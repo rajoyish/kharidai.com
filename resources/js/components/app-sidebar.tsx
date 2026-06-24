@@ -37,7 +37,25 @@ const footerNavItems: NavItem[] = [
     },
 ];
 
+import { usePage } from '@inertiajs/react';
+import type { SharedData } from '@/types';
+
 export function AppSidebar() {
+    const { auth } = usePage<SharedData>().props;
+
+    const adminNavItems: NavItem[] = [
+        {
+            title: 'Admin Dashboard',
+            href: '/admin',
+            icon: LayoutGrid,
+        },
+        {
+            title: 'User Management',
+            href: '/admin/users',
+            icon: BookOpen,
+        },
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -54,6 +72,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                {auth.user.is_admin && <NavMain items={adminNavItems} />}
             </SidebarContent>
 
             <SidebarFooter>
