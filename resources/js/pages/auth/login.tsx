@@ -11,7 +11,7 @@ export default function Login() {
                     <Button
                         type="button"
                         className="w-full"
-                        onClick={() => window.location.href = '/auth/google'}
+                        onClick={() => (window.location.href = '/auth/google')}
                     >
                         Sign in with Google
                     </Button>
