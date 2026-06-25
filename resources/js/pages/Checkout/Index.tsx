@@ -89,7 +89,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                     }
                                     className="gap-4"
                                 >
-                                    <div className="flex items-center space-x-2 rounded-md border p-4">
+                                    <div className="flex items-start space-x-2 rounded-md border p-4">
                                         <RadioGroupItem value="npr" id="r1" />
                                         <Label
                                             htmlFor="r1"
@@ -102,7 +102,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                             </p>
                                         </Label>
                                     </div>
-                                    <div className="flex items-center space-x-2 rounded-md border p-4">
+                                    <div className="flex items-start space-x-2 rounded-md border p-4">
                                         <RadioGroupItem value="usd" id="r2" />
                                         <Label
                                             htmlFor="r2"
