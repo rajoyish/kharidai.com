@@ -128,12 +128,12 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                     Additional Information (Optional)
                                 </h2>
                                 <div className="space-y-2">
-                                    <Label htmlFor="additional_data">
-                                        Special Instructions or Player ID
+                                    <Label htmlFor="additional_data" className='inline-block mb-2'>
+                                        Special Instructions or Account Information
                                     </Label>
                                     <Textarea
                                         id="additional_data"
-                                        placeholder="Add any specific details required for this order (e.g. In-game User ID for top-ups)"
+                                        placeholder="Add any specific details required for this order (e.g.  Account Information for top-ups)"
                                         value={data.additional_data}
                                         onChange={(e) =>
                                             setData(

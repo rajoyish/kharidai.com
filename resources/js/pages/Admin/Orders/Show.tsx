@@ -16,6 +16,7 @@ type Order = {
     currency: string;
     status: string;
     created_at: string;
+    additional_data: { note?: string } | null;
     user: {
         id: number;
         name: string;
@@ -240,6 +241,16 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                 ))}
                             </div>
                         </div>
+
+                        {/* Additional Information */}
+                        {order.additional_data?.note && (
+                            <div className="rounded-xl border bg-card p-6">
+                                <h2 className="mb-4 text-xl font-semibold">Additional Information</h2>
+                                <div className="rounded-lg bg-muted p-4 text-sm text-foreground whitespace-pre-wrap">
+                                    {order.additional_data.note}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Digital Delivery Credentials */}
                         <div className="rounded-xl border bg-card p-6">
