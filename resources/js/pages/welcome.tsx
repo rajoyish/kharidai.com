@@ -1,5 +1,5 @@
-import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 
 type Product = {
@@ -20,21 +20,44 @@ type Variant = {
 export default function Welcome({
     uncategorizedProducts,
     categories,
-    filters,
 }: {
     uncategorizedProducts: Product[];
     categories: { id: number; name: string; slug: string; products: Product[] }[];
-    filters: { search?: string; category?: string };
 }) {
     const { auth, cartCount } = usePage().props;
-    const { data, setData, get } = useForm({
-        search: filters.search || '',
-    });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        get('/', { preserveState: true });
-    };
+    const { filteredCategories, filteredUncategorizedProducts } = useMemo(() => {
+        const query = searchQuery.toLowerCase().trim();
+        
+        let cats = categories;
+        let uncategorized = uncategorizedProducts;
+
+        // Filter by selected category dropdown
+        if (selectedCategory !== 'all') {
+            cats = cats.filter(c => c.id.toString() === selectedCategory);
+            uncategorized = []; // If a specific category is selected, uncategorized products are hidden
+        }
+
+        // Filter by search query
+        if (query) {
+            cats = cats.map(category => ({
+                ...category,
+                products: category.products.filter(p => 
+                    p.title.toLowerCase().includes(query) || 
+                    (p.description && p.description.toLowerCase().includes(query))
+                )
+            })).filter(category => category.products.length > 0);
+
+            uncategorized = uncategorized.filter(p => 
+                p.title.toLowerCase().includes(query) || 
+                (p.description && p.description.toLowerCase().includes(query))
+            );
+        }
+
+        return { filteredCategories: cats, filteredUncategorizedProducts: uncategorized };
+    }, [categories, uncategorizedProducts, searchQuery, selectedCategory]);
 
     return (
         <>
@@ -49,21 +72,8 @@ export default function Welcome({
                             Kharidai
                         </Link>
 
-                        <div className="mx-8 max-w-md flex-1">
-                            <form
-                                onSubmit={handleSearch}
-                                className="flex gap-2"
-                            >
-                                <Input
-                                    type="search"
-                                    placeholder="Search products..."
-                                    value={data.search}
-                                    onChange={(e) =>
-                                        setData('search', e.target.value)
-                                    }
-                                />
-                                <Button type="submit">Search</Button>
-                            </form>
+                        <div className="mx-8 max-w-md flex-1 hidden md:block">
+                            {/* Empty space for layout balance */}
                         </div>
 
                         <nav className="flex items-center gap-4">
@@ -98,7 +108,28 @@ export default function Welcome({
                 </header>
 
                 <main className="container mx-auto flex-1 px-4 py-8">
-                    {categories.map((category) => (
+                    {/* Search and Filter */}
+                    <div className="mb-12 flex flex-col sm:flex-row gap-4 items-center bg-card p-4 rounded-xl border shadow-sm">
+                        <Input
+                            type="search"
+                            placeholder="Search products by name or description..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="flex-1"
+                        />
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="flex h-9 w-full sm:w-64 items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <option value="all">All Categories</option>
+                            {categories.map(category => (
+                                <option key={category.id} value={category.id.toString()}>{category.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {filteredCategories.map((category) => (
                         category.products && category.products.length > 0 && (
                             <div key={category.id} className="mb-12">
                                 <h2 className="mb-6 text-2xl font-bold tracking-tight border-b pb-2">
@@ -142,13 +173,13 @@ export default function Welcome({
                         )
                     ))}
 
-                    {uncategorizedProducts && uncategorizedProducts.length > 0 && (
+                    {filteredUncategorizedProducts && filteredUncategorizedProducts.length > 0 && (
                         <div className="mb-12">
                             <h2 className="mb-6 text-2xl font-bold tracking-tight border-b pb-2">
                                 Other Products
                             </h2>
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
-                                {uncategorizedProducts.map((product) => (
+                                {filteredUncategorizedProducts.map((product) => (
                                     <Link
                                         key={product.id}
                                         href={`/products/${product.id}`}
@@ -184,7 +215,7 @@ export default function Welcome({
                         </div>
                     )}
 
-                    {categories.length === 0 && (!uncategorizedProducts || uncategorizedProducts.length === 0) && (
+                    {filteredCategories.length === 0 && (!filteredUncategorizedProducts || filteredUncategorizedProducts.length === 0) && (
                         <div className="mt-12 text-center text-muted-foreground">
                             No products found matching your criteria.
                         </div>
