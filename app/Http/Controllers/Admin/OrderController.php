@@ -108,4 +108,10 @@ class OrderController extends Controller
 
         return redirect()->back()->with('success', 'Message sent.');
     }
+
+    public function destroy(Order $order)
+    {
+        $order->delete();
+        return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
+    }
 }

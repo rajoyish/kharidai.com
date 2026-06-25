@@ -138,10 +138,22 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                 description={`Customer: ${order.user.name} (${order.user.email}) | Date: ${new Date(order.created_at).toLocaleString()}`}
                 variant="transparent"
                 actions={
-                    <form
-                        onSubmit={handleUpdateStatus}
-                        className="flex items-center gap-2 rounded-lg border bg-card p-2 shadow-sm"
-                    >
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            className="border-red-200 text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                                if (confirm('Are you sure you want to delete this order completely?')) {
+                                    router.delete(`/admin/orders/${order.id}`);
+                                }
+                            }}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Order
+                        </Button>
+                        <form
+                            onSubmit={handleUpdateStatus}
+                            className="flex items-center gap-2 rounded-lg border bg-card p-2 shadow-sm"
+                        >
                         <select
                             value={statusData.status}
                             onChange={(e) =>
@@ -164,6 +176,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                             Update Status
                         </Button>
                     </form>
+                    </div>
                 }
             >
 

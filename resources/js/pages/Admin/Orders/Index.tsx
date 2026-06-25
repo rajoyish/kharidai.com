@@ -1,6 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Eye } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { PagePanel } from '@/components/page-panel';
@@ -129,7 +129,7 @@ export default function AdminOrderIndex({
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-right">
+                                    <td className="px-6 py-4 flex justify-end gap-2">
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -141,6 +141,18 @@ export default function AdminOrderIndex({
                                                 <Eye className="mr-2 h-4 w-4" />
                                                 View
                                             </Link>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                            onClick={() => {
+                                                if (confirm('Are you sure you want to delete this order?')) {
+                                                    router.delete(`/admin/orders/${order.id}`);
+                                                }
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </td>
                                 </tr>
