@@ -12,7 +12,7 @@ Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::c
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia\Inertia::render('dashboard', [
-            'recentOrders' => auth()->user()->orders()->with('items.product_variant.product')->latest()->take(5)->get()
+            'recentOrders' => auth()->user()->orders()->with('items.productVariant.product')->latest()->take(5)->get()
         ]);
     })->name('dashboard');
 
