@@ -30,7 +30,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('orders', [\App\Http\Controllers\User\OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [\App\Http\Controllers\User\OrderController::class, 'show'])->name('orders.show');
-    Route::post('orders/{order}/messages', [\App\Http\Controllers\User\OrderController::class, 'storeMessage'])->name('orders.messages.store');
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+
+    Route::post('/orders/{order}/messages', [\App\Http\Controllers\User\OrderController::class, 'storeMessage'])->name('orders.messages.store');
 });
 
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {

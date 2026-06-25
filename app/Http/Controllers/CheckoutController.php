@@ -67,6 +67,9 @@ class CheckoutController extends Controller
         $cart->items()->delete();
         $cart->delete();
 
+        $admins = \App\Models\User::where('is_admin', true)->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\OrderPlacedNotification($order));
+
         if ($validated['currency'] === 'npr') {
             return redirect()->route('checkout.npr', $order);
         }
@@ -101,6 +104,9 @@ class CheckoutController extends Controller
             'file_path' => $path,
             'status' => 'pending',
         ]);
+
+        $admins = \App\Models\User::where('is_admin', true)->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PaymentReceiptUploadedNotification($order));
 
         // Keep order status as pending until admin reviews the receipt
         return redirect()->route('orders.show', $order)->with('success', 'Receipt uploaded successfully. We will process your order soon.');

@@ -52,6 +52,9 @@ class OrderController extends Controller
         $message->load('user');
         \App\Events\OrderMessageCreated::dispatch($message);
 
+        $admins = \App\Models\User::where('is_admin', true)->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\NewMessageNotification($message));
+
         return redirect()->back()->with('success', 'Message sent.');
     }
 }

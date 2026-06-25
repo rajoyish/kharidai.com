@@ -37,6 +37,7 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $validated['status']]);
+        $order->user->notify(new \App\Notifications\OrderStatusUpdatedNotification($order, $validated['status']));
 
         return redirect()->back()->with('success', 'Order status updated.');
     }
@@ -51,6 +52,7 @@ class OrderController extends Controller
 
         if ($validated['status'] === 'approved') {
             $paymentReceipt->order->update(['status' => 'delivering']);
+            $paymentReceipt->order->user->notify(new \App\Notifications\OrderStatusUpdatedNotification($paymentReceipt->order, 'delivering'));
         }
 
         return redirect()->back()->with('success', 'Receipt status updated.');
@@ -102,6 +104,7 @@ class OrderController extends Controller
 
         $message->load('user');
         \App\Events\OrderMessageCreated::dispatch($message);
+        $order->user->notify(new \App\Notifications\NewMessageNotification($message));
 
         return redirect()->back()->with('success', 'Message sent.');
     }
