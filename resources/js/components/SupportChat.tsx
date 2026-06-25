@@ -16,7 +16,10 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [isOnline, setIsOnline] = useState(false);
+    const [isLocalOnline, setIsLocalOnline] = useState(false);
+    const [isGlobalAdminOnline, setIsGlobalAdminOnline] = useState(false);
+
+    const isOnline = isLocalOnline || (!auth.user.is_admin && isGlobalAdminOnline);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,24 +30,41 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
             try {
                 const channel = window.Echo.join(`orders.${order.id}`)
                     .here((users: any[]) => {
-                        setIsOnline(
+                        setIsLocalOnline(
                             users.some((u) => u.is_admin !== auth.user.is_admin),
                         );
                     })
                     .joining((user: any) => {
-                        if (user.is_admin !== auth.user.is_admin) setIsOnline(true);
+                        if (user.is_admin !== auth.user.is_admin) setIsLocalOnline(true);
                     })
                     .leaving((user: any) => {
-                        if (user.is_admin !== auth.user.is_admin) setIsOnline(false);
+                        if (user.is_admin !== auth.user.is_admin) setIsLocalOnline(false);
                     })
                     .listen('OrderMessageCreated', (e: any) => {
                         router.reload({ only: ['order'] });
                     });
 
+                let supportChannel: any;
+                if (!auth.user.is_admin) {
+                    supportChannel = window.Echo.join('support')
+                        .here((users: any[]) => {
+                            setIsGlobalAdminOnline(users.some((u) => u.is_admin));
+                        })
+                        .joining((user: any) => {
+                            if (user.is_admin) setIsGlobalAdminOnline(true);
+                        })
+                        .leaving((user: any) => {
+                            if (user.is_admin) setIsGlobalAdminOnline(false);
+                        });
+                }
+
                 return () => {
                     if (window.Echo) {
                         channel.stopListening('OrderMessageCreated');
                         window.Echo.leave(`orders.${order.id}`);
+                        if (supportChannel) {
+                            window.Echo.leave('support');
+                        }
                     }
                 };
             } catch (e) {

@@ -8,10 +8,9 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 Broadcast::channel('orders.{orderId}', function ($user, $orderId) {
     $order = \App\Models\Order::find($orderId);
-    if ($order && ((int) $user->id === (int) $order->user_id || $user->is_admin)) {
-        return [
-            'id' => $user->id,
-            'is_admin' => $user->is_admin,
-        ];
-    }
+    return $order && ((int) $user->id === (int) $order->user_id || $user->is_admin) ? ['id' => $user->id, 'is_admin' => $user->is_admin] : false;
+});
+
+Broadcast::channel('support', function ($user) {
+    return ['id' => $user->id, 'is_admin' => $user->is_admin];
 });
