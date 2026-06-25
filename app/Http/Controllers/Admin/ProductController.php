@@ -28,6 +28,7 @@ class ProductController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
+            'in_stock' => 'boolean',
         ]);
 
         if ($request->hasFile('image')) {
@@ -50,6 +51,7 @@ class ProductController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
+            'in_stock' => 'boolean',
         ]);
 
         if ($request->hasFile('image')) {
@@ -72,5 +74,15 @@ class ProductController extends Controller
         $product->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
+    }
+
+    public function toggleStock(Product $product)
+    {
+        $product->update([
+            'in_stock' => !$product->in_stock,
+        ]);
+
+        $status = $product->in_stock ? 'listed in stock' : 'unlisted as out of stock';
+        return redirect()->back()->with('success', "Product is now {$status}.");
     }
 }

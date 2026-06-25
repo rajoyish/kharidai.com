@@ -20,6 +20,7 @@ export type Product = {
     title: string;
     description: string;
     image?: string;
+    in_stock?: boolean;
 };
 
 type ProductFormProps = {
@@ -34,6 +35,7 @@ export function ProductForm({ product, submitUrl, isEditing = false }: ProductFo
         title: product?.title || '',
         description: product?.description || '',
         image: null as File | null,
+        in_stock: product?.in_stock ?? true,
     });
 
     const submit = (e: React.FormEvent) => {
@@ -68,6 +70,22 @@ export function ProductForm({ product, submitUrl, isEditing = false }: ProductFo
                             {errors.title && (
                                 <div className="text-sm font-medium text-destructive">
                                     {errors.title}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="in_stock"
+                                checked={data.in_stock}
+                                onChange={(e) => setData('in_stock', e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <Label htmlFor="in_stock">Product is listed and in stock</Label>
+                            {errors.in_stock && (
+                                <div className="text-sm font-medium text-destructive ml-2">
+                                    {errors.in_stock}
                                 </div>
                             )}
                         </div>

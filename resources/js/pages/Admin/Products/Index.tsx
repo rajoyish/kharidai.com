@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
 import { PagePanel } from '@/components/page-panel';
@@ -8,6 +8,7 @@ type Product = {
     title: string;
     description: string;
     image: string;
+    in_stock: boolean;
 };
 
 export default function ProductsIndex({ products }: { products: Product[] }) {
@@ -36,6 +37,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                             <tr>
                                 <th className="px-6 py-3">Image</th>
                                 <th className="px-6 py-3">Title</th>
+                                <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3">Actions</th>
                             </tr>
                         </thead>
@@ -57,7 +59,20 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                     <td className="px-6 py-4 font-medium">
                                         {product.title}
                                     </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            {product.in_stock ? 'In Stock' : 'Out of Stock'}
+                                        </span>
+                                    </td>
                                     <td className="flex gap-2 px-6 py-4">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={product.in_stock ? 'text-amber-600 hover:text-amber-700' : 'text-green-600 hover:text-green-700'}
+                                            onClick={() => router.patch(`/admin/products/${product.id}/toggle-stock`, {}, { preserveScroll: true })}
+                                        >
+                                            {product.in_stock ? 'Unlist' : 'Restock'}
+                                        </Button>
                                         <Button
                                             variant="outline"
                                             size="sm"

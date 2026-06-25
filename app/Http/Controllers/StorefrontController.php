@@ -10,7 +10,7 @@ class StorefrontController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('variants');
+        $query = Product::where('in_stock', true)->with('variants');
 
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -28,6 +28,10 @@ class StorefrontController extends Controller
 
     public function show(Product $product)
     {
+        if (!$product->in_stock) {
+            abort(404);
+        }
+        
         $product->load('variants');
         return Inertia::render('Products/Show', [
             'product' => $product

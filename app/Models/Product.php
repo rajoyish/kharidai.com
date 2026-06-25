@@ -13,14 +13,22 @@ use Illuminate\Support\Carbon;
  * @property string $title
  * @property string|null $description
  * @property string|null $image
+ * @property bool $in_stock
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['title', 'description', 'image'])]
+#[Fillable(['title', 'description', 'image', 'in_stock'])]
 class Product extends Model
 {
     /** @use HasFactory<\Database\Factories\ProductFactory> */
     use HasFactory;
+
+    protected function casts(): array
+    {
+        return [
+            'in_stock' => 'boolean',
+        ];
+    }
 
     /**
      * @return HasMany<ProductVariant, $this>

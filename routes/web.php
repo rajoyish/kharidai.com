@@ -44,6 +44,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
 
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->except(['show']);
+    Route::post('products/{product}/media', [\App\Http\Controllers\Admin\ProductController::class, 'uploadMedia'])->name('products.media.store');
+    Route::delete('products/{product}/media/{media}', [\App\Http\Controllers\Admin\ProductController::class, 'deleteMedia'])->name('products.media.destroy');
+    Route::patch('products/{product}/toggle-stock', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStock'])->name('products.toggle-stock');
     Route::resource('products.variants', \App\Http\Controllers\Admin\ProductVariantController::class)->except(['show']);
 
     Route::get('media', [\App\Http\Controllers\MediaController::class, 'index'])->name('media.index');
