@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Product $product
  */
-#[Fillable(['product_id', 'name', 'price_npr', 'price_usd'])]
+#[Fillable(['product_id', 'name', 'details', 'price_npr', 'price_usd'])]
 class ProductVariant extends Model
 {
     /** @use HasFactory<\Database\Factories\ProductVariantFactory> */

@@ -3,10 +3,13 @@ import { dashboard, login } from '@/routes';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 type Variant = {
     id: number;
     name: string;
+    details: string | null;
     price_npr: string;
     price_usd: string;
 };
@@ -131,25 +134,43 @@ export default function Show({ product }: { product: Product }) {
                                     <h3 className="mb-3 text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Select Variant
                                     </h3>
-                                    <div className="flex flex-wrap gap-2">
+                                    <RadioGroup
+                                        value={selectedVariant?.id.toString()}
+                                        onValueChange={(value) => {
+                                            const variant =
+                                                product.variants.find(
+                                                    (v) =>
+                                                        v.id.toString() ===
+                                                        value,
+                                                );
+                                            if (variant)
+                                                handleVariantChange(variant);
+                                        }}
+                                        className="grid gap-4"
+                                    >
                                         {product.variants.map((variant) => (
-                                            <Button
+                                            <Label
                                                 key={variant.id}
-                                                variant={
-                                                    selectedVariant?.id ===
-                                                    variant.id
-                                                        ? 'default'
-                                                        : 'outline'
-                                                }
-                                                onClick={() =>
-                                                    handleVariantChange(variant)
-                                                }
-                                                className="min-w-[100px]"
+                                                htmlFor={`variant-${variant.id}`}
+                                                className="flex cursor-pointer items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
                                             >
-                                                {variant.name}
-                                            </Button>
+                                                <div className="mr-4 flex flex-col gap-1">
+                                                    <span className="text-base font-semibold">
+                                                        {variant.name}
+                                                    </span>
+                                                    {variant.details && (
+                                                        <span className="text-sm font-normal text-muted-foreground">
+                                                            {variant.details}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <RadioGroupItem
+                                                    value={variant.id.toString()}
+                                                    id={`variant-${variant.id}`}
+                                                />
+                                            </Label>
                                         ))}
-                                    </div>
+                                    </RadioGroup>
                                 </div>
                             )}
 

@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type Product = {
     id: number;
@@ -12,6 +13,7 @@ type Product = {
 export default function CreateVariant({ product }: { product: Product }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
+        details: '',
         price_npr: '',
         price_usd: '',
     });
@@ -58,6 +60,22 @@ export default function CreateVariant({ product }: { product: Product }) {
                         {errors.name && (
                             <div className="text-sm text-red-500">
                                 {errors.name}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="details">Details</Label>
+                        <Textarea
+                            id="details"
+                            value={data.details}
+                            onChange={(e) => setData('details', e.target.value)}
+                            placeholder="Variant details or description"
+                            className="h-32"
+                        />
+                        {errors.details && (
+                            <div className="text-sm text-red-500">
+                                {errors.details}
                             </div>
                         )}
                     </div>

@@ -28,6 +28,7 @@ class ProductVariantController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'details' => 'nullable|string',
             'price_npr' => 'required|numeric|min:0',
             'price_usd' => 'required|numeric|min:0',
         ]);
@@ -49,6 +50,7 @@ class ProductVariantController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'details' => 'nullable|string',
             'price_npr' => 'required|numeric|min:0',
             'price_usd' => 'required|numeric|min:0',
         ]);

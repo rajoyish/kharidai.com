@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type Product = {
     id: number;
@@ -12,6 +13,7 @@ type Product = {
 type Variant = {
     id: number;
     name: string;
+    details: string | null;
     price_npr: string;
     price_usd: string;
 };
@@ -25,6 +27,7 @@ export default function EditVariant({
 }) {
     const { data, setData, put, processing, errors } = useForm({
         name: variant.name,
+        details: variant.details || '',
         price_npr: variant.price_npr,
         price_usd: variant.price_usd,
     });
@@ -71,6 +74,22 @@ export default function EditVariant({
                         {errors.name && (
                             <div className="text-sm text-red-500">
                                 {errors.name}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="details">Details</Label>
+                        <Textarea
+                            id="details"
+                            value={data.details}
+                            onChange={(e) => setData('details', e.target.value)}
+                            placeholder="Variant details or description"
+                            className="h-32"
+                        />
+                        {errors.details && (
+                            <div className="text-sm text-red-500">
+                                {errors.details}
                             </div>
                         )}
                     </div>
