@@ -7,7 +7,7 @@ description: Trigger when the user says "write a commit message", "generate a co
 
 When triggered, follow this workflow:
 
-1. Check that there are staged changes using the `run_command` tool to execute `git diff --staged`. If the output is empty (nothing is staged), stop and tell the user to stage their changes first.
+1. Check that there are staged changes using the `run_command` tool to execute `git diff --staged`. If the output is empty (nothing is staged), automatically stage all changes on the user's behalf by running `git add .`, and then run `git diff --staged` again to read the newly staged changes.
 2. Read the staged diff output.
 3. Generate a commit message based on the diff in this exact format:
 
