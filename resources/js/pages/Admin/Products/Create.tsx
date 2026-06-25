@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Card,
     CardContent,
@@ -35,7 +36,7 @@ export default function CreateProduct() {
             <Head title="Create Product" />
 
             <div className="flex h-full flex-1 flex-col p-4 md:p-8">
-                <div className="mx-auto w-full max-w-2xl">
+                <div className="w-full max-w-3xl">
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-2xl">Create Product</CardTitle>
@@ -63,13 +64,14 @@ export default function CreateProduct() {
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="description">Description</Label>
-                                    <Input
+                                    <Textarea
                                         id="description"
                                         placeholder="Briefly describe the product..."
                                         value={data.description}
                                         onChange={(e) =>
                                             setData('description', e.target.value)
                                         }
+                                        className="min-h-[120px]"
                                     />
                                     {errors.description && (
                                         <div className="text-sm font-medium text-destructive">
