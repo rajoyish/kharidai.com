@@ -109,7 +109,7 @@ export default function Show({ product }: { product: Product }) {
                                 {product.title}
                             </h1>
 
-                            {selectedVariant && (
+                            {auth.user && selectedVariant && (
                                 <div className="mb-6 text-2xl font-semibold text-primary">
                                     Rs. {selectedVariant.price_npr} / $
                                     {selectedVariant.price_usd}
@@ -121,7 +121,7 @@ export default function Show({ product }: { product: Product }) {
                             </div>
 
                             {/* Variants Selection */}
-                            {product.variants.length > 0 && (
+                            {auth.user && product.variants.length > 0 && (
                                 <div className="mb-8">
                                     <h3 className="mb-3 text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Select Variant
