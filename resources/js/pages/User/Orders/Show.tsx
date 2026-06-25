@@ -52,12 +52,6 @@ export default function OrderShow({ order }: { order: Order }) {
         message: '',
     });
 
-    const breadcrumbs: Breadcrumbs = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'My Orders', href: '/orders' },
-        { title: order.order_number, href: `/orders/${order.id}` },
-    ];
-
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         post(`/orders/${order.id}/messages`, {
@@ -359,5 +353,9 @@ export default function OrderShow({ order }: { order: Order }) {
 }
 
 OrderShow.layout = {
-    breadcrumbs: breadcrumbs,
+    breadcrumbs: [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'My Orders', href: '/orders' },
+        { title: 'Order Details', href: '#' },
+    ],
 };

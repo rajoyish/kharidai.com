@@ -84,12 +84,6 @@ export default function AdminOrderShow({ order }: { order: Order }) {
         message: '',
     });
 
-    const breadcrumbs: Breadcrumbs = [
-        { title: 'Admin Dashboard', href: '/admin' },
-        { title: 'Orders', href: '/admin/orders' },
-        { title: order.order_number, href: `/admin/orders/${order.id}` },
-    ];
-
     const handleUpdateStatus = (e: React.FormEvent) => {
         e.preventDefault();
         patchStatus(`/admin/orders/${order.id}/status`, {
@@ -483,5 +477,9 @@ export default function AdminOrderShow({ order }: { order: Order }) {
 }
 
 AdminOrderShow.layout = {
-    breadcrumbs: breadcrumbs,
+    breadcrumbs: [
+        { title: 'Admin Dashboard', href: '/admin' },
+        { title: 'Orders', href: '/admin/orders' },
+        { title: 'Order Details', href: '#' },
+    ],
 };
