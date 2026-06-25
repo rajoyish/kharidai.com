@@ -1,4 +1,5 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
@@ -60,9 +61,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
         status: order.status,
     });
 
-    const { patch: patchReceipt, processing: processingReceipt } = useForm({
-        status: order.payment_receipt?.status || 'pending',
-    });
+    // Receipt status is handled via router.patch now
 
     const {
         data: credData,
@@ -98,11 +97,14 @@ export default function AdminOrderShow({ order }: { order: Order }) {
         });
     };
 
+    const [processingReceipt, setProcessingReceipt] = useState(false);
+
     const handleReceiptAction = (status: 'approved' | 'rejected') => {
         if (!order.payment_receipt) return;
-        patchReceipt(`/admin/receipts/${order.payment_receipt.id}/status`, {
-            data: { status },
+        router.patch(`/admin/receipts/${order.payment_receipt.id}/status`, { status }, {
             preserveScroll: true,
+            onStart: () => setProcessingReceipt(true),
+            onFinish: () => setProcessingReceipt(false),
             onSuccess: () => toast.success(`Receipt ${status}`),
         });
     };
