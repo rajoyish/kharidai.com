@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import { dashboard, login } from '@/routes';
@@ -31,18 +31,17 @@ type Cart = {
 
 export default function CartIndex({ cart }: { cart: Cart }) {
     const { auth, cartCount } = usePage().props;
-    const { put, delete: destroy } = useForm();
-
     const handleUpdateQuantity = (item: CartItem, newQuantity: number) => {
         if (newQuantity < 1) return;
-        put(`/cart/${item.id}`, {
-            data: { quantity: newQuantity },
-            preserveScroll: true,
-        });
+        router.put(
+            `/cart/${item.id}`,
+            { quantity: newQuantity },
+            { preserveScroll: true },
+        );
     };
 
     const handleRemove = (item: CartItem) => {
-        destroy(`/cart/${item.id}`, {
+        router.delete(`/cart/${item.id}`, {
             preserveScroll: true,
         });
     };
