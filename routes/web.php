@@ -10,7 +10,11 @@ Route::get('/', [\App\Http\Controllers\StorefrontController::class, 'index'])->n
 Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::class, 'show'])->name('products.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', function () {
+        return Inertia\Inertia::render('dashboard', [
+            'recentOrders' => auth()->user()->orders()->with('items.product_variant.product')->latest()->take(5)->get()
+        ]);
+    })->name('dashboard');
 
     Route::get('cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
     Route::post('cart', [\App\Http\Controllers\CartController::class, 'add'])->name('cart.add');

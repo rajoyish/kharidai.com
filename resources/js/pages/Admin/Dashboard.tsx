@@ -55,6 +55,7 @@ export default function Dashboard({
                                     <th className="px-6 py-4">Date</th>
                                     <th className="px-6 py-4">Amount</th>
                                     <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4">Receipt</th>
                                     <th className="px-6 py-4 text-right">
                                         Actions
                                     </th>
@@ -103,6 +104,39 @@ export default function Dashboard({
                                                 {order.status}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-4">
+                                            {order.currency === 'npr' ? (
+                                                order.paymentReceipt ? (
+                                                    <span
+                                                        className={`rounded-md px-2 py-1 text-xs ${
+                                                            order.paymentReceipt
+                                                                .status ===
+                                                            'approved'
+                                                                ? 'border border-green-200 bg-green-100/50 text-green-700'
+                                                                : order
+                                                                        .paymentReceipt
+                                                                        .status ===
+                                                                    'rejected'
+                                                                  ? 'border border-red-200 bg-red-100/50 text-red-700'
+                                                                  : 'border border-amber-200 bg-amber-100/50 text-amber-700'
+                                                        }`}
+                                                    >
+                                                        {
+                                                            order.paymentReceipt
+                                                                .status
+                                                        }
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground italic">
+                                                        Missing
+                                                    </span>
+                                                )
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-right">
                                             <Button
                                                 variant="ghost"
@@ -122,7 +156,7 @@ export default function Dashboard({
                                 {recentOrders.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={6}
+                                            colSpan={7}
                                             className="px-6 py-8 text-center text-muted-foreground"
                                         >
                                             No recent orders found.
