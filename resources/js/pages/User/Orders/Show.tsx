@@ -1,4 +1,5 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,8 +53,44 @@ export default function OrderShow({ order }: { order: Order }) {
         message: '',
     });
 
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [isAdminOnline, setIsAdminOnline] = useState(false);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [order.messages]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.Echo) {
+            try {
+                const channel = window.Echo.join(`orders.${order.id}`)
+                    .here((users: any[]) => {
+                        setIsAdminOnline(users.some((u) => u.is_admin));
+                    })
+                    .joining((user: any) => {
+                        if (user.is_admin) setIsAdminOnline(true);
+                    })
+                    .leaving((user: any) => {
+                        if (user.is_admin) setIsAdminOnline(false);
+                    })
+                    .listen('OrderMessageCreated', (e: any) => {
+                        router.reload({ only: ['order'] });
+                    });
+
+                return () => {
+                    if (window.Echo) {
+                        channel.stopListening('OrderMessageCreated');
+                        window.Echo.leave(`orders.${order.id}`);
+                    }
+                };
+            } catch (e) {
+                console.warn('Real-time chat is unavailable:', e);
+            }
+        }
+    }, [order.id]);
+
+    const handleSendMessage = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         post(`/orders/${order.id}/messages`, {
             preserveScroll: true,
             onSuccess: () => reset('message'),
@@ -221,9 +258,25 @@ export default function OrderShow({ order }: { order: Order }) {
 
                         {/* Order Messages */}
                         <div className="flex h-[500px] flex-col rounded-xl border bg-card p-6">
-                            <h2 className="mb-4 flex-shrink-0 text-xl font-semibold">
-                                Support & Updates
-                            </h2>
+                            <div className="mb-4 flex flex-shrink-0 items-center justify-between">
+                                <h2 className="text-xl font-semibold">
+                                    Support Chat
+                                </h2>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <div
+                                        className={`h-2.5 w-2.5 rounded-full ${isAdminOnline ? 'bg-green-500' : 'bg-gray-400'}`}
+                                    ></div>
+                                    <span
+                                        className={
+                                            isAdminOnline
+                                                ? 'font-medium text-green-600 dark:text-green-500'
+                                                : 'text-gray-500 dark:text-gray-400'
+                                        }
+                                    >
+                                        {isAdminOnline ? 'Online' : 'Offline'}
+                                    </span>
+                                </div>
+                            </div>
                             <div className="mb-4 flex-1 space-y-4 overflow-y-auto pr-2">
                                 {order.messages.map((msg) => (
                                     <div
@@ -259,6 +312,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                         question.
                                     </div>
                                 )}
+                                <div ref={messagesEndRef} />
                             </div>
                             <form
                                 onSubmit={handleSendMessage}
@@ -269,6 +323,14 @@ export default function OrderShow({ order }: { order: Order }) {
                                     onChange={(e) =>
                                         setData('message', e.target.value)
                                     }
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            if (!processing && data.message.trim()) {
+                                                handleSendMessage();
+                                            }
+                                        }
+                                    }}
                                     placeholder="Type your message..."
                                     className="min-h-[60px] resize-none"
                                 />

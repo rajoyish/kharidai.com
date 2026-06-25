@@ -95,10 +95,13 @@ class OrderController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
-        $order->messages()->create([
+        $message = $order->messages()->create([
             'user_id' => $request->user()->id,
             'message' => $validated['message'],
         ]);
+
+        $message->load('user');
+        \App\Events\OrderMessageCreated::dispatch($message);
 
         return redirect()->back()->with('success', 'Message sent.');
     }
