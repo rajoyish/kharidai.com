@@ -1,5 +1,13 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 import { PagePanel } from '@/components/page-panel';
 
@@ -37,85 +45,82 @@ export default function VariantsIndex({
             <Head title={`Variants - ${product.title}`} />
 
             <PagePanel
-                title={`Variants for ${product.title}`}
+                title="Product Variants"
+                variant="transparent"
                 actions={
                     <Button asChild>
-                        <Link
-                            href={`/admin/products/${product.id}/variants/create`}
-                        >
+                        <Link href={`/admin/products/${product.id}/variants/create`}>
                             Add Variant
                         </Link>
                     </Button>
                 }
             >
-                <table className="w-full text-left text-sm">
-                        <thead className="bg-muted text-xs text-muted-foreground uppercase">
-                            <tr>
-                                <th className="px-6 py-3">Name</th>
-                                <th className="px-6 py-3">Selling Price (NPR)</th>
-                                <th className="px-6 py-3">Purchase Price (NPR)</th>
-                                <th className="px-6 py-3">Selling Price (USD)</th>
-                                <th className="px-6 py-3">Purchase Price (USD)</th>
-                                <th className="px-6 py-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {variants.map((variant) => (
-                                <tr
-                                    key={variant.id}
-                                    className="border-b last:border-0"
-                                >
-                                    <td className="px-6 py-4 font-medium">
-                                        {variant.name}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {variant.price_npr}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {variant.purchase_price_npr || '0.00'}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {variant.price_usd}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {variant.purchase_price_usd || '0.00'}
-                                    </td>
-                                    <td className="flex gap-2 px-6 py-4">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={`/admin/products/${product.id}/variants/${variant.id}/edit`}
-                                            >
-                                                Edit
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleDelete(variant)
-                                            }
-                                        >
-                                            Delete
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {variants.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={4}
-                                        className="px-6 py-4 text-center text-muted-foreground"
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Selling Price (NPR)</TableHead>
+                            <TableHead>Purchase Price (NPR)</TableHead>
+                            <TableHead>Selling Price (USD)</TableHead>
+                            <TableHead>Purchase Price (USD)</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {variants.map((variant) => (
+                            <TableRow key={variant.id}>
+                                <TableCell className="font-medium">
+                                    {variant.name}
+                                </TableCell>
+                                <TableCell>
+                                    {variant.price_npr}
+                                </TableCell>
+                                <TableCell>
+                                    {variant.purchase_price_npr || '0.00'}
+                                </TableCell>
+                                <TableCell>
+                                    {variant.price_usd}
+                                </TableCell>
+                                <TableCell>
+                                    {variant.purchase_price_usd || '0.00'}
+                                </TableCell>
+                                <TableCell className="flex justify-end gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        asChild
                                     >
-                                        No variants found.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                        <Link
+                                            href={`/admin/products/${product.id}/variants/${variant.id}/edit`}
+                                        >
+                                            Edit
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() =>
+                                            handleDelete(variant)
+                                        }
+                                    >
+                                        Delete
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {variants.length === 0 && (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={6}
+                                    className="h-24 text-center text-muted-foreground"
+                                >
+                                    No variants found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </PagePanel>
         </>
     );

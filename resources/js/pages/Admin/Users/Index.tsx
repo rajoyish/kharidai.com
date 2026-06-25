@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 import { PagePanel } from '@/components/page-panel';
 
@@ -29,62 +37,71 @@ export default function UsersIndex({ users }: { users: User[] }) {
         <>
             <Head title="User Management" />
 
-            <PagePanel title="User Management">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-muted text-xs text-muted-foreground uppercase">
-                            <tr>
-                                <th className="px-6 py-3">Name</th>
-                                <th className="px-6 py-3">Email</th>
-                                <th className="px-6 py-3">Status</th>
-                                <th className="px-6 py-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            <PagePanel title="User Management" variant="transparent">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {users.map((user) => (
-                                <tr
-                                    key={user.id}
-                                    className="border-b last:border-0"
-                                >
-                                    <td className="px-6 py-4 font-medium">
+                                <TableRow key={user.id}>
+                                    <TableCell className="font-medium">
                                         {user.name}{' '}
                                         {user.is_admin ? '(Admin)' : ''}
-                                    </td>
-                                    <td className="px-6 py-4">{user.email}</td>
-                                    <td className="px-6 py-4">
+                                    </TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>
                                         {user.banned_at ? (
-                                            <span className="text-destructive">
+                                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80">
                                                 Banned
                                             </span>
                                         ) : (
-                                            <span className="text-green-500">
+                                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-800 hover:bg-green-100/80">
                                                 Active
                                             </span>
                                         )}
-                                    </td>
-                                    <td className="flex gap-2 px-6 py-4">
+                                    </TableCell>
+                                    <TableCell className="flex justify-end gap-2">
                                         <Button
                                             variant={
                                                 user.banned_at
                                                     ? 'outline'
-                                                    : 'destructive'
+                                                    : 'ghost'
                                             }
                                             size="sm"
+                                            className={!user.banned_at ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50" : ""}
                                             onClick={() => handleBan(user)}
                                         >
                                             {user.banned_at ? 'Unban' : 'Ban'}
                                         </Button>
                                         <Button
-                                            variant="destructive"
+                                            variant="ghost"
                                             size="sm"
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                             onClick={() => handleDelete(user)}
                                         >
                                             Delete
                                         </Button>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ))}
-                        </tbody>
-                    </table>
+                            {users.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className="h-24 text-center text-muted-foreground"
+                                    >
+                                        No users found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
             </PagePanel>
         </>
     );

@@ -1,5 +1,15 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 import { PagePanel } from '@/components/page-panel';
 
@@ -13,6 +23,15 @@ type Product = {
 
 export default function ProductsIndex({ products }: { products: Product[] }) {
     const { delete: destroy } = useForm();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredProducts = useMemo(() => {
+        if (!searchQuery.trim()) return products;
+        const query = searchQuery.toLowerCase();
+        return products.filter((p) =>
+            p.title.toLowerCase().includes(query)
+        );
+    }, [products, searchQuery]);
 
     const handleDelete = (product: Product) => {
         if (confirm('Are you sure you want to delete this product?')) {
@@ -26,49 +45,59 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
 
             <PagePanel
                 title="Products"
+                variant="transparent"
                 actions={
-                    <Button asChild>
-                        <Link href="/admin/products/create">Add Product</Link>
-                    </Button>
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                        <Input
+                            placeholder="Search products..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full sm:w-64"
+                        />
+                        <Button asChild className="w-full sm:w-auto">
+                            <Link href="/admin/products/create">Add Product</Link>
+                        </Button>
+                    </div>
                 }
             >
-                <table className="w-full text-left text-sm">
-                        <thead className="bg-muted text-xs text-muted-foreground uppercase">
-                            <tr>
-                                <th className="px-6 py-3">Image</th>
-                                <th className="px-6 py-3">Title</th>
-                                <th className="px-6 py-3">Status</th>
-                                <th className="px-6 py-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.map((product) => (
-                                <tr
-                                    key={product.id}
-                                    className="border-b last:border-0"
-                                >
-                                    <td className="px-6 py-4">
-                                        {product.image && (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[80px]">Image</TableHead>
+                                <TableHead>Title</TableHead>
+                                <TableHead className="w-[120px]">Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredProducts.map((product) => (
+                                <TableRow key={product.id}>
+                                    <TableCell>
+                                        {product.image ? (
                                             <img
                                                 src={`/storage/${product.image}`}
                                                 alt={product.title}
-                                                className="h-12 w-12 rounded object-cover"
+                                                className="h-10 w-10 rounded object-cover shadow-sm"
                                             />
+                                        ) : (
+                                            <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground">
+                                                <span className="text-xs">No img</span>
+                                            </div>
                                         )}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium">
+                                    </TableCell>
+                                    <TableCell className="font-medium truncate max-w-[200px] sm:max-w-none">
                                         {product.title}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                             {product.in_stock ? 'In Stock' : 'Out of Stock'}
                                         </span>
-                                    </td>
-                                    <td className="flex gap-2 px-6 py-4">
+                                    </TableCell>
+                                    <TableCell className="flex items-center justify-end gap-1.5 h-[72px]">
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            className={product.in_stock ? 'text-amber-600 hover:text-amber-700' : 'text-green-600 hover:text-green-700'}
+                                            className={`h-8 px-2 text-xs ${product.in_stock ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
                                             onClick={() => router.patch(`/admin/products/${product.id}/toggle-stock`, {}, { preserveScroll: true })}
                                         >
                                             {product.in_stock ? 'Unlist' : 'Restock'}
@@ -76,49 +105,46 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            className="h-8 px-2 text-xs hover:bg-muted"
                                             asChild
                                         >
-                                            <Link
-                                                href={`/admin/products/${product.id}/variants`}
-                                            >
+                                            <Link href={`/admin/products/${product.id}/variants`}>
                                                 Variants
                                             </Link>
                                         </Button>
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            className="h-8 px-2 text-xs hover:bg-muted"
                                             asChild
                                         >
-                                            <Link
-                                                href={`/admin/products/${product.id}/edit`}
-                                            >
+                                            <Link href={`/admin/products/${product.id}/edit`}>
                                                 Edit
                                             </Link>
                                         </Button>
                                         <Button
-                                            variant="destructive"
+                                            variant="ghost"
                                             size="sm"
-                                            onClick={() =>
-                                                handleDelete(product)
-                                            }
+                                            className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            onClick={() => handleDelete(product)}
                                         >
                                             Delete
                                         </Button>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ))}
-                            {products.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={3}
-                                        className="px-6 py-4 text-center text-muted-foreground"
+                            {filteredProducts.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className="h-24 text-center text-muted-foreground"
                                     >
-                                        No products found.
-                                    </td>
-                                </tr>
+                                        {products.length === 0 ? 'No products found.' : 'No products match your search.'}
+                                    </TableCell>
+                                </TableRow>
                             )}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
             </PagePanel>
         </>
     );
