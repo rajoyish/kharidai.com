@@ -158,54 +158,65 @@ export default function OrderShow({ order }: { order: Order }) {
                             {order.credentials.length > 0 ? (
                                 <div className="space-y-4">
                                     {order.credentials.map((cred) => {
-                                        const linkBlockRegex = /```link\n([\s\S]*?)\n```/;
-                                        const hasLinkBlock = linkBlockRegex.test(cred.content);
+                                        const parts = cred.content.split('```');
                                         
-                                        let textToCopy = cred.content;
-                                        let displayText = cred.content;
-
-                                        if (hasLinkBlock) {
-                                            const match = cred.content.match(linkBlockRegex);
-                                            if (match) {
-                                                textToCopy = match[1].trim();
-                                                displayText = cred.content.replace(/```link\n/g, '').replace(/\n```/g, '');
-                                            }
-                                        }
-
-                                        const urlRegex = /(https?:\/\/[^\s]+)/g;
-                                        const parts = displayText.split(urlRegex);
-
                                         return (
                                             <div
                                                 key={cred.id}
-                                                className="flex items-start justify-between rounded-lg bg-muted p-4"
+                                                className="rounded-lg border bg-card p-5 shadow-sm"
                                             >
-                                                <div className="overflow-x-auto font-mono text-sm whitespace-pre-wrap">
+                                                <div className="space-y-4">
                                                     {parts.map((part, i) => {
-                                                        if (part.match(urlRegex)) {
+                                                        const isCodeBlock = i % 2 === 1;
+                                                        if (!part.trim()) return null;
+
+                                                        if (isCodeBlock) {
+                                                            let codeText = part.trim();
+                                                            if (codeText.startsWith('link\n')) {
+                                                                codeText = codeText.substring(5).trim();
+                                                            }
+                                                            
                                                             return (
-                                                                <a
-                                                                    key={i}
-                                                                    href={part}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-primary hover:underline"
-                                                                >
-                                                                    {part}
-                                                                </a>
+                                                                <div key={i} className="relative rounded-md bg-muted/80 p-4 font-mono text-sm border">
+                                                                    <pre className="overflow-x-auto whitespace-pre-wrap pr-10">{codeText}</pre>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={() => copyToClipboard(codeText)}
+                                                                        className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                                        title="Copy to clipboard"
+                                                                    >
+                                                                        <Copy className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
                                                             );
                                                         }
-                                                        return <span key={i}>{part}</span>;
+
+                                                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                                                        const textParts = part.split(urlRegex);
+
+                                                        return (
+                                                            <div key={i} className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                                                                {textParts.map((tPart, j) => {
+                                                                    if (tPart.match(urlRegex)) {
+                                                                        return (
+                                                                            <a
+                                                                                key={j}
+                                                                                href={tPart}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="text-primary font-medium hover:underline"
+                                                                            >
+                                                                                {tPart}
+                                                                            </a>
+                                                                        );
+                                                                    }
+                                                                    return <span key={j}>{tPart}</span>;
+                                                                })}
+                                                            </div>
+                                                        );
                                                     })}
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => copyToClipboard(textToCopy)}
-                                                    className="ml-4 flex-shrink-0"
-                                                >
-                                                    <Copy className="h-4 w-4" />
-                                                </Button>
                                             </div>
                                         );
                                     })}
