@@ -30,7 +30,7 @@ type Cart = {
 };
 
 export default function CartIndex({ cart }: { cart: Cart }) {
-    const { auth } = usePage().props;
+    const { auth, cartCount } = usePage().props;
     const { put, delete: destroy } = useForm();
 
     const handleUpdateQuantity = (item: CartItem, newQuantity: number) => {
@@ -73,6 +73,17 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                         </Link>
 
                         <nav className="flex items-center gap-4">
+                            <Link
+                                href="/cart"
+                                className="mr-4 flex items-center text-sm font-medium underline-offset-4 hover:underline"
+                            >
+                                Cart
+                                {(cartCount as number) > 0 && (
+                                    <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                                        {cartCount as number}
+                                    </span>
+                                )}
+                            </Link>
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
