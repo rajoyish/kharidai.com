@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, LayoutGrid } from 'lucide-react';
+import { BookOpen, LayoutGrid, ShoppingCart } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -39,6 +39,11 @@ export function AppSidebar() {
             title: 'User Management',
             href: '/admin/users',
             icon: BookOpen,
+        },
+        {
+            title: 'Orders',
+            href: '/admin/orders',
+            icon: ShoppingCart,
         },
         {
             title: 'Products',
