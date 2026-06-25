@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import NovelEditor from '@/components/ui/editor/novel-editor';
+import { MediaManager } from '@/components/ui/media-manager';
 import {
     Card,
     CardContent,
@@ -82,6 +83,11 @@ export function ProductForm({ product, submitUrl, isEditing = false }: ProductFo
                                     {errors.description}
                                 </div>
                             )}
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Media Manager</Label>
+                            <MediaManager />
                         </div>
 
                         <div className="grid gap-2">

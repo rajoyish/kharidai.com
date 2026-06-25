@@ -96,42 +96,26 @@ export default function Show({ product }: { product: Product }) {
 
                 <main className="container mx-auto flex-1 px-4 py-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
-                        {/* Product Image */}
-                        <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
-                            {product.image ? (
-                                <img
-                                    src={`/storage/${product.image}`}
-                                    alt={product.title}
-                                    className="h-full w-full object-cover"
-                                />
-                            ) : (
-                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                    No image available
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Product Details */}
-                        <div className="flex flex-col">
-                            <h1 className="mb-2 text-3xl font-bold tracking-tight">
-                                {product.title}
-                            </h1>
-
-                            {auth.user && selectedVariant && (
-                                <div className="mb-6 text-2xl font-semibold text-primary">
-                                    Rs. {selectedVariant.price_npr} / $
-                                    {selectedVariant.price_usd}
-                                </div>
-                            )}
-
-                            <div
-                                className="prose dark:prose-invert mb-8 max-w-none text-muted-foreground"
-                                dangerouslySetInnerHTML={{ __html: product.description }}
-                            />
+                        {/* Block A: Image + Variants (First on mobile, second on desktop) */}
+                        <div className="flex flex-col gap-8 order-1 md:order-2">
+                            {/* Product Image */}
+                            <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+                                {product.image ? (
+                                    <img
+                                        src={`/storage/${product.image}`}
+                                        alt={product.title}
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                        No image available
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Variants Selection */}
                             {auth.user && product.variants.length > 0 && (
-                                <div className="mb-8">
+                                <div>
                                     <h3 className="mb-3 text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Select Variant
                                     </h3>
@@ -174,6 +158,25 @@ export default function Show({ product }: { product: Product }) {
                                     </RadioGroup>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Block B: Details + Add to Cart (Second on mobile, first on desktop) */}
+                        <div className="flex flex-col order-2 md:order-1">
+                            <h1 className="mb-2 text-3xl font-bold tracking-tight">
+                                {product.title}
+                            </h1>
+
+                            {auth.user && selectedVariant && (
+                                <div className="mb-6 text-2xl font-semibold text-primary">
+                                    Rs. {selectedVariant.price_npr} / $
+                                    {selectedVariant.price_usd}
+                                </div>
+                            )}
+
+                            <div
+                                className="prose dark:prose-invert mb-8 max-w-none text-muted-foreground"
+                                dangerouslySetInnerHTML={{ __html: product.description }}
+                            />
 
                             {/* Add to Cart Actions */}
                             <div className="mt-auto flex flex-col gap-4">

@@ -19,6 +19,32 @@ interface NovelEditorProps {
     onChange: (html: string) => void;
 }
 
+const uploadFileToMedia = async (file: File, view: any) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = document.head.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    try {
+        const response = await fetch('/admin/media', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': token || '',
+                'Accept': 'application/json',
+            },
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const node = view.state.schema.nodes.image.create({ src: data.url, alt: file.name });
+            const tr = view.state.tr.replaceSelectionWith(node);
+            view.dispatch(tr);
+        }
+    } catch (error) {
+        console.error('Image upload failed', error);
+    }
+};
+
 export default function NovelEditor({
     initialValue,
     onChange,
@@ -43,6 +69,46 @@ export default function NovelEditor({
                     attributes: {
                         class: `prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[200px]`,
                     },
+                    handlePaste: (view, event) => {
+                        const items = Array.from(event.clipboardData?.items || []);
+                        const image = items.find(item => item.type.startsWith('image/'));
+                        if (image) {
+                            const file = image.getAsFile();
+                            if (file) {
+                                event.preventDefault();
+                                uploadFileToMedia(file, view);
+                                return true;
+                            }
+                        }
+
+                        const text = event.clipboardData?.getData('text/plain');
+                        if (text) {
+                            const markdownImageRegex = /^!\[([^\]]*)\]\(([^)]+)\)$/;
+                            const match = text.trim().match(markdownImageRegex);
+                            if (match) {
+                                event.preventDefault();
+                                const alt = match[1];
+                                const src = match[2];
+                                const node = view.state.schema.nodes.image.create({ src, alt });
+                                const tr = view.state.tr.replaceSelectionWith(node);
+                                view.dispatch(tr);
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    },
+                    handleDrop: (view, event, slice, moved) => {
+                        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+                            const file = event.dataTransfer.files[0];
+                            if (file.type.startsWith('image/')) {
+                                event.preventDefault();
+                                uploadFileToMedia(file, view);
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
                 }}
             >
                 <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
