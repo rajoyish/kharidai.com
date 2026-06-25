@@ -152,22 +152,22 @@ export default function Show({ product }: { product: Product }) {
                                             <Label
                                                 key={variant.id}
                                                 htmlFor={`variant-${variant.id}`}
-                                                className="flex cursor-pointer items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+                                                className="flex cursor-pointer flex-col rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
                                             >
-                                                <div className="mr-4 flex flex-col gap-1">
+                                                <div className="flex w-full items-center justify-between">
                                                     <span className="text-base font-semibold">
                                                         {variant.name}
                                                     </span>
-                                                    {variant.details && (
-                                                        <span className="text-sm font-normal text-muted-foreground">
-                                                            {variant.details}
-                                                        </span>
-                                                    )}
+                                                    <RadioGroupItem
+                                                        value={variant.id.toString()}
+                                                        id={`variant-${variant.id}`}
+                                                    />
                                                 </div>
-                                                <RadioGroupItem
-                                                    value={variant.id.toString()}
-                                                    id={`variant-${variant.id}`}
-                                                />
+                                                {variant.details && (
+                                                    <span className="mt-1 text-sm font-normal text-muted-foreground">
+                                                        {variant.details}
+                                                    </span>
+                                                )}
                                             </Label>
                                         ))}
                                     </RadioGroup>
