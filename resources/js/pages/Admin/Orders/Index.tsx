@@ -4,6 +4,8 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Order = {
     id: number;
     order_number: string;
@@ -34,10 +36,7 @@ export default function AdminOrderIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Manage Orders" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="mb-4 flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold">Manage Orders</h1>
-                </div>
+            <PagePanel title="Manage Orders" variant="transparent">
 
                 <div className="overflow-hidden overflow-x-auto rounded-xl border bg-card shadow-sm">
                     <table className="w-full text-left text-sm">
@@ -160,7 +159,7 @@ export default function AdminOrderIndex({
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

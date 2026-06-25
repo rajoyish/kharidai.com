@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
+import { PagePanel } from '@/components/page-panel';
+
 type User = {
     id: number;
     name: string;
@@ -30,8 +32,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
         >
             <Head title="User Management" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="overflow-hidden rounded-xl border">
+            <PagePanel title="User Management">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted text-xs text-muted-foreground uppercase">
                             <tr>
@@ -87,8 +88,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
                             ))}
                         </tbody>
                     </table>
-                </div>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

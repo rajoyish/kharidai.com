@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Product = {
     id: number;
     title: string;
@@ -57,12 +59,8 @@ export default function EditVariant({
         >
             <Head title={`Edit Variant - ${product.title}`} />
 
-            <div className="flex h-full max-w-2xl flex-1 flex-col gap-4 rounded-xl p-4">
-                <h2 className="text-xl font-bold">
-                    Edit Variant: {variant.name}
-                </h2>
-
-                <form onSubmit={submit} className="mt-4 flex flex-col gap-4">
+            <PagePanel title={`Edit Variant: ${variant.name}`}>
+                <form onSubmit={submit} className="flex flex-col gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
                         <Input
@@ -140,7 +138,7 @@ export default function EditVariant({
                         Update Variant
                     </Button>
                 </form>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

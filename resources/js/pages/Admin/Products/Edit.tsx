@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { ProductForm, type Product } from '@/components/ProductForm';
 
+import { PagePanel } from '@/components/page-panel';
+
 export default function EditProduct({ product }: { product: Product }) {
     return (
         <AppLayout
@@ -12,13 +14,13 @@ export default function EditProduct({ product }: { product: Product }) {
         >
             <Head title="Edit Product" />
 
-            <div className="flex h-full flex-1 flex-col p-4 md:p-8">
+            <PagePanel variant="transparent">
                 <ProductForm
                     product={product}
                     submitUrl={`/admin/products/${product.id}`}
                     isEditing={true}
                 />
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

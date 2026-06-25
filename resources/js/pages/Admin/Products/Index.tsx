@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Product = {
     id: number;
     title: string;
@@ -24,16 +26,15 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
         >
             <Head title="Products Management" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">Products</h2>
+            <PagePanel
+                title="Products"
+                actions={
                     <Button asChild>
                         <Link href="/admin/products/create">Add Product</Link>
                     </Button>
-                </div>
-
-                <div className="overflow-hidden rounded-xl border">
-                    <table className="w-full text-left text-sm">
+                }
+            >
+                <table className="w-full text-left text-sm">
                         <thead className="bg-muted text-xs text-muted-foreground uppercase">
                             <tr>
                                 <th className="px-6 py-3">Image</th>
@@ -106,8 +107,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                             )}
                         </tbody>
                     </table>
-                </div>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Copy, Check, X, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Order = {
     id: number;
     order_number: string;
@@ -151,22 +153,14 @@ export default function AdminOrderShow({ order }: { order: Order }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Manage Order ${order.order_number}`} />
 
-            <div className="mx-auto flex h-full w-full max-w-6xl flex-1 flex-col gap-6 rounded-xl p-4">
-                <div className="flex flex-col items-start justify-between gap-4 rounded-xl border bg-card p-6 md:flex-row md:items-center">
-                    <div>
-                        <h1 className="mb-1 text-3xl font-bold tracking-tight">
-                            Order {order.order_number}
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Customer: {order.user.name} ({order.user.email})
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                            Date: {new Date(order.created_at).toLocaleString()}
-                        </p>
-                    </div>
+            <PagePanel
+                title={`Order ${order.order_number}`}
+                description={`Customer: ${order.user.name} (${order.user.email}) | Date: ${new Date(order.created_at).toLocaleString()}`}
+                variant="transparent"
+                actions={
                     <form
                         onSubmit={handleUpdateStatus}
-                        className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2"
+                        className="flex items-center gap-2 rounded-lg border bg-card p-2 shadow-sm"
                     >
                         <select
                             value={statusData.status}
@@ -190,7 +184,8 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                             Update Status
                         </Button>
                     </form>
-                </div>
+                }
+            >
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
@@ -483,7 +478,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

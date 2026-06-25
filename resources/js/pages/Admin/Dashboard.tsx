@@ -3,6 +3,8 @@ import { Head, Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Order = {
     id: number;
     order_number: string;
@@ -28,7 +30,7 @@ export default function Dashboard({
         <AppLayout breadcrumbs={[{ title: 'Admin Dashboard', href: '/admin' }]}>
             <Head title="Admin Dashboard" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
+            <PagePanel title="Admin Dashboard" variant="transparent">
                 <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                     <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                         <div className="flex h-full items-center justify-center">
@@ -167,7 +169,7 @@ export default function Dashboard({
                         </table>
                     </div>
                 </div>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

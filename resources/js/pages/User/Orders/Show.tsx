@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Order = {
     id: number;
     order_number: string;
@@ -74,31 +76,24 @@ export default function OrderShow({ order }: { order: Order }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Order ${order.order_number}`} />
 
-            <div className="mx-auto flex h-full w-full max-w-5xl flex-1 flex-col gap-6 rounded-xl p-4">
-                <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-                    <div>
-                        <h1 className="mb-1 text-3xl font-bold tracking-tight">
-                            Order {order.order_number}
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Placed on{' '}
-                            {new Date(order.created_at).toLocaleString()}
-                        </p>
-                    </div>
-                    <div>
-                        <span
-                            className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize ${
-                                order.status === 'completed'
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                    : order.status === 'delivering'
-                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                            }`}
-                        >
-                            {order.status}
-                        </span>
-                    </div>
-                </div>
+            <PagePanel
+                title={`Order ${order.order_number}`}
+                description={`Placed on ${new Date(order.created_at).toLocaleString()}`}
+                actions={
+                    <span
+                        className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize ${
+                            order.status === 'completed'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : order.status === 'delivering'
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                        }`}
+                    >
+                        {order.status}
+                    </span>
+                }
+                variant="transparent"
+            >
 
                 {order.payment_receipt &&
                     order.payment_receipt.status === 'pending' && (
@@ -359,7 +354,7 @@ export default function OrderShow({ order }: { order: Order }) {
                         )}
                     </div>
                 </div>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

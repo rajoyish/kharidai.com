@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Product = {
     id: number;
     title: string;
@@ -43,12 +45,8 @@ export default function CreateVariant({ product }: { product: Product }) {
         >
             <Head title={`Create Variant - ${product.title}`} />
 
-            <div className="flex h-full max-w-2xl flex-1 flex-col gap-4 rounded-xl p-4">
-                <h2 className="text-xl font-bold">
-                    Create Variant for {product.title}
-                </h2>
-
-                <form onSubmit={submit} className="mt-4 flex flex-col gap-4">
+            <PagePanel title={`Create Variant for ${product.title}`}>
+                <form onSubmit={submit} className="flex flex-col gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
                         <Input
@@ -126,7 +124,7 @@ export default function CreateVariant({ product }: { product: Product }) {
                         Create Variant
                     </Button>
                 </form>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

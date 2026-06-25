@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { ProductForm } from '@/components/ProductForm';
 
+import { PagePanel } from '@/components/page-panel';
+
 export default function CreateProduct() {
     return (
         <AppLayout
@@ -12,9 +14,9 @@ export default function CreateProduct() {
         >
             <Head title="Create Product" />
 
-            <div className="flex h-full flex-1 flex-col p-4 md:p-8">
+            <PagePanel variant="transparent">
                 <ProductForm submitUrl="/admin/products" />
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }

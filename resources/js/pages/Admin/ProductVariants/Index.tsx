@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
+import { PagePanel } from '@/components/page-panel';
+
 type Product = {
     id: number;
     title: string;
@@ -45,11 +47,9 @@ export default function VariantsIndex({
         >
             <Head title={`Variants - ${product.title}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">
-                        Variants for {product.title}
-                    </h2>
+            <PagePanel
+                title={`Variants for ${product.title}`}
+                actions={
                     <Button asChild>
                         <Link
                             href={`/admin/products/${product.id}/variants/create`}
@@ -57,10 +57,9 @@ export default function VariantsIndex({
                             Add Variant
                         </Link>
                     </Button>
-                </div>
-
-                <div className="overflow-hidden rounded-xl border">
-                    <table className="w-full text-left text-sm">
+                }
+            >
+                <table className="w-full text-left text-sm">
                         <thead className="bg-muted text-xs text-muted-foreground uppercase">
                             <tr>
                                 <th className="px-6 py-3">Name</th>
@@ -120,8 +119,7 @@ export default function VariantsIndex({
                             )}
                         </tbody>
                     </table>
-                </div>
-            </div>
+            </PagePanel>
         </AppLayout>
     );
 }
