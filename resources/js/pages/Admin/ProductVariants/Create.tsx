@@ -11,6 +11,14 @@ type Product = {
     title: string;
 };
 
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+
 export default function CreateVariant({ product }: { product: Product }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
@@ -28,85 +36,100 @@ export default function CreateVariant({ product }: { product: Product }) {
         <>
             <Head title={`Create Variant - ${product.title}`} />
 
-            <PagePanel title={`Create Variant for ${product.title}`}>
-                <form onSubmit={submit} className="flex flex-col gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            required
-                        />
-                        {errors.name && (
-                            <div className="text-sm text-red-500">
-                                {errors.name}
+            <PagePanel title={`Create Variant for ${product.title}`} variant="transparent">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Variant Details</CardTitle>
+                        <CardDescription>
+                            Add a new pricing or options variant for this product.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submit} className="flex flex-col gap-6">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) => setData('name', e.target.value)}
+                                    required
+                                    placeholder="e.g. 18 Months | Activation Link"
+                                />
+                                {errors.name && (
+                                    <div className="text-sm text-destructive">
+                                        {errors.name}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="details">Details</Label>
-                        <Textarea
-                            id="details"
-                            value={data.details}
-                            onChange={(e) => setData('details', e.target.value)}
-                            placeholder="Variant details or description"
-                            className="h-32"
-                        />
-                        {errors.details && (
-                            <div className="text-sm text-red-500">
-                                {errors.details}
+                            <div className="grid gap-2">
+                                <Label htmlFor="details">Details</Label>
+                                <Textarea
+                                    id="details"
+                                    value={data.details}
+                                    onChange={(e) => setData('details', e.target.value)}
+                                    placeholder="Variant details or description"
+                                    className="h-32"
+                                />
+                                {errors.details && (
+                                    <div className="text-sm text-destructive">
+                                        {errors.details}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="price_npr">Price (NPR)</Label>
-                        <Input
-                            id="price_npr"
-                            type="number"
-                            step="0.01"
-                            value={data.price_npr}
-                            onChange={(e) =>
-                                setData('price_npr', e.target.value)
-                            }
-                            required
-                        />
-                        {errors.price_npr && (
-                            <div className="text-sm text-red-500">
-                                {errors.price_npr}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="price_npr">Price (NPR)</Label>
+                                    <Input
+                                        id="price_npr"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.price_npr}
+                                        onChange={(e) =>
+                                            setData('price_npr', e.target.value)
+                                        }
+                                        required
+                                        placeholder="2100"
+                                    />
+                                    {errors.price_npr && (
+                                        <div className="text-sm text-destructive">
+                                            {errors.price_npr}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="price_usd">Price (USD)</Label>
+                                    <Input
+                                        id="price_usd"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.price_usd}
+                                        onChange={(e) =>
+                                            setData('price_usd', e.target.value)
+                                        }
+                                        required
+                                        placeholder="15"
+                                    />
+                                    {errors.price_usd && (
+                                        <div className="text-sm text-destructive">
+                                            {errors.price_usd}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="price_usd">Price (USD)</Label>
-                        <Input
-                            id="price_usd"
-                            type="number"
-                            step="0.01"
-                            value={data.price_usd}
-                            onChange={(e) =>
-                                setData('price_usd', e.target.value)
-                            }
-                            required
-                        />
-                        {errors.price_usd && (
-                            <div className="text-sm text-red-500">
-                                {errors.price_usd}
-                            </div>
-                        )}
-                    </div>
-
-                    <Button
-                        type="submit"
-                        disabled={processing}
-                        className="w-fit"
-                    >
-                        Create Variant
-                    </Button>
-                </form>
+                            <Button
+                                type="submit"
+                                disabled={processing}
+                                className="w-full sm:w-auto mt-2"
+                            >
+                                Create Variant
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
             </PagePanel>
         </>
     );
@@ -114,18 +137,7 @@ export default function CreateVariant({ product }: { product: Product }) {
 
 CreateVariant.layout = {
     breadcrumbs: [
-                { title: 'Products', href: '/admin/products' },
-                {
-                    title: product.title,
-                    href: `/admin/products/${product.id}/edit`,
-                },
-                {
-                    title: 'Variants',
-                    href: `/admin/products/${product.id}/variants`,
-                },
-                {
-                    title: 'Create',
-                    href: `/admin/products/${product.id}/variants/create`,
-                },
-            ],
+        { title: 'Products', href: '/admin/products' },
+        { title: 'Variants', href: '#' },
+    ],
 };

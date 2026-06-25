@@ -26,7 +26,7 @@ export default function EditVariant({
     product: Product;
     variant: Variant;
 }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, patch, processing, errors } = useForm({
         name: variant.name,
         details: variant.details || '',
         price_npr: variant.price_npr,
@@ -35,92 +35,107 @@ export default function EditVariant({
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(`/admin/products/${product.id}/variants/${variant.id}`);
+        patch(`/admin/products/${product.id}/variants/${variant.id}`);
     };
 
     return (
         <>
-            <Head title={`Edit Variant - ${product.title}`} />
+            <Head title={`Edit Variant - ${variant.name}`} />
 
-            <PagePanel title={`Edit Variant: ${variant.name}`}>
-                <form onSubmit={submit} className="flex flex-col gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            required
-                        />
-                        {errors.name && (
-                            <div className="text-sm text-red-500">
-                                {errors.name}
+            <PagePanel title={`Edit Variant for ${product.title}`} variant="transparent">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Variant Details</CardTitle>
+                        <CardDescription>
+                            Update pricing and details for this variant.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submit} className="flex flex-col gap-6">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) => setData('name', e.target.value)}
+                                    required
+                                    placeholder="e.g. 18 Months | Activation Link"
+                                />
+                                {errors.name && (
+                                    <div className="text-sm text-destructive">
+                                        {errors.name}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="details">Details</Label>
-                        <Textarea
-                            id="details"
-                            value={data.details}
-                            onChange={(e) => setData('details', e.target.value)}
-                            placeholder="Variant details or description"
-                            className="h-32"
-                        />
-                        {errors.details && (
-                            <div className="text-sm text-red-500">
-                                {errors.details}
+                            <div className="grid gap-2">
+                                <Label htmlFor="details">Details</Label>
+                                <Textarea
+                                    id="details"
+                                    value={data.details}
+                                    onChange={(e) => setData('details', e.target.value)}
+                                    placeholder="Variant details or description"
+                                    className="h-32"
+                                />
+                                {errors.details && (
+                                    <div className="text-sm text-destructive">
+                                        {errors.details}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="price_npr">Price (NPR)</Label>
-                        <Input
-                            id="price_npr"
-                            type="number"
-                            step="0.01"
-                            value={data.price_npr}
-                            onChange={(e) =>
-                                setData('price_npr', e.target.value)
-                            }
-                            required
-                        />
-                        {errors.price_npr && (
-                            <div className="text-sm text-red-500">
-                                {errors.price_npr}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="price_npr">Price (NPR)</Label>
+                                    <Input
+                                        id="price_npr"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.price_npr}
+                                        onChange={(e) =>
+                                            setData('price_npr', e.target.value)
+                                        }
+                                        required
+                                        placeholder="2100"
+                                    />
+                                    {errors.price_npr && (
+                                        <div className="text-sm text-destructive">
+                                            {errors.price_npr}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="price_usd">Price (USD)</Label>
+                                    <Input
+                                        id="price_usd"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.price_usd}
+                                        onChange={(e) =>
+                                            setData('price_usd', e.target.value)
+                                        }
+                                        required
+                                        placeholder="15"
+                                    />
+                                    {errors.price_usd && (
+                                        <div className="text-sm text-destructive">
+                                            {errors.price_usd}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="price_usd">Price (USD)</Label>
-                        <Input
-                            id="price_usd"
-                            type="number"
-                            step="0.01"
-                            value={data.price_usd}
-                            onChange={(e) =>
-                                setData('price_usd', e.target.value)
-                            }
-                            required
-                        />
-                        {errors.price_usd && (
-                            <div className="text-sm text-red-500">
-                                {errors.price_usd}
-                            </div>
-                        )}
-                    </div>
-
-                    <Button
-                        type="submit"
-                        disabled={processing}
-                        className="w-fit"
-                    >
-                        Update Variant
-                    </Button>
-                </form>
+                            <Button
+                                type="submit"
+                                disabled={processing}
+                                className="w-full sm:w-auto mt-2"
+                            >
+                                Update Variant
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
             </PagePanel>
         </>
     );
@@ -128,18 +143,7 @@ export default function EditVariant({
 
 EditVariant.layout = {
     breadcrumbs: [
-                { title: 'Products', href: '/admin/products' },
-                {
-                    title: product.title,
-                    href: `/admin/products/${product.id}/edit`,
-                },
-                {
-                    title: 'Variants',
-                    href: `/admin/products/${product.id}/variants`,
-                },
-                {
-                    title: 'Edit',
-                    href: `/admin/products/${product.id}/variants/${variant.id}/edit`,
-                },
-            ],
+        { title: 'Products', href: '/admin/products' },
+        { title: 'Variants', href: '#' },
+    ],
 };

@@ -113,14 +113,7 @@ export default function VariantsIndex({
 
 VariantsIndex.layout = {
     breadcrumbs: [
-                { title: 'Products', href: '/admin/products' },
-                {
-                    title: product.title,
-                    href: `/admin/products/${product.id}/edit`,
-                },
-                {
-                    title: 'Variants',
-                    href: `/admin/products/${product.id}/variants`,
-                },
-            ],
+        { title: 'Products', href: '/admin/products' },
+        { title: 'Variants', href: '#' },
+    ],
 };

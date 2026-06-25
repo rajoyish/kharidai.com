@@ -42,7 +42,7 @@ export function ProductForm({ product, submitUrl, isEditing = false }: ProductFo
     };
 
     return (
-        <div className="w-full max-w-3xl">
+        <div>
             <Card>
                 <CardHeader>
                     <CardTitle className="text-2xl">
