@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Check, X } from 'lucide-react';
+import { Copy, Check, X, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Order = {
@@ -106,6 +106,28 @@ export default function AdminOrderShow({ order }: { order: Order }) {
             onStart: () => setProcessingReceipt(true),
             onFinish: () => setProcessingReceipt(false),
             onSuccess: () => toast.success(`Receipt ${status}`),
+        });
+    };
+
+    const [editingCredentialId, setEditingCredentialId] = useState<number | null>(null);
+    const [editCredContent, setEditCredContent] = useState('');
+
+    const handleEditCredentialSubmit = (e: React.FormEvent, credId: number) => {
+        e.preventDefault();
+        router.put(`/admin/orders/${order.id}/credentials/${credId}`, { content: editCredContent }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setEditingCredentialId(null);
+                toast.success('Credential updated');
+            }
+        });
+    };
+
+    const handleDeleteCredential = (credId: number) => {
+        if (!confirm('Are you sure you want to delete this credential?')) return;
+        router.delete(`/admin/orders/${order.id}/credentials/${credId}`, {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Credential deleted')
         });
     };
 
@@ -228,15 +250,52 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                         key={cred.id}
                                         className="rounded-lg bg-muted p-4"
                                     >
-                                        <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap">
-                                            {cred.content}
-                                        </pre>
-                                        <div className="mt-2 text-right text-xs text-muted-foreground">
-                                            Added on{' '}
-                                            {new Date(
-                                                cred.created_at,
-                                            ).toLocaleString()}
-                                        </div>
+                                        {editingCredentialId === cred.id ? (
+                                            <form onSubmit={(e) => handleEditCredentialSubmit(e, cred.id)}>
+                                                <Textarea
+                                                    value={editCredContent}
+                                                    onChange={(e) => setEditCredContent(e.target.value)}
+                                                    className="mb-2 min-h-[100px] font-mono text-sm"
+                                                />
+                                                <div className="flex justify-end gap-2">
+                                                    <Button type="button" variant="ghost" size="sm" onClick={() => setEditingCredentialId(null)}>Cancel</Button>
+                                                    <Button type="submit" size="sm">Save</Button>
+                                                </div>
+                                            </form>
+                                        ) : (
+                                            <>
+                                                <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap">
+                                                    {cred.content}
+                                                </pre>
+                                                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setEditingCredentialId(cred.id);
+                                                                setEditCredContent(cred.content);
+                                                            }}
+                                                            className="flex items-center gap-1 hover:text-foreground"
+                                                        >
+                                                            <Pencil className="h-3 w-3" /> Edit
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteCredential(cred.id)}
+                                                            className="flex items-center gap-1 text-red-500 hover:text-red-600"
+                                                        >
+                                                            <Trash2 className="h-3 w-3" /> Delete
+                                                        </button>
+                                                    </div>
+                                                    <div>
+                                                        Added on{' '}
+                                                        {new Date(
+                                                            cred.created_at,
+                                                        ).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                                 {order.credentials.length === 0 && (

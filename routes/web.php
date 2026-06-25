@@ -47,6 +47,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::patch('orders/{order}/status', [\App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('orders.status.update');
     Route::patch('receipts/{paymentReceipt}/status', [\App\Http\Controllers\Admin\OrderController::class, 'updateReceiptStatus'])->name('receipts.status.update');
     Route::post('orders/{order}/credentials', [\App\Http\Controllers\Admin\OrderController::class, 'storeCredential'])->name('orders.credentials.store');
+    Route::put('orders/{order}/credentials/{credential}', [\App\Http\Controllers\Admin\OrderController::class, 'updateCredential'])->name('orders.credentials.update');
+    Route::delete('orders/{order}/credentials/{credential}', [\App\Http\Controllers\Admin\OrderController::class, 'destroyCredential'])->name('orders.credentials.destroy');
     Route::post('orders/{order}/messages', [\App\Http\Controllers\Admin\OrderController::class, 'storeMessage'])->name('orders.messages.store');
 });
 

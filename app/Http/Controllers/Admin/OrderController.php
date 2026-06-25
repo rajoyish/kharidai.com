@@ -69,6 +69,26 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Digital credential added.');
     }
 
+    public function updateCredential(Request $request, Order $order, \App\Models\OrderCredential $credential)
+    {
+        $validated = $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $credential->update([
+            'content' => $validated['content'],
+        ]);
+
+        return redirect()->back()->with('success', 'Digital credential updated.');
+    }
+
+    public function destroyCredential(Order $order, \App\Models\OrderCredential $credential)
+    {
+        $credential->delete();
+
+        return redirect()->back()->with('success', 'Digital credential deleted.');
+    }
+
     public function storeMessage(Request $request, Order $order)
     {
         $validated = $request->validate([

@@ -157,28 +157,58 @@ export default function OrderShow({ order }: { order: Order }) {
                             </h2>
                             {order.credentials.length > 0 ? (
                                 <div className="space-y-4">
-                                    {order.credentials.map((cred) => (
-                                        <div
-                                            key={cred.id}
-                                            className="flex items-start justify-between rounded-lg bg-muted p-4"
-                                        >
-                                            <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap">
-                                                {cred.content}
-                                            </pre>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    copyToClipboard(
-                                                        cred.content,
-                                                    )
-                                                }
-                                                className="ml-4 flex-shrink-0"
+                                    {order.credentials.map((cred) => {
+                                        const linkBlockRegex = /```link\n([\s\S]*?)\n```/;
+                                        const hasLinkBlock = linkBlockRegex.test(cred.content);
+                                        
+                                        let textToCopy = cred.content;
+                                        let displayText = cred.content;
+
+                                        if (hasLinkBlock) {
+                                            const match = cred.content.match(linkBlockRegex);
+                                            if (match) {
+                                                textToCopy = match[1].trim();
+                                                displayText = cred.content.replace(/```link\n/g, '').replace(/\n```/g, '');
+                                            }
+                                        }
+
+                                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                                        const parts = displayText.split(urlRegex);
+
+                                        return (
+                                            <div
+                                                key={cred.id}
+                                                className="flex items-start justify-between rounded-lg bg-muted p-4"
                                             >
-                                                <Copy className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
+                                                <div className="overflow-x-auto font-mono text-sm whitespace-pre-wrap">
+                                                    {parts.map((part, i) => {
+                                                        if (part.match(urlRegex)) {
+                                                            return (
+                                                                <a
+                                                                    key={i}
+                                                                    href={part}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-primary hover:underline"
+                                                                >
+                                                                    {part}
+                                                                </a>
+                                                            );
+                                                        }
+                                                        return <span key={i}>{part}</span>;
+                                                    })}
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => copyToClipboard(textToCopy)}
+                                                    className="ml-4 flex-shrink-0"
+                                                >
+                                                    <Copy className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="rounded-lg border border-dashed bg-muted/30 py-8 text-center text-muted-foreground">
