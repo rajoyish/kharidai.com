@@ -23,7 +23,7 @@ type Order = {
 };
 
 const breadcrumbs = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Home', href: '/' },
     { title: 'My Orders', href: '/orders' },
 ];
 

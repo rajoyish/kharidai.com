@@ -1,5 +1,4 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import { dashboard, login } from '@/routes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -79,10 +78,10 @@ export default function Welcome({
                             </Link>
                             {auth.user ? (
                                 <Link
-                                    href={dashboard()}
+                                    href={auth.user.is_admin ? '/admin' : '/orders'}
                                     className="text-sm font-medium underline-offset-4 hover:underline"
                                 >
-                                    Dashboard
+                                    {auth.user.is_admin ? 'Admin' : 'My Orders'}
                                 </Link>
                             ) : (
                                 <a

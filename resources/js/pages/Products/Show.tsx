@@ -1,5 +1,5 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import { dashboard, login } from '@/routes';
+import { cartAdd } from "@/routes";
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -77,10 +77,10 @@ export default function Show({ product }: { product: Product }) {
                             </Link>
                             {auth.user ? (
                                 <Link
-                                    href={dashboard()}
+                                    href={auth.user.is_admin ? '/admin' : '/orders'}
                                     className="text-sm font-medium underline-offset-4 hover:underline"
                                 >
-                                    Dashboard
+                                    {auth.user.is_admin ? 'Admin' : 'My Orders'}
                                 </Link>
                             ) : (
                                 <a

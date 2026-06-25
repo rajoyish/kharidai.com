@@ -284,7 +284,7 @@ export default function OrderShow({ order }: { order: Order }) {
 
 OrderShow.layout = {
     breadcrumbs: [
-        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Home', href: '/' },
         { title: 'My Orders', href: '/orders' },
         { title: 'Order Details', href: '#' },
     ],

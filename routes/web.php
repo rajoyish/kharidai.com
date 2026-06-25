@@ -9,14 +9,7 @@ Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name(
 Route::get('/', [\App\Http\Controllers\StorefrontController::class, 'index'])->name('home');
 Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::class, 'show'])->name('products.show');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia\Inertia::render('dashboard', [
-            'recentOrders' => auth()->user()->orders()->with('items.productVariant.product')->latest()->take(5)->get()
-        ]);
-    })->name('dashboard');
-
-    Route::get('cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+Route::middleware(['auth', 'verified'])->group(function () {    Route::get('cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
     Route::post('cart', [\App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
     Route::put('cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
     Route::delete('cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');

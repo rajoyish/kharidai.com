@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus } from 'lucide-react';
-import { dashboard, login } from '@/routes';
+import { cartAdd, cartRemove, cartUpdate, login } from '@/routes';
 
 type Product = {
     id: number;
@@ -85,10 +85,10 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                             </Link>
                             {auth.user ? (
                                 <Link
-                                    href={dashboard()}
+                                    href={auth.user.is_admin ? '/admin' : '/orders'}
                                     className="text-sm font-medium underline-offset-4 hover:underline"
                                 >
-                                    Dashboard
+                                    {auth.user.is_admin ? 'Admin' : 'My Orders'}
                                 </Link>
                             ) : (
                                 <a
