@@ -38,9 +38,10 @@ type Order = {
             is_admin: boolean;
         };
     }[];
-    paymentReceipt: {
+    payment_receipt: {
         id: number;
         status: string;
+        file_path: string;
     } | null;
 };
 
@@ -99,8 +100,8 @@ export default function OrderShow({ order }: { order: Order }) {
                     </div>
                 </div>
 
-                {order.paymentReceipt &&
-                    order.paymentReceipt.status === 'pending' && (
+                {order.payment_receipt &&
+                    order.payment_receipt.status === 'pending' && (
                         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
                             Your payment receipt is currently being reviewed.
                             Once approved, we will process your order.
@@ -278,6 +279,43 @@ export default function OrderShow({ order }: { order: Order }) {
                                 </span>
                             </div>
                         </div>
+
+                        {order.payment_receipt && (
+                            <div className="mt-6 rounded-xl border bg-card p-6">
+                                <h3 className="mb-4 text-lg font-semibold">
+                                    Payment Receipt
+                                </h3>
+                                <div className="overflow-hidden rounded-lg border bg-muted p-2">
+                                    <a
+                                        href={`/storage/${order.payment_receipt.file_path}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <img
+                                            src={`/storage/${order.payment_receipt.file_path}`}
+                                            alt="Payment Receipt"
+                                            className="h-auto max-h-60 w-full object-contain"
+                                        />
+                                    </a>
+                                </div>
+                                <div className="mt-4 flex items-center justify-between">
+                                    <span className="text-sm font-medium text-muted-foreground">
+                                        Status:
+                                    </span>
+                                    <span
+                                        className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                                            order.payment_receipt.status === 'approved'
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                                : order.payment_receipt.status === 'rejected'
+                                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
+                                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
+                                        }`}
+                                    >
+                                        {order.payment_receipt.status}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

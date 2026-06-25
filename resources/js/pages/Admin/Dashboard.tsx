@@ -14,7 +14,7 @@ type Order = {
         name: string;
         email: string;
     };
-    paymentReceipt: {
+    payment_receipt: {
         status: string;
     } | null;
 };
@@ -106,15 +106,15 @@ export default function Dashboard({
                                         </td>
                                         <td className="px-6 py-4">
                                             {order.currency === 'npr' ? (
-                                                order.paymentReceipt ? (
+                                                order.payment_receipt ? (
                                                     <span
                                                         className={`rounded-md px-2 py-1 text-xs ${
-                                                            order.paymentReceipt
+                                                            order.payment_receipt
                                                                 .status ===
                                                             'approved'
                                                                 ? 'border border-green-200 bg-green-100/50 text-green-700'
                                                                 : order
-                                                                        .paymentReceipt
+                                                                        .payment_receipt
                                                                         .status ===
                                                                     'rejected'
                                                                   ? 'border border-red-200 bg-red-100/50 text-red-700'
@@ -122,7 +122,7 @@ export default function Dashboard({
                                                         }`}
                                                     >
                                                         {
-                                                            order.paymentReceipt
+                                                            order.payment_receipt
                                                                 .status
                                                         }
                                                     </span>

@@ -43,7 +43,7 @@ type Order = {
             is_admin: boolean;
         };
     }[];
-    paymentReceipt: {
+    payment_receipt: {
         id: number;
         status: string;
         file_path: string;
@@ -61,7 +61,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
     });
 
     const { patch: patchReceipt, processing: processingReceipt } = useForm({
-        status: order.paymentReceipt?.status || 'pending',
+        status: order.payment_receipt?.status || 'pending',
     });
 
     const {
@@ -99,8 +99,8 @@ export default function AdminOrderShow({ order }: { order: Order }) {
     };
 
     const handleReceiptAction = (status: 'approved' | 'rejected') => {
-        if (!order.paymentReceipt) return;
-        patchReceipt(`/admin/receipts/${order.paymentReceipt.id}/status`, {
+        if (!order.payment_receipt) return;
+        patchReceipt(`/admin/receipts/${order.payment_receipt.id}/status`, {
             data: { status },
             preserveScroll: true,
             onSuccess: () => toast.success(`Receipt ${status}`),
@@ -282,16 +282,16 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                 <h2 className="mb-4 text-xl font-semibold">
                                     Payment Receipt
                                 </h2>
-                                {order.paymentReceipt ? (
+                                {order.payment_receipt ? (
                                     <div className="space-y-4">
                                         <div className="overflow-hidden rounded-lg border bg-muted p-2">
                                             <a
-                                                href={`/storage/${order.paymentReceipt.file_path}`}
+                                                href={`/storage/${order.payment_receipt.file_path}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
                                                 <img
-                                                    src={`/storage/${order.paymentReceipt.file_path}`}
+                                                    src={`/storage/${order.payment_receipt.file_path}`}
                                                     alt="Payment Receipt"
                                                     className="h-auto max-h-60 w-full object-contain"
                                                 />
@@ -303,20 +303,20 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                             </span>
                                             <span
                                                 className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                                    order.paymentReceipt
+                                                    order.payment_receipt
                                                         .status === 'approved'
                                                         ? 'bg-green-100 text-green-800'
-                                                        : order.paymentReceipt
+                                                        : order.payment_receipt
                                                                 .status ===
                                                             'rejected'
                                                           ? 'bg-red-100 text-red-800'
                                                           : 'bg-amber-100 text-amber-800'
                                                 }`}
                                             >
-                                                {order.paymentReceipt.status}
+                                                {order.payment_receipt.status}
                                             </span>
                                         </div>
-                                        {order.paymentReceipt.status ===
+                                        {order.payment_receipt.status ===
                                             'pending' && (
                                             <div className="flex gap-2 border-t pt-2">
                                                 <Button
