@@ -97,7 +97,7 @@ export default function Show({ product }: { product: Product }) {
                 <main className="container mx-auto flex-1 px-4 py-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
                         {/* Product Image */}
-                        <div className="aspect-square w-full overflow-hidden rounded-lg border bg-muted">
+                        <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
                             {product.image ? (
                                 <img
                                     src={`/storage/${product.image}`}

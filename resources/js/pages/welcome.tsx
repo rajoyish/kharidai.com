@@ -104,7 +104,7 @@ export default function Welcome({
                                 href={`/products/${product.id}`}
                                 className="group relative rounded-lg border bg-card p-4 text-card-foreground transition-shadow hover:shadow-lg"
                             >
-                                <div className="mb-4 aspect-square w-full overflow-hidden rounded-md bg-muted">
+                                <div className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-muted">
                                     {product.image ? (
                                         <img
                                             src={`/storage/${product.image}`}
