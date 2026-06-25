@@ -3,7 +3,7 @@ import { ProductForm, type Product } from '@/components/ProductForm';
 
 import { PagePanel } from '@/components/page-panel';
 
-export default function EditProduct({ product }: { product: Product }) {
+export default function EditProduct({ product, categories }: { product: Product, categories: any[] }) {
     return (
         <>
             <Head title="Edit Product" />
@@ -13,6 +13,7 @@ export default function EditProduct({ product }: { product: Product }) {
                     product={product}
                     submitUrl={`/admin/products/${product.id}`}
                     isEditing={true}
+                    categories={categories}
                 />
             </PagePanel>
         </>

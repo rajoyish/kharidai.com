@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -10,18 +11,44 @@ class StorefrontController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::where('in_stock', true)->with('variants');
+        $categoriesQuery = Category::orderBy('name');
+        $uncategorizedQuery = Product::whereNull('category_id')->where('in_stock', true)->with('variants');
 
         if ($request->has('search')) {
             $search = $request->input('search');
-            $query->where('title', 'like', "%{$search}%")
+            
+            $categoriesQuery->with(['products' => function ($q) use ($search) {
+                $q->where('in_stock', true)
+                  ->with('variants')
+                  ->where(function($subQ) use ($search) {
+                      $subQ->where('title', 'like', "%{$search}%")
+                           ->orWhere('description', 'like', "%{$search}%");
+                  });
+            }]);
+            
+            $uncategorizedQuery->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
+            });
+        } else {
+            $categoriesQuery->with(['products' => function ($q) {
+                $q->where('in_stock', true)->with('variants');
+            }]);
         }
 
-        $products = $query->latest()->get();
+        $categories = $categoriesQuery->get();
+        // Only keep categories that have products (useful for search)
+        if ($request->has('search')) {
+             $categories = $categories->filter(function($category) {
+                 return $category->products->count() > 0;
+             })->values();
+        }
+
+        $uncategorizedProducts = $uncategorizedQuery->latest()->get();
 
         return Inertia::render('welcome', [
-            'products' => $products,
+            'categories' => $categories,
+            'uncategorizedProducts' => $uncategorizedProducts,
             'filters' => $request->only(['search'])
         ]);
     }

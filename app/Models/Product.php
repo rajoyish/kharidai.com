@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -16,8 +17,10 @@ use Illuminate\Support\Carbon;
  * @property bool $in_stock
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property int|null $category_id
+ * @property Category|null $category
  */
-#[Fillable(['title', 'description', 'image', 'in_stock'])]
+#[Fillable(['title', 'description', 'image', 'in_stock', 'category_id'])]
 class Product extends Model
 {
     /** @use HasFactory<\Database\Factories\ProductFactory> */
@@ -36,5 +39,13 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * @return BelongsTo<Category, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 }

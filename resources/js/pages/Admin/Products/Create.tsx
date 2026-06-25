@@ -3,13 +3,13 @@ import { ProductForm } from '@/components/ProductForm';
 
 import { PagePanel } from '@/components/page-panel';
 
-export default function CreateProduct() {
+export default function CreateProduct({ categories }: { categories: any[] }) {
     return (
         <>
             <Head title="Create Product" />
 
             <PagePanel variant="transparent">
-                <ProductForm submitUrl="/admin/products" />
+                <ProductForm submitUrl="/admin/products" categories={categories} />
             </PagePanel>
         </>
     );

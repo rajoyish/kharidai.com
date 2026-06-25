@@ -36,6 +36,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('users/{user}/ban', [\App\Http\Controllers\Admin\UserController::class, 'ban'])->name('users.ban');
     Route::delete('users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
 
+    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)->except(['create', 'show', 'edit']);
+
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->except(['show']);
     Route::post('products/{product}/media', [\App\Http\Controllers\Admin\ProductController::class, 'uploadMedia'])->name('products.media.store');
     Route::delete('products/{product}/media/{media}', [\App\Http\Controllers\Admin\ProductController::class, 'deleteMedia'])->name('products.media.destroy');

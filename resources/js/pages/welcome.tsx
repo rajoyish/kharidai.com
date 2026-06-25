@@ -18,11 +18,13 @@ type Variant = {
 };
 
 export default function Welcome({
-    products,
+    uncategorizedProducts,
+    categories,
     filters,
 }: {
-    products: Product[];
-    filters: { search?: string };
+    uncategorizedProducts: Product[];
+    categories: { id: number; name: string; slug: string; products: Product[] }[];
+    filters: { search?: string; category?: string };
 }) {
     const { auth, cartCount } = usePage().props;
     const { data, setData, get } = useForm({
@@ -96,41 +98,93 @@ export default function Welcome({
                 </header>
 
                 <main className="container mx-auto flex-1 px-4 py-8">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
-                        {products.map((product) => (
-                            <Link
-                                key={product.id}
-                                href={`/products/${product.id}`}
-                                className="group relative rounded-lg border bg-card p-4 text-card-foreground transition-shadow hover:shadow-lg"
-                            >
-                                <div className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-muted">
-                                    {product.image ? (
-                                        <img
-                                            src={`/storage/${product.image}`}
-                                            alt={product.title}
-                                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                                        />
-                                    ) : (
-                                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                            No image
-                                        </div>
-                                    )}
+                    {categories.map((category) => (
+                        category.products && category.products.length > 0 && (
+                            <div key={category.id} className="mb-12">
+                                <h2 className="mb-6 text-2xl font-bold tracking-tight border-b pb-2">
+                                    {category.name}
+                                </h2>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                                    {category.products.map((product) => (
+                                        <Link
+                                            key={product.id}
+                                            href={`/products/${product.id}`}
+                                            className="group relative rounded-lg border bg-card p-4 text-card-foreground transition-shadow hover:shadow-lg"
+                                        >
+                                            <div className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-muted">
+                                                {product.image ? (
+                                                    <img
+                                                        src={`/storage/${product.image}`}
+                                                        alt={product.title}
+                                                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                                        No image
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <h3 className="text-lg font-semibold">
+                                                {product.title}
+                                            </h3>
+                                            {product.variants &&
+                                                product.variants.length > 0 && (
+                                                    <div className="mt-2 text-sm text-muted-foreground">
+                                                        Starting at Rs.{' '}
+                                                        {product.variants[0].price_npr} / $
+                                                        {product.variants[0].price_usd}
+                                                    </div>
+                                                )}
+                                        </Link>
+                                    ))}
                                 </div>
-                                <h3 className="text-lg font-semibold">
-                                    {product.title}
-                                </h3>
-                                {product.variants &&
-                                    product.variants.length > 0 && (
-                                        <div className="mt-2 text-sm text-muted-foreground">
-                                            Starting at Rs.{' '}
-                                            {product.variants[0].price_npr} / $
-                                            {product.variants[0].price_usd}
+                            </div>
+                        )
+                    ))}
+
+                    {uncategorizedProducts && uncategorizedProducts.length > 0 && (
+                        <div className="mb-12">
+                            <h2 className="mb-6 text-2xl font-bold tracking-tight border-b pb-2">
+                                Other Products
+                            </h2>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                                {uncategorizedProducts.map((product) => (
+                                    <Link
+                                        key={product.id}
+                                        href={`/products/${product.id}`}
+                                        className="group relative rounded-lg border bg-card p-4 text-card-foreground transition-shadow hover:shadow-lg"
+                                    >
+                                        <div className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-muted">
+                                            {product.image ? (
+                                                <img
+                                                    src={`/storage/${product.image}`}
+                                                    alt={product.title}
+                                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                                    No image
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                            </Link>
-                        ))}
-                    </div>
-                    {products.length === 0 && (
+                                        <h3 className="text-lg font-semibold">
+                                            {product.title}
+                                        </h3>
+                                        {product.variants &&
+                                            product.variants.length > 0 && (
+                                                <div className="mt-2 text-sm text-muted-foreground">
+                                                    Starting at Rs.{' '}
+                                                    {product.variants[0].price_npr} / $
+                                                    {product.variants[0].price_usd}
+                                                </div>
+                                            )}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {categories.length === 0 && (!uncategorizedProducts || uncategorizedProducts.length === 0) && (
                         <div className="mt-12 text-center text-muted-foreground">
                             No products found matching your criteria.
                         </div>

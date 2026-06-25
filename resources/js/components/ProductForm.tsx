@@ -21,21 +21,29 @@ export type Product = {
     description: string;
     image?: string;
     in_stock?: boolean;
+    category_id?: number | null;
+};
+
+type Category = {
+    id: number;
+    name: string;
 };
 
 type ProductFormProps = {
     product?: Product;
     submitUrl: string;
     isEditing?: boolean;
+    categories?: Category[];
 };
 
-export function ProductForm({ product, submitUrl, isEditing = false }: ProductFormProps) {
+export function ProductForm({ product, submitUrl, isEditing = false, categories = [] }: ProductFormProps) {
     const { data, setData, post, processing, errors } = useForm({
         _method: isEditing ? 'put' : 'post',
         title: product?.title || '',
         description: product?.description || '',
         image: null as File | null,
         in_stock: product?.in_stock ?? true,
+        category_id: product?.category_id || '',
     });
 
     const submit = (e: React.FormEvent) => {
@@ -70,6 +78,28 @@ export function ProductForm({ product, submitUrl, isEditing = false }: ProductFo
                             {errors.title && (
                                 <div className="text-sm font-medium text-destructive">
                                     {errors.title}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="category_id">Category</Label>
+                            <select
+                                id="category_id"
+                                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                                value={data.category_id}
+                                onChange={(e) => setData('category_id', e.target.value)}
+                            >
+                                <option value="">Select a category</option>
+                                {categories.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.category_id && (
+                                <div className="text-sm font-medium text-destructive">
+                                    {errors.category_id}
                                 </div>
                             )}
                         </div>

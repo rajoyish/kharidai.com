@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -13,13 +14,15 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::latest()->get();
+        $products = Product::with('category')->latest()->get();
         return Inertia::render('Admin/Products/Index', ['products' => $products]);
     }
 
     public function create()
     {
-        return Inertia::render('Admin/Products/Create');
+        return Inertia::render('Admin/Products/Create', [
+            'categories' => Category::orderBy('name')->get()
+        ]);
     }
 
     public function store(Request $request)
@@ -29,6 +32,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'in_stock' => 'boolean',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
 
         if ($request->hasFile('image')) {
@@ -42,7 +46,10 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        return Inertia::render('Admin/Products/Edit', ['product' => $product]);
+        return Inertia::render('Admin/Products/Edit', [
+            'product' => $product,
+            'categories' => Category::orderBy('name')->get()
+        ]);
     }
 
     public function update(Request $request, Product $product)
@@ -52,6 +59,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'in_stock' => 'boolean',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
 
         if ($request->hasFile('image')) {

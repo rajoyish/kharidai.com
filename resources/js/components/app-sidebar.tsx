@@ -55,6 +55,11 @@ export function AppSidebar() {
             href: '/admin/products',
             icon: BookOpen,
         },
+        {
+            title: 'Categories',
+            href: '/admin/categories',
+            icon: LayoutGrid,
+        },
     ];
 
     return (

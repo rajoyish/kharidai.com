@@ -19,6 +19,9 @@ type Product = {
     description: string;
     image: string;
     in_stock: boolean;
+    category?: {
+        name: string;
+    };
 };
 
 export default function ProductsIndex({ products }: { products: Product[] }) {
@@ -65,6 +68,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                             <TableRow>
                                 <TableHead className="w-[80px]">Image</TableHead>
                                 <TableHead>Title</TableHead>
+                                <TableHead>Category</TableHead>
                                 <TableHead className="w-[120px]">Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -87,6 +91,9 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                     </TableCell>
                                     <TableCell className="font-medium truncate max-w-[200px] sm:max-w-none">
                                         {product.title}
+                                    </TableCell>
+                                    <TableCell>
+                                        {product.category?.name || <span className="text-muted-foreground italic text-xs">Uncategorized</span>}
                                     </TableCell>
                                     <TableCell>
                                         <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
