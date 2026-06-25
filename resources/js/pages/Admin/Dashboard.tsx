@@ -1,4 +1,3 @@
-import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,7 @@ export default function Dashboard({
     recentOrders?: Order[];
 }) {
     return (
-        <AppLayout breadcrumbs={[{ title: 'Admin Dashboard', href: '/admin' }]}>
+        <>
             <Head title="Admin Dashboard" />
 
             <PagePanel title="Admin Dashboard" variant="transparent">
@@ -170,6 +169,10 @@ export default function Dashboard({
                     </div>
                 </div>
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+Dashboard.layout = {
+    breadcrumbs: [{ title: 'Admin Dashboard', href: '/admin' }],
+};

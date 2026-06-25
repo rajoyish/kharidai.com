@@ -1,4 +1,3 @@
-import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,23 +39,7 @@ export default function EditVariant({
     };
 
     return (
-        <AppLayout
-            breadcrumbs={[
-                { title: 'Products', href: '/admin/products' },
-                {
-                    title: product.title,
-                    href: `/admin/products/${product.id}/edit`,
-                },
-                {
-                    title: 'Variants',
-                    href: `/admin/products/${product.id}/variants`,
-                },
-                {
-                    title: 'Edit',
-                    href: `/admin/products/${product.id}/variants/${variant.id}/edit`,
-                },
-            ]}
-        >
+        <>
             <Head title={`Edit Variant - ${product.title}`} />
 
             <PagePanel title={`Edit Variant: ${variant.name}`}>
@@ -139,6 +122,24 @@ export default function EditVariant({
                     </Button>
                 </form>
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+EditVariant.layout = {
+    breadcrumbs: [
+                { title: 'Products', href: '/admin/products' },
+                {
+                    title: product.title,
+                    href: `/admin/products/${product.id}/edit`,
+                },
+                {
+                    title: 'Variants',
+                    href: `/admin/products/${product.id}/variants`,
+                },
+                {
+                    title: 'Edit',
+                    href: `/admin/products/${product.id}/variants/${variant.id}/edit`,
+                },
+            ],
+};

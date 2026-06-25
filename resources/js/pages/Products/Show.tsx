@@ -124,9 +124,10 @@ export default function Show({ product }: { product: Product }) {
                                 </div>
                             )}
 
-                            <div className="prose dark:prose-invert mb-8 max-w-none text-muted-foreground">
-                                <p>{product.description}</p>
-                            </div>
+                            <div
+                                className="prose dark:prose-invert mb-8 max-w-none text-muted-foreground"
+                                dangerouslySetInnerHTML={{ __html: product.description }}
+                            />
 
                             {/* Variants Selection */}
                             {auth.user && product.variants.length > 0 && (

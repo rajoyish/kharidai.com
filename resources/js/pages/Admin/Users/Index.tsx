@@ -1,4 +1,3 @@
-import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
@@ -27,9 +26,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
     };
 
     return (
-        <AppLayout
-            breadcrumbs={[{ title: 'User Management', href: '/admin/users' }]}
-        >
+        <>
             <Head title="User Management" />
 
             <PagePanel title="User Management">
@@ -89,6 +86,10 @@ export default function UsersIndex({ users }: { users: User[] }) {
                         </tbody>
                     </table>
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+UsersIndex.layout = {
+    breadcrumbs: [{ title: 'User Management', href: '/admin/users' }],
+};

@@ -1,4 +1,3 @@
-import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
@@ -32,19 +31,7 @@ export default function VariantsIndex({
     };
 
     return (
-        <AppLayout
-            breadcrumbs={[
-                { title: 'Products', href: '/admin/products' },
-                {
-                    title: product.title,
-                    href: `/admin/products/${product.id}/edit`,
-                },
-                {
-                    title: 'Variants',
-                    href: `/admin/products/${product.id}/variants`,
-                },
-            ]}
-        >
+        <>
             <Head title={`Variants - ${product.title}`} />
 
             <PagePanel
@@ -120,6 +107,20 @@ export default function VariantsIndex({
                         </tbody>
                     </table>
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+VariantsIndex.layout = {
+    breadcrumbs: [
+                { title: 'Products', href: '/admin/products' },
+                {
+                    title: product.title,
+                    href: `/admin/products/${product.id}/edit`,
+                },
+                {
+                    title: 'Variants',
+                    href: `/admin/products/${product.id}/variants`,
+                },
+            ],
+};

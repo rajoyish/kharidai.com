@@ -1,5 +1,4 @@
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 
 import { PagePanel } from '@/components/page-panel';
@@ -30,7 +29,7 @@ const breadcrumbs = [
 
 export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title="My Orders" />
 
             <PagePanel title="My Orders">
@@ -101,6 +100,10 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                     </div>
                 )}
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+OrderIndex.layout = {
+    breadcrumbs: breadcrumbs,
+};

@@ -1,5 +1,4 @@
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,7 @@ export default function AdminOrderIndex({
     orders: { data: Order[] };
 }) {
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title="Manage Orders" />
 
             <PagePanel title="Manage Orders" variant="transparent">
@@ -160,6 +159,10 @@ export default function AdminOrderIndex({
                     </table>
                 </div>
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+AdminOrderIndex.layout = {
+    breadcrumbs: breadcrumbs,
+};

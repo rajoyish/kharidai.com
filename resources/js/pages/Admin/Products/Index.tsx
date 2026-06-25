@@ -1,4 +1,3 @@
-import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
@@ -21,9 +20,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
     };
 
     return (
-        <AppLayout
-            breadcrumbs={[{ title: 'Products', href: '/admin/products' }]}
-        >
+        <>
             <Head title="Products Management" />
 
             <PagePanel
@@ -108,6 +105,10 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                         </tbody>
                     </table>
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+ProductsIndex.layout = {
+    breadcrumbs: [{ title: 'Products', href: '/admin/products' }],
+};

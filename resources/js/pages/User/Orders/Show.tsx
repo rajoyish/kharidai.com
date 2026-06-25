@@ -1,5 +1,4 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,7 +72,7 @@ export default function OrderShow({ order }: { order: Order }) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={`Order ${order.order_number}`} />
 
             <PagePanel
@@ -355,6 +354,10 @@ export default function OrderShow({ order }: { order: Order }) {
                     </div>
                 </div>
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+OrderShow.layout = {
+    breadcrumbs: breadcrumbs,
+};

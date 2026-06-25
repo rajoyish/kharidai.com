@@ -1,4 +1,3 @@
-import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { ProductForm, type Product } from '@/components/ProductForm';
 
@@ -6,12 +5,7 @@ import { PagePanel } from '@/components/page-panel';
 
 export default function EditProduct({ product }: { product: Product }) {
     return (
-        <AppLayout
-            breadcrumbs={[
-                { title: 'Products', href: '/admin/products' },
-                { title: 'Edit', href: `/admin/products/${product.id}/edit` },
-            ]}
-        >
+        <>
             <Head title="Edit Product" />
 
             <PagePanel variant="transparent">
@@ -21,6 +15,13 @@ export default function EditProduct({ product }: { product: Product }) {
                     isEditing={true}
                 />
             </PagePanel>
-        </AppLayout>
+        </>
     );
 }
+
+EditProduct.layout = {
+    breadcrumbs: [
+        { title: 'Products', href: '/admin/products' },
+        { title: 'Edit', href: '#' },
+    ],
+};

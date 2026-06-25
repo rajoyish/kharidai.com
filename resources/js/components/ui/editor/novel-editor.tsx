@@ -1,0 +1,122 @@
+import React from 'react';
+import {
+    EditorRoot,
+    EditorContent,
+    EditorCommand,
+    EditorCommandEmpty,
+    EditorCommandList,
+    EditorCommandItem,
+    EditorBubble,
+    EditorBubbleItem,
+    JSONContent,
+} from 'novel';
+import { defaultExtensions } from './extensions';
+import { slashCommand, suggestionItems } from './slash-command';
+import { Bold, Italic, Strikethrough, Underline, Code } from 'lucide-react';
+
+interface NovelEditorProps {
+    initialValue?: string | JSONContent;
+    onChange: (html: string) => void;
+}
+
+export default function NovelEditor({
+    initialValue,
+    onChange,
+}: NovelEditorProps) {
+    const extensions = [...defaultExtensions, slashCommand];
+
+    return (
+        <EditorRoot>
+            <EditorContent
+                className="w-full min-h-[200px] border border-input rounded-md bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+                initialContent={typeof initialValue === 'string' ? undefined : initialValue}
+                onCreate={({ editor }) => {
+                    if (typeof initialValue === 'string' && initialValue) {
+                        editor.commands.setContent(initialValue);
+                    }
+                }}
+                extensions={extensions}
+                onUpdate={({ editor }) => {
+                    onChange(editor.getHTML());
+                }}
+                editorProps={{
+                    attributes: {
+                        class: `prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[200px]`,
+                    },
+                }}
+            >
+                <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
+                    <EditorCommandEmpty className="px-2 text-muted-foreground">
+                        No results
+                    </EditorCommandEmpty>
+                    <EditorCommandList>
+                        {suggestionItems.map((item) => (
+                            <EditorCommandItem
+                                value={item.title}
+                                onCommand={(val) => item.command!(val)}
+                                className="flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent"
+                                key={item.title}
+                            >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-md border border-muted bg-background">
+                                    {item.icon}
+                                </div>
+                                <div>
+                                    <p className="font-medium">{item.title}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {item.description}
+                                    </p>
+                                </div>
+                            </EditorCommandItem>
+                        ))}
+                    </EditorCommandList>
+                </EditorCommand>
+
+                <EditorBubble
+                    tippyOptions={{ placement: 'top' }}
+                    className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl"
+                >
+                    <EditorBubbleItem
+                        onSelect={(editor) => {
+                            editor.chain().focus().toggleBold().run();
+                        }}
+                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                    >
+                        <Bold size={16} />
+                    </EditorBubbleItem>
+                    <EditorBubbleItem
+                        onSelect={(editor) => {
+                            editor.chain().focus().toggleItalic().run();
+                        }}
+                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                    >
+                        <Italic size={16} />
+                    </EditorBubbleItem>
+                    <EditorBubbleItem
+                        onSelect={(editor) => {
+                            editor.chain().focus().toggleUnderline().run();
+                        }}
+                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                    >
+                        <Underline size={16} />
+                    </EditorBubbleItem>
+                    <EditorBubbleItem
+                        onSelect={(editor) => {
+                            editor.chain().focus().toggleStrike().run();
+                        }}
+                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                    >
+                        <Strikethrough size={16} />
+                    </EditorBubbleItem>
+                    <EditorBubbleItem
+                        onSelect={(editor) => {
+                            editor.chain().focus().toggleCode().run();
+                        }}
+                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                    >
+                        <Code size={16} />
+                    </EditorBubbleItem>
+                </EditorBubble>
+            </EditorContent>
+        </EditorRoot>
+    );
+}

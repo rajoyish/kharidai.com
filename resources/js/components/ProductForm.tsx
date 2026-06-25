@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import NovelEditor from '@/components/ui/editor/novel-editor';
 import {
     Card,
     CardContent,
@@ -72,12 +73,9 @@ export function ProductForm({ product, submitUrl, isEditing = false }: ProductFo
 
                         <div className="grid gap-2">
                             <Label htmlFor="description">Description</Label>
-                            <Textarea
-                                id="description"
-                                placeholder="Briefly describe the product..."
-                                value={data.description}
-                                onChange={(e) => setData('description', e.target.value)}
-                                className="min-h-[120px]"
+                            <NovelEditor
+                                initialValue={data.description}
+                                onChange={(html) => setData('description', html)}
                             />
                             {errors.description && (
                                 <div className="text-sm font-medium text-destructive">
