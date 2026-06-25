@@ -22,21 +22,46 @@ type Order = {
 
 export default function Dashboard({
     recentOrders = [],
+    stats,
 }: {
     recentOrders?: Order[];
+    stats: {
+        total_sales_npr: number;
+        total_sales_usd: number;
+        total_orders: number;
+        todays_orders: number;
+        pending_orders: number;
+        total_users: number;
+    };
 }) {
     return (
         <>
             <Head title="Admin Dashboard" />
 
             <PagePanel title="Admin Dashboard" variant="transparent">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <div className="flex h-full items-center justify-center">
-                            <span className="text-muted-foreground">
-                                Stats Card
-                            </span>
+                <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Total Sales (Completed)</div>
+                        <div className="mt-2 text-2xl font-bold">
+                            <div>Rs. {stats.total_sales_npr.toLocaleString()}</div>
+                            <div className="text-sm text-muted-foreground">${stats.total_sales_usd.toLocaleString()}</div>
                         </div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Total Orders</div>
+                        <div className="mt-2 text-2xl font-bold">{stats.total_orders.toLocaleString()}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Today's Orders</div>
+                        <div className="mt-2 text-2xl font-bold">{stats.todays_orders.toLocaleString()}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Pending Orders</div>
+                        <div className="mt-2 text-2xl font-bold">{stats.pending_orders.toLocaleString()}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Total Users</div>
+                        <div className="mt-2 text-2xl font-bold">{stats.total_users.toLocaleString()}</div>
                     </div>
                 </div>
 
