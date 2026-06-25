@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
+import { ShoppingBag, Sparkles, Archive, CloudDownload, Star, Briefcase, Truck, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 type Product = {
@@ -141,7 +142,7 @@ export default function Welcome({
                     <div className="relative z-10 mt-20 flex justify-center max-w-5xl mx-auto px-4 h-64 md:h-80 perspective-1000">
                         {/* Center Card */}
                         <div className="absolute z-30 w-72 bg-white p-8 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-gray-100 transform -translate-y-4 transition-transform hover:-translate-y-6 duration-500">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-6 mx-auto text-xl shadow-inner">🛍️</div>
+                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-6 mx-auto shadow-inner"><ShoppingBag className="w-5 h-5" /></div>
                             <h3 className="text-center text-xl text-gray-900 leading-snug mb-3">Find exactly what you need, instantly.</h3>
                             <div className="flex justify-center items-center gap-3 text-xs font-medium text-gray-400 mt-6">
                                 <span>10k+ items</span>
@@ -151,12 +152,12 @@ export default function Welcome({
                         </div>
                         {/* Left Card */}
                         <div className="absolute z-20 w-64 bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform -rotate-[8deg] -translate-x-32 md:-translate-x-56 translate-y-12 transition-transform hover:-rotate-[4deg] duration-500">
-                            <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center mb-4 mx-auto text-sm shadow-inner">✨</div>
+                            <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center mb-4 mx-auto shadow-inner"><Sparkles className="w-4 h-4" /></div>
                             <h3 className="text-center text-lg text-gray-800 leading-snug">Premium Subscriptions</h3>
                         </div>
                         {/* Right Card */}
                         <div className="absolute z-20 w-64 bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform rotate-[8deg] translate-x-32 md:translate-x-56 translate-y-12 transition-transform hover:rotate-[4deg] duration-500">
-                            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center mb-4 mx-auto text-sm shadow-inner">📦</div>
+                            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center mb-4 mx-auto shadow-inner"><Archive className="w-4 h-4" /></div>
                             <h3 className="text-center text-lg text-gray-800 leading-snug">Trusted Physical Goods</h3>
                         </div>
                     </div>
@@ -173,21 +174,25 @@ export default function Welcome({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
                                 <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors"></div>
+                                <CloudDownload className="w-8 h-8 text-accent mb-4 relative z-10" />
                                 <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Digital Goods</h3>
                                 <p className="text-gray-500 leading-relaxed relative z-10">Instant access to software, game keys, and digital content. Delivered directly to your email within seconds.</p>
                             </div>
                             <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
                                 <div className="absolute -top-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors"></div>
+                                <Star className="w-8 h-8 text-primary mb-4 relative z-10" />
                                 <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Premium Subscriptions</h3>
                                 <p className="text-gray-500 leading-relaxed relative z-10">Unlock premium features on your favorite platforms at unbeatable discounted rates.</p>
                             </div>
                             <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
                                 <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors"></div>
+                                <Briefcase className="w-8 h-8 text-accent mb-4 relative z-10" />
                                 <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Trusted Services</h3>
                                 <p className="text-gray-500 leading-relaxed relative z-10">Hire top-rated professionals for freelance work, consulting, and specialized services.</p>
                             </div>
                             <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
                                 <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors"></div>
+                                <Truck className="w-8 h-8 text-primary mb-4 relative z-10" />
                                 <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Physical Products</h3>
                                 <p className="text-gray-500 leading-relaxed relative z-10">Shop for electronics, gadgets, and everyday essentials with fast, reliable shipping to your door.</p>
                             </div>
@@ -317,7 +322,7 @@ export default function Welcome({
 
                     {filteredCategories.length === 0 && (!filteredUncategorizedProducts || filteredUncategorizedProducts.length === 0) && (
                         <div className="mt-20 text-center bg-gray-50 rounded-2xl p-12 border border-gray-100">
-                            <div className="text-4xl mb-4">🔍</div>
+                            <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-xl text-gray-900 mb-2">No products found</h3>
                             <p className="text-gray-500">We couldn't find any products matching your current filters.</p>
                         </div>

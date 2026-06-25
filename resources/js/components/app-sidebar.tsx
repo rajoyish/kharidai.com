@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, LayoutGrid, ShoppingCart } from 'lucide-react';
+import { BookOpen, LayoutGrid, ShoppingCart, LayoutDashboard, Users, ClipboardList, Package, Tags } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -38,27 +38,27 @@ export function AppSidebar() {
         {
             title: 'Admin Dashboard',
             href: '/admin',
-            icon: LayoutGrid,
+            icon: LayoutDashboard,
         },
         {
             title: 'User Management',
             href: '/admin/users',
-            icon: BookOpen,
+            icon: Users,
         },
         {
             title: 'Orders',
             href: '/admin/orders',
-            icon: ShoppingCart,
+            icon: ClipboardList,
         },
         {
             title: 'Products',
             href: '/admin/products',
-            icon: BookOpen,
+            icon: Package,
         },
         {
             title: 'Categories',
             href: '/admin/categories',
-            icon: LayoutGrid,
+            icon: Tags,
         },
     ];
 
