@@ -57,9 +57,11 @@ class CheckoutController extends Controller
 
         foreach ($cart->items as $item) {
             $price = $validated['currency'] === 'npr' ? $item->productVariant->price_npr : $item->productVariant->price_usd;
+            $purchasePrice = $validated['currency'] === 'npr' ? $item->productVariant->purchase_price_npr : $item->productVariant->purchase_price_usd;
             $order->items()->create([
                 'product_variant_id' => $item->product_variant_id,
                 'price' => $price,
+                'purchase_price' => $purchasePrice,
                 'quantity' => $item->quantity,
             ]);
         }

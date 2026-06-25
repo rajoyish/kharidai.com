@@ -24,6 +24,8 @@ type Order = {
     items: {
         id: number;
         quantity: number;
+        price: string;
+        purchase_price: string;
         product_variant: {
             name: string;
             product: {
@@ -219,8 +221,20 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                                 {item.product_variant.name}
                                             </p>
                                             <p className="mt-1 text-sm font-medium">
-                                                Qty: {item.quantity}
+                                                Qty: {item.quantity} | Selling Price: {order.currency === 'npr' ? 'Rs.' : '$'} {item.price}
                                             </p>
+                                            {order.status === 'completed' && (
+                                                <div className="mt-2 rounded bg-green-50 px-3 py-2 text-sm text-green-800 border border-green-100">
+                                                    <div className="flex justify-between">
+                                                        <span>Purchase Price:</span>
+                                                        <span>{order.currency === 'npr' ? 'Rs.' : '$'} {item.purchase_price}</span>
+                                                    </div>
+                                                    <div className="flex justify-between font-semibold mt-1">
+                                                        <span>Profit:</span>
+                                                        <span>{order.currency === 'npr' ? 'Rs.' : '$'} {((parseFloat(item.price) - parseFloat(item.purchase_price)) * item.quantity).toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

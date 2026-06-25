@@ -77,4 +77,17 @@ class Order extends Model
     {
         return $this->hasMany(OrderMessage::class);
     }
+
+    protected $appends = ['profit'];
+
+    public function getProfitAttribute(): float
+    {
+        if ($this->status !== 'completed') {
+            return 0.0;
+        }
+
+        return $this->items->sum(function ($item) {
+            return ($item->price - $item->purchase_price) * $item->quantity;
+        });
+    }
 }

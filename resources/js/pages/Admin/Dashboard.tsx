@@ -10,6 +10,7 @@ type Order = {
     total_amount: string;
     currency: string;
     status: string;
+    profit: number;
     created_at: string;
     user: {
         name: string;
@@ -28,6 +29,8 @@ export default function Dashboard({
     stats: {
         total_sales_npr: number;
         total_sales_usd: number;
+        total_profit_npr: number;
+        total_profit_usd: number;
         total_orders: number;
         todays_orders: number;
         pending_orders: number;
@@ -39,12 +42,19 @@ export default function Dashboard({
             <Head title="Admin Dashboard" />
 
             <PagePanel title="Admin Dashboard" variant="transparent">
-                <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-5">
+                <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-6">
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
                         <div className="text-sm font-medium text-muted-foreground">Total Sales (Completed)</div>
                         <div className="mt-2 text-2xl font-bold">
                             <div>Rs. {stats.total_sales_npr.toLocaleString()}</div>
                             <div className="text-sm text-muted-foreground">${stats.total_sales_usd.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Total Profit</div>
+                        <div className="mt-2 text-2xl font-bold">
+                            <div>Rs. {stats.total_profit_npr.toLocaleString()}</div>
+                            <div className="text-sm text-muted-foreground">${stats.total_profit_usd.toLocaleString()}</div>
                         </div>
                     </div>
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
@@ -80,6 +90,7 @@ export default function Dashboard({
                                     <th className="px-6 py-4">Customer</th>
                                     <th className="px-6 py-4">Date</th>
                                     <th className="px-6 py-4">Amount</th>
+                                    <th className="px-6 py-4">Profit</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4">Receipt</th>
                                     <th className="px-6 py-4 text-right">
@@ -115,6 +126,13 @@ export default function Dashboard({
                                                 ? 'Rs.'
                                                 : '$'}{' '}
                                             {order.total_amount}
+                                        </td>
+                                        <td className="px-6 py-4 font-medium text-green-600">
+                                            {order.status === 'completed' ? (
+                                                <>{order.currency === 'npr' ? 'Rs.' : '$'} {order.profit.toFixed(2)}</>
+                                            ) : (
+                                                <span className="text-muted-foreground">—</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span
@@ -182,7 +200,7 @@ export default function Dashboard({
                                 {recentOrders.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="px-6 py-8 text-center text-muted-foreground"
                                         >
                                             No recent orders found.

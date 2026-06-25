@@ -12,7 +12,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = Order::with(['user', 'paymentReceipt'])
+        $orders = Order::with(['user', 'paymentReceipt', 'items'])
             ->latest()
             ->paginate(15);
 

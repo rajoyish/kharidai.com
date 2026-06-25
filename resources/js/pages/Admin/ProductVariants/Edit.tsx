@@ -5,6 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 import { PagePanel } from '@/components/page-panel';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 
 type Product = {
     id: number;
@@ -17,6 +24,8 @@ type Variant = {
     details: string | null;
     price_npr: string;
     price_usd: string;
+    purchase_price_npr: string;
+    purchase_price_usd: string;
 };
 
 export default function EditVariant({
@@ -31,6 +40,8 @@ export default function EditVariant({
         details: variant.details || '',
         price_npr: variant.price_npr,
         price_usd: variant.price_usd,
+        purchase_price_npr: variant.purchase_price_npr || '',
+        purchase_price_usd: variant.purchase_price_usd || '',
     });
 
     const submit = (e: React.FormEvent) => {
@@ -86,7 +97,7 @@ export default function EditVariant({
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="price_npr">Price (NPR)</Label>
+                                    <Label htmlFor="price_npr">Selling Price (NPR)</Label>
                                     <Input
                                         id="price_npr"
                                         type="number"
@@ -106,7 +117,7 @@ export default function EditVariant({
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="price_usd">Price (USD)</Label>
+                                    <Label htmlFor="price_usd">Selling Price (USD)</Label>
                                     <Input
                                         id="price_usd"
                                         type="number"
@@ -121,6 +132,44 @@ export default function EditVariant({
                                     {errors.price_usd && (
                                         <div className="text-sm text-destructive">
                                             {errors.price_usd}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="purchase_price_npr">Purchase Price (NPR)</Label>
+                                    <Input
+                                        id="purchase_price_npr"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.purchase_price_npr}
+                                        onChange={(e) =>
+                                            setData('purchase_price_npr', e.target.value)
+                                        }
+                                        placeholder="1800"
+                                    />
+                                    {errors.purchase_price_npr && (
+                                        <div className="text-sm text-destructive">
+                                            {errors.purchase_price_npr}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="purchase_price_usd">Purchase Price (USD)</Label>
+                                    <Input
+                                        id="purchase_price_usd"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.purchase_price_usd}
+                                        onChange={(e) =>
+                                            setData('purchase_price_usd', e.target.value)
+                                        }
+                                        placeholder="12"
+                                    />
+                                    {errors.purchase_price_usd && (
+                                        <div className="text-sm text-destructive">
+                                            {errors.purchase_price_usd}
                                         </div>
                                     )}
                                 </div>

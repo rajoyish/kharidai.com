@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property Order $order
  * @property ProductVariant $productVariant
  */
-#[Fillable(['order_id', 'product_variant_id', 'price', 'quantity'])]
+#[Fillable(['order_id', 'product_variant_id', 'price', 'purchase_price', 'quantity'])]
 class OrderItem extends Model
 {
     /** @use HasFactory<\Database\Factories\OrderItemFactory> */

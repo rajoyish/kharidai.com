@@ -11,6 +11,7 @@ type Order = {
     total_amount: string;
     currency: string;
     status: string;
+    profit: number;
     created_at: string;
     user: {
         name: string;
@@ -45,6 +46,7 @@ export default function AdminOrderIndex({
                                 <th className="px-6 py-4">Customer</th>
                                 <th className="px-6 py-4">Date</th>
                                 <th className="px-6 py-4">Amount</th>
+                                <th className="px-6 py-4">Profit</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Receipt</th>
                                 <th className="px-6 py-4 text-right">
@@ -81,6 +83,13 @@ export default function AdminOrderIndex({
                                     <td className="px-6 py-4 font-bold">
                                         {order.currency === 'npr' ? 'Rs.' : '$'}{' '}
                                         {order.total_amount}
+                                    </td>
+                                    <td className="px-6 py-4 font-medium text-green-600">
+                                        {order.status === 'completed' ? (
+                                            <>{order.currency === 'npr' ? 'Rs.' : '$'} {order.profit.toFixed(2)}</>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span
@@ -160,7 +169,7 @@ export default function AdminOrderIndex({
                             {orders.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={8}
                                         className="px-6 py-8 text-center text-muted-foreground"
                                     >
                                         No orders found.

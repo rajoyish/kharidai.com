@@ -13,6 +13,8 @@ type Variant = {
     name: string;
     price_npr: string;
     price_usd: string;
+    purchase_price_npr: string | null;
+    purchase_price_usd: string | null;
 };
 
 export default function VariantsIndex({
@@ -50,8 +52,10 @@ export default function VariantsIndex({
                         <thead className="bg-muted text-xs text-muted-foreground uppercase">
                             <tr>
                                 <th className="px-6 py-3">Name</th>
-                                <th className="px-6 py-3">Price (NPR)</th>
-                                <th className="px-6 py-3">Price (USD)</th>
+                                <th className="px-6 py-3">Selling Price (NPR)</th>
+                                <th className="px-6 py-3">Purchase Price (NPR)</th>
+                                <th className="px-6 py-3">Selling Price (USD)</th>
+                                <th className="px-6 py-3">Purchase Price (USD)</th>
                                 <th className="px-6 py-3">Actions</th>
                             </tr>
                         </thead>
@@ -68,7 +72,13 @@ export default function VariantsIndex({
                                         {variant.price_npr}
                                     </td>
                                     <td className="px-6 py-4">
+                                        {variant.purchase_price_npr || '0.00'}
+                                    </td>
+                                    <td className="px-6 py-4">
                                         {variant.price_usd}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {variant.purchase_price_usd || '0.00'}
                                     </td>
                                     <td className="flex gap-2 px-6 py-4">
                                         <Button
