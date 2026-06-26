@@ -79,7 +79,7 @@ export default function OrderShow({ order }: { order: Order }) {
 
                 {order.payment_receipt &&
                     order.payment_receipt.status === 'pending' && (
-                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+                        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
                             Your payment receipt is currently being reviewed.
                             Once approved, we will process your order.
                         </div>

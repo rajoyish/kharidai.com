@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Breadcrumbs } from '@/components/breadcrumbs';
+import { type BreadcrumbItem } from '@/types';
 import { Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +30,7 @@ type Order = {
     } | null;
 };
 
-const breadcrumbs: Breadcrumbs = [
+const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Admin Dashboard', href: '/admin' },
     { title: 'Orders', href: '/admin/orders' },
 ];
