@@ -141,7 +141,7 @@ export default function Welcome({
                     {/* Floating Cards Graphic */}
                     <div className="relative z-10 mt-20 flex justify-center max-w-5xl mx-auto px-4 h-64 md:h-80 perspective-1000">
                         {/* Center Card */}
-                        <div className="absolute z-30 w-72 bg-white p-8 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-gray-100 transform -translate-y-4 transition-transform hover:-translate-y-6 duration-500">
+                        <div className="absolute z-30 w-72 bg-white p-8 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-gray-100 transform -translate-y-4 transition-all duration-500 ease-out hover:-translate-y-8 hover:scale-105 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] hover:z-50 cursor-pointer">
                             <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-6 mx-auto shadow-inner"><ShoppingBag className="w-5 h-5" /></div>
                             <h3 className="text-center text-xl text-gray-900 leading-snug mb-3">Find exactly what you need, instantly.</h3>
                             <div className="flex justify-center items-center gap-3 text-xs font-medium text-gray-400 mt-6">
@@ -151,12 +151,12 @@ export default function Welcome({
                             </div>
                         </div>
                         {/* Left Card */}
-                        <div className="absolute z-20 w-64 bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform -rotate-[8deg] -translate-x-32 md:-translate-x-56 translate-y-12 transition-transform hover:-rotate-[4deg] duration-500">
+                        <div className="absolute z-20 w-64 bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform -rotate-[8deg] -translate-x-32 md:-translate-x-56 translate-y-12 transition-all duration-500 ease-out hover:rotate-0 hover:translate-y-0 hover:scale-110 hover:z-50 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] cursor-pointer">
                             <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center mb-4 mx-auto shadow-inner"><Sparkles className="w-4 h-4" /></div>
                             <h3 className="text-center text-lg text-gray-800 leading-snug">Premium Subscriptions</h3>
                         </div>
                         {/* Right Card */}
-                        <div className="absolute z-20 w-64 bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform rotate-[8deg] translate-x-32 md:translate-x-56 translate-y-12 transition-transform hover:rotate-[4deg] duration-500">
+                        <div className="absolute z-20 w-64 bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform rotate-[8deg] translate-x-32 md:translate-x-56 translate-y-12 transition-all duration-500 ease-out hover:rotate-0 hover:translate-y-0 hover:scale-110 hover:z-50 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] cursor-pointer">
                             <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center mb-4 mx-auto shadow-inner"><Archive className="w-4 h-4" /></div>
                             <h3 className="text-center text-lg text-gray-800 leading-snug">Trusted Physical Goods</h3>
                         </div>
