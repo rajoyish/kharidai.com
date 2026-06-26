@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus } from 'lucide-react';
-import { cartAdd, cartRemove, cartUpdate, login } from '@/routes';
+
 
 type Product = {
     id: number;
@@ -46,13 +46,13 @@ export default function CartIndex({ cart }: { cart: Cart }) {
         });
     };
 
-    const totalNpr = cart.items.reduce((total, item) => {
+    const totalNpr = (cart?.items || []).reduce((total, item) => {
         return (
             total + parseFloat(item.product_variant.price_npr) * item.quantity
         );
     }, 0);
 
-    const totalUsd = cart.items.reduce((total, item) => {
+    const totalUsd = (cart?.items || []).reduce((total, item) => {
         return (
             total + parseFloat(item.product_variant.price_usd) * item.quantity
         );

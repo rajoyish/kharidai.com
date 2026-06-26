@@ -100,13 +100,13 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                             </p>
                                         </Label>
                                     </div>
-                                    <div className="flex items-start space-x-2 rounded-md border p-4">
-                                        <RadioGroupItem value="usd" id="r2" />
+                                    <div className="flex items-start space-x-2 rounded-md border p-4 opacity-50 cursor-not-allowed">
+                                        <RadioGroupItem value="usd" id="r2" disabled />
                                         <Label
                                             htmlFor="r2"
-                                            className="flex-1 cursor-pointer font-medium"
+                                            className="flex-1 cursor-not-allowed font-medium"
                                         >
-                                            Pay via Pocketsflow (USD)
+                                            Pay via Pocketsflow (USD) - <span className="text-destructive">Temporarily Disabled</span>
                                             <p className="mt-1 text-sm font-normal text-muted-foreground">
                                                 Automated secure payment
                                                 processing.

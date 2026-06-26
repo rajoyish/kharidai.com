@@ -11,6 +11,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PocketsflowWebhookController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\User\OrderController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,8 @@ Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name(
 
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
 Route::get('/products/{product}', [StorefrontController::class, 'show'])->name('products.show');
+
+Route::post('webhooks/pocketsflow', [PocketsflowWebhookController::class, 'handle'])->name('webhooks.pocketsflow');
 
 Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::get('cart', [CartController::class, 'index'])->name('cart.index');
@@ -31,8 +34,8 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::post('checkout', [CheckoutController::class, 'process'])->name('checkout.process');
     Route::get('checkout/{order}/npr', [CheckoutController::class, 'nprPayment'])->name('checkout.npr');
     Route::post('checkout/{order}/npr', [CheckoutController::class, 'processNprPayment'])->name('checkout.npr.process');
-    Route::get('checkout/{order}/usd-mock', [CheckoutController::class, 'mockPocketsflow'])->name('checkout.usd.mock');
-    Route::post('checkout/{order}/usd-mock', [CheckoutController::class, 'processMockPocketsflow'])->name('checkout.usd.mock.process');
+    Route::get('checkout/{order}/usd/success', [CheckoutController::class, 'usdSuccess'])->name('checkout.usd.success');
+    Route::get('checkout/{order}/usd/cancel', [CheckoutController::class, 'usdCancel'])->name('checkout.usd.cancel');
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');

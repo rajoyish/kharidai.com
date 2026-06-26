@@ -41,4 +41,9 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
     ],
 
+    'pocketsflow' => [
+        'key' => env('POCKETSFLOW_API_KEY'),
+        'webhook_secret' => env('POCKETSFLOW_WEBHOOK_SECRET'),
+    ],
+
 ];

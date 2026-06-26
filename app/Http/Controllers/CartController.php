@@ -12,8 +12,8 @@ class CartController extends Controller
 {
     public function index(Request $request)
     {
-        $cart = Cart::with(['items.productVariant.product'])
-            ->firstOrCreate(['user_id' => $request->user()->id]);
+        $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
+        $cart->load('items.productVariant.product');
 
         return Inertia::render('Cart/Index', [
             'cart' => $cart,

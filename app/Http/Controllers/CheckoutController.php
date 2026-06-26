@@ -4,9 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\User;
+use App\Notifications\OrderPlacedNotification;
+use App\Notifications\PaymentReceiptUploadedNotification;
+use App\Services\PocketsflowService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class CheckoutController extends Controller
 {
@@ -16,7 +22,7 @@ class CheckoutController extends Controller
             ->where('user_id', $request->user()->id)
             ->first();
 
-        if (!$cart || $cart->items->isEmpty()) {
+        if (! $cart || $cart->items->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
@@ -31,7 +37,7 @@ class CheckoutController extends Controller
             ->where('user_id', $request->user()->id)
             ->first();
 
-        if (!$cart || $cart->items->isEmpty()) {
+        if (! $cart || $cart->items->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
@@ -47,7 +53,7 @@ class CheckoutController extends Controller
         }
 
         $order = Order::create([
-            'order_number' => 'ORD-' . strtoupper(Str::random(10)),
+            'order_number' => 'ORD-'.strtoupper(Str::random(10)),
             'user_id' => $request->user()->id,
             'status' => 'pending',
             'total_amount' => $totalAmount,
@@ -66,17 +72,35 @@ class CheckoutController extends Controller
             ]);
         }
 
-        $cart->items()->delete();
-        $cart->delete();
-
-        $admins = \App\Models\User::where('is_admin', true)->get();
-        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\OrderPlacedNotification($order));
+        $admins = User::where('is_admin', true)->get();
+        Notification::send($admins, new OrderPlacedNotification($order));
 
         if ($validated['currency'] === 'npr') {
+            $cart->items()->delete();
+            $cart->delete();
             return redirect()->route('checkout.npr', $order);
         }
 
-        return redirect()->route('checkout.usd.mock', $order);
+        try {
+            // --- TEMPORARILY DISABLED POCKETSFLOW ---
+            // $pocketsflowService = app(PocketsflowService::class);
+            // $product = $pocketsflowService->createOrderProduct($order);
+            // $productId = $product['_id'] ?? $product['id'];
+            // $session = $pocketsflowService->createCheckoutSession($productId, $order);
+
+            $cart->items()->delete();
+            $cart->delete();
+            // return Inertia::location($session['url']);
+            
+            // Temporary mock success bypass
+            $order->update(['status' => 'delivering']);
+            return redirect()->route('orders.show', $order)->with('success', 'Payment successful! Your order is being processed. (MOCK MODE)');
+            // ----------------------------------------
+        } catch (\Exception $e) {
+            Log::error('Pocketsflow checkout error: '.$e->getMessage());
+
+            return back()->with('error', 'Unable to initiate payment. Please try again later.');
+        }
     }
 
     public function nprPayment(Request $request, Order $order)
@@ -107,32 +131,29 @@ class CheckoutController extends Controller
             'status' => 'pending',
         ]);
 
-        $admins = \App\Models\User::where('is_admin', true)->get();
-        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PaymentReceiptUploadedNotification($order));
+        $admins = User::where('is_admin', true)->get();
+        Notification::send($admins, new PaymentReceiptUploadedNotification($order));
 
         // Keep order status as pending until admin reviews the receipt
         return redirect()->route('orders.show', $order)->with('success', 'Receipt uploaded successfully. We will process your order soon.');
     }
 
-    public function mockPocketsflow(Request $request, Order $order)
+    public function usdSuccess(Request $request, Order $order)
     {
-        if ($order->user_id !== $request->user()->id || $order->status !== 'pending' || $order->currency !== 'usd') {
+        if ($order->user_id !== $request->user()->id || $order->currency !== 'usd') {
             abort(403);
         }
 
-        return Inertia::render('Checkout/MockPocketsflow', [
-            'order' => $order,
-        ]);
+        // Webhook handles the actual status update. This is just the return page.
+        return redirect()->route('orders.show', $order)->with('success', 'Payment successful! We are processing your order.');
     }
 
-    public function processMockPocketsflow(Request $request, Order $order)
+    public function usdCancel(Request $request, Order $order)
     {
-        if ($order->user_id !== $request->user()->id || $order->status !== 'pending' || $order->currency !== 'usd') {
+        if ($order->user_id !== $request->user()->id || $order->currency !== 'usd') {
             abort(403);
         }
 
-        $order->update(['status' => 'delivering']);
-
-        return redirect()->route('orders.show', $order)->with('success', 'Payment successful! Your order is being processed.');
+        return redirect()->route('cart.index')->with('error', 'Payment was canceled.');
     }
 }
