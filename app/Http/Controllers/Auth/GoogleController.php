@@ -4,18 +4,20 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
 {
-    public function redirect()
+    public function redirect(): \Symfony\Component\HttpFoundation\RedirectResponse
     {
         return Socialite::driver('google')->redirect();
     }
 
-    public function callback()
+    public function callback(): RedirectResponse
     {
         try {
             $googleUser = Socialite::driver('google')->user();
@@ -28,11 +30,19 @@ class GoogleController extends Controller
                 'avatar' => $googleUser->avatar,
             ]);
 
+            if ($user->banned_at) {
+                Inertia::flash('toast', ['type' => 'error', 'message' => 'Your account has been banned.']);
+
+                return redirect()->route('login');
+            }
+
             Auth::login($user);
 
             return redirect()->intended(config('fortify.home', '/dashboard'));
-        } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Google authentication failed.');
+        } catch (Exception $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Google authentication failed.']);
+
+            return redirect()->route('login');
         }
     }
 }
