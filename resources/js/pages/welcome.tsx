@@ -31,7 +31,7 @@ export default function Welcome({
 
     const { filteredCategories, filteredUncategorizedProducts } = useMemo(() => {
         const query = searchQuery.toLowerCase().trim();
-        
+
         let cats = categories;
         let uncategorized = uncategorizedProducts;
 
@@ -45,14 +45,14 @@ export default function Welcome({
         if (query) {
             cats = cats.map(category => ({
                 ...category,
-                products: category.products.filter(p => 
-                    p.title.toLowerCase().includes(query) || 
+                products: category.products.filter(p =>
+                    p.title.toLowerCase().includes(query) ||
                     (p.description && p.description.toLowerCase().includes(query))
                 )
             })).filter(category => category.products.length > 0);
 
-            uncategorized = uncategorized.filter(p => 
-                p.title.toLowerCase().includes(query) || 
+            uncategorized = uncategorized.filter(p =>
+                p.title.toLowerCase().includes(query) ||
                 (p.description && p.description.toLowerCase().includes(query))
             );
         }
@@ -68,11 +68,11 @@ export default function Welcome({
         <>
             <Head title="Kharidai - Your all-in-one marketplace!" />
             <div className="flex min-h-screen flex-col bg-[#FAFAFA] text-foreground">
-                
+
                 {/* Hero Wrapper with Gradient */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-[#EAE6F9] via-[#FDFDFD] to-[#FCEFDA] pb-32 pt-4">
+                <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-accent/10 pb-32 pt-4">
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_bottom,white,transparent)]"></div>
-                    
+
                     <header className="relative z-10 container mx-auto flex items-center justify-between px-6 py-4">
                         <Link href="/" className="flex items-center gap-3 group">
                             <img src="/images/logo.webp" alt="Kharidai" className="h-9 transition-transform group-hover:scale-105" />
@@ -127,17 +127,14 @@ export default function Welcome({
                         <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-10">
                             Discover digital goods, premium subscriptions, trusted services, and physical products—all at unbeatable prices. Shop smart. Shop reliable.
                         </p>
-                        
+
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <button onClick={scrollToShop} className="rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
                                 Start Here
                             </button>
-                            <button onClick={scrollToShop} className="rounded-full bg-white/80 backdrop-blur-sm px-8 py-3.5 text-sm font-semibold text-gray-900 hover:bg-white transition-all shadow-sm border border-gray-200 hover:border-gray-300">
-                                Explore
-                            </button>
                         </div>
                     </div>
-                    
+
                     {/* Floating Cards Graphic */}
                     <div className="relative z-10 mt-20 flex justify-center max-w-5xl mx-auto px-4 h-64 md:h-80 perspective-1000">
                         {/* Center Card */}
@@ -163,46 +160,47 @@ export default function Welcome({
                     </div>
                 </div>
 
-                <div className="bg-[#FAFAFA] py-32 relative">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
-                    <div className="container mx-auto px-4 max-w-5xl">
+                <div className="py-32 relative overflow-hidden bg-[#09090b]">
+                    {/* Mesh Gradient Orbs */}
+                    <div className="absolute top-0 left-1/4 w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[128px] pointer-events-none mix-blend-screen transform -translate-y-1/2"></div>
+                    <div className="absolute bottom-0 right-1/4 w-[40rem] h-[40rem] bg-accent/20 rounded-full blur-[128px] pointer-events-none mix-blend-screen transform translate-y-1/3"></div>
+                    <div className="absolute top-1/2 left-1/2 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-[128px] pointer-events-none mix-blend-screen transform -translate-x-1/2 -translate-y-1/2"></div>
+
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                    <div className="container mx-auto px-4 max-w-5xl relative z-10">
                         <div className="text-center mb-20">
-                            <h2 className="text-4xl text-[#1A1A1A] mb-4">A path to better shopping</h2>
-                            <p className="text-gray-500 text-lg">Kharidai helps you discover the best products without the hassle.</p>
+                            <h2 className="text-4xl text-white mb-4">A path to better shopping</h2>
+                            <p className="text-gray-400 text-lg">Kharidai helps you discover the best products without the hassle.</p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors"></div>
+                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
+                                <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors pointer-events-none"></div>
                                 <CloudDownload className="w-8 h-8 text-accent mb-4 relative z-10" />
-                                <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Digital Goods</h3>
-                                <p className="text-gray-500 leading-relaxed relative z-10">Instant access to software, game keys, and digital content. Delivered directly to your email within seconds.</p>
+                                <h3 className="text-2xl text-white mb-3 relative z-10">Digital Goods</h3>
+                                <p className="text-gray-400 leading-relaxed relative z-10">Instant access to software, game keys, and digital content. Delivered directly to your email within seconds.</p>
                             </div>
-                            <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute -top-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors"></div>
+                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
+                                <div className="absolute -top-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors pointer-events-none"></div>
                                 <Star className="w-8 h-8 text-primary mb-4 relative z-10" />
-                                <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Premium Subscriptions</h3>
-                                <p className="text-gray-500 leading-relaxed relative z-10">Unlock premium features on your favorite platforms at unbeatable discounted rates.</p>
+                                <h3 className="text-2xl text-white mb-3 relative z-10">Premium Subscriptions</h3>
+                                <p className="text-gray-400 leading-relaxed relative z-10">Unlock premium features on your favorite platforms at unbeatable discounted rates.</p>
                             </div>
-                            <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors"></div>
+                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
+                                <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors pointer-events-none"></div>
                                 <Briefcase className="w-8 h-8 text-accent mb-4 relative z-10" />
-                                <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Trusted Services</h3>
-                                <p className="text-gray-500 leading-relaxed relative z-10">Hire top-rated professionals for freelance work, consulting, and specialized services.</p>
+                                <h3 className="text-2xl text-white mb-3 relative z-10">Trusted Services</h3>
+                                <p className="text-gray-400 leading-relaxed relative z-10">Hire top-rated professionals for freelance work, consulting, and specialized services.</p>
                             </div>
-                            <div className="bg-white p-10 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors"></div>
+                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
+                                <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors pointer-events-none"></div>
                                 <Truck className="w-8 h-8 text-primary mb-4 relative z-10" />
-                                <h3 className="text-2xl text-gray-900 mb-3 relative z-10">Physical Products</h3>
-                                <p className="text-gray-500 leading-relaxed relative z-10">Shop for electronics, gadgets, and everyday essentials with fast, reliable shipping to your door.</p>
+                                <h3 className="text-2xl text-white mb-3 relative z-10">Physical Products</h3>
+                                <p className="text-gray-400 leading-relaxed relative z-10">Shop for electronics, gadgets, and everyday essentials with fast, reliable shipping to your door.</p>
                             </div>
                         </div>
-                        
-                        <div className="mt-16 text-center">
-                            <button onClick={scrollToShop} className="rounded-full bg-primary px-10 py-4 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg hover:-translate-y-0.5">
-                                Begin the Journey
-                            </button>
-                        </div>
+
+
                     </div>
                 </div>
 
@@ -240,7 +238,7 @@ export default function Welcome({
                                 <h2 className="mb-8 text-2xl text-gray-900 border-b border-gray-100 pb-4">
                                     {category.name}
                                 </h2>
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
                                     {category.products.map((product) => (
                                         <Link
                                             key={product.id}
@@ -283,7 +281,7 @@ export default function Welcome({
                             <h2 className="mb-8 text-2xl text-gray-900 border-b border-gray-100 pb-4">
                                 Other Products
                             </h2>
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
                                 {filteredUncategorizedProducts.map((product) => (
                                     <Link
                                         key={product.id}

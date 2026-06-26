@@ -56,11 +56,9 @@ export default function Show({ product }: { product: Product }) {
             <div className="flex min-h-screen flex-col bg-background text-foreground">
                 <header className="border-b">
                     <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                        <Link
-                            href="/"
-                            className="text-2xl font-bold tracking-tighter"
-                        >
-                            Kharidai
+                        <Link href="/" className="flex items-center gap-3 group">
+                            <img src="/images/logo.webp" alt="Kharidai" className="h-9 transition-transform group-hover:scale-105" />
+                            <span className="sr-only">Kharidai</span>
                         </Link>
 
                         <nav className="flex items-center gap-4">
@@ -158,28 +156,9 @@ export default function Show({ product }: { product: Product }) {
                                     </RadioGroup>
                                 </div>
                             )}
-                        </div>
-
-                        {/* Block B: Details + Add to Cart (Second on mobile, first on desktop) */}
-                        <div className="flex flex-col order-2 md:order-1">
-                            <h1 className="mb-2 text-3xl font-bold tracking-tight">
-                                {product.title}
-                            </h1>
-
-                            {auth.user && selectedVariant && (
-                                <div className="mb-6 text-2xl font-semibold text-primary">
-                                    Rs. {selectedVariant.price_npr} / $
-                                    {selectedVariant.price_usd}
-                                </div>
-                            )}
-
-                            <div
-                                className="prose dark:prose-invert mb-8 max-w-none text-muted-foreground"
-                                dangerouslySetInnerHTML={{ __html: product.description }}
-                            />
 
                             {/* Add to Cart Actions */}
-                            <div className="mt-auto flex flex-col gap-4">
+                            <div className="mt-2 flex flex-col gap-4">
                                 <Button
                                     size="lg"
                                     className="h-14 w-full text-lg"
@@ -207,6 +186,27 @@ export default function Show({ product }: { product: Product }) {
                                     </p>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Block B: Details (Second on mobile, first on desktop) */}
+                        <div className="flex flex-col order-2 md:order-1">
+                            <h1 className="mb-2 text-3xl font-bold tracking-tight">
+                                {product.title}
+                            </h1>
+
+                            {auth.user && selectedVariant && (
+                                <div className="mb-6 text-2xl font-semibold text-primary">
+                                    Rs. {selectedVariant.price_npr} / $
+                                    {selectedVariant.price_usd}
+                                </div>
+                            )}
+
+                            <div
+                                className="prose dark:prose-invert mb-8 max-w-none text-muted-foreground"
+                                dangerouslySetInnerHTML={{ __html: product.description }}
+                            />
+
+
                         </div>
                     </div>
                 </main>
