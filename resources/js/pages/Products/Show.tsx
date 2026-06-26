@@ -1,4 +1,6 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
+import { SeoHead } from '@/components/seo-head';
+import { JsonLd } from '@/components/json-ld';
 import { cartAdd } from "@/routes";
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -23,7 +25,7 @@ type Product = {
 };
 
 export default function Show({ product }: { product: Product }) {
-    const { auth, cartCount } = usePage().props;
+    const { auth, cartCount, seo } = usePage().props as any;
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
         product.variants.length > 0 ? product.variants[0] : null,
     );
@@ -52,7 +54,25 @@ export default function Show({ product }: { product: Product }) {
 
     return (
         <>
-            <Head title={`${product.title} - Kharidai`} />
+            <SeoHead 
+                title={product.title} 
+                description={product.description?.substring(0, 160).replace(/<[^>]*>?/gm, '') || product.title} 
+                image={product.image ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}` : undefined}
+                type="product"
+            />
+            <JsonLd data={{
+                '@context': 'https://schema.org',
+                '@type': 'Product',
+                name: product.title,
+                image: product.image ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}` : undefined,
+                description: product.description?.replace(/<[^>]*>?/gm, ''),
+                offers: {
+                    '@type': 'Offer',
+                    priceCurrency: 'USD',
+                    price: selectedVariant?.price_usd || '0.00',
+                    availability: 'https://schema.org/InStock'
+                }
+            }} />
             <div className="flex min-h-screen flex-col bg-background text-foreground">
                 <header className="border-b">
                     <div className="container mx-auto flex items-center justify-between px-4 py-4">

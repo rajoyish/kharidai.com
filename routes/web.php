@@ -22,6 +22,8 @@ Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name(
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
 Route::get('/products/{product}', [StorefrontController::class, 'show'])->name('products.show');
 
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
+
 Route::post('webhooks/pocketsflow', [PocketsflowWebhookController::class, 'handle'])->name('webhooks.pocketsflow');
 
 Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
