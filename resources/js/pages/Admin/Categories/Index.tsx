@@ -19,10 +19,18 @@ type Category = {
     slug: string;
 };
 
-export default function CategoriesIndex({ categories }: { categories: Category[] }) {
-    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+export default function CategoriesIndex({
+    categories,
+}: {
+    categories: Category[];
+}) {
+    const [editingCategory, setEditingCategory] = useState<Category | null>(
+        null,
+    );
     const [isCreating, setIsCreating] = useState(false);
-    const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
+    const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(
+        null,
+    );
 
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         name: '',
@@ -65,7 +73,11 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
     };
 
     const handleDelete = (category: Category) => {
-        if (confirm(`Are you sure you want to delete the category "${category.name}"?`)) {
+        if (
+            confirm(
+                `Are you sure you want to delete the category "${category.name}"?`,
+            )
+        ) {
             setDeletingCategoryId(category.id);
 
             router.delete(destroyCategory(category), {
@@ -91,26 +103,41 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
                 }
             >
                 {(isCreating || editingCategory) && (
-                    <div className="mb-6 p-4 rounded-xl border bg-card shadow-sm">
-                        <h3 className="text-lg font-semibold mb-4">
+                    <div className="mb-6 rounded-xl border bg-card p-4 shadow-sm">
+                        <h3 className="mb-4 text-lg font-semibold">
                             {isCreating ? 'Create Category' : 'Edit Category'}
                         </h3>
-                        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 sm:items-start">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="flex flex-col gap-4 sm:flex-row sm:items-start"
+                        >
                             <div className="flex-1">
-                                <label className="block text-sm font-medium mb-1">Name</label>
+                                <label className="mb-1 block text-sm font-medium">
+                                    Name
+                                </label>
                                 <Input
                                     value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('name', e.target.value)
+                                    }
                                     placeholder="Category Name"
                                     required
                                 />
-                                {errors.name && <div className="text-sm text-red-500 mt-1">{errors.name}</div>}
+                                {errors.name && (
+                                    <div className="mt-1 text-sm text-red-500">
+                                        {errors.name}
+                                    </div>
+                                )}
                             </div>
                             <div className="flex gap-2 sm:mt-6">
                                 <Button type="submit" disabled={processing}>
                                     Save
                                 </Button>
-                                <Button type="button" variant="outline" onClick={handleCancel}>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleCancel}
+                                >
                                     Cancel
                                 </Button>
                             </div>
@@ -118,21 +145,29 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
                     </div>
                 )}
 
-                <Table>
+                <Table stickyFirstColumn={false}>
                     <TableHeader>
                         <TableRow>
                             <TableHead>ID</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Slug</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-right">
+                                Actions
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {categories.map((category) => (
                             <TableRow key={category.id}>
-                                <TableCell className="font-medium text-muted-foreground">{category.id}</TableCell>
-                                <TableCell className="font-semibold">{category.name}</TableCell>
-                                <TableCell className="text-muted-foreground">{category.slug}</TableCell>
+                                <TableCell className="font-medium text-muted-foreground">
+                                    {category.id}
+                                </TableCell>
+                                <TableCell className="font-semibold">
+                                    {category.name}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {category.slug}
+                                </TableCell>
                                 <TableCell className="flex justify-end gap-2">
                                     <Button
                                         variant="outline"
@@ -144,8 +179,10 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        disabled={deletingCategoryId === category.id}
+                                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                        disabled={
+                                            deletingCategoryId === category.id
+                                        }
                                         onClick={() => handleDelete(category)}
                                     >
                                         Delete
@@ -155,7 +192,10 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
                         ))}
                         {categories.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                <TableCell
+                                    colSpan={4}
+                                    className="h-24 text-center text-muted-foreground"
+                                >
                                     No categories found.
                                 </TableCell>
                             </TableRow>
