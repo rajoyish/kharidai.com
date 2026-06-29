@@ -13,7 +13,6 @@ type Order = {
     id: number;
     order_number: string;
     total_amount: string;
-    currency: string;
     status: string;
     created_at: string;
     additional_data: { note?: string } | null;
@@ -190,9 +189,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-xl font-semibold">Items</h2>
                                 <div className="text-lg font-bold">
-                                    Total:{' '}
-                                    {order.currency === 'npr' ? 'Rs.' : '$'}{' '}
-                                    {order.total_amount}
+                                    Total: Rs. {order.total_amount}
                                 </div>
                             </div>
                             <div className="divide-y border-t">
@@ -222,17 +219,17 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                                 {item.product_variant.name}
                                             </p>
                                             <p className="mt-1 text-sm font-medium">
-                                                Qty: {item.quantity} | Selling Price: {order.currency === 'npr' ? 'Rs.' : '$'} {item.price}
+                                                Qty: {item.quantity} | Selling Price: Rs. {item.price}
                                             </p>
                                             {order.status === 'completed' && (
                                                 <div className="mt-2 rounded bg-green-50 px-3 py-2 text-sm text-green-800 border border-green-100">
                                                     <div className="flex justify-between">
                                                         <span>Purchase Price:</span>
-                                                        <span>{order.currency === 'npr' ? 'Rs.' : '$'} {item.purchase_price}</span>
+                                                        <span>Rs. {item.purchase_price}</span>
                                                     </div>
                                                     <div className="flex justify-between font-semibold mt-1">
                                                         <span>Profit:</span>
-                                                        <span>{order.currency === 'npr' ? 'Rs.' : '$'} {((parseFloat(item.price) - parseFloat(item.purchase_price)) * item.quantity).toFixed(2)}</span>
+                                                        <span>Rs. {((parseFloat(item.price) - parseFloat(item.purchase_price)) * item.quantity).toFixed(2)}</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -351,85 +348,83 @@ export default function AdminOrderShow({ order }: { order: Order }) {
 
                     <div className="space-y-6">
                         {/* Payment Receipt */}
-                        {order.currency === 'npr' && (
-                            <div className="rounded-xl border bg-card p-6">
-                                <h2 className="mb-4 text-xl font-semibold">
-                                    Payment Receipt
-                                </h2>
-                                {order.payment_receipt ? (
-                                    <div className="space-y-4">
-                                        <div className="overflow-hidden rounded-lg border bg-muted p-2">
-                                            <a
-                                                href={`/storage/${order.payment_receipt.file_path}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                <img
-                                                    src={`/storage/${order.payment_receipt.file_path}`}
-                                                    alt="Payment Receipt"
-                                                    className="h-auto max-h-60 w-full object-contain"
-                                                />
-                                            </a>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium text-muted-foreground">
-                                                Status:
-                                            </span>
-                                            <span
-                                                className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                                    order.payment_receipt
-                                                        .status === 'approved'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : order.payment_receipt
-                                                                .status ===
-                                                            'rejected'
-                                                          ? 'bg-red-100 text-red-800'
-                                                          : 'bg-amber-100 text-amber-800'
-                                                }`}
-                                            >
-                                                {order.payment_receipt.status}
-                                            </span>
-                                        </div>
-                                        {order.payment_receipt.status ===
-                                            'pending' && (
-                                            <div className="flex gap-2 border-t pt-2">
-                                                <Button
-                                                    variant="outline"
-                                                    className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
-                                                    onClick={() =>
-                                                        handleReceiptAction(
-                                                            'approved',
-                                                        )
-                                                    }
-                                                    disabled={processingReceipt}
-                                                >
-                                                    <Check className="mr-1 h-4 w-4" />{' '}
-                                                    Approve
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
-                                                    onClick={() =>
-                                                        handleReceiptAction(
-                                                            'rejected',
-                                                        )
-                                                    }
-                                                    disabled={processingReceipt}
-                                                >
-                                                    <X className="mr-1 h-4 w-4" />{' '}
-                                                    Reject
-                                                </Button>
-                                            </div>
-                                        )}
+                        <div className="rounded-xl border bg-card p-6">
+                            <h2 className="mb-4 text-xl font-semibold">
+                                Payment Receipt
+                            </h2>
+                            {order.payment_receipt ? (
+                                <div className="space-y-4">
+                                    <div className="overflow-hidden rounded-lg border bg-muted p-2">
+                                        <a
+                                            href={`/storage/${order.payment_receipt.file_path}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <img
+                                                src={`/storage/${order.payment_receipt.file_path}`}
+                                                alt="Payment Receipt"
+                                                className="h-auto max-h-60 w-full object-contain"
+                                            />
+                                        </a>
                                     </div>
-                                ) : (
-                                    <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-                                        No receipt uploaded yet. Customer needs
-                                        to complete NPR payment.
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium text-muted-foreground">
+                                            Status:
+                                        </span>
+                                        <span
+                                            className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                                                order.payment_receipt
+                                                    .status === 'approved'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : order.payment_receipt
+                                                            .status ===
+                                                        'rejected'
+                                                        ? 'bg-red-100 text-red-800'
+                                                        : 'bg-amber-100 text-amber-800'
+                                            }`}
+                                        >
+                                            {order.payment_receipt.status}
+                                        </span>
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                    {order.payment_receipt.status ===
+                                        'pending' && (
+                                        <div className="flex gap-2 border-t pt-2">
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
+                                                onClick={() =>
+                                                    handleReceiptAction(
+                                                        'approved',
+                                                    )
+                                                }
+                                                disabled={processingReceipt}
+                                            >
+                                                <Check className="mr-1 h-4 w-4" />{' '}
+                                                Approve
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                                                onClick={() =>
+                                                    handleReceiptAction(
+                                                        'rejected',
+                                                    )
+                                                }
+                                                disabled={processingReceipt}
+                                            >
+                                                <X className="mr-1 h-4 w-4" />{' '}
+                                                Reject
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                                    No receipt uploaded yet. Customer needs
+                                    to complete NPR payment.
+                                </div>
+                            )}
+                        </div>
 
                         {/* Order Messages */}
                         <SupportChat

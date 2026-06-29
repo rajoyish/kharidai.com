@@ -22,7 +22,6 @@ class OrderFactory extends Factory
             'user_id' => \App\Models\User::factory(),
             'status' => 'pending',
             'total_amount' => $this->faker->randomFloat(2, 10, 1000),
-            'currency' => $this->faker->randomElement(['npr', 'usd']),
         ];
     }
 }

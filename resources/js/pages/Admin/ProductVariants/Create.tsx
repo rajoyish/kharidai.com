@@ -24,9 +24,7 @@ export default function CreateVariant({ product }: { product: Product }) {
         name: '',
         details: '',
         price_npr: '',
-        price_usd: '',
         purchase_price_npr: '',
-        purchase_price_usd: '',
     });
 
     const submit = (e: React.FormEvent) => {
@@ -101,25 +99,7 @@ export default function CreateVariant({ product }: { product: Product }) {
                                     )}
                                 </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="price_usd">Selling Price (USD)</Label>
-                                    <Input
-                                        id="price_usd"
-                                        type="number"
-                                        step="0.01"
-                                        value={data.price_usd}
-                                        onChange={(e) =>
-                                            setData('price_usd', e.target.value)
-                                        }
-                                        required
-                                        placeholder="15"
-                                    />
-                                    {errors.price_usd && (
-                                        <div className="text-sm text-destructive">
-                                            {errors.price_usd}
-                                        </div>
-                                    )}
-                                </div>
+
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="purchase_price_npr">Purchase Price (NPR)</Label>
@@ -140,24 +120,7 @@ export default function CreateVariant({ product }: { product: Product }) {
                                     )}
                                 </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="purchase_price_usd">Purchase Price (USD)</Label>
-                                    <Input
-                                        id="purchase_price_usd"
-                                        type="number"
-                                        step="0.01"
-                                        value={data.purchase_price_usd}
-                                        onChange={(e) =>
-                                            setData('purchase_price_usd', e.target.value)
-                                        }
-                                        placeholder="12"
-                                    />
-                                    {errors.purchase_price_usd && (
-                                        <div className="text-sm text-destructive">
-                                            {errors.purchase_price_usd}
-                                        </div>
-                                    )}
-                                </div>
+
                             </div>
 
                             <Button

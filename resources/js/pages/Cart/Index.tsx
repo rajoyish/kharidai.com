@@ -13,7 +13,6 @@ type ProductVariant = {
     id: number;
     name: string;
     price_npr: string;
-    price_usd: string;
     product: Product;
 };
 
@@ -52,11 +51,6 @@ export default function CartIndex({ cart }: { cart: Cart }) {
         );
     }, 0);
 
-    const totalUsd = (cart?.items || []).reduce((total, item) => {
-        return (
-            total + parseFloat(item.product_variant.price_usd) * item.quantity
-        );
-    }, 0);
 
     return (
         <>
@@ -168,13 +162,6 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                                                                 .price_npr
                                                         }
                                                     </p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        $
-                                                        {
-                                                            item.product_variant
-                                                                .price_usd
-                                                        }
-                                                    </p>
                                                 </div>
                                             </div>
 
@@ -242,19 +229,13 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                                                 Rs. {totalNpr.toFixed(2)}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between text-muted-foreground">
-                                            <span>Subtotal (USD)</span>
-                                            <span className="font-medium text-foreground">
-                                                ${totalUsd.toFixed(2)}
-                                            </span>
-                                        </div>
+
                                     </div>
 
                                     <div className="mb-6 border-t pt-4">
                                         <p className="mb-4 text-sm text-muted-foreground">
                                             Taxes and shipping calculated at
-                                            checkout. You can choose to pay in
-                                            either NPR or USD.
+                                            checkout.
                                         </p>
                                     </div>
 

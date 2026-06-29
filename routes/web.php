@@ -24,7 +24,6 @@ Route::get('/products/{product}', [StorefrontController::class, 'show'])->name('
 
 Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
 
-Route::post('webhooks/pocketsflow', [PocketsflowWebhookController::class, 'handle'])->name('webhooks.pocketsflow');
 
 Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::get('cart', [CartController::class, 'index'])->name('cart.index');
@@ -36,8 +35,7 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::post('checkout', [CheckoutController::class, 'process'])->name('checkout.process');
     Route::get('checkout/{order}/npr', [CheckoutController::class, 'nprPayment'])->name('checkout.npr');
     Route::post('checkout/{order}/npr', [CheckoutController::class, 'processNprPayment'])->name('checkout.npr.process');
-    Route::get('checkout/{order}/usd/success', [CheckoutController::class, 'usdSuccess'])->name('checkout.usd.success');
-    Route::get('checkout/{order}/usd/cancel', [CheckoutController::class, 'usdCancel'])->name('checkout.usd.cancel');
+
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');

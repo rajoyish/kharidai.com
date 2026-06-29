@@ -15,7 +15,6 @@ type Variant = {
     id: number;
     name: string;
     price_npr: string;
-    price_usd: string;
 };
 
 export default function Welcome({
@@ -261,14 +260,11 @@ export default function Welcome({
                                             <h3 className="text-lg text-gray-900 leading-tight mb-2">
                                                 {product.title}
                                             </h3>
-                                            {product.variants &&
-                                                product.variants.length > 0 && (
-                                                    <div className="text-sm font-medium text-primary">
-                                                        Starting at Rs.{' '}
-                                                        {product.variants[0].price_npr} / $
-                                                        {product.variants[0].price_usd}
-                                                    </div>
-                                                )}
+                                            {product.variants && product.variants.length > 0 && (
+                                                <div className="text-xl font-bold mt-2">
+                                                    Rs. {parseFloat(product.variants[0].price_npr).toLocaleString()}
+                                                </div>
+                                            )}
                                         </Link>
                                     ))}
                                 </div>
@@ -308,8 +304,7 @@ export default function Welcome({
                                             product.variants.length > 0 && (
                                                 <div className="text-sm font-medium text-primary">
                                                     Starting at Rs.{' '}
-                                                    {product.variants[0].price_npr} / $
-                                                    {product.variants[0].price_usd}
+                                                    {product.variants[0].price_npr}
                                                 </div>
                                             )}
                                     </Link>

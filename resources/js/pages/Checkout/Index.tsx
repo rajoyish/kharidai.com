@@ -14,7 +14,6 @@ type ProductVariant = {
     id: number;
     name: string;
     price_npr: string;
-    price_usd: string;
     product: Product;
 };
 
@@ -32,19 +31,12 @@ type Cart = {
 
 export default function CheckoutIndex({ cart }: { cart: Cart }) {
     const { data, setData, post, processing, errors } = useForm({
-        currency: 'npr',
         additional_data: '',
     });
 
     const totalNpr = cart.items.reduce((total, item) => {
         return (
             total + parseFloat(item.product_variant.price_npr) * item.quantity
-        );
-    }, 0);
-
-    const totalUsd = cart.items.reduce((total, item) => {
-        return (
-            total + parseFloat(item.product_variant.price_usd) * item.quantity
         );
     }, 0);
 
@@ -80,18 +72,10 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                 <h2 className="mb-4 text-xl font-semibold">
                                     Payment Method
                                 </h2>
-                                <RadioGroup
-                                    defaultValue="npr"
-                                    onValueChange={(value) =>
-                                        setData('currency', value)
-                                    }
-                                    className="gap-4"
-                                >
+                                <div className="space-y-4">
                                     <div className="flex items-start space-x-2 rounded-md border p-4">
-                                        <RadioGroupItem value="npr" id="r1" />
                                         <Label
-                                            htmlFor="r1"
-                                            className="flex-1 cursor-pointer font-medium"
+                                            className="flex-1 cursor-default font-medium"
                                         >
                                             Pay via QR (NPR)
                                             <p className="mt-1 text-sm font-normal text-muted-foreground">
@@ -100,25 +84,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                             </p>
                                         </Label>
                                     </div>
-                                    <div className="flex items-start space-x-2 rounded-md border p-4 opacity-50 cursor-not-allowed">
-                                        <RadioGroupItem value="usd" id="r2" disabled />
-                                        <Label
-                                            htmlFor="r2"
-                                            className="flex-1 cursor-not-allowed font-medium"
-                                        >
-                                            Pay via Pocketsflow (USD) - <span className="text-destructive">Temporarily Disabled</span>
-                                            <p className="mt-1 text-sm font-normal text-muted-foreground">
-                                                Automated secure payment
-                                                processing.
-                                            </p>
-                                        </Label>
-                                    </div>
-                                </RadioGroup>
-                                {errors.currency && (
-                                    <div className="mt-2 text-sm text-destructive">
-                                        {errors.currency}
-                                    </div>
-                                )}
+                                </div>
                             </div>
 
                             <div className="rounded-lg border bg-card p-6">
@@ -171,9 +137,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                                 ({item.product_variant.name})
                                             </span>
                                             <span className="text-right font-medium">
-                                                {data.currency === 'npr'
-                                                    ? `Rs. ${(parseFloat(item.product_variant.price_npr) * item.quantity).toFixed(2)}`
-                                                    : `$${(parseFloat(item.product_variant.price_usd) * item.quantity).toFixed(2)}`}
+                                                {`Rs. ${(parseFloat(item.product_variant.price_npr) * item.quantity).toFixed(2)}`}
                                             </span>
                                         </div>
                                     ))}
@@ -183,9 +147,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                     <div className="flex justify-between text-lg font-bold">
                                         <span>Total</span>
                                         <span>
-                                            {data.currency === 'npr'
-                                                ? `Rs. ${totalNpr.toFixed(2)}`
-                                                : `$${totalUsd.toFixed(2)}`}
+                                            {`Rs. ${totalNpr.toFixed(2)}`}
                                         </span>
                                     </div>
                                 </div>

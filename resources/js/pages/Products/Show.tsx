@@ -13,7 +13,6 @@ type Variant = {
     name: string;
     details: string | null;
     price_npr: string;
-    price_usd: string;
 };
 
 type Product = {
@@ -60,19 +59,23 @@ export default function Show({ product }: { product: Product }) {
                 image={product.image ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}` : undefined}
                 type="product"
             />
-            <JsonLd data={{
-                '@context': 'https://schema.org',
-                '@type': 'Product',
-                name: product.title,
-                image: product.image ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}` : undefined,
-                description: product.description?.replace(/<[^>]*>?/gm, ''),
-                offers: {
-                    '@type': 'Offer',
-                    priceCurrency: 'USD',
-                    price: selectedVariant?.price_usd || '0.00',
-                    availability: 'https://schema.org/InStock'
-                }
-            }} />
+            {selectedVariant && (
+                <script type="application/ld+json">
+                    {JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: product.title,
+                        image: product.image ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}` : undefined,
+                        description: product.description?.replace(/<[^>]*>?/gm, ''),
+                        offers: {
+                            '@type': 'Offer',
+                            priceCurrency: 'NPR',
+                            price: selectedVariant?.price_npr || '0.00',
+                            availability: 'https://schema.org/InStock'
+                        }
+                    })}
+                </script>
+            )}
             <div className="flex min-h-screen flex-col bg-background text-foreground">
                 <header className="border-b">
                     <div className="container mx-auto flex items-center justify-between px-4 py-4">
@@ -216,8 +219,7 @@ export default function Show({ product }: { product: Product }) {
 
                             {auth.user && selectedVariant && (
                                 <div className="mb-6 text-2xl font-semibold text-primary">
-                                    Rs. {selectedVariant.price_npr} / $
-                                    {selectedVariant.price_usd}
+                                    Rs. {selectedVariant.price_npr}
                                 </div>
                             )}
 

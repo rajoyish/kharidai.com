@@ -16,7 +16,6 @@ type Order = {
     id: number;
     order_number: string;
     total_amount: string;
-    currency: string;
     status: string;
     profit: number;
     created_at: string;
@@ -36,9 +35,7 @@ export default function Dashboard({
     recentOrders?: Order[];
     stats: {
         total_sales_npr: number;
-        total_sales_usd: number;
         total_profit_npr: number;
-        total_profit_usd: number;
         total_orders: number;
         todays_orders: number;
         pending_orders: number;
@@ -55,14 +52,12 @@ export default function Dashboard({
                         <div className="text-sm font-medium text-muted-foreground">Total Sales (Completed)</div>
                         <div className="mt-2 text-2xl font-bold">
                             <div>Rs. {stats.total_sales_npr.toLocaleString()}</div>
-                            <div className="text-sm text-muted-foreground">${stats.total_sales_usd.toLocaleString()}</div>
                         </div>
                     </div>
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
                         <div className="text-sm font-medium text-muted-foreground">Total Profit</div>
                         <div className="mt-2 text-2xl font-bold">
                             <div>Rs. {stats.total_profit_npr.toLocaleString()}</div>
-                            <div className="text-sm text-muted-foreground">${stats.total_profit_usd.toLocaleString()}</div>
                         </div>
                     </div>
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
@@ -120,11 +115,11 @@ export default function Dashboard({
                                     {new Date(order.created_at).toLocaleDateString()}
                                 </TableCell>
                                 <TableCell className="font-bold">
-                                    {order.currency === 'npr' ? 'Rs.' : '$'} {order.total_amount}
+                                    Rs. {order.total_amount}
                                 </TableCell>
                                 <TableCell className="font-medium text-green-600">
                                     {order.status === 'completed' ? (
-                                        <>{order.currency === 'npr' ? 'Rs.' : '$'} {order.profit.toFixed(2)}</>
+                                        <>Rs. {order.profit.toFixed(2)}</>
                                     ) : (
                                         <span className="text-muted-foreground">—</span>
                                     )}
@@ -143,8 +138,7 @@ export default function Dashboard({
                                     </span>
                                 </TableCell>
                                 <TableCell>
-                                    {order.currency === 'npr' ? (
-                                        order.payment_receipt ? (
+                                        {order.payment_receipt ? (
                                             <span
                                                 className={`rounded-md px-2 py-1 text-xs ${
                                                     order.payment_receipt.status === 'approved'
@@ -160,10 +154,7 @@ export default function Dashboard({
                                             <span className="text-xs text-muted-foreground italic">
                                                 Missing
                                             </span>
-                                        )
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground">—</span>
-                                    )}
+                                        )}
                                 </TableCell>
                                 <TableCell className="flex justify-end gap-2">
                                     <Button variant="ghost" size="sm" asChild>

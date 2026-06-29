@@ -16,8 +16,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $completedOrdersNpr = \App\Models\Order::where('status', 'completed')->where('currency', 'npr')->with('items')->get();
-        $completedOrdersUsd = \App\Models\Order::where('status', 'completed')->where('currency', 'usd')->with('items')->get();
+        $completedOrdersNpr = \App\Models\Order::where('status', 'completed')->with('items')->get();
 
         $totalProfitNpr = $completedOrdersNpr->sum(function ($order) {
             return $order->items->sum(function ($item) {
@@ -25,17 +24,9 @@ class DashboardController extends Controller
             });
         });
 
-        $totalProfitUsd = $completedOrdersUsd->sum(function ($order) {
-            return $order->items->sum(function ($item) {
-                return ($item->price - $item->purchase_price) * $item->quantity;
-            });
-        });
-
         $stats = [
             'total_sales_npr' => $completedOrdersNpr->sum('total_amount'),
-            'total_sales_usd' => $completedOrdersUsd->sum('total_amount'),
             'total_profit_npr' => $totalProfitNpr,
-            'total_profit_usd' => $totalProfitUsd,
             'total_orders' => \App\Models\Order::count(),
             'todays_orders' => \App\Models\Order::whereDate('created_at', today())->count(),
             'pending_orders' => \App\Models\Order::where('status', 'pending')->count(),

@@ -42,13 +42,12 @@ class CheckoutController extends Controller
         }
 
         $validated = $request->validate([
-            'currency' => 'required|in:npr,usd',
             'additional_data' => 'nullable|string',
         ]);
 
         $totalAmount = 0;
         foreach ($cart->items as $item) {
-            $price = $validated['currency'] === 'npr' ? $item->productVariant->price_npr : $item->productVariant->price_usd;
+            $price = $item->productVariant->price_npr;
             $totalAmount += $price * $item->quantity;
         }
 
@@ -57,13 +56,12 @@ class CheckoutController extends Controller
             'user_id' => $request->user()->id,
             'status' => 'pending',
             'total_amount' => $totalAmount,
-            'currency' => $validated['currency'],
             'additional_data' => !empty($validated['additional_data']) ? ['note' => $validated['additional_data']] : null,
         ]);
 
         foreach ($cart->items as $item) {
-            $price = $validated['currency'] === 'npr' ? $item->productVariant->price_npr : $item->productVariant->price_usd;
-            $purchasePrice = $validated['currency'] === 'npr' ? $item->productVariant->purchase_price_npr : $item->productVariant->purchase_price_usd;
+            $price = $item->productVariant->price_npr;
+            $purchasePrice = $item->productVariant->purchase_price_npr;
             $order->items()->create([
                 'product_variant_id' => $item->product_variant_id,
                 'price' => $price,
@@ -75,37 +73,14 @@ class CheckoutController extends Controller
         $admins = User::where('is_admin', true)->get();
         Notification::send($admins, new OrderPlacedNotification($order));
 
-        if ($validated['currency'] === 'npr') {
-            $cart->items()->delete();
-            $cart->delete();
-            return redirect()->route('checkout.npr', $order);
-        }
-
-        try {
-            // --- TEMPORARILY DISABLED POCKETSFLOW ---
-            // $pocketsflowService = app(PocketsflowService::class);
-            // $product = $pocketsflowService->createOrderProduct($order);
-            // $productId = $product['_id'] ?? $product['id'];
-            // $session = $pocketsflowService->createCheckoutSession($productId, $order);
-
-            $cart->items()->delete();
-            $cart->delete();
-            // return Inertia::location($session['url']);
-            
-            // Temporary mock success bypass
-            $order->update(['status' => 'delivering']);
-            return redirect()->route('orders.show', $order)->with('success', 'Payment successful! Your order is being processed. (MOCK MODE)');
-            // ----------------------------------------
-        } catch (\Exception $e) {
-            Log::error('Pocketsflow checkout error: '.$e->getMessage());
-
-            return back()->with('error', 'Unable to initiate payment. Please try again later.');
-        }
+        $cart->items()->delete();
+        $cart->delete();
+        return redirect()->route('checkout.npr', $order);
     }
 
     public function nprPayment(Request $request, Order $order)
     {
-        if ($order->user_id !== $request->user()->id || $order->status !== 'pending' || $order->currency !== 'npr') {
+        if ($order->user_id !== $request->user()->id || $order->status !== 'pending') {
             abort(403);
         }
 
@@ -116,7 +91,7 @@ class CheckoutController extends Controller
 
     public function processNprPayment(Request $request, Order $order)
     {
-        if ($order->user_id !== $request->user()->id || $order->status !== 'pending' || $order->currency !== 'npr') {
+        if ($order->user_id !== $request->user()->id || $order->status !== 'pending') {
             abort(403);
         }
 
@@ -138,22 +113,4 @@ class CheckoutController extends Controller
         return redirect()->route('orders.show', $order)->with('success', 'Receipt uploaded successfully. We will process your order soon.');
     }
 
-    public function usdSuccess(Request $request, Order $order)
-    {
-        if ($order->user_id !== $request->user()->id || $order->currency !== 'usd') {
-            abort(403);
-        }
-
-        // Webhook handles the actual status update. This is just the return page.
-        return redirect()->route('orders.show', $order)->with('success', 'Payment successful! We are processing your order.');
-    }
-
-    public function usdCancel(Request $request, Order $order)
-    {
-        if ($order->user_id !== $request->user()->id || $order->currency !== 'usd') {
-            abort(403);
-        }
-
-        return redirect()->route('cart.index')->with('error', 'Payment was canceled.');
-    }
 }

@@ -16,13 +16,12 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property string $status
  * @property float $total_amount
- * @property string $currency
  * @property array|null $additional_data
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property User $user
  */
-#[Fillable(['order_number', 'user_id', 'status', 'total_amount', 'currency', 'additional_data'])]
+#[Fillable(['order_number', 'user_id', 'status', 'total_amount', 'additional_data'])]
 class Order extends Model
 {
     /** @use HasFactory<\Database\Factories\OrderFactory> */

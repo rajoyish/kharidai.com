@@ -13,12 +13,12 @@ use Illuminate\Support\Carbon;
  * @property int $product_id
  * @property string $name
  * @property float $price_npr
- * @property float $price_usd
+ * @property float $purchase_price_npr
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Product $product
  */
-#[Fillable(['product_id', 'name', 'details', 'price_npr', 'price_usd', 'purchase_price_npr', 'purchase_price_usd'])]
+#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr'])]
 class ProductVariant extends Model
 {
     /** @use HasFactory<\Database\Factories\ProductVariantFactory> */

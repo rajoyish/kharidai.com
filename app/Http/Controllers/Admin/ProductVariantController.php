@@ -30,9 +30,7 @@ class ProductVariantController extends Controller
             'name' => 'required|string|max:255',
             'details' => 'nullable|string',
             'price_npr' => 'required|numeric|min:0',
-            'price_usd' => 'required|numeric|min:0',
             'purchase_price_npr' => 'nullable|numeric|min:0',
-            'purchase_price_usd' => 'nullable|numeric|min:0',
         ]);
 
         $product->variants()->create($validated);
@@ -54,9 +52,7 @@ class ProductVariantController extends Controller
             'name' => 'required|string|max:255',
             'details' => 'nullable|string',
             'price_npr' => 'required|numeric|min:0',
-            'price_usd' => 'required|numeric|min:0',
             'purchase_price_npr' => 'nullable|numeric|min:0',
-            'purchase_price_usd' => 'nullable|numeric|min:0',
         ]);
 
         $variant->update($validated);

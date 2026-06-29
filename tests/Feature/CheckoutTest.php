@@ -40,13 +40,11 @@ it('can process NPR checkout', function () {
     CartItem::factory()->create(['cart_id' => $cart->id]);
 
     $response = $this->actingAs($this->user)->post('/checkout', [
-        'currency' => 'npr',
         'additional_data' => 'test note',
     ]);
 
     $order = Order::first();
     expect($order)->not->toBeNull()
-        ->and($order->currency)->toBe('npr')
         ->and($order->status)->toBe('pending');
         
     $response->assertRedirect(route('checkout.npr', $order));
@@ -55,30 +53,10 @@ it('can process NPR checkout', function () {
     Notification::assertSentTo($this->admin, OrderPlacedNotification::class);
 });
 
-it('can process USD checkout (mock)', function () {
-    Notification::fake();
-
-    $cart = Cart::factory()->create(['user_id' => $this->user->id]);
-    CartItem::factory()->create(['cart_id' => $cart->id]);
-
-    $response = $this->actingAs($this->user)->post('/checkout', [
-        'currency' => 'usd',
-    ]);
-
-    $order = Order::first();
-    expect($order)->not->toBeNull()
-        ->and($order->currency)->toBe('usd');
-        
-    $response->assertRedirect(route('orders.show', $order));
-    $this->assertDatabaseMissing('carts', ['id' => $cart->id]);
-    
-    Notification::assertSentTo($this->admin, OrderPlacedNotification::class);
-});
 
 it('can view NPR payment page', function () {
     $order = Order::factory()->create([
         'user_id' => $this->user->id,
-        'currency' => 'npr',
         'status' => 'pending',
     ]);
 
@@ -93,7 +71,6 @@ it('can process NPR payment receipt upload', function () {
 
     $order = Order::factory()->create([
         'user_id' => $this->user->id,
-        'currency' => 'npr',
         'status' => 'pending',
     ]);
 
@@ -111,24 +88,4 @@ it('can process NPR payment receipt upload', function () {
     Notification::assertSentTo($this->admin, PaymentReceiptUploadedNotification::class);
 });
 
-it('can view usd success page', function () {
-    $order = Order::factory()->create([
-        'user_id' => $this->user->id,
-        'currency' => 'usd',
-    ]);
 
-    $response = $this->actingAs($this->user)->get('/checkout/' . $order->id . '/usd/success');
-    
-    $response->assertRedirect(route('orders.show', $order));
-});
-
-it('can view usd cancel page', function () {
-    $order = Order::factory()->create([
-        'user_id' => $this->user->id,
-        'currency' => 'usd',
-    ]);
-
-    $response = $this->actingAs($this->user)->get('/checkout/' . $order->id . '/usd/cancel');
-    
-    $response->assertRedirect(route('cart.index'));
-});

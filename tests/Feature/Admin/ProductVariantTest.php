@@ -26,9 +26,7 @@ it('can create a product variant', function () {
     $response = $this->actingAs($this->admin)->post('/admin/products/' . $product->id . '/variants', [
         'name' => 'New Variant',
         'price_npr' => 1000,
-        'price_usd' => 10,
         'purchase_price_npr' => 800,
-        'purchase_price_usd' => 8,
     ]);
 
     $response->assertRedirect(route('admin.products.variants.index', $product));
@@ -36,7 +34,6 @@ it('can create a product variant', function () {
         'product_id' => $product->id,
         'name' => 'New Variant',
         'price_npr' => 1000,
-        'price_usd' => 10,
     ]);
 });
 
@@ -50,7 +47,6 @@ it('can update a product variant', function () {
     $response = $this->actingAs($this->admin)->patch('/admin/products/' . $product->id . '/variants/' . $variant->id, [
         'name' => 'Updated Variant',
         'price_npr' => 1200,
-        'price_usd' => 12,
     ]);
 
     $response->assertRedirect(route('admin.products.variants.index', $product));

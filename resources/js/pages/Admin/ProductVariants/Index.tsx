@@ -20,9 +20,7 @@ type Variant = {
     id: number;
     name: string;
     price_npr: string;
-    price_usd: string;
     purchase_price_npr: string | null;
-    purchase_price_usd: string | null;
 };
 
 export default function VariantsIndex({
@@ -61,8 +59,6 @@ export default function VariantsIndex({
                             <TableHead>Name</TableHead>
                             <TableHead>Selling Price (NPR)</TableHead>
                             <TableHead>Purchase Price (NPR)</TableHead>
-                            <TableHead>Selling Price (USD)</TableHead>
-                            <TableHead>Purchase Price (USD)</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -77,12 +73,6 @@ export default function VariantsIndex({
                                 </TableCell>
                                 <TableCell>
                                     {variant.purchase_price_npr || '0.00'}
-                                </TableCell>
-                                <TableCell>
-                                    {variant.price_usd}
-                                </TableCell>
-                                <TableCell>
-                                    {variant.purchase_price_usd || '0.00'}
                                 </TableCell>
                                 <TableCell className="flex justify-end gap-2">
                                     <Button

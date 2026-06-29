@@ -220,21 +220,13 @@ export default function OrderShow({ order }: { order: Order }) {
                             <h3 className="mb-4 text-lg font-semibold">
                                 Summary
                             </h3>
-                            <div className="flex items-center justify-between border-b py-2">
-                                <span className="text-muted-foreground">
-                                    Currency
-                                </span>
-                                <span className="font-medium uppercase">
-                                    {order.currency}
-                                </span>
-                            </div>
+
                             <div className="flex items-center justify-between border-b py-2">
                                 <span className="text-muted-foreground">
                                     Total
                                 </span>
                                 <span className="text-lg font-bold">
-                                    {order.currency === 'npr' ? 'Rs.' : '$'}{' '}
-                                    {order.total_amount}
+                                    Rs. {order.total_amount}
                                 </span>
                             </div>
                         </div>

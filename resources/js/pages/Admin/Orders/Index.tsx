@@ -17,7 +17,6 @@ type Order = {
     id: number;
     order_number: string;
     total_amount: string;
-    currency: string;
     status: string;
     profit: number;
     created_at: string;
@@ -85,12 +84,11 @@ export default function AdminOrderIndex({
                                     ).toLocaleDateString()}
                                 </TableCell>
                                 <TableCell className="font-bold">
-                                    {order.currency === 'npr' ? 'Rs.' : '$'}{' '}
-                                    {order.total_amount}
+                                    Rs. {order.total_amount}
                                 </TableCell>
                                 <TableCell className="font-medium text-green-600">
                                     {order.status === 'completed' ? (
-                                        <>{order.currency === 'npr' ? 'Rs.' : '$'} {order.profit.toFixed(2)}</>
+                                        <>Rs. {order.profit.toFixed(2)}</>
                                     ) : (
                                         <span className="text-muted-foreground">—</span>
                                     )}
@@ -110,35 +108,25 @@ export default function AdminOrderIndex({
                                     </span>
                                 </TableCell>
                                 <TableCell>
-                                    {order.currency === 'npr' ? (
-                                        order.payment_receipt ? (
-                                            <span
-                                                className={`rounded-md px-2 py-1 text-xs ${
-                                                    order.payment_receipt
-                                                        .status ===
-                                                    'approved'
-                                                        ? 'border border-green-200 bg-green-100/50 text-green-700'
-                                                        : order
-                                                                .payment_receipt
-                                                                .status ===
-                                                            'rejected'
-                                                          ? 'border border-red-200 bg-red-100/50 text-red-700'
-                                                          : 'border border-amber-200 bg-amber-100/50 text-amber-700'
-                                                }`}
-                                            >
-                                                {
-                                                    order.payment_receipt
-                                                        .status
-                                                }
-                                            </span>
-                                        ) : (
-                                            <span className="text-xs text-muted-foreground italic">
-                                                Missing
-                                            </span>
-                                        )
+                                    {order.payment_receipt ? (
+                                        <span
+                                            className={`rounded-md px-2 py-1 text-xs ${
+                                                order.payment_receipt
+                                                    .status ===
+                                                'approved'
+                                                    ? 'border border-green-200 bg-green-100/50 text-green-700'
+                                                    : order.payment_receipt
+                                                            .status ===
+                                                        'rejected'
+                                                      ? 'border border-red-200 bg-red-100/50 text-red-700'
+                                                      : 'border border-amber-200 bg-amber-100/50 text-amber-700'
+                                            }`}
+                                        >
+                                            {order.payment_receipt.status}
+                                        </span>
                                     ) : (
-                                        <span className="text-xs text-muted-foreground">
-                                            —
+                                        <span className="text-xs text-muted-foreground italic">
+                                            Missing
                                         </span>
                                     )}
                                 </TableCell>

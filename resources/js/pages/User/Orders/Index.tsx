@@ -18,7 +18,6 @@ type Order = {
     id: number;
     order_number: string;
     total_amount: string;
-    currency: string;
     status: string;
     created_at: string;
     items: {
@@ -84,7 +83,7 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-bold whitespace-nowrap">
-                                        {order.currency === 'npr' ? 'Rs.' : '$'} {order.total_amount}
+                                        Rs. {order.total_amount}
                                     </TableCell>
                                     <TableCell>
                                         <span
