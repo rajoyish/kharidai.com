@@ -57,4 +57,26 @@ class OrderController extends Controller
 
         return redirect()->back()->with('success', 'Message sent.');
     }
+
+    public function askForReceiptReupload(Request $request, Order $order)
+    {
+        if ($order->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $order->update(['request_receipt_upload' => true]);
+
+        $message = $order->messages()->create([
+            'user_id' => $request->user()->id,
+            'message' => 'I would like to request permission to re-upload my payment receipt.',
+        ]);
+
+        $message->load('user');
+        \App\Events\OrderMessageCreated::dispatch($message);
+
+        $admins = \App\Models\User::where('is_admin', true)->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\NewMessageNotification($message));
+
+        return redirect()->back()->with('success', 'Request sent to admin.');
+    }
 }

@@ -1,8 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { SupportChat } from '@/components/SupportChat';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
-import { Copy } from 'lucide-react';
+import { Copy, Upload, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { PagePanel } from '@/components/page-panel';
@@ -14,6 +14,8 @@ type Order = {
     currency: string;
     status: string;
     created_at: string;
+    can_reupload_receipt: boolean;
+    request_receipt_upload: boolean;
     items: {
         id: number;
         quantity: number;
@@ -264,6 +266,47 @@ export default function OrderShow({ order }: { order: Order }) {
                                     >
                                         {order.payment_receipt.status}
                                     </span>
+                                </div>
+                                {order.can_reupload_receipt ? (
+                                    <div className="mt-4 border-t pt-4">
+                                        <Button className="w-full" asChild>
+                                            <Link href={`/checkout/${order.id}/npr`}>
+                                                <Upload className="mr-2 h-4 w-4" /> Re-upload Receipt
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 border-t pt-4">
+                                        <Button 
+                                            className="w-full" 
+                                            variant="outline" 
+                                            disabled={order.request_receipt_upload}
+                                            onClick={() => {
+                                                router.post(`/orders/${order.id}/ask-reupload-receipt`, {}, { preserveScroll: true });
+                                            }}
+                                        >
+                                            <AlertCircle className="mr-2 h-4 w-4" />
+                                            {order.request_receipt_upload ? 'Re-upload Requested' : 'Ask Admin to Re-upload'}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {!order.payment_receipt && order.status === 'pending' && (
+                            <div className="mt-6 rounded-xl border bg-card p-6">
+                                <h3 className="mb-4 text-lg font-semibold">
+                                    Payment Receipt
+                                </h3>
+                                <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                                    No receipt uploaded yet. Please upload your payment receipt to process the order.
+                                </div>
+                                <div className="mt-4 border-t pt-4">
+                                    <Button className="w-full" asChild>
+                                        <Link href={`/checkout/${order.id}/npr`}>
+                                            <Upload className="mr-2 h-4 w-4" /> Upload Receipt
+                                        </Link>
+                                    </Button>
                                 </div>
                             </div>
                         )}

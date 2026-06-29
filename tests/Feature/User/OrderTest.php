@@ -62,3 +62,27 @@ it('can send a message on an order', function () {
     Event::assertDispatched(OrderMessageCreated::class);
     Notification::assertSentTo($this->admin, NewMessageNotification::class);
 });
+
+it('can ask for receipt reupload', function () {
+    Event::fake();
+    Notification::fake();
+
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+
+    $response = $this->actingAs($this->user)->post('/orders/' . $order->id . '/ask-reupload-receipt');
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('orders', [
+        'id' => $order->id,
+        'request_receipt_upload' => true,
+    ]);
+
+    $this->assertDatabaseHas('order_messages', [
+        'order_id' => $order->id,
+        'user_id' => $this->user->id,
+        'message' => 'I would like to request permission to re-upload my payment receipt.',
+    ]);
+
+    Event::assertDispatched(OrderMessageCreated::class);
+    Notification::assertSentTo($this->admin, NewMessageNotification::class);
+});

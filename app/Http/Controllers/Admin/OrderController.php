@@ -114,4 +114,14 @@ class OrderController extends Controller
         $order->delete();
         return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
     }
+
+    public function allowReceiptReupload(Request $request, Order $order)
+    {
+        $order->update([
+            'can_reupload_receipt' => true,
+            'request_receipt_upload' => false,
+        ]);
+
+        return redirect()->back()->with('success', 'User can now re-upload receipt.');
+    }
 }

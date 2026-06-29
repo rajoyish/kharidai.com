@@ -4,7 +4,7 @@ import { SupportChat } from '@/components/SupportChat';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Check, X, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Check, X, Pencil, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { PagePanel } from '@/components/page-panel';
@@ -15,6 +15,8 @@ type Order = {
     total_amount: string;
     status: string;
     created_at: string;
+    can_reupload_receipt: boolean;
+    request_receipt_upload: boolean;
     additional_data: { note?: string } | null;
     user: {
         id: number;
@@ -414,6 +416,25 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                             >
                                                 <X className="mr-1 h-4 w-4" />{' '}
                                                 Reject
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {!order.can_reupload_receipt && (
+                                        <div className="mt-4 border-t pt-4">
+                                            {order.request_receipt_upload && (
+                                                <div className="mb-3 text-sm text-amber-600 font-medium flex items-center">
+                                                    User requested to re-upload receipt.
+                                                </div>
+                                            )}
+                                            <Button
+                                                variant="outline"
+                                                className="w-full"
+                                                onClick={() => {
+                                                    router.patch(`/admin/orders/${order.id}/allow-reupload`, {}, { preserveScroll: true });
+                                                }}
+                                            >
+                                                <Upload className="mr-2 h-4 w-4" /> Allow Receipt Re-upload
                                             </Button>
                                         </div>
                                     )}

@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
-import { Eye, MessageCircle } from 'lucide-react';
+import { Eye, MessageCircle, Upload } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -20,6 +20,7 @@ type Order = {
     total_amount: string;
     status: string;
     created_at: string;
+    can_reupload_receipt: boolean;
     items: {
         id: number;
         quantity: number;
@@ -99,6 +100,13 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                         </span>
                                     </TableCell>
                                     <TableCell className="flex justify-end gap-2">
+                                        {(order.can_reupload_receipt || order.status === 'pending') && (
+                                            <Button variant="outline" size="sm" asChild className="border-amber-200 text-amber-700 hover:bg-amber-50">
+                                                <Link href={`/orders/${order.id}`}>
+                                                    <Upload className="h-4 w-4 mr-1" /> Reupload Receipt
+                                                </Link>
+                                            </Button>
+                                        )}
                                         <Button variant="ghost" size="sm" asChild>
                                             <Link href={`/orders/${order.id}`}>
                                                 <Eye className="h-4 w-4" />

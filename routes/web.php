@@ -44,6 +44,7 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
     Route::post('/orders/{order}/messages', [OrderController::class, 'storeMessage'])->name('orders.messages.store');
+    Route::post('/orders/{order}/ask-reupload-receipt', [OrderController::class, 'askForReceiptReupload'])->name('orders.ask-reupload-receipt');
 });
 
 Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -68,6 +69,7 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::delete('orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
     Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status.update');
+    Route::patch('orders/{order}/allow-reupload', [AdminOrderController::class, 'allowReceiptReupload'])->name('orders.allow-reupload');
     Route::patch('receipts/{paymentReceipt}/status', [AdminOrderController::class, 'updateReceiptStatus'])->name('receipts.status.update');
     Route::post('orders/{order}/credentials', [AdminOrderController::class, 'storeCredential'])->name('orders.credentials.store');
     Route::put('orders/{order}/credentials/{credential}', [AdminOrderController::class, 'updateCredential'])->name('orders.credentials.update');

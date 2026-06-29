@@ -11,6 +11,7 @@ use App\Services\PocketsflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -84,6 +85,10 @@ class CheckoutController extends Controller
             abort(403);
         }
 
+        if ($order->paymentReceipt && !$order->can_reupload_receipt) {
+            return redirect()->route('orders.show', $order)->with('error', 'Receipt already uploaded.');
+        }
+
         return Inertia::render('Checkout/NprPayment', [
             'order' => $order->load('items.productVariant.product'),
         ]);
@@ -95,15 +100,29 @@ class CheckoutController extends Controller
             abort(403);
         }
 
+        if ($order->paymentReceipt && !$order->can_reupload_receipt) {
+            return redirect()->route('orders.show', $order)->with('error', 'Receipt already uploaded.');
+        }
+
         $validated = $request->validate([
             'receipt' => 'required|image|max:2048',
         ]);
+
+        if ($order->paymentReceipt) {
+            Storage::disk('public')->delete($order->paymentReceipt->file_path);
+            $order->paymentReceipt()->delete();
+        }
 
         $path = $request->file('receipt')->store('receipts', 'public');
 
         $order->paymentReceipt()->create([
             'file_path' => $path,
             'status' => 'pending',
+        ]);
+
+        $order->update([
+            'can_reupload_receipt' => false,
+            'request_receipt_upload' => false,
         ]);
 
         $admins = User::where('is_admin', true)->get();

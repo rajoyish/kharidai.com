@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property User $user
  */
-#[Fillable(['order_number', 'user_id', 'status', 'total_amount', 'additional_data'])]
+#[Fillable(['order_number', 'user_id', 'status', 'total_amount', 'additional_data', 'can_reupload_receipt', 'request_receipt_upload'])]
 class Order extends Model
 {
     /** @use HasFactory<\Database\Factories\OrderFactory> */
@@ -34,6 +34,8 @@ class Order extends Model
     {
         return [
             'additional_data' => 'array',
+            'can_reupload_receipt' => 'boolean',
+            'request_receipt_upload' => 'boolean',
         ];
     }
 

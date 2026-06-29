@@ -157,3 +157,16 @@ it('can delete an order', function () {
         'id' => $order->id,
     ]);
 });
+
+it('can allow receipt reupload', function () {
+    $order = Order::factory()->create(['user_id' => $this->user->id, 'request_receipt_upload' => true]);
+
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/' . $order->id . '/allow-reupload');
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('orders', [
+        'id' => $order->id,
+        'can_reupload_receipt' => true,
+        'request_receipt_upload' => false,
+    ]);
+});
