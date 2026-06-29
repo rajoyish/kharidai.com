@@ -32,6 +32,15 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
+        if ($request->user()->isDirty('name')) {
+            if ($request->user()->name_changed_at && $request->user()->name_changed_at->clone()->addMonths(3)->isFuture()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'name' => 'You can only change your name every 3 months.',
+                ]);
+            }
+            $request->user()->name_changed_at = now();
+        }
+
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }

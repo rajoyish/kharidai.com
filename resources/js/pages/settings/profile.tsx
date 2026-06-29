@@ -1,11 +1,11 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MobileNumberInput } from '@/components/mobile-number-input';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
 
@@ -26,7 +26,7 @@ export default function Profile() {
                 <Heading
                     variant="small"
                     title="Profile"
-                    description="Update your name and email address"
+                    description="Update your name and mobile number"
                 />
 
                 <Form
@@ -50,10 +50,29 @@ export default function Profile() {
                                     autoComplete="name"
                                     placeholder="Full name"
                                 />
+                                <p className={`text-[0.8rem] ${errors.name ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted-foreground'}`}>
+                                    This can only be changed once every 90 days.
+                                </p>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="mobile_number">Mobile Number</Label>
+
+                                <MobileNumberInput
+                                    id="mobile_number"
+                                    className="mt-1 block w-full"
+                                    defaultValue={auth.user.mobile_number || ''}
+                                    name="mobile_number"
+                                    autoComplete="tel"
+                                    placeholder="Mobile number"
+                                />
+                                <p className="text-[0.8rem] text-muted-foreground">
+                                    To get support, please share your WhatsApp number.
+                                </p>
 
                                 <InputError
                                     className="mt-2"
-                                    message={errors.name}
+                                    message={errors.mobile_number}
                                 />
                             </div>
 
@@ -61,15 +80,16 @@ export default function Profile() {
                                 <Label htmlFor="email">Email address</Label>
 
                                 <Input
-                                    id="email"
+                                    id="email_display"
                                     type="email"
                                     className="mt-1 block w-full"
                                     defaultValue={auth.user.email}
-                                    name="email"
-                                    required
+                                    name="email_display"
+                                    disabled
                                     autoComplete="username"
                                     placeholder="Email address"
                                 />
+                                <input type="hidden" name="email" value={auth.user.email} />
 
                                 <InputError
                                     className="mt-2"
@@ -89,8 +109,6 @@ export default function Profile() {
                     )}
                 </Form>
             </div>
-
-            <DeleteUser />
         </>
     );
 }

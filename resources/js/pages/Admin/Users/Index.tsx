@@ -15,6 +15,7 @@ type User = {
     id: number;
     name: string;
     email: string;
+    mobile_number: string | null;
     is_admin: boolean;
     banned_at: string | null;
     created_at: string;
@@ -43,6 +44,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
+                            <TableHead>Mobile</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">
                                 Actions
@@ -56,6 +58,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
                                     {user.name} {user.is_admin ? '(Admin)' : ''}
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
+                                <TableCell>{user.mobile_number || '-'}</TableCell>
                                 <TableCell>
                                     {user.banned_at ? (
                                         <span className="inline-flex items-center rounded-full border border-transparent bg-destructive px-2.5 py-0.5 text-xs font-semibold text-white transition-colors hover:bg-destructive/80 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none">
@@ -96,7 +99,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
                         {users.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={4}
+                                    colSpan={5}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No users found.
