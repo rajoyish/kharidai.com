@@ -6,6 +6,15 @@ use Inertia\Support\SessionKey;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 
+test('an admin can list users', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    User::factory()->count(3)->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.index'))
+        ->assertSuccessful();
+});
+
 test('an admin can ban and unban another user', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $user = User::factory()->create();

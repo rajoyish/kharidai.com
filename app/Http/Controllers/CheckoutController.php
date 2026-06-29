@@ -58,7 +58,7 @@ class CheckoutController extends Controller
             'status' => 'pending',
             'total_amount' => $totalAmount,
             'currency' => $validated['currency'],
-            'additional_data' => $validated['additional_data'] ? ['note' => $validated['additional_data']] : null,
+            'additional_data' => !empty($validated['additional_data']) ? ['note' => $validated['additional_data']] : null,
         ]);
 
         foreach ($cart->items as $item) {

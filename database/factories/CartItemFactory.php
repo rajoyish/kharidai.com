@@ -18,7 +18,9 @@ class CartItemFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'cart_id' => \App\Models\Cart::factory(),
+            'product_variant_id' => \App\Models\ProductVariant::factory(),
+            'quantity' => $this->faker->numberBetween(1, 5),
         ];
     }
 }

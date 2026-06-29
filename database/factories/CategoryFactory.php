@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Cart;
+use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Cart>
+ * @extends Factory<Category>
  */
-class CartFactory extends Factory
+class CategoryFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -17,8 +17,10 @@ class CartFactory extends Factory
      */
     public function definition(): array
     {
+        $name = $this->faker->unique()->word();
         return [
-            'user_id' => \App\Models\User::factory(),
+            'name' => $name,
+            'slug' => \Illuminate\Support\Str::slug($name),
         ];
     }
 }
