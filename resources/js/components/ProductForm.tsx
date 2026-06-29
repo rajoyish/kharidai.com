@@ -18,6 +18,7 @@ import { UploadCloud } from 'lucide-react';
 export type Product = {
     id: number;
     title: string;
+    slug?: string;
     description: string;
     image?: string;
     in_stock?: boolean;

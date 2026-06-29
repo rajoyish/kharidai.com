@@ -18,6 +18,7 @@ type Product = {
     title: string;
     description: string;
     image: string;
+    slug: string;
     in_stock: boolean;
     category?: {
         name: string;
@@ -38,7 +39,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
 
     const handleDelete = (product: Product) => {
         if (confirm('Are you sure you want to delete this product?')) {
-            destroy(`/admin/products/${product.id}`);
+            destroy(`/admin/products/${product.slug}`);
         }
     };
 
@@ -105,7 +106,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                             variant="outline"
                                             size="sm"
                                             className={`h-8 px-2 text-xs ${product.in_stock ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
-                                            onClick={() => router.patch(`/admin/products/${product.id}/toggle-stock`, {}, { preserveScroll: true })}
+                                            onClick={() => router.patch(`/admin/products/${product.slug}/toggle-stock`, {}, { preserveScroll: true })}
                                         >
                                             {product.in_stock ? 'Unlist' : 'Restock'}
                                         </Button>
@@ -115,7 +116,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                             className="h-8 px-2 text-xs hover:bg-muted"
                                             asChild
                                         >
-                                            <Link href={`/admin/products/${product.id}/variants`}>
+                                            <Link href={`/admin/products/${product.slug}/variants`}>
                                                 Variants
                                             </Link>
                                         </Button>
@@ -125,7 +126,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                             className="h-8 px-2 text-xs hover:bg-muted"
                                             asChild
                                         >
-                                            <Link href={`/admin/products/${product.id}/edit`}>
+                                            <Link href={`/admin/products/${product.slug}/edit`}>
                                                 Edit
                                             </Link>
                                         </Button>

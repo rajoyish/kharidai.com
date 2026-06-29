@@ -14,6 +14,7 @@ import { PagePanel } from '@/components/page-panel';
 type Product = {
     id: number;
     title: string;
+    slug: string;
 };
 
 type Variant = {
@@ -34,7 +35,7 @@ export default function VariantsIndex({
 
     const handleDelete = (variant: Variant) => {
         if (confirm('Are you sure you want to delete this variant?')) {
-            destroy(`/admin/products/${product.id}/variants/${variant.id}`);
+            destroy(`/admin/products/${product.slug}/variants/${variant.id}`);
         }
     };
 
@@ -47,7 +48,7 @@ export default function VariantsIndex({
                 variant="transparent"
                 actions={
                     <Button asChild>
-                        <Link href={`/admin/products/${product.id}/variants/create`}>
+                        <Link href={`/admin/products/${product.slug}/variants/create`}>
                             Add Variant
                         </Link>
                     </Button>
@@ -81,7 +82,7 @@ export default function VariantsIndex({
                                         asChild
                                     >
                                         <Link
-                                            href={`/admin/products/${product.id}/variants/${variant.id}/edit`}
+                                            href={`/admin/products/${product.slug}/variants/${variant.id}/edit`}
                                         >
                                             Edit
                                         </Link>

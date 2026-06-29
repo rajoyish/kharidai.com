@@ -17,7 +17,7 @@ it('can view a single product page', function () {
         'in_stock' => true,
     ]);
 
-    $response = $this->get('/products/'.$product->id);
+    $response = $this->get('/products/'.$product->slug);
 
     $response->assertSuccessful();
 });

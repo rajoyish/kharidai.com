@@ -35,7 +35,7 @@ it('can create a product', function () {
 it('can update a product', function () {
     $product = Product::factory()->create(['title' => 'Old Product']);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->id, [
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug, [
         'title' => 'Updated Product',
         'description' => 'Updated description',
         'in_stock' => false,
@@ -52,7 +52,7 @@ it('can update a product', function () {
 it('can delete a product', function () {
     $product = Product::factory()->create();
 
-    $response = $this->actingAs($this->admin)->delete('/admin/products/'.$product->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/products/'.$product->slug);
 
     $response->assertRedirect();
     $this->assertDatabaseMissing('products', [
@@ -63,7 +63,7 @@ it('can delete a product', function () {
 it('can toggle product stock status', function () {
     $product = Product::factory()->create(['in_stock' => true]);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->id.'/toggle-stock');
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug.'/toggle-stock');
 
     $response->assertRedirect();
     $this->assertDatabaseHas('products', [

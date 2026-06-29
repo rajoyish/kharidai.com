@@ -16,6 +16,7 @@ import {
 type Product = {
     id: number;
     title: string;
+    slug: string;
 };
 
 type Variant = {
@@ -42,7 +43,7 @@ export default function EditVariant({
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        patch(`/admin/products/${product.id}/variants/${variant.id}`);
+        patch(`/admin/products/${product.slug}/variants/${variant.id}`);
     };
 
     return (

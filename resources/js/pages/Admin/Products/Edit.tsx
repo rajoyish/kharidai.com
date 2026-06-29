@@ -11,7 +11,7 @@ export default function EditProduct({ product, categories }: { product: Product,
             <PagePanel variant="transparent">
                 <ProductForm
                     product={product}
-                    submitUrl={`/admin/products/${product.id}`}
+                    submitUrl={`/admin/products/${product.slug}`}
                     isEditing={true}
                     categories={categories}
                 />

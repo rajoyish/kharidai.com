@@ -34,7 +34,7 @@ it('can create a category', function () {
 it('can update a category', function () {
     $category = Category::factory()->create(['name' => 'Old Category']);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/categories/'.$category->id, [
+    $response = $this->actingAs($this->admin)->patch('/admin/categories/'.$category->slug, [
         'name' => 'Updated Category',
     ]);
 
@@ -49,7 +49,7 @@ it('can update a category', function () {
 it('can delete a category', function () {
     $category = Category::factory()->create();
 
-    $response = $this->actingAs($this->admin)->delete('/admin/categories/'.$category->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/categories/'.$category->slug);
 
     $response->assertRedirect();
     $this->assertDatabaseMissing('categories', [

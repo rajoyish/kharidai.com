@@ -9,6 +9,7 @@ import { PagePanel } from '@/components/page-panel';
 type Product = {
     id: number;
     title: string;
+    slug: string;
 };
 
 import {
@@ -29,7 +30,7 @@ export default function CreateVariant({ product }: { product: Product }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(`/admin/products/${product.id}/variants`);
+        post(`/admin/products/${product.slug}/variants`);
     };
 
     return (

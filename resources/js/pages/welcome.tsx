@@ -7,6 +7,7 @@ import AppLogo from '@/components/app-logo';
 type Product = {
     id: number;
     title: string;
+    slug: string;
     description: string;
     image: string;
     variants: Variant[];
@@ -241,7 +242,7 @@ export default function Welcome({
                                     {category.products.map((product) => (
                                         <Link
                                             key={product.id}
-                                            href={`/products/${product.id}`}
+                                            href={`/products/${product.slug}`}
                                             className="group relative rounded-2xl border border-gray-100 bg-white p-5 text-card-foreground transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 block"
                                         >
                                             <div className="mb-5 aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-50">
@@ -281,7 +282,7 @@ export default function Welcome({
                                 {filteredUncategorizedProducts.map((product) => (
                                     <Link
                                         key={product.id}
-                                        href={`/products/${product.id}`}
+                                        href={`/products/${product.slug}`}
                                         className="group relative rounded-2xl border border-gray-100 bg-white p-5 text-card-foreground transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 block"
                                     >
                                         <div className="mb-5 aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-50">

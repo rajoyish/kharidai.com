@@ -53,7 +53,7 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
                 },
             });
         } else if (editingCategory) {
-            patch(`/admin/categories/${editingCategory.id}`, {
+            patch(`/admin/categories/${editingCategory.slug}`, {
                 onSuccess: () => {
                     handleCancel();
                 },
@@ -63,7 +63,7 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
 
     const handleDelete = (category: Category) => {
         if (confirm(`Are you sure you want to delete the category "${category.name}"?`)) {
-            destroy(`/admin/categories/${category.id}`);
+            destroy(`/admin/categories/${category.slug}`);
         }
     };
 
