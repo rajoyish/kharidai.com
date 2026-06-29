@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Database\Factories\OrderMessageFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -21,7 +22,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['order_id', 'user_id', 'message'])]
 class OrderMessage extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrderMessageFactory> */
+    /** @use HasFactory<OrderMessageFactory> */
     use HasFactory;
 
     /**

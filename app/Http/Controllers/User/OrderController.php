@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Events\OrderMessageCreated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\User;
+use App\Notifications\NewMessageNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -50,10 +54,10 @@ class OrderController extends Controller
         ]);
 
         $message->load('user');
-        \App\Events\OrderMessageCreated::dispatch($message);
+        OrderMessageCreated::dispatch($message);
 
-        $admins = \App\Models\User::where('is_admin', true)->get();
-        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\NewMessageNotification($message));
+        $admins = User::where('is_admin', true)->get();
+        Notification::send($admins, new NewMessageNotification($message));
 
         return redirect()->back()->with('success', 'Message sent.');
     }
@@ -72,10 +76,10 @@ class OrderController extends Controller
         ]);
 
         $message->load('user');
-        \App\Events\OrderMessageCreated::dispatch($message);
+        OrderMessageCreated::dispatch($message);
 
-        $admins = \App\Models\User::where('is_admin', true)->get();
-        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\NewMessageNotification($message));
+        $admins = User::where('is_admin', true)->get();
+        Notification::send($admins, new NewMessageNotification($message));
 
         return redirect()->back()->with('success', 'Request sent to admin.');
     }

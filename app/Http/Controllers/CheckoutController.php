@@ -7,9 +7,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Notifications\OrderPlacedNotification;
 use App\Notifications\PaymentReceiptUploadedNotification;
-use App\Services\PocketsflowService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -57,7 +55,7 @@ class CheckoutController extends Controller
             'user_id' => $request->user()->id,
             'status' => 'pending',
             'total_amount' => $totalAmount,
-            'additional_data' => !empty($validated['additional_data']) ? ['note' => $validated['additional_data']] : null,
+            'additional_data' => ! empty($validated['additional_data']) ? ['note' => $validated['additional_data']] : null,
         ]);
 
         foreach ($cart->items as $item) {
@@ -76,6 +74,7 @@ class CheckoutController extends Controller
 
         $cart->items()->delete();
         $cart->delete();
+
         return redirect()->route('checkout.npr', $order);
     }
 
@@ -85,7 +84,7 @@ class CheckoutController extends Controller
             abort(403);
         }
 
-        if ($order->paymentReceipt && !$order->can_reupload_receipt) {
+        if ($order->paymentReceipt && ! $order->can_reupload_receipt) {
             return redirect()->route('orders.show', $order)->with('error', 'Receipt already uploaded.');
         }
 
@@ -100,7 +99,7 @@ class CheckoutController extends Controller
             abort(403);
         }
 
-        if ($order->paymentReceipt && !$order->can_reupload_receipt) {
+        if ($order->paymentReceipt && ! $order->can_reupload_receipt) {
             return redirect()->route('orders.show', $order)->with('error', 'Receipt already uploaded.');
         }
 
@@ -131,5 +130,4 @@ class CheckoutController extends Controller
         // Keep order status as pending until admin reviews the receipt
         return redirect()->route('orders.show', $order)->with('success', 'Receipt uploaded successfully. We will process your order soon.');
     }
-
 }

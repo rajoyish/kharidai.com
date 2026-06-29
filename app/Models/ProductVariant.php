@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Database\Factories\ProductVariantFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -21,7 +22,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr'])]
 class ProductVariant extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProductVariantFactory> */
+    /** @use HasFactory<ProductVariantFactory> */
     use HasFactory;
 
     /**

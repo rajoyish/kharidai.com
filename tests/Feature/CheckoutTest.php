@@ -20,7 +20,7 @@ beforeEach(function () {
 
 it('redirects to cart if checkout index is accessed with an empty cart', function () {
     $response = $this->actingAs($this->user)->get('/checkout');
-    
+
     $response->assertRedirect(route('cart.index'));
 });
 
@@ -29,7 +29,7 @@ it('can view the checkout page with items in cart', function () {
     CartItem::factory()->create(['cart_id' => $cart->id]);
 
     $response = $this->actingAs($this->user)->get('/checkout');
-    
+
     $response->assertSuccessful();
 });
 
@@ -46,13 +46,12 @@ it('can process NPR checkout', function () {
     $order = Order::first();
     expect($order)->not->toBeNull()
         ->and($order->status)->toBe('pending');
-        
+
     $response->assertRedirect(route('checkout.npr', $order));
     $this->assertDatabaseMissing('carts', ['id' => $cart->id]);
-    
+
     Notification::assertSentTo($this->admin, OrderPlacedNotification::class);
 });
-
 
 it('can view NPR payment page', function () {
     $order = Order::factory()->create([
@@ -60,8 +59,8 @@ it('can view NPR payment page', function () {
         'status' => 'pending',
     ]);
 
-    $response = $this->actingAs($this->user)->get('/checkout/' . $order->id . '/npr');
-    
+    $response = $this->actingAs($this->user)->get('/checkout/'.$order->id.'/npr');
+
     $response->assertSuccessful();
 });
 
@@ -76,7 +75,7 @@ it('can process NPR payment receipt upload', function () {
 
     $file = UploadedFile::fake()->image('receipt.jpg');
 
-    $response = $this->actingAs($this->user)->post('/checkout/' . $order->id . '/npr', [
+    $response = $this->actingAs($this->user)->post('/checkout/'.$order->id.'/npr', [
         'receipt' => $file,
     ]);
 
@@ -84,7 +83,7 @@ it('can process NPR payment receipt upload', function () {
     $this->assertDatabaseHas('payment_receipts', [
         'order_id' => $order->id,
     ]);
-    
+
     Notification::assertSentTo($this->admin, PaymentReceiptUploadedNotification::class);
 });
 
@@ -103,12 +102,12 @@ it('can process NPR payment receipt re-upload and deletes old receipt', function
 
     $order->paymentReceipt()->create([
         'file_path' => $oldPath,
-        'status' => 'rejected'
+        'status' => 'rejected',
     ]);
 
     $newFile = UploadedFile::fake()->image('new_receipt.jpg');
 
-    $response = $this->actingAs($this->user)->post('/checkout/' . $order->id . '/npr', [
+    $response = $this->actingAs($this->user)->post('/checkout/'.$order->id.'/npr', [
         'receipt' => $newFile,
     ]);
 
@@ -128,17 +127,15 @@ it('cannot upload receipt if already uploaded and can_reupload_receipt is false'
 
     $order->paymentReceipt()->create([
         'file_path' => 'dummy.jpg',
-        'status' => 'pending'
+        'status' => 'pending',
     ]);
 
     $file = UploadedFile::fake()->image('receipt.jpg');
 
-    $response = $this->actingAs($this->user)->post('/checkout/' . $order->id . '/npr', [
+    $response = $this->actingAs($this->user)->post('/checkout/'.$order->id.'/npr', [
         'receipt' => $file,
     ]);
 
     $response->assertRedirect(route('orders.show', $order));
     $response->assertSessionHas('error', 'Receipt already uploaded.');
 });
-
-

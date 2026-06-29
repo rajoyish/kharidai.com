@@ -2,18 +2,16 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Notification;
 
 class PaymentReceiptUploadedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Order $order)
-    {
-    }
+    public function __construct(public Order $order) {}
 
     public function via($notifiable)
     {
@@ -24,7 +22,7 @@ class PaymentReceiptUploadedNotification extends Notification
     {
         return new BroadcastMessage([
             'message' => 'Payment Receipt Uploaded',
-            'description' => 'Customer uploaded a receipt for order #' . $this->order->order_number,
+            'description' => 'Customer uploaded a receipt for order #'.$this->order->order_number,
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ]);
@@ -34,7 +32,7 @@ class PaymentReceiptUploadedNotification extends Notification
     {
         return [
             'message' => 'Payment Receipt Uploaded',
-            'description' => 'Customer uploaded a receipt for order #' . $this->order->order_number,
+            'description' => 'Customer uploaded a receipt for order #'.$this->order->order_number,
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ];

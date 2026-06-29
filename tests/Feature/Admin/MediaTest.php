@@ -43,10 +43,10 @@ it('can upload media', function () {
 
 it('can delete media', function () {
     Storage::fake('public');
-    
+
     $file = UploadedFile::fake()->image('image.jpg');
     $path = $file->store('media', 'public');
-    
+
     $media = Media::create([
         'file_name' => 'image.jpg',
         'file_path' => $path,
@@ -54,7 +54,7 @@ it('can delete media', function () {
         'disk' => 'public',
     ]);
 
-    $response = $this->actingAs($this->admin)->delete('/admin/media/' . $media->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/media/'.$media->id);
 
     $response->assertSuccessful();
     $this->assertDatabaseMissing('media', [

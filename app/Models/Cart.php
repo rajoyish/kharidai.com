@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Database\Factories\CartFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -19,7 +20,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['user_id'])]
 class Cart extends Model
 {
-    /** @use HasFactory<\Database\Factories\CartFactory> */
+    /** @use HasFactory<CartFactory> */
     use HasFactory;
 
     /**

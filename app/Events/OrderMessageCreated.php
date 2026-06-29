@@ -2,11 +2,10 @@
 
 namespace App\Events;
 
+use App\Models\OrderMessage;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -18,7 +17,7 @@ class OrderMessageCreated implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
-    public function __construct(public \App\Models\OrderMessage $message)
+    public function __construct(public OrderMessage $message)
     {
         //
     }
@@ -31,7 +30,7 @@ class OrderMessageCreated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('orders.' . $this->message->order_id),
+            new PresenceChannel('orders.'.$this->message->order_id),
         ];
     }
 }

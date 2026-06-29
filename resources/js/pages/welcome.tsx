@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import { ShoppingBag, Sparkles, Archive, CloudDownload, Star, Briefcase, Truck, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import AppLogo from '@/components/app-logo';
 
 type Product = {
     id: number;
@@ -73,9 +74,8 @@ export default function Welcome({
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_bottom,white,transparent)]"></div>
 
                     <header className="relative z-10 container mx-auto flex items-center justify-between px-6 py-4">
-                        <Link href="/" className="flex items-center gap-3 group">
-                            <img src="/images/logo.webp" alt="Kharidai" className="h-9 transition-transform group-hover:scale-105" />
-                            <span className="sr-only">Kharidai</span>
+                        <Link href="/" className="flex items-center gap-2 font-bold group">
+                            <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
                         </Link>
 
                         <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-gray-700">

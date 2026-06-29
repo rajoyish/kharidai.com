@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\OrderMessageCreated;
 use App\Models\Order;
 use App\Models\OrderCredential;
 use App\Models\PaymentReceipt;
@@ -9,7 +10,6 @@ use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use App\Events\OrderMessageCreated;
 
 uses(RefreshDatabase::class);
 
@@ -29,7 +29,7 @@ it('can list orders', function () {
 it('can view order details', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->get('/admin/orders/' . $order->id);
+    $response = $this->actingAs($this->admin)->get('/admin/orders/'.$order->id);
 
     $response->assertSuccessful();
 });
@@ -39,7 +39,7 @@ it('can update order status', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/orders/' . $order->id . '/status', [
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', [
         'status' => 'delivering',
     ]);
 
@@ -48,7 +48,7 @@ it('can update order status', function () {
         'id' => $order->id,
         'status' => 'delivering',
     ]);
-    
+
     Notification::assertSentTo($this->user, OrderStatusUpdatedNotification::class);
 });
 
@@ -59,10 +59,10 @@ it('can update receipt status', function () {
     $receipt = PaymentReceipt::create([
         'order_id' => $order->id,
         'file_path' => 'test.jpg',
-        'status' => 'pending'
+        'status' => 'pending',
     ]);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/receipts/' . $receipt->id . '/status', [
+    $response = $this->actingAs($this->admin)->patch('/admin/receipts/'.$receipt->id.'/status', [
         'status' => 'approved',
     ]);
 
@@ -75,14 +75,14 @@ it('can update receipt status', function () {
         'id' => $order->id,
         'status' => 'delivering',
     ]);
-    
+
     Notification::assertSentTo($this->user, OrderStatusUpdatedNotification::class);
 });
 
 it('can add digital credentials to an order', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->post('/admin/orders/' . $order->id . '/credentials', [
+    $response = $this->actingAs($this->admin)->post('/admin/orders/'.$order->id.'/credentials', [
         'content' => 'Test Credential Content',
     ]);
 
@@ -100,7 +100,7 @@ it('can update digital credentials', function () {
         'content' => 'Old Content',
     ]);
 
-    $response = $this->actingAs($this->admin)->put('/admin/orders/' . $order->id . '/credentials/' . $credential->id, [
+    $response = $this->actingAs($this->admin)->put('/admin/orders/'.$order->id.'/credentials/'.$credential->id, [
         'content' => 'New Content',
     ]);
 
@@ -118,7 +118,7 @@ it('can delete digital credentials', function () {
         'content' => 'Old Content',
     ]);
 
-    $response = $this->actingAs($this->admin)->delete('/admin/orders/' . $order->id . '/credentials/' . $credential->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id.'/credentials/'.$credential->id);
 
     $response->assertRedirect();
     $this->assertDatabaseMissing('order_credentials', [
@@ -132,7 +132,7 @@ it('can send a message on an order', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->post('/admin/orders/' . $order->id . '/messages', [
+    $response = $this->actingAs($this->admin)->post('/admin/orders/'.$order->id.'/messages', [
         'message' => 'Admin test message',
     ]);
 
@@ -150,7 +150,7 @@ it('can send a message on an order', function () {
 it('can delete an order', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->delete('/admin/orders/' . $order->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id);
 
     $response->assertRedirect(route('admin.orders.index'));
     $this->assertDatabaseMissing('orders', [
@@ -161,7 +161,7 @@ it('can delete an order', function () {
 it('can allow receipt reupload', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id, 'request_receipt_upload' => true]);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/orders/' . $order->id . '/allow-reupload');
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/allow-reupload');
 
     $response->assertRedirect();
     $this->assertDatabaseHas('orders', [

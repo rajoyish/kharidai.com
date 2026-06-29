@@ -1,12 +1,12 @@
 <?php
 
+use App\Events\OrderMessageCreated;
 use App\Models\Order;
 use App\Models\User;
+use App\Notifications\NewMessageNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use App\Events\OrderMessageCreated;
-use App\Notifications\NewMessageNotification;
 
 uses(RefreshDatabase::class);
 
@@ -28,7 +28,7 @@ it('can list user orders', function () {
 it('can view specific order details', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->user)->get('/orders/' . $order->id);
+    $response = $this->actingAs($this->user)->get('/orders/'.$order->id);
 
     $response->assertSuccessful();
 });
@@ -37,7 +37,7 @@ it('cannot view other user order details', function () {
     $otherUser = User::factory()->create();
     $order = Order::factory()->create(['user_id' => $otherUser->id]);
 
-    $response = $this->actingAs($this->user)->get('/orders/' . $order->id);
+    $response = $this->actingAs($this->user)->get('/orders/'.$order->id);
 
     $response->assertForbidden();
 });
@@ -48,7 +48,7 @@ it('can send a message on an order', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->user)->post('/orders/' . $order->id . '/messages', [
+    $response = $this->actingAs($this->user)->post('/orders/'.$order->id.'/messages', [
         'message' => 'Hello this is a test message',
     ]);
 
@@ -69,7 +69,7 @@ it('can ask for receipt reupload', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->user)->post('/orders/' . $order->id . '/ask-reupload-receipt');
+    $response = $this->actingAs($this->user)->post('/orders/'.$order->id.'/ask-reupload-receipt');
 
     $response->assertRedirect();
     $this->assertDatabaseHas('orders', [

@@ -40,7 +40,7 @@ it('can update a cart item quantity', function () {
         'quantity' => 1,
     ]);
 
-    $response = $this->actingAs($user)->put('/cart/' . $cartItem->id, [
+    $response = $this->actingAs($user)->put('/cart/'.$cartItem->id, [
         'quantity' => 5,
     ]);
 
@@ -58,7 +58,7 @@ it('can remove an item from the cart', function () {
         'cart_id' => $cart->id,
     ]);
 
-    $response = $this->actingAs($user)->delete('/cart/' . $cartItem->id);
+    $response = $this->actingAs($user)->delete('/cart/'.$cartItem->id);
 
     $response->assertRedirect();
     $this->assertDatabaseMissing('cart_items', [

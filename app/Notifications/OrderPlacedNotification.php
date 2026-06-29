@@ -2,18 +2,16 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Notification;
 
 class OrderPlacedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Order $order)
-    {
-    }
+    public function __construct(public Order $order) {}
 
     public function via($notifiable)
     {
@@ -23,8 +21,8 @@ class OrderPlacedNotification extends Notification
     public function toBroadcast($notifiable)
     {
         return new BroadcastMessage([
-            'message' => 'New Order #' . $this->order->order_number,
-            'description' => 'A new order has been placed for ' . $this->order->currency . ' ' . number_format($this->order->total_amount, 2),
+            'message' => 'New Order #'.$this->order->order_number,
+            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 2),
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ]);
@@ -33,8 +31,8 @@ class OrderPlacedNotification extends Notification
     public function toArray($notifiable)
     {
         return [
-            'message' => 'New Order #' . $this->order->order_number,
-            'description' => 'A new order has been placed for ' . $this->order->currency . ' ' . number_format($this->order->total_amount, 2),
+            'message' => 'New Order #'.$this->order->order_number,
+            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 2),
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ];

@@ -3,8 +3,6 @@
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -37,7 +35,7 @@ it('can create a product', function () {
 it('can update a product', function () {
     $product = Product::factory()->create(['title' => 'Old Product']);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/products/' . $product->id, [
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->id, [
         'title' => 'Updated Product',
         'description' => 'Updated description',
         'in_stock' => false,
@@ -54,7 +52,7 @@ it('can update a product', function () {
 it('can delete a product', function () {
     $product = Product::factory()->create();
 
-    $response = $this->actingAs($this->admin)->delete('/admin/products/' . $product->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/products/'.$product->id);
 
     $response->assertRedirect();
     $this->assertDatabaseMissing('products', [
@@ -65,7 +63,7 @@ it('can delete a product', function () {
 it('can toggle product stock status', function () {
     $product = Product::factory()->create(['in_stock' => true]);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/products/' . $product->id . '/toggle-stock');
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->id.'/toggle-stock');
 
     $response->assertRedirect();
     $this->assertDatabaseHas('products', [
@@ -73,5 +71,3 @@ it('can toggle product stock status', function () {
         'in_stock' => false,
     ]);
 });
-
-

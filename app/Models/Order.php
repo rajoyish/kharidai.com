@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Database\Factories\OrderFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -24,7 +25,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['order_number', 'user_id', 'status', 'total_amount', 'additional_data', 'can_reupload_receipt', 'request_receipt_upload'])]
 class Order extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrderFactory> */
+    /** @use HasFactory<OrderFactory> */
     use HasFactory;
 
     /**

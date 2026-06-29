@@ -2,18 +2,16 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Notification;
 
 class OrderStatusUpdatedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Order $order, public string $status)
-    {
-    }
+    public function __construct(public Order $order, public string $status) {}
 
     public function via($notifiable)
     {
@@ -24,7 +22,7 @@ class OrderStatusUpdatedNotification extends Notification
     {
         return new BroadcastMessage([
             'message' => 'Order Status Updated',
-            'description' => 'Your order #' . $this->order->order_number . ' is now ' . $this->status . '.',
+            'description' => 'Your order #'.$this->order->order_number.' is now '.$this->status.'.',
             'url' => route('orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ]);
@@ -34,7 +32,7 @@ class OrderStatusUpdatedNotification extends Notification
     {
         return [
             'message' => 'Order Status Updated',
-            'description' => 'Your order #' . $this->order->order_number . ' is now ' . $this->status . '.',
+            'description' => 'Your order #'.$this->order->order_number.' is now '.$this->status.'.',
             'url' => route('orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ];

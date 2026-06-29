@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\OrderMessageCreated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderCredential;
 use App\Models\PaymentReceipt;
+use App\Notifications\NewMessageNotification;
+use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -37,7 +41,7 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $validated['status']]);
-        $order->user->notify(new \App\Notifications\OrderStatusUpdatedNotification($order, $validated['status']));
+        $order->user->notify(new OrderStatusUpdatedNotification($order, $validated['status']));
 
         return redirect()->back()->with('success', 'Order status updated.');
     }
@@ -52,7 +56,7 @@ class OrderController extends Controller
 
         if ($validated['status'] === 'approved') {
             $paymentReceipt->order->update(['status' => 'delivering']);
-            $paymentReceipt->order->user->notify(new \App\Notifications\OrderStatusUpdatedNotification($paymentReceipt->order, 'delivering'));
+            $paymentReceipt->order->user->notify(new OrderStatusUpdatedNotification($paymentReceipt->order, 'delivering'));
         }
 
         return redirect()->back()->with('success', 'Receipt status updated.');
@@ -71,7 +75,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Digital credential added.');
     }
 
-    public function updateCredential(Request $request, Order $order, \App\Models\OrderCredential $credential)
+    public function updateCredential(Request $request, Order $order, OrderCredential $credential)
     {
         $validated = $request->validate([
             'content' => 'required|string',
@@ -84,7 +88,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Digital credential updated.');
     }
 
-    public function destroyCredential(Order $order, \App\Models\OrderCredential $credential)
+    public function destroyCredential(Order $order, OrderCredential $credential)
     {
         $credential->delete();
 
@@ -103,8 +107,8 @@ class OrderController extends Controller
         ]);
 
         $message->load('user');
-        \App\Events\OrderMessageCreated::dispatch($message);
-        $order->user->notify(new \App\Notifications\NewMessageNotification($message));
+        OrderMessageCreated::dispatch($message);
+        $order->user->notify(new NewMessageNotification($message));
 
         return redirect()->back()->with('success', 'Message sent.');
     }
@@ -112,6 +116,7 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         $order->delete();
+
         return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
     }
 

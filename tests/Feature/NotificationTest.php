@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\User;
 use App\Models\Order;
+use App\Models\User;
 use App\Notifications\OrderPlacedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -30,10 +30,10 @@ it('can mark a notification as read', function () {
 
     $notification = $this->user->notifications()->first();
 
-    $response = $this->actingAs($this->user)->postJson('/notifications/' . $notification->id . '/mark-read');
+    $response = $this->actingAs($this->user)->postJson('/notifications/'.$notification->id.'/mark-read');
 
     $response->assertSuccessful();
-    
+
     $notification->refresh();
     expect($notification->read_at)->not->toBeNull();
 });
@@ -45,6 +45,6 @@ it('can mark all notifications as read (deletes them)', function () {
     $response = $this->actingAs($this->user)->postJson('/notifications/mark-all-read');
 
     $response->assertSuccessful();
-    
+
     expect($this->user->notifications()->count())->toBe(0);
 });

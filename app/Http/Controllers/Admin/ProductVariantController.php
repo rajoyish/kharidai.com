@@ -5,14 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ProductVariantController extends Controller
 {
     public function index(Product $product)
     {
         $variants = $product->variants()->latest()->get();
+
         return Inertia::render('Admin/ProductVariants/Index', [
             'product' => $product,
             'variants' => $variants,

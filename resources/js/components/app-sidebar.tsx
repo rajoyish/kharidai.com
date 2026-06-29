@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { BookOpen, LayoutGrid, ShoppingCart, LayoutDashboard, Users, ClipboardList, Package, Tags } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import AppLogoIcon from '@/components/app-logo-icon';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -11,6 +12,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 // import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
@@ -33,6 +35,7 @@ import type { SharedData } from '@/types';
 
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
+    const { state } = useSidebar();
 
     const adminNavItems: NavItem[] = [
         {
@@ -69,7 +72,13 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/" prefetch>
-                                <AppLogo />
+                                <div className="flex items-center justify-center">
+                                    {state === 'collapsed' ? (
+                                        <AppLogoIcon className="size-6 text-primary" />
+                                    ) : (
+                                        <AppLogo className="h-8 w-auto ml-1" />
+                                    )}
+                                </div>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

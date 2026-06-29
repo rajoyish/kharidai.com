@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Database\Factories\PaymentReceiptFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -20,7 +21,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['order_id', 'file_path', 'status'])]
 class PaymentReceipt extends Model
 {
-    /** @use HasFactory<\Database\Factories\PaymentReceiptFactory> */
+    /** @use HasFactory<PaymentReceiptFactory> */
     use HasFactory;
 
     /**

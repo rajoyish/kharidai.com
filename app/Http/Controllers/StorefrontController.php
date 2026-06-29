@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,7 +20,7 @@ class StorefrontController extends Controller
 
         $categories = $categoriesQuery->get();
         // Only keep categories that have products
-        $categories = $categories->filter(function($category) {
+        $categories = $categories->filter(function ($category) {
             return $category->products->count() > 0;
         })->values();
 
@@ -34,13 +34,14 @@ class StorefrontController extends Controller
 
     public function show(Product $product)
     {
-        if (!$product->in_stock) {
+        if (! $product->in_stock) {
             abort(404);
         }
-        
+
         $product->load('variants');
+
         return Inertia::render('Products/Show', [
-            'product' => $product
+            'product' => $product,
         ]);
     }
 }
