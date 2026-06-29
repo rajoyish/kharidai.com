@@ -3,13 +3,17 @@
 use App\Events\OrderMessageCreated;
 use App\Models\Order;
 use App\Models\OrderCredential;
+use App\Models\OrderItem;
+use App\Models\OrderMessage;
 use App\Models\PaymentReceipt;
+use App\Models\ProductVariant;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -156,6 +160,56 @@ it('can delete an order', function () {
     $this->assertDatabaseMissing('orders', [
         'id' => $order->id,
     ]);
+});
+
+it('can delete an order with related records', function () {
+    Storage::fake('public');
+
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+    $variant = ProductVariant::factory()->create();
+    $item = OrderItem::create([
+        'order_id' => $order->id,
+        'product_variant_id' => $variant->id,
+        'price' => 1000,
+        'purchase_price' => 600,
+        'quantity' => 1,
+    ]);
+    $receipt = PaymentReceipt::create([
+        'order_id' => $order->id,
+        'file_path' => 'receipts/test.jpg',
+        'status' => 'pending',
+    ]);
+    $credential = OrderCredential::create([
+        'order_id' => $order->id,
+        'content' => 'Credential content',
+    ]);
+    $message = OrderMessage::create([
+        'order_id' => $order->id,
+        'user_id' => $this->admin->id,
+        'message' => 'Support message',
+    ]);
+
+    Storage::disk('public')->put($receipt->file_path, 'receipt');
+
+    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id);
+
+    $response->assertRedirect(route('admin.orders.index'));
+    $this->assertDatabaseMissing('orders', [
+        'id' => $order->id,
+    ]);
+    $this->assertDatabaseMissing('order_items', [
+        'id' => $item->id,
+    ]);
+    $this->assertDatabaseMissing('payment_receipts', [
+        'id' => $receipt->id,
+    ]);
+    $this->assertDatabaseMissing('order_credentials', [
+        'id' => $credential->id,
+    ]);
+    $this->assertDatabaseMissing('order_messages', [
+        'id' => $message->id,
+    ]);
+    Storage::disk('public')->assertMissing($receipt->file_path);
 });
 
 it('can allow receipt reupload', function () {

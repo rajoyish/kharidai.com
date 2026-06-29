@@ -1,5 +1,7 @@
-import { Head, Link, useForm, router } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
+import { destroy as destroyProduct } from '@/actions/App/Http/Controllers/Admin/ProductController';
+import { PagePanel } from '@/components/page-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,8 +12,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-
-import { PagePanel } from '@/components/page-panel';
 
 type Product = {
     id: number;
@@ -26,12 +26,16 @@ type Product = {
 };
 
 export default function ProductsIndex({ products }: { products: Product[] }) {
-    const { delete: destroy } = useForm();
     const [searchQuery, setSearchQuery] = useState('');
+    const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
 
     const filteredProducts = useMemo(() => {
-        if (!searchQuery.trim()) return products;
+        if (!searchQuery.trim()) {
+            return products;
+        }
+
         const query = searchQuery.toLowerCase();
+
         return products.filter((p) =>
             p.title.toLowerCase().includes(query)
         );
@@ -39,7 +43,14 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
 
     const handleDelete = (product: Product) => {
         if (confirm('Are you sure you want to delete this product?')) {
-            destroy(`/admin/products/${product.slug}`);
+            setDeletingProductId(product.id);
+
+            router.delete(destroyProduct(product), {
+                preserveScroll: true,
+                onFinish: () => {
+                    setDeletingProductId(null);
+                },
+            });
         }
     };
 
@@ -134,6 +145,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                             variant="ghost"
                                             size="sm"
                                             className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            disabled={deletingProductId === product.id}
                                             onClick={() => handleDelete(product)}
                                         >
                                             Delete

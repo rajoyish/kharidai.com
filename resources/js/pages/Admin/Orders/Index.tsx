@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { type BreadcrumbItem } from '@/types';
 import { Eye, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { PagePanel } from '@/components/page-panel';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -10,8 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-
-import { PagePanel } from '@/components/page-panel';
+import type { BreadcrumbItem } from '@/types';
 
 type Order = {
     id: number;
@@ -39,6 +40,8 @@ export default function AdminOrderIndex({
 }: {
     orders: { data: Order[] };
 }) {
+    const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
+
     return (
         <>
             <Head title="Manage Orders" />
@@ -147,9 +150,17 @@ export default function AdminOrderIndex({
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                        disabled={deletingOrderId === order.id}
                                         onClick={() => {
                                             if (confirm('Are you sure you want to delete this order?')) {
-                                                router.delete(`/admin/orders/${order.id}`);
+                                                setDeletingOrderId(order.id);
+
+                                                router.delete(destroyOrder(order), {
+                                                    preserveScroll: true,
+                                                    onFinish: () => {
+                                                        setDeletingOrderId(null);
+                                                    },
+                                                });
                                             }
                                         }}
                                     >

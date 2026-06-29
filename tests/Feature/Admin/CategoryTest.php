@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -54,5 +55,21 @@ it('can delete a category', function () {
     $response->assertRedirect();
     $this->assertDatabaseMissing('categories', [
         'id' => $category->id,
+    ]);
+});
+
+it('can delete a category without deleting its products', function () {
+    $category = Category::factory()->create();
+    $product = Product::factory()->create(['category_id' => $category->id]);
+
+    $response = $this->actingAs($this->admin)->delete('/admin/categories/'.$category->slug);
+
+    $response->assertRedirect();
+    $this->assertDatabaseMissing('categories', [
+        'id' => $category->id,
+    ]);
+    $this->assertDatabaseHas('products', [
+        'id' => $product->id,
+        'category_id' => null,
     ]);
 });

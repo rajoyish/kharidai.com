@@ -1,5 +1,7 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { destroy as destroyCategory } from '@/actions/App/Http/Controllers/Admin/CategoryController';
+import { PagePanel } from '@/components/page-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,7 +12,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { PagePanel } from '@/components/page-panel';
 
 type Category = {
     id: number;
@@ -21,8 +22,9 @@ type Category = {
 export default function CategoriesIndex({ categories }: { categories: Category[] }) {
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
 
-    const { data, setData, post, patch, delete: destroy, processing, errors, reset } = useForm({
+    const { data, setData, post, patch, processing, errors, reset } = useForm({
         name: '',
     });
 
@@ -46,6 +48,7 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (isCreating) {
             post('/admin/categories', {
                 onSuccess: () => {
@@ -63,7 +66,14 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
 
     const handleDelete = (category: Category) => {
         if (confirm(`Are you sure you want to delete the category "${category.name}"?`)) {
-            destroy(`/admin/categories/${category.slug}`);
+            setDeletingCategoryId(category.id);
+
+            router.delete(destroyCategory(category), {
+                preserveScroll: true,
+                onFinish: () => {
+                    setDeletingCategoryId(null);
+                },
+            });
         }
     };
 
@@ -135,6 +145,7 @@ export default function CategoriesIndex({ categories }: { categories: Category[]
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        disabled={deletingCategoryId === category.id}
                                         onClick={() => handleDelete(category)}
                                     >
                                         Delete

@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
+import { Check, Pencil, Trash2, Upload, X } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { PagePanel } from '@/components/page-panel';
 import { SupportChat } from '@/components/SupportChat';
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Check, X, Pencil, Trash2, Upload } from 'lucide-react';
-import { toast } from 'sonner';
-
-import { PagePanel } from '@/components/page-panel';
 
 type Order = {
     id: number;
@@ -92,7 +91,10 @@ export default function AdminOrderShow({ order }: { order: Order }) {
     const [processingReceipt, setProcessingReceipt] = useState(false);
 
     const handleReceiptAction = (status: 'approved' | 'rejected') => {
-        if (!order.payment_receipt) return;
+        if (!order.payment_receipt) {
+            return;
+        }
+
         router.patch(`/admin/receipts/${order.payment_receipt.id}/status`, { status }, {
             preserveScroll: true,
             onStart: () => setProcessingReceipt(true),
@@ -116,7 +118,10 @@ export default function AdminOrderShow({ order }: { order: Order }) {
     };
 
     const handleDeleteCredential = (credId: number) => {
-        if (!confirm('Are you sure you want to delete this credential?')) return;
+        if (!confirm('Are you sure you want to delete this credential?')) {
+            return;
+        }
+
         router.delete(`/admin/orders/${order.id}/credentials/${credId}`, {
             preserveScroll: true,
             onSuccess: () => toast.success('Credential deleted')
@@ -130,6 +135,8 @@ export default function AdminOrderShow({ order }: { order: Order }) {
             onSuccess: () => resetCred('content'),
         });
     };
+
+    const [deletingOrder, setDeletingOrder] = useState(false);
 
     // handleSendMessage moved to SupportChat
 
@@ -146,9 +153,17 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                         <Button
                             variant="outline"
                             className="border-red-200 text-red-600 hover:bg-red-50"
+                            disabled={deletingOrder}
                             onClick={() => {
                                 if (confirm('Are you sure you want to delete this order completely?')) {
-                                    router.delete(`/admin/orders/${order.id}`);
+                                    setDeletingOrder(true);
+
+                                    router.delete(destroyOrder(order), {
+                                        preserveScroll: true,
+                                        onFinish: () => {
+                                            setDeletingOrder(false);
+                                        },
+                                    });
                                 }
                             }}
                         >

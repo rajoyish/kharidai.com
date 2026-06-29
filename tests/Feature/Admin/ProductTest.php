@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -57,6 +58,21 @@ it('can delete a product', function () {
     $response->assertRedirect();
     $this->assertDatabaseMissing('products', [
         'id' => $product->id,
+    ]);
+});
+
+it('can delete a product with variants', function () {
+    $product = Product::factory()->create();
+    $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+
+    $response = $this->actingAs($this->admin)->delete('/admin/products/'.$product->slug);
+
+    $response->assertRedirect(route('admin.products.index'));
+    $this->assertDatabaseMissing('products', [
+        'id' => $product->id,
+    ]);
+    $this->assertDatabaseMissing('product_variants', [
+        'id' => $variant->id,
     ]);
 });
 

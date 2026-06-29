@@ -10,6 +10,7 @@ use App\Models\PaymentReceipt;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -115,7 +116,13 @@ class OrderController extends Controller
 
     public function destroy(Order $order)
     {
+        $receiptPath = $order->paymentReceipt?->file_path;
+
         $order->delete();
+
+        if ($receiptPath !== null) {
+            Storage::disk('public')->delete($receiptPath);
+        }
 
         return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
     }
