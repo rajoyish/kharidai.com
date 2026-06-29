@@ -22,7 +22,7 @@ class OrderPlacedNotification extends Notification
     {
         return new BroadcastMessage([
             'message' => 'New Order #'.$this->order->order_number,
-            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 2),
+            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 0),
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ]);
@@ -32,7 +32,7 @@ class OrderPlacedNotification extends Notification
     {
         return [
             'message' => 'New Order #'.$this->order->order_number,
-            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 2),
+            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 0),
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ];

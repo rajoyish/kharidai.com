@@ -33,7 +33,7 @@ it('can create a product variant', function () {
     $this->assertDatabaseHas('product_variants', [
         'product_id' => $product->id,
         'name' => 'New Variant',
-        'price_npr' => 1000,
+        'price_npr' => 1000 * 100,
     ]);
 });
 
@@ -53,7 +53,7 @@ it('can update a product variant', function () {
     $this->assertDatabaseHas('product_variants', [
         'id' => $variant->id,
         'name' => 'Updated Variant',
-        'price_npr' => 1200,
+        'price_npr' => 1200 * 100,
     ]);
 });
 

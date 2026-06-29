@@ -1,4 +1,5 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
+import AppLogo from '@/components/app-logo';
 import { SeoHead } from '@/components/seo-head';
 import { JsonLd } from '@/components/json-ld';
 import { cartAdd } from "@/routes";

@@ -1,4 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import AppLogo from '@/components/app-logo';
+import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -49,13 +51,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
         <>
             <Head title="Checkout - Kharidai" />
             <div className="flex min-h-screen flex-col bg-background text-foreground">
-                <header className="border-b">
-                    <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                        <Link href="/" className="flex items-center gap-2 font-bold group">
-                            <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
-                        </Link>
-                    </div>
-                </header>
+
 
                 <main className="container mx-auto max-w-5xl flex-1 px-4 py-8">
                     <h1 className="mb-8 text-3xl font-bold tracking-tight">
@@ -72,7 +68,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                     Payment Method
                                 </h2>
                                 <div className="space-y-4">
-                                    <div className="flex items-start space-x-2 rounded-md border p-4">
+                                    <div className="flex items-start justify-between rounded-md border-2 border-primary bg-primary/5 p-4">
                                         <Label
                                             className="flex-1 cursor-default font-medium"
                                         >
@@ -82,6 +78,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                                 bank/wallet transfer.
                                             </p>
                                         </Label>
+                                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +133,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                                 ({item.product_variant.name})
                                             </span>
                                             <span className="text-right font-medium">
-                                                {`Rs. ${(parseFloat(item.product_variant.price_npr) * item.quantity).toFixed(2)}`}
+                                                {`Rs. ${(parseFloat(item.product_variant.price_npr) * item.quantity).toFixed(0)}`}
                                             </span>
                                         </div>
                                     ))}
@@ -146,7 +143,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                     <div className="flex justify-between text-lg font-bold">
                                         <span>Total</span>
                                         <span>
-                                            {`Rs. ${totalNpr.toFixed(2)}`}
+                                            {`Rs. ${totalNpr.toFixed(0)}`}
                                         </span>
                                     </div>
                                 </div>

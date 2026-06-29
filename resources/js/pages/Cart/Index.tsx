@@ -1,4 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus } from 'lucide-react';
 
@@ -225,7 +226,7 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                                         <div className="flex justify-between text-muted-foreground">
                                             <span>Subtotal (NPR)</span>
                                             <span className="font-medium text-foreground">
-                                                Rs. {totalNpr.toFixed(2)}
+                                                Rs. {totalNpr.toFixed(0)}
                                             </span>
                                         </div>
 

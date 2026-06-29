@@ -101,7 +101,7 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     </TableCell>
                                     <TableCell className="flex justify-end gap-2">
                                         {(order.can_reupload_receipt || order.status === 'pending') && (
-                                            <Button variant="outline" size="sm" asChild className="border-amber-200 text-amber-700 hover:bg-amber-50">
+                                            <Button variant="outline" size="sm" asChild className="border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-900 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300 focus-visible:ring-amber-500">
                                                 <Link href={`/orders/${order.id}`}>
                                                     <Upload className="h-4 w-4 mr-1" /> Reupload Receipt
                                                 </Link>

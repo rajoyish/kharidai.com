@@ -88,7 +88,7 @@ export default function AdminOrderIndex({
                                 </TableCell>
                                 <TableCell className="font-medium text-green-600">
                                     {order.status === 'completed' ? (
-                                        <>Rs. {order.profit.toFixed(2)}</>
+                                        <>Rs. {order.profit.toFixed(0)}</>
                                     ) : (
                                         <span className="text-muted-foreground">—</span>
                                     )}

@@ -231,7 +231,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                                     </div>
                                                     <div className="flex justify-between font-semibold mt-1">
                                                         <span>Profit:</span>
-                                                        <span>Rs. {((parseFloat(item.price) - parseFloat(item.purchase_price)) * item.quantity).toFixed(2)}</span>
+                                                        <span>Rs. {((parseFloat(item.price) - parseFloat(item.purchase_price)) * item.quantity).toFixed(0)}</span>
                                                     </div>
                                                 </div>
                                             )}
