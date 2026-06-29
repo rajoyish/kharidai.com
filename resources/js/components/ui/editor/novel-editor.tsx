@@ -6,13 +6,11 @@ import {
     EditorCommandEmpty,
     EditorCommandList,
     EditorCommandItem,
-    EditorBubble,
-    EditorBubbleItem,
+    handleCommandNavigation,
     JSONContent,
 } from 'novel';
 import { defaultExtensions } from './extensions';
 import { slashCommand, suggestionItems } from './slash-command';
-import { Bold, Italic, Strikethrough, Underline, Code } from 'lucide-react';
 
 interface NovelEditorProps {
     initialValue?: string | JSONContent;
@@ -108,7 +106,10 @@ export default function NovelEditor({
                             }
                         }
                         return false;
-                    }
+                    },
+                    handleDOMEvents: {
+                        keydown: (_view, event) => handleCommandNavigation(event),
+                    },
                 }}
             >
                 <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
@@ -120,6 +121,7 @@ export default function NovelEditor({
                             <EditorCommandItem
                                 value={item.title}
                                 onCommand={(val) => item.command!(val)}
+                                onMouseDown={(e) => e.preventDefault()}
                                 className="flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent"
                                 key={item.title}
                             >
@@ -136,52 +138,6 @@ export default function NovelEditor({
                         ))}
                     </EditorCommandList>
                 </EditorCommand>
-
-                <EditorBubble
-                    tippyOptions={{ placement: 'top' }}
-                    className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl"
-                >
-                    <EditorBubbleItem
-                        onSelect={(editor) => {
-                            editor.chain().focus().toggleBold().run();
-                        }}
-                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
-                    >
-                        <Bold size={16} />
-                    </EditorBubbleItem>
-                    <EditorBubbleItem
-                        onSelect={(editor) => {
-                            editor.chain().focus().toggleItalic().run();
-                        }}
-                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
-                    >
-                        <Italic size={16} />
-                    </EditorBubbleItem>
-                    <EditorBubbleItem
-                        onSelect={(editor) => {
-                            editor.chain().focus().toggleUnderline().run();
-                        }}
-                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
-                    >
-                        <Underline size={16} />
-                    </EditorBubbleItem>
-                    <EditorBubbleItem
-                        onSelect={(editor) => {
-                            editor.chain().focus().toggleStrike().run();
-                        }}
-                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
-                    >
-                        <Strikethrough size={16} />
-                    </EditorBubbleItem>
-                    <EditorBubbleItem
-                        onSelect={(editor) => {
-                            editor.chain().focus().toggleCode().run();
-                        }}
-                        className="flex px-3 py-2 text-sm hover:bg-accent cursor-pointer"
-                    >
-                        <Code size={16} />
-                    </EditorBubbleItem>
-                </EditorBubble>
             </EditorContent>
         </EditorRoot>
     );
