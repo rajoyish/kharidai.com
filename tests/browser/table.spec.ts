@@ -171,6 +171,11 @@ test.describe('admin table sticky overrides', () => {
         expect(productsIndexSource).toContain('rel="noopener noreferrer"');
     });
 
+    test('keeps product status labels on one line', () => {
+        expect(productsIndexSource).toContain('PRODUCT_STATUS_COLUMN_CLASSES');
+        expect(productsIndexSource).toContain('whitespace-nowrap');
+    });
+
     for (const viewport of [
         { name: 'desktop', width: 1024, height: 720 },
         { name: 'mobile', width: 390, height: 720 },

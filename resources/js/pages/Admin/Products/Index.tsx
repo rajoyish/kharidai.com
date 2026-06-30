@@ -27,6 +27,7 @@ type Product = {
 };
 
 const PRODUCT_IMAGE_COLUMN_CLASSES = 'w-[88px] min-w-[88px] max-w-[88px] px-4';
+const PRODUCT_STATUS_COLUMN_CLASSES = 'w-[132px] min-w-[132px]';
 
 export default function ProductsIndex({ products }: { products: Product[] }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -88,7 +89,11 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                             </TableHead>
                             <TableHead>Title</TableHead>
                             <TableHead>Category</TableHead>
-                            <TableHead className="w-[120px]">Status</TableHead>
+                            <TableHead
+                                className={PRODUCT_STATUS_COLUMN_CLASSES}
+                            >
+                                Status
+                            </TableHead>
                             <TableHead className="text-right">
                                 Actions
                             </TableHead>
@@ -124,9 +129,11 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         </span>
                                     )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    className={PRODUCT_STATUS_COLUMN_CLASSES}
+                                >
                                     <span
-                                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap uppercase ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
                                     >
                                         {product.in_stock
                                             ? 'In Stock'
