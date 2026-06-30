@@ -25,9 +25,8 @@ class UserController extends Controller
             return back();
         }
 
-        $user->update([
-            'banned_at' => $user->banned_at ? null : now(),
-        ]);
+        $user->banned_at = $user->banned_at ? null : now();
+        $user->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'User status updated.']);
 
