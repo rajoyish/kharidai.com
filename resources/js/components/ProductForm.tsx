@@ -1,10 +1,7 @@
 import { useForm } from '@inertiajs/react';
+import { UploadCloud } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import NovelEditor from '@/components/ui/editor/novel-editor';
-import { MediaManager } from '@/components/ui/media-manager';
 import {
     Card,
     CardContent,
@@ -13,7 +10,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { UploadCloud } from 'lucide-react';
+import NovelEditor from '@/components/ui/editor/novel-editor';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { MediaManager } from '@/components/ui/media-manager';
 
 export type Product = {
     id: number;
@@ -37,7 +37,12 @@ type ProductFormProps = {
     categories?: Category[];
 };
 
-export function ProductForm({ product, submitUrl, isEditing = false, categories = [] }: ProductFormProps) {
+export function ProductForm({
+    product,
+    submitUrl,
+    isEditing = false,
+    categories = [],
+}: ProductFormProps) {
     const { data, setData, post, processing, errors } = useForm({
         _method: isEditing ? 'put' : 'post',
         title: product?.title || '',
@@ -73,7 +78,9 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                                 id="title"
                                 placeholder="e.g. Premium Wireless Headphones"
                                 value={data.title}
-                                onChange={(e) => setData('title', e.target.value)}
+                                onChange={(e) =>
+                                    setData('title', e.target.value)
+                                }
                                 required
                             />
                             {errors.title && (
@@ -87,13 +94,18 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                             <Label htmlFor="category_id">Category</Label>
                             <select
                                 id="category_id"
-                                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                                className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-sm ring-offset-background placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
                                 value={data.category_id}
-                                onChange={(e) => setData('category_id', e.target.value)}
+                                onChange={(e) =>
+                                    setData('category_id', e.target.value)
+                                }
                             >
                                 <option value="">Select a category</option>
                                 {categories.map((category) => (
-                                    <option key={category.id} value={category.id}>
+                                    <option
+                                        key={category.id}
+                                        value={category.id}
+                                    >
                                         {category.name}
                                     </option>
                                 ))}
@@ -110,12 +122,16 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                                 type="checkbox"
                                 id="in_stock"
                                 checked={data.in_stock}
-                                onChange={(e) => setData('in_stock', e.target.checked)}
+                                onChange={(e) =>
+                                    setData('in_stock', e.target.checked)
+                                }
                                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
-                            <Label htmlFor="in_stock">Product is listed and in stock</Label>
+                            <Label htmlFor="in_stock">
+                                Product is listed and in stock
+                            </Label>
                             {errors.in_stock && (
-                                <div className="text-sm font-medium text-destructive ml-2">
+                                <div className="ml-2 text-sm font-medium text-destructive">
                                     {errors.in_stock}
                                 </div>
                             )}
@@ -125,7 +141,9 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                             <Label htmlFor="description">Description</Label>
                             <NovelEditor
                                 initialValue={data.description}
-                                onChange={(html) => setData('description', html)}
+                                onChange={(html) =>
+                                    setData('description', html)
+                                }
                             />
                             {errors.description && (
                                 <div className="text-sm font-medium text-destructive">
@@ -135,7 +153,6 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                         </div>
 
                         <div className="grid gap-2">
-                            <Label>Media Manager</Label>
                             <MediaManager />
                         </div>
 
@@ -151,7 +168,7 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                                         <div className="flex">
                                             <label
                                                 htmlFor="image"
-                                                className="relative cursor-pointer rounded-md bg-background font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary/80"
+                                                className="relative cursor-pointer rounded-md bg-background font-semibold text-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:outline-none hover:text-primary/80"
                                             >
                                                 <span>Upload a file</span>
                                                 <Input
@@ -161,31 +178,38 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                                                     onChange={(e) =>
                                                         setData(
                                                             'image',
-                                                            e.target.files ? e.target.files[0] : null,
+                                                            e.target.files
+                                                                ? e.target
+                                                                      .files[0]
+                                                                : null,
                                                         )
                                                     }
                                                     accept="image/*"
                                                 />
                                             </label>
-                                            <p className="pl-1">or drag and drop</p>
+                                            <p className="pl-1">
+                                                or drag and drop
+                                            </p>
                                         </div>
                                     </div>
                                     <p className="text-xs leading-5 text-muted-foreground">
                                         {data.image
                                             ? data.image.name
                                             : isEditing && product?.image
-                                            ? 'Leave blank to keep current image'
-                                            : 'PNG, JPG, WEBP up to 10MB'}
+                                              ? 'Leave blank to keep current image'
+                                              : 'PNG, JPG, WEBP up to 10MB'}
                                     </p>
-                                    {isEditing && product?.image && !data.image && (
-                                        <div className="mt-4 flex justify-center">
-                                            <img
-                                                src={`/storage/${product.image}`}
-                                                className="h-24 w-24 rounded object-cover border"
-                                                alt="Current product image"
-                                            />
-                                        </div>
-                                    )}
+                                    {isEditing &&
+                                        product?.image &&
+                                        !data.image && (
+                                            <div className="mt-4 flex justify-center">
+                                                <img
+                                                    src={`/storage/${product.image}`}
+                                                    className="h-24 w-24 rounded border object-cover"
+                                                    alt="Current product image"
+                                                />
+                                            </div>
+                                        )}
                                 </div>
                             </div>
                             {errors.image && (
@@ -202,8 +226,8 @@ export function ProductForm({ product, submitUrl, isEditing = false, categories 
                                     ? 'Updating...'
                                     : 'Creating...'
                                 : isEditing
-                                ? 'Update Product'
-                                : 'Create Product'}
+                                  ? 'Update Product'
+                                  : 'Create Product'}
                         </Button>
                     </CardFooter>
                 </form>
