@@ -1,13 +1,13 @@
-import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import AppLogo from '@/components/app-logo';
-import { SeoHead } from '@/components/seo-head';
-import { JsonLd } from '@/components/json-ld';
-import { cartAdd } from "@/routes";
-import { Button } from '@/components/ui/button';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+import AppLogo from '@/components/app-logo';
+import { ProductDescription } from '@/components/product-description';
+import { SeoHead } from '@/components/seo-head';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type Variant = {
     id: number;
@@ -30,13 +30,15 @@ export default function Show({ product }: { product: Product }) {
         product.variants.length > 0 ? product.variants[0] : null,
     );
 
-    const { data, setData, post, processing } = useForm({
+    const { setData, post, processing } = useForm({
         product_variant_id: selectedVariant?.id,
         quantity: 1,
     });
 
     const handleAddToCart = () => {
-        if (!selectedVariant) return;
+        if (!selectedVariant) {
+            return;
+        }
 
         post('/cart', {
             preserveScroll: true,
@@ -54,10 +56,18 @@ export default function Show({ product }: { product: Product }) {
 
     return (
         <>
-            <SeoHead 
-                title={product.title} 
-                description={product.description?.substring(0, 160).replace(/<[^>]*>?/gm, '') || product.title} 
-                image={product.image ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}` : undefined}
+            <SeoHead
+                title={product.title}
+                description={
+                    product.description
+                        ?.substring(0, 160)
+                        .replace(/<[^>]*>?/gm, '') || product.title
+                }
+                image={
+                    product.image
+                        ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}`
+                        : undefined
+                }
                 type="product"
             />
             {selectedVariant && (
@@ -66,21 +76,29 @@ export default function Show({ product }: { product: Product }) {
                         '@context': 'https://schema.org',
                         '@type': 'Product',
                         name: product.title,
-                        image: product.image ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}` : undefined,
-                        description: product.description?.replace(/<[^>]*>?/gm, ''),
+                        image: product.image
+                            ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}`
+                            : undefined,
+                        description: product.description?.replace(
+                            /<[^>]*>?/gm,
+                            '',
+                        ),
                         offers: {
                             '@type': 'Offer',
                             priceCurrency: 'NPR',
                             price: selectedVariant?.price_npr || '0.00',
-                            availability: 'https://schema.org/InStock'
-                        }
+                            availability: 'https://schema.org/InStock',
+                        },
                     })}
                 </script>
             )}
             <div className="flex min-h-screen flex-col bg-background text-foreground">
                 <header className="border-b">
                     <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                        <Link href="/" className="flex items-center gap-2 font-bold group">
+                        <Link
+                            href="/"
+                            className="group flex items-center gap-2 font-bold"
+                        >
                             <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
                         </Link>
 
@@ -98,7 +116,11 @@ export default function Show({ product }: { product: Product }) {
                             </Link>
                             {auth.user ? (
                                 <Link
-                                    href={auth.user.is_admin ? '/admin' : '/orders'}
+                                    href={
+                                        auth.user.is_admin
+                                            ? '/admin'
+                                            : '/orders'
+                                    }
                                     className="text-sm font-medium underline-offset-4 hover:underline"
                                 >
                                     {auth.user.is_admin ? 'Admin' : 'My Orders'}
@@ -118,7 +140,7 @@ export default function Show({ product }: { product: Product }) {
                 <main className="container mx-auto flex-1 px-4 py-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
                         {/* Block A: Image + Variants (First on mobile, second on desktop) */}
-                        <div className="flex flex-col gap-8 order-1 md:order-2">
+                        <div className="order-1 flex flex-col gap-8 md:order-2">
                             {/* Product Image */}
                             <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
                                 {product.image ? (
@@ -149,8 +171,10 @@ export default function Show({ product }: { product: Product }) {
                                                         v.id.toString() ===
                                                         value,
                                                 );
-                                            if (variant)
+
+                                            if (variant) {
                                                 handleVariantChange(variant);
+                                            }
                                         }}
                                         className="grid gap-4"
                                     >
@@ -212,7 +236,7 @@ export default function Show({ product }: { product: Product }) {
                         </div>
 
                         {/* Block B: Details (Second on mobile, first on desktop) */}
-                        <div className="flex flex-col order-2 md:order-1">
+                        <div className="order-2 flex flex-col md:order-1">
                             <h1 className="mb-2 text-3xl font-bold tracking-tight">
                                 {product.title}
                             </h1>
@@ -223,12 +247,9 @@ export default function Show({ product }: { product: Product }) {
                                 </div>
                             )}
 
-                            <div
-                                className="prose dark:prose-invert mb-8 max-w-none text-muted-foreground"
-                                dangerouslySetInnerHTML={{ __html: product.description }}
+                            <ProductDescription
+                                description={product.description}
                             />
-
-
                         </div>
                     </div>
                 </main>

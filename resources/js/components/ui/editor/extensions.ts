@@ -11,7 +11,6 @@ import {
     HorizontalRule,
     Placeholder,
 } from 'novel';
-import { Markdown } from 'tiptap-markdown';
 
 const placeholder = Placeholder.configure({
     placeholder: ({ node }) => {
@@ -96,5 +95,4 @@ export const defaultExtensions = [
             class: 'mt-4 mb-6 border-t border-stone-300 dark:border-stone-700',
         },
     }),
-    Markdown,
 ];
