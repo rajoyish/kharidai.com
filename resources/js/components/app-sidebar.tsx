@@ -1,5 +1,14 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, LayoutGrid, ShoppingCart, LayoutDashboard, Users, ClipboardList, Package, Tags, CalendarDays } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    CalendarDays,
+    ClipboardList,
+    LayoutDashboard,
+    LayoutGrid,
+    Package,
+    ShoppingCart,
+    Tags,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { NavMain } from '@/components/nav-main';
@@ -14,66 +23,71 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
-// import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import { home } from '@/routes';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as adminCategoriesIndex } from '@/routes/admin/categories';
+import { index as adminOrdersIndex } from '@/routes/admin/orders';
+import { index as adminProductsIndex } from '@/routes/admin/products';
+import { index as adminSubscriptionsIndex } from '@/routes/admin/subscriptions';
+import { index as adminUsersIndex } from '@/routes/admin/users';
+import { index as ordersIndex } from '@/routes/orders';
+import { index as subscriptionsIndex } from '@/routes/subscriptions';
+import type { NavItem, SharedData } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Home',
-        href: '/',
+        href: home(),
         icon: LayoutGrid,
     },
     {
         title: 'My Orders',
-        href: '/orders',
+        href: ordersIndex(),
         icon: ShoppingCart,
     },
     {
         title: 'My Subscriptions',
-        href: '/subscriptions',
+        href: subscriptionsIndex(),
         icon: CalendarDays,
     },
 ];
 
-import { usePage } from '@inertiajs/react';
-import type { SharedData } from '@/types';
+const adminNavItems: NavItem[] = [
+    {
+        title: 'Admin Dashboard',
+        href: adminDashboard(),
+        icon: LayoutDashboard,
+    },
+    {
+        title: 'User Management',
+        href: adminUsersIndex(),
+        icon: Users,
+    },
+    {
+        title: 'Orders',
+        href: adminOrdersIndex(),
+        icon: ClipboardList,
+    },
+    {
+        title: 'Subscriptions',
+        href: adminSubscriptionsIndex(),
+        icon: CalendarDays,
+    },
+    {
+        title: 'Products',
+        href: adminProductsIndex(),
+        icon: Package,
+    },
+    {
+        title: 'Categories',
+        href: adminCategoriesIndex(),
+        icon: Tags,
+    },
+];
 
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
     const { state } = useSidebar();
-
-    const adminNavItems: NavItem[] = [
-        {
-            title: 'Admin Dashboard',
-            href: '/admin',
-            icon: LayoutDashboard,
-        },
-        {
-            title: 'User Management',
-            href: '/admin/users',
-            icon: Users,
-        },
-        {
-            title: 'Orders',
-            href: '/admin/orders',
-            icon: ClipboardList,
-        },
-        {
-            title: 'Subscriptions',
-            href: '/admin/subscriptions',
-            icon: CalendarDays,
-        },
-        {
-            title: 'Products',
-            href: '/admin/products',
-            icon: Package,
-        },
-        {
-            title: 'Categories',
-            href: '/admin/categories',
-            icon: Tags,
-        },
-    ];
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">
@@ -81,7 +95,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/" prefetch>
+                            <Link href={home()} prefetch>
                                 <div className="flex items-center justify-center">
                                     {state === 'collapsed' ? (
                                         <AppLogoIcon className="size-6 text-primary" />

@@ -1,5 +1,4 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import {
     Table,
     TableBody,
@@ -11,6 +10,9 @@ import {
 import { PagePanel } from '@/components/page-panel';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
+import { home } from '@/routes';
+import { show as showOrder } from '@/routes/orders';
+import { index as subscriptionsIndex, update } from '@/routes/subscriptions';
 
 type Subscription = {
     id: number;
@@ -35,8 +37,8 @@ type Subscription = {
 };
 
 const breadcrumbs = [
-    { title: 'Home', href: '/' },
-    { title: 'My Subscriptions', href: '/subscriptions' },
+    { title: 'Home', href: home() },
+    { title: 'My Subscriptions', href: subscriptionsIndex() },
 ];
 
 function EditableLabel({ subscription }: { subscription: Subscription }) {
@@ -44,9 +46,13 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
 
     const handleBlur = () => {
         if (label !== (subscription.user_label || '')) {
-            router.put(`/subscriptions/${subscription.id}`, {
-                user_label: label,
-            }, { preserveScroll: true, preserveState: true });
+            router.put(
+                update.url(subscription),
+                {
+                    user_label: label,
+                },
+                { preserveScroll: true, preserveState: true },
+            );
         }
     };
 
@@ -96,7 +102,10 @@ export default function SubscriptionIndex({ subscriptions }: { subscriptions: Su
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <Link href={`/orders/${sub.order.id}`} className="text-primary hover:underline">
+                                        <Link
+                                            href={showOrder(sub.order.id)}
+                                            className="text-primary hover:underline"
+                                        >
                                             {sub.order.order_number}
                                         </Link>
                                     </TableCell>

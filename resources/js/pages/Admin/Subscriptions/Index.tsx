@@ -1,5 +1,4 @@
 import { Head, Link } from '@inertiajs/react';
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import {
     Table,
     TableBody,
@@ -9,7 +8,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { PagePanel } from '@/components/page-panel';
-import type { PaginatedData } from '@/types';
+import { dashboard } from '@/routes/admin';
+import { show as showAdminOrder } from '@/routes/admin/orders';
+import { index as adminSubscriptionsIndex } from '@/routes/admin/subscriptions';
 
 type Subscription = {
     id: number;
@@ -38,11 +39,15 @@ type Subscription = {
 };
 
 const breadcrumbs = [
-    { title: 'Admin', href: '/admin' },
-    { title: 'Subscriptions', href: '/admin/subscriptions' },
+    { title: 'Admin', href: dashboard() },
+    { title: 'Subscriptions', href: adminSubscriptionsIndex() },
 ];
 
-export default function AdminSubscriptionIndex({ subscriptions }: { subscriptions: PaginatedData<Subscription> }) {
+export default function AdminSubscriptionIndex({
+    subscriptions,
+}: {
+    subscriptions: { data: Subscription[] };
+}) {
     return (
         <>
             <Head title="Subscriptions - Admin" />
@@ -82,7 +87,10 @@ export default function AdminSubscriptionIndex({ subscriptions }: { subscription
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <Link href={`/admin/orders/${sub.order.id}`} className="text-primary hover:underline">
+                                            <Link
+                                                href={showAdminOrder(sub.order.id)}
+                                                className="text-primary hover:underline"
+                                            >
                                                 {sub.order.order_number}
                                             </Link>
                                         </TableCell>
