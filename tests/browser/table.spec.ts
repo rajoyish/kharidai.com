@@ -165,6 +165,12 @@ test.describe('admin table sticky overrides', () => {
         );
     });
 
+    test('links products to storefront pages in a new tab', () => {
+        expect(productsIndexSource).toContain('showStorefrontProduct.url');
+        expect(productsIndexSource).toContain('target="_blank"');
+        expect(productsIndexSource).toContain('rel="noopener noreferrer"');
+    });
+
     for (const viewport of [
         { name: 'desktop', width: 1024, height: 720 },
         { name: 'mobile', width: 390, height: 720 },

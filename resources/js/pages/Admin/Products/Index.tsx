@@ -12,6 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { show as showStorefrontProduct } from '@/routes/products';
 
 type Product = {
     id: number;
@@ -133,6 +134,22 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                     </span>
                                 </TableCell>
                                 <TableCell className="flex h-[72px] items-center justify-end gap-1.5">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-2 text-xs hover:bg-muted"
+                                        asChild
+                                    >
+                                        <a
+                                            href={showStorefrontProduct.url(
+                                                product,
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            View
+                                        </a>
+                                    </Button>
                                     <Button
                                         variant="outline"
                                         size="sm"
