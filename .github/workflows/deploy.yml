@@ -13,17 +13,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '26' 
-          cache: 'npm'
-
-      - name: Install NPM Dependencies & Build Assets
-        run: |
-          npm ci
-          npm run build
-          
+      # 1. SETUP PHP AND COMPOSER FIRST
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -33,6 +23,19 @@ jobs:
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress --no-dev --optimize-autoloader
 
+      # 2. SETUP NODE AND BUILD ASSETS SECOND
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: 'npm'
+
+      - name: Install NPM Dependencies & Build Assets
+        run: |
+          npm ci
+          npm run build
+
+      # 3. DEPLOYMENT STEPS REMAIN THE SAME
       - name: Setup SSH Key
         uses: webfactory/ssh-agent@v0.9.0
         with:
