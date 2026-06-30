@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, LayoutGrid, ShoppingCart, LayoutDashboard, Users, ClipboardList, Package, Tags } from 'lucide-react';
+import { BookOpen, LayoutGrid, ShoppingCart, LayoutDashboard, Users, ClipboardList, Package, Tags, CalendarDays } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { NavMain } from '@/components/nav-main';
@@ -28,6 +28,11 @@ const mainNavItems: NavItem[] = [
         href: '/orders',
         icon: ShoppingCart,
     },
+    {
+        title: 'My Subscriptions',
+        href: '/subscriptions',
+        icon: CalendarDays,
+    },
 ];
 
 import { usePage } from '@inertiajs/react';
@@ -52,6 +57,11 @@ export function AppSidebar() {
             title: 'Orders',
             href: '/admin/orders',
             icon: ClipboardList,
+        },
+        {
+            title: 'Subscriptions',
+            href: '/admin/subscriptions',
+            icon: CalendarDays,
         },
         {
             title: 'Products',

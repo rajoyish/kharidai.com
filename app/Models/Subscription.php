@@ -19,11 +19,12 @@ use Illuminate\Support\Carbon;
  * @property int|null $days_left
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $user_label
  * @property User $user
  * @property Order $order
  * @property OrderItem|null $orderItem
  */
-#[Fillable(['user_id', 'order_id', 'order_item_id', 'start_date', 'end_date', 'days_left'])]
+#[Fillable(['user_id', 'order_id', 'order_item_id', 'start_date', 'end_date', 'days_left', 'user_label'])]
 class Subscription extends Model
 {
     /** @use HasFactory<SubscriptionFactory> */
