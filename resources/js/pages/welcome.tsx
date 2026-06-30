@@ -1,8 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
 import { ShoppingBag, Sparkles, Archive, CloudDownload, Star, Briefcase, Truck, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { useState, useMemo } from 'react';
 import AppLogo from '@/components/app-logo';
+import { Input } from '@/components/ui/input';
 
 type Product = {
     id: number;

@@ -1,3 +1,7 @@
+import { router } from '@inertiajs/react';
+import axios from 'axios';
+import { Bell, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -8,12 +12,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { router } from '@inertiajs/react';
-import axios from 'axios';
 
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-import { Bell, Check, CircleAlert } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 interface Notification {
     id: string;
@@ -32,7 +32,18 @@ export function NotificationsPanel() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
 
+    const fetchNotifications = async () => {
+        try {
+            const res = await axios.get('/notifications');
+            setNotifications(res.data.notifications);
+            setUnreadCount(res.data.unread_count);
+        } catch (error) {
+            console.error('Failed to fetch notifications', error);
+        }
+    };
+
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchNotifications();
 
         const handleNewNotification = (e: CustomEvent) => {
@@ -51,8 +62,12 @@ export function NotificationsPanel() {
             };
 
             setNotifications((prev) => {
-                if (prev.some(n => n.id === formatted.id)) return prev;
+                if (prev.some(n => n.id === formatted.id)) {
+return prev;
+}
+
                 setUnreadCount(c => c + 1);
+
                 return [formatted, ...prev].slice(0, 20);
             });
         };
@@ -63,16 +78,6 @@ export function NotificationsPanel() {
             window.removeEventListener('new-notification', handleNewNotification as EventListener);
         };
     }, []);
-
-    const fetchNotifications = async () => {
-        try {
-            const res = await axios.get('/notifications');
-            setNotifications(res.data.notifications);
-            setUnreadCount(res.data.unread_count);
-        } catch (error) {
-            console.error('Failed to fetch notifications', error);
-        }
-    };
 
     const markAsRead = async (notification: Notification) => {
         if (!notification.read_at) {
@@ -86,6 +91,7 @@ export function NotificationsPanel() {
                 console.error('Failed to mark notification as read', error);
             }
         }
+
         setIsOpen(false);
         router.visit(notification.data.url);
     };

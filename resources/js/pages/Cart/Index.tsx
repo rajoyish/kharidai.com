@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Trash2, Plus, Minus } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
-import { Trash2, Plus, Minus } from 'lucide-react';
 
 
 type Product = {
@@ -32,7 +32,10 @@ type Cart = {
 export default function CartIndex({ cart }: { cart: Cart }) {
     const { auth, cartCount } = usePage().props;
     const handleUpdateQuantity = (item: CartItem, newQuantity: number) => {
-        if (newQuantity < 1) return;
+        if (newQuantity < 1) {
+return;
+}
+
         router.put(
             `/cart/${item.id}`,
             { quantity: newQuantity },

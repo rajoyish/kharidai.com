@@ -1,9 +1,8 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import AppLogo from '@/components/app-logo';
+import { Head, useForm } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
 import { Textarea } from '@/components/ui/textarea';
 
 type Product = {

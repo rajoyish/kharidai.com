@@ -1,5 +1,5 @@
-import React from 'react';
 import { usePage } from '@inertiajs/react';
+import React from 'react';
 
 interface JsonLdProps {
     data: Record<string, any>;

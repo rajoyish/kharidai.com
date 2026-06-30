@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 
 /**
@@ -14,7 +14,7 @@ export function validateNepaleseNumber(number: string) {
     }
 
     // Remove all whitespace, dashes, and parenthetical elements
-    const cleanNumber = number.replace(/[\s\-\(\)]/g, '');
+    const cleanNumber = number.replace(/[\s\-()]/g, '');
 
     // Normalize country code (+977 or 977) to a clean 10-digit format
     const standardNumber = cleanNumber.replace(/^(\+?977)?/, '');
@@ -39,33 +39,39 @@ interface MobileNumberInputProps extends React.ComponentProps<"input"> {
 }
 
 export function MobileNumberInput({ className, value, defaultValue, onChange, onValueChange, ...props }: MobileNumberInputProps) {
-    const [internalValue, setInternalValue] = useState(value || defaultValue || '');
+    const isControlled = value !== undefined;
+    const [internalValue, setInternalValue] = useState(defaultValue || '');
     
-    useEffect(() => {
-        if (value !== undefined) {
-            setInternalValue(value);
-        }
-    }, [value]);
+    const displayValue = isControlled ? value : internalValue;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
-        setInternalValue(val);
-        if (onChange) onChange(e);
-        if (onValueChange) onValueChange(val);
+
+        if (!isControlled) {
+            setInternalValue(val);
+        }
+
+        if (onChange) {
+onChange(e);
+}
+
+        if (onValueChange) {
+onValueChange(val);
+}
     };
 
-    const validation = validateNepaleseNumber(internalValue as string);
+    const validation = validateNepaleseNumber(displayValue as string);
 
     return (
         <div className="relative">
             <Input
                 type="tel"
-                value={internalValue}
+                value={displayValue}
                 onChange={handleChange}
                 className={className}
                 {...props}
             />
-            {internalValue && validation.carrier && validation.carrier !== "Unknown" && (
+            {displayValue && validation.carrier && validation.carrier !== "Unknown" && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         validation.carrier === 'NTC' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'

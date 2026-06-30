@@ -9,6 +9,7 @@ test.describe('Admin Page Tests', () => {
     
     // Depending on auth state, we might get redirected to /auth/google
     const currentUrl = page.url();
+
     if (currentUrl.includes('/auth/google') || currentUrl.includes('/login')) {
       // Expected behavior if unauthenticated
       expect(true).toBeTruthy();

@@ -1,7 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
-import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Button } from '@/components/ui/button';
+
 import { Eye, MessageCircle, Upload } from 'lucide-react';
+import { PagePanel } from '@/components/page-panel';
+import { Button } from '@/components/ui/button';
 import {
     Table,
     TableBody,
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui/table';
 
 
-import { PagePanel } from '@/components/page-panel';
 
 type Order = {
     id: number;

@@ -1,11 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { SupportChat } from '@/components/SupportChat';
-import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Button } from '@/components/ui/button';
+
 import { Copy, Upload, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { PagePanel } from '@/components/page-panel';
+import { SupportChat } from '@/components/SupportChat';
+import { Button } from '@/components/ui/button';
 
 type Order = {
     id: number;
@@ -147,10 +147,14 @@ export default function OrderShow({ order }: { order: Order }) {
                                                 <div className="space-y-4">
                                                     {parts.map((part, i) => {
                                                         const isCodeBlock = i % 2 === 1;
-                                                        if (!part.trim()) return null;
+
+                                                        if (!part.trim()) {
+return null;
+}
 
                                                         if (isCodeBlock) {
                                                             let codeText = part.trim();
+
                                                             if (codeText.startsWith('link\n')) {
                                                                 codeText = codeText.substring(5).trim();
                                                             }
@@ -190,6 +194,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                                                             </a>
                                                                         );
                                                                     }
+
                                                                     return <span key={j}>{tPart}</span>;
                                                                 })}
                                                             </div>

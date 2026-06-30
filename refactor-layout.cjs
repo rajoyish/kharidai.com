@@ -1,3 +1,5 @@
+/* global require */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
 
@@ -18,15 +20,21 @@ const files = [
 
 for (const file of files) {
     const fullPath = path.resolve(file);
-    if (!fs.existsSync(fullPath)) continue;
+
+    if (!fs.existsSync(fullPath)) {
+continue;
+}
+
     let content = fs.readFileSync(fullPath, 'utf8');
 
     // Extract component name from export default function ComponentName
     const matchComponent = content.match(/export default function (\w+)/);
+
     if (!matchComponent) {
         console.log(`Could not find component name in ${file}`);
         continue;
     }
+
     const componentName = matchComponent[1];
 
     // Remove import AppLayout
@@ -35,11 +43,13 @@ for (const file of files) {
     // Extract breadcrumbs if they are hardcoded in the <AppLayout breadcrumbs={[...]}>
     let breadcrumbsSource = '';
     const matchBreadcrumbsInline = content.match(/<AppLayout\s+breadcrumbs=\{([^>]+)\}\s*>/m);
+
     if (matchBreadcrumbsInline) {
         breadcrumbsSource = matchBreadcrumbsInline[1];
     } else {
         // sometimes breadcrumbs are defined as a const above
         const matchBreadcrumbsConst = content.match(/const breadcrumbs(?:: Breadcrumbs)? = (\[[\s\S]*?\]);/);
+
         if (matchBreadcrumbsConst) {
             breadcrumbsSource = 'breadcrumbs'; // we'll just reference the const
         }
@@ -48,6 +58,7 @@ for (const file of files) {
     if (!breadcrumbsSource) {
         // Look for multiline <AppLayout breadcrumbs={...}>
         const matchMultiline = content.match(/<AppLayout\s+breadcrumbs=\{([\s\S]*?)\}\s*>/);
+
         if (matchMultiline) {
             breadcrumbsSource = matchMultiline[1];
         }
@@ -58,6 +69,7 @@ for (const file of files) {
     
     // Replace the closing </AppLayout> with </>
     const lastClosingTagIndex = content.lastIndexOf('</AppLayout>');
+
     if (lastClosingTagIndex !== -1) {
         content = content.substring(0, lastClosingTagIndex) + '</>' + content.substring(lastClosingTagIndex + 12);
     }

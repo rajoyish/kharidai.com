@@ -1,8 +1,8 @@
-import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
-import type { BreadcrumbItem } from '@/types';
 import { usePage, router } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
+import type { BreadcrumbItem } from '@/types';
 
 export default function AppLayout({
     breadcrumbs = [],
@@ -54,12 +54,15 @@ export default function AppLayout({
 
             return () => {
                 if (window.Echo) {
-                    if (auth.user.is_admin) window.Echo.leave('support');
+                    if (auth.user.is_admin) {
+window.Echo.leave('support');
+}
+
                     window.Echo.leave(`App.Models.User.${auth.user.id}`);
                 }
             };
         }
-    }, [auth?.user?.id, auth?.user?.is_admin]);
+    }, [auth.user, auth?.user?.id, auth?.user?.is_admin]);
 
     return (
         <AppLayoutTemplate breadcrumbs={breadcrumbs}>

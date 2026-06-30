@@ -1,4 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
+import { PagePanel } from '@/components/page-panel';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -9,7 +10,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-import { PagePanel } from '@/components/page-panel';
 
 type User = {
     id: number;

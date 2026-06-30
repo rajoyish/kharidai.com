@@ -1,4 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { PagePanel } from '@/components/page-panel';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -7,10 +11,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { PagePanel } from '@/components/page-panel';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
 import { home } from '@/routes';
 import { show as showOrder } from '@/routes/orders';
 import { index as subscriptionsIndex, update } from '@/routes/subscriptions';
@@ -48,6 +48,7 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
 
     const handleBlur = () => {
         setIsEditing(false);
+
         if (label !== (subscription.user_label || '')) {
             router.put(
                 update.url(subscription),

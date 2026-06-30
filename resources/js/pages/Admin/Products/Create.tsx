@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
+import { PagePanel } from '@/components/page-panel';
 import { ProductForm } from '@/components/ProductForm';
 
-import { PagePanel } from '@/components/page-panel';
 
 export default function CreateProduct({ categories }: { categories: any[] }) {
     return (

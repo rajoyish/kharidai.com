@@ -7,6 +7,7 @@ test.describe('Orders Page Tests', () => {
     
     // Check if redirected to login due to auth middleware
     const currentUrl = page.url();
+
     if (currentUrl.includes('/auth/google') || currentUrl.includes('/login')) {
       // If we got redirected, the page is protected correctly
       expect(true).toBeTruthy();

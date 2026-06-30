@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { PagePanel } from '@/components/page-panel';
 import {
     Table,
     TableBody,
@@ -7,7 +8,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { PagePanel } from '@/components/page-panel';
 import { dashboard } from '@/routes/admin';
 import { show as showAdminOrder } from '@/routes/admin/orders';
 import { index as adminSubscriptionsIndex } from '@/routes/admin/subscriptions';

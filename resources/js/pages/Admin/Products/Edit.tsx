@@ -1,7 +1,8 @@
 import { Head } from '@inertiajs/react';
-import { ProductForm, type Product } from '@/components/ProductForm';
-
 import { PagePanel } from '@/components/page-panel';
+import { ProductForm  } from '@/components/ProductForm';
+import type {Product} from '@/components/ProductForm';
+
 
 export default function EditProduct({ product, categories }: { product: Product, categories: any[] }) {
     return (

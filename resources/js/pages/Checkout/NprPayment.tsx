@@ -1,9 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
+import { QrCode, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode, Upload } from 'lucide-react';
-import { toast } from 'sonner';
 
 type Order = {
     id: number;
@@ -22,6 +22,7 @@ export default function NprPayment({ order }: { order: Order }) {
 
         if (!data.receipt) {
             toast.error('Please select a receipt image to upload');
+
             return;
         }
 

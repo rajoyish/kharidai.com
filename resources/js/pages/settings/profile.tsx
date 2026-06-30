@@ -2,10 +2,10 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import { MobileNumberInput } from '@/components/mobile-number-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MobileNumberInput } from '@/components/mobile-number-input';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
 

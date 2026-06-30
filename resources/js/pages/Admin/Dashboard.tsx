@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
+import { PagePanel } from '@/components/page-panel';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -10,7 +11,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-import { PagePanel } from '@/components/page-panel';
 
 type Order = {
     id: number;

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
 import { useForm, router, usePage } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { PageProps } from '@/types';
+import type { PageProps } from '@/types';
 
 interface SupportChatProps {
     order: any;
@@ -35,26 +35,35 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
                         );
                     })
                     .joining((user: any) => {
-                        if (user.is_admin !== auth.user.is_admin) setIsLocalOnline(true);
+                        if (user.is_admin !== auth.user.is_admin) {
+setIsLocalOnline(true);
+}
                     })
                     .leaving((user: any) => {
-                        if (user.is_admin !== auth.user.is_admin) setIsLocalOnline(false);
+                        if (user.is_admin !== auth.user.is_admin) {
+setIsLocalOnline(false);
+}
                     })
-                    .listen('OrderMessageCreated', (e: any) => {
+                    .listen('OrderMessageCreated', () => {
                         router.reload({ only: ['order'] });
                     });
 
                 let supportChannel: any;
+
                 if (!auth.user.is_admin) {
                     supportChannel = window.Echo.join('support')
                         .here((users: any[]) => {
                             setIsGlobalAdminOnline(users.some((u) => u.is_admin));
                         })
                         .joining((user: any) => {
-                            if (user.is_admin) setIsGlobalAdminOnline(true);
+                            if (user.is_admin) {
+setIsGlobalAdminOnline(true);
+}
                         })
                         .leaving((user: any) => {
-                            if (user.is_admin) setIsGlobalAdminOnline(false);
+                            if (user.is_admin) {
+setIsGlobalAdminOnline(false);
+}
                         });
                 }
 
@@ -62,19 +71,23 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
                     if (window.Echo) {
                         channel.stopListening('OrderMessageCreated');
                         window.Echo.leave(`orders.${order.id}`);
+
                         if (supportChannel) {
                             window.Echo.leave('support');
                         }
                     }
                 };
-            } catch (e) {
-                console.warn('Real-time chat is unavailable:', e);
+            } catch (error) {
+                console.warn('Real-time chat is unavailable:', error);
             }
         }
     }, [order.id, auth.user.is_admin]);
 
     const handleSendMessage = (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
+        if (e) {
+e.preventDefault();
+}
+
         post(postUrl, {
             preserveScroll: true,
             onSuccess: () => reset('message'),
@@ -123,6 +136,7 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
             <div className="mb-4 flex-1 space-y-4 overflow-y-auto pr-2">
                 {order.messages.map((msg: any) => {
                     const isMine = msg.user_id === auth.user.id;
+
                     return (
                         <div
                             key={msg.id}
@@ -170,6 +184,7 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
+
                             if (!processing && data.message.trim()) {
                                 handleSendMessage();
                             }
