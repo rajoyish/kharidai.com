@@ -27,6 +27,7 @@ it('can create a product variant', function () {
         'name' => 'New Variant',
         'price_npr' => 1000,
         'purchase_price_npr' => 800,
+        'validity_days' => 30,
     ]);
 
     $response->assertRedirect(route('admin.products.variants.index', $product));
@@ -34,6 +35,7 @@ it('can create a product variant', function () {
         'product_id' => $product->id,
         'name' => 'New Variant',
         'price_npr' => 1000 * 100,
+        'validity_days' => 30,
     ]);
 });
 
@@ -47,6 +49,7 @@ it('can update a product variant', function () {
     $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug.'/variants/'.$variant->id, [
         'name' => 'Updated Variant',
         'price_npr' => 1200,
+        'validity_days' => null,
     ]);
 
     $response->assertRedirect(route('admin.products.variants.index', $product));
@@ -54,6 +57,7 @@ it('can update a product variant', function () {
         'id' => $variant->id,
         'name' => 'Updated Variant',
         'price_npr' => 1200 * 100,
+        'validity_days' => null,
     ]);
 });
 

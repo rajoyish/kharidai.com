@@ -4,27 +4,39 @@ namespace App\Models;
 
 use Database\Factories\ProductVariantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $product_id
  * @property string $name
+ * @property string|null $details
  * @property float $price_npr
  * @property float $purchase_price_npr
+ * @property int|null $validity_days
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Product $product
  */
-#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr'])]
+#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr', 'validity_days'])]
 class ProductVariant extends Model
 {
     /** @use HasFactory<ProductVariantFactory> */
     use HasFactory;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'validity_days' => 'integer',
+        ];
+    }
 
     /**
      * @return BelongsTo<Product, $this>

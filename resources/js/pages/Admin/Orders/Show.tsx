@@ -2,7 +2,16 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { Check, Pencil, Trash2, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import {
+    allowReceiptReupload,
+    destroy as destroyOrder,
+    destroyCredential,
+    storeCredential,
+    storeMessage,
+    updateCredential,
+    updateReceiptStatus,
+    updateStatus as updateOrderStatus,
+} from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { PagePanel } from '@/components/page-panel';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
@@ -29,6 +38,7 @@ type Order = {
         purchase_price: string;
         product_variant: {
             name: string;
+            validity_days: number | null;
             product: {
                 title: string;
                 image: string;
@@ -54,6 +64,22 @@ type Order = {
         status: string;
         file_path: string;
     } | null;
+    subscriptions: {
+        id: number;
+        start_date: string;
+        end_date: string | null;
+        days_left: number | null;
+        order_item: {
+            id: number;
+            quantity: number;
+            product_variant: {
+                name: string;
+                product: {
+                    title: string;
+                };
+            };
+        } | null;
+    }[];
 };
 
 export default function AdminOrderShow({ order }: { order: Order }) {
@@ -82,7 +108,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
 
     const handleUpdateStatus = (e: React.FormEvent) => {
         e.preventDefault();
-        patchStatus(`/admin/orders/${order.id}/status`, {
+        patchStatus(updateOrderStatus.url(order), {
             preserveScroll: true,
             onSuccess: () => toast.success('Order status updated'),
         });
@@ -95,26 +121,36 @@ export default function AdminOrderShow({ order }: { order: Order }) {
             return;
         }
 
-        router.patch(`/admin/receipts/${order.payment_receipt.id}/status`, { status }, {
-            preserveScroll: true,
-            onStart: () => setProcessingReceipt(true),
-            onFinish: () => setProcessingReceipt(false),
-            onSuccess: () => toast.success(`Receipt ${status}`),
-        });
+        router.patch(
+            updateReceiptStatus(order.payment_receipt),
+            { status },
+            {
+                preserveScroll: true,
+                onStart: () => setProcessingReceipt(true),
+                onFinish: () => setProcessingReceipt(false),
+                onSuccess: () => toast.success(`Receipt ${status}`),
+            },
+        );
     };
 
-    const [editingCredentialId, setEditingCredentialId] = useState<number | null>(null);
+    const [editingCredentialId, setEditingCredentialId] = useState<
+        number | null
+    >(null);
     const [editCredContent, setEditCredContent] = useState('');
 
     const handleEditCredentialSubmit = (e: React.FormEvent, credId: number) => {
         e.preventDefault();
-        router.put(`/admin/orders/${order.id}/credentials/${credId}`, { content: editCredContent }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setEditingCredentialId(null);
-                toast.success('Credential updated');
-            }
-        });
+        router.put(
+            updateCredential({ order, credential: credId }),
+            { content: editCredContent },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setEditingCredentialId(null);
+                    toast.success('Credential updated');
+                },
+            },
+        );
     };
 
     const handleDeleteCredential = (credId: number) => {
@@ -122,21 +158,24 @@ export default function AdminOrderShow({ order }: { order: Order }) {
             return;
         }
 
-        router.delete(`/admin/orders/${order.id}/credentials/${credId}`, {
+        router.delete(destroyCredential({ order, credential: credId }), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Credential deleted')
+            onSuccess: () => toast.success('Credential deleted'),
         });
     };
 
     const handleAddCredential = (e: React.FormEvent) => {
         e.preventDefault();
-        postCred(`/admin/orders/${order.id}/credentials`, {
+        postCred(storeCredential.url(order), {
             preserveScroll: true,
             onSuccess: () => resetCred('content'),
         });
     };
 
     const [deletingOrder, setDeletingOrder] = useState(false);
+    const hasSubscriptionEligibleItems = order.items.some(
+        (item) => item.product_variant.validity_days !== null,
+    );
 
     // handleSendMessage moved to SupportChat
 
@@ -155,7 +194,11 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                             className="border-red-200 text-red-600 hover:bg-red-50"
                             disabled={deletingOrder}
                             onClick={() => {
-                                if (confirm('Are you sure you want to delete this order completely?')) {
+                                if (
+                                    confirm(
+                                        'Are you sure you want to delete this order completely?',
+                                    )
+                                ) {
                                     setDeletingOrder(true);
 
                                     router.delete(destroyOrder(order), {
@@ -173,32 +216,31 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                             onSubmit={handleUpdateStatus}
                             className="flex items-center gap-2 rounded-lg border bg-card p-2 shadow-sm"
                         >
-                        <select
-                            value={statusData.status}
-                            onChange={(e) =>
-                                setStatusData('status', e.target.value)
-                            }
-                            className="rounded-md border bg-background px-3 py-1.5 text-sm"
-                        >
-                            <option value="pending">Pending</option>
-                            <option value="delivering">Delivering</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                        <Button
-                            type="submit"
-                            size="sm"
-                            disabled={
-                                processingStatus ||
-                                statusData.status === order.status
-                            }
-                        >
-                            Update Status
-                        </Button>
-                    </form>
+                            <select
+                                value={statusData.status}
+                                onChange={(e) =>
+                                    setStatusData('status', e.target.value)
+                                }
+                                className="rounded-md border bg-background px-3 py-1.5 text-sm"
+                            >
+                                <option value="pending">Pending</option>
+                                <option value="delivering">Delivering</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                disabled={
+                                    processingStatus ||
+                                    statusData.status === order.status
+                                }
+                            >
+                                Update Status
+                            </Button>
+                        </form>
                     </div>
                 }
             >
-
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
                         {/* Order Items */}
@@ -236,17 +278,36 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                                 {item.product_variant.name}
                                             </p>
                                             <p className="mt-1 text-sm font-medium">
-                                                Qty: {item.quantity} | Selling Price: Rs. {item.price}
+                                                Qty: {item.quantity} | Selling
+                                                Price: Rs. {item.price}
                                             </p>
                                             {order.status === 'completed' && (
-                                                <div className="mt-2 rounded bg-green-50 px-3 py-2 text-sm text-green-800 border border-green-100">
+                                                <div className="mt-2 rounded border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-800">
                                                     <div className="flex justify-between">
-                                                        <span>Purchase Price:</span>
-                                                        <span>Rs. {item.purchase_price}</span>
+                                                        <span>
+                                                            Purchase Price:
+                                                        </span>
+                                                        <span>
+                                                            Rs.{' '}
+                                                            {
+                                                                item.purchase_price
+                                                            }
+                                                        </span>
                                                     </div>
-                                                    <div className="flex justify-between font-semibold mt-1">
+                                                    <div className="mt-1 flex justify-between font-semibold">
                                                         <span>Profit:</span>
-                                                        <span>Rs. {((parseFloat(item.price) - parseFloat(item.purchase_price)) * item.quantity).toFixed(0)}</span>
+                                                        <span>
+                                                            Rs.{' '}
+                                                            {(
+                                                                (parseFloat(
+                                                                    item.price,
+                                                                ) -
+                                                                    parseFloat(
+                                                                        item.purchase_price,
+                                                                    )) *
+                                                                item.quantity
+                                                            ).toFixed(0)}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             )}
@@ -259,8 +320,10 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                         {/* Additional Information */}
                         {order.additional_data?.note && (
                             <div className="rounded-xl border bg-card p-6">
-                                <h2 className="mb-4 text-xl font-semibold">Additional Information</h2>
-                                <div className="rounded-lg bg-muted p-4 text-sm text-foreground whitespace-pre-wrap">
+                                <h2 className="mb-4 text-xl font-semibold">
+                                    Additional Information
+                                </h2>
+                                <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap text-foreground">
                                     {order.additional_data.note}
                                 </div>
                             </div>
@@ -278,15 +341,42 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                         className="rounded-lg bg-muted p-4"
                                     >
                                         {editingCredentialId === cred.id ? (
-                                            <form onSubmit={(e) => handleEditCredentialSubmit(e, cred.id)}>
+                                            <form
+                                                onSubmit={(e) =>
+                                                    handleEditCredentialSubmit(
+                                                        e,
+                                                        cred.id,
+                                                    )
+                                                }
+                                            >
                                                 <Textarea
                                                     value={editCredContent}
-                                                    onChange={(e) => setEditCredContent(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setEditCredContent(
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     className="mb-2 min-h-[100px] font-mono text-sm"
                                                 />
                                                 <div className="flex justify-end gap-2">
-                                                    <Button type="button" variant="ghost" size="sm" onClick={() => setEditingCredentialId(null)}>Cancel</Button>
-                                                    <Button type="submit" size="sm">Save</Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setEditingCredentialId(
+                                                                null,
+                                                            )
+                                                        }
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        type="submit"
+                                                        size="sm"
+                                                    >
+                                                        Save
+                                                    </Button>
                                                 </div>
                                             </form>
                                         ) : (
@@ -299,19 +389,29 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                setEditingCredentialId(cred.id);
-                                                                setEditCredContent(cred.content);
+                                                                setEditingCredentialId(
+                                                                    cred.id,
+                                                                );
+                                                                setEditCredContent(
+                                                                    cred.content,
+                                                                );
                                                             }}
                                                             className="flex items-center gap-1 hover:text-foreground"
                                                         >
-                                                            <Pencil className="h-3 w-3" /> Edit
+                                                            <Pencil className="h-3 w-3" />{' '}
+                                                            Edit
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleDeleteCredential(cred.id)}
+                                                            onClick={() =>
+                                                                handleDeleteCredential(
+                                                                    cred.id,
+                                                                )
+                                                            }
                                                             className="flex items-center gap-1 text-red-500 hover:text-red-600"
                                                         >
-                                                            <Trash2 className="h-3 w-3" /> Delete
+                                                            <Trash2 className="h-3 w-3" />{' '}
+                                                            Delete
                                                         </button>
                                                     </div>
                                                     <div>
@@ -364,6 +464,83 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                     </div>
 
                     <div className="space-y-6">
+                        <div className="rounded-xl border bg-card p-6">
+                            <h2 className="mb-4 text-xl font-semibold">
+                                Subscription
+                            </h2>
+                            {order.subscriptions.length > 0 ? (
+                                <div className="space-y-4">
+                                    {order.subscriptions.map((subscription) => (
+                                        <div
+                                            key={subscription.id}
+                                            className="space-y-2 rounded-lg bg-muted/40 p-4 text-sm"
+                                        >
+                                            <div className="font-medium">
+                                                {subscription.order_item
+                                                    ? `${subscription.order_item.product_variant.product.title} | ${subscription.order_item.product_variant.name}`
+                                                    : 'Legacy subscription record'}
+                                            </div>
+                                            {subscription.order_item && (
+                                                <div className="text-muted-foreground">
+                                                    Quantity:{' '}
+                                                    {
+                                                        subscription.order_item
+                                                            .quantity
+                                                    }
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between gap-4">
+                                                <span className="text-muted-foreground">
+                                                    Start date
+                                                </span>
+                                                <span className="font-medium">
+                                                    {subscription.start_date}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <span className="text-muted-foreground">
+                                                    End date
+                                                </span>
+                                                <span className="font-medium">
+                                                    {subscription.end_date ??
+                                                        'Not assigned'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <span className="text-muted-foreground">
+                                                    Duration
+                                                </span>
+                                                <span className="font-medium">
+                                                    {subscription.days_left ===
+                                                    null
+                                                        ? 'Not calculated'
+                                                        : `${subscription.days_left} days`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : hasSubscriptionEligibleItems &&
+                              order.status === 'completed' ? (
+                                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                                    No subscription record was generated for
+                                    this completed order.
+                                </div>
+                            ) : hasSubscriptionEligibleItems ? (
+                                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                                    Subscription records will be created
+                                    automatically when the admin marks this
+                                    order as completed.
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                                    This order only contains lifetime or
+                                    one-time purchase items, so no subscription
+                                    record is needed.
+                                </div>
+                            )}
+                        </div>
+
                         {/* Payment Receipt */}
                         <div className="rounded-xl border bg-card p-6">
                             <h2 className="mb-4 text-xl font-semibold">
@@ -390,14 +567,14 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                         </span>
                                         <span
                                             className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                                order.payment_receipt
-                                                    .status === 'approved'
+                                                order.payment_receipt.status ===
+                                                'approved'
                                                     ? 'bg-green-100 text-green-800'
                                                     : order.payment_receipt
                                                             .status ===
                                                         'rejected'
-                                                        ? 'bg-red-100 text-red-800'
-                                                        : 'bg-amber-100 text-amber-800'
+                                                      ? 'bg-red-100 text-red-800'
+                                                      : 'bg-amber-100 text-amber-800'
                                             }`}
                                         >
                                             {order.payment_receipt.status}
@@ -438,26 +615,36 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                     {!order.can_reupload_receipt && (
                                         <div className="mt-4 border-t pt-4">
                                             {order.request_receipt_upload && (
-                                                <div className="mb-3 text-sm text-amber-600 font-medium flex items-center">
-                                                    User requested to re-upload receipt.
+                                                <div className="mb-3 flex items-center text-sm font-medium text-amber-600">
+                                                    User requested to re-upload
+                                                    receipt.
                                                 </div>
                                             )}
                                             <Button
                                                 variant="outline"
                                                 className="w-full"
                                                 onClick={() => {
-                                                    router.patch(`/admin/orders/${order.id}/allow-reupload`, {}, { preserveScroll: true });
+                                                    router.patch(
+                                                        allowReceiptReupload(
+                                                            order,
+                                                        ),
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
                                                 }}
                                             >
-                                                <Upload className="mr-2 h-4 w-4" /> Allow Receipt Re-upload
+                                                <Upload className="mr-2 h-4 w-4" />{' '}
+                                                Allow Receipt Re-upload
                                             </Button>
                                         </div>
                                     )}
                                 </div>
                             ) : (
                                 <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-                                    No receipt uploaded yet. Customer needs
-                                    to complete NPR payment.
+                                    No receipt uploaded yet. Customer needs to
+                                    complete NPR payment.
                                 </div>
                             )}
                         </div>
@@ -465,7 +652,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                         {/* Order Messages */}
                         <SupportChat
                             order={order}
-                            postUrl={`/admin/orders/${order.id}/messages`}
+                            postUrl={storeMessage.url(order)}
                         />
                     </div>
                 </div>

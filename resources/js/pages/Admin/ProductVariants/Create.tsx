@@ -1,17 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-
+import { store as storeVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
-
-type Product = {
-    id: number;
-    title: string;
-    slug: string;
-};
-
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -19,6 +9,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
+type Product = {
+    id: number;
+    title: string;
+    slug: string;
+};
 
 export default function CreateVariant({ product }: { product: Product }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -26,23 +25,28 @@ export default function CreateVariant({ product }: { product: Product }) {
         details: '',
         price_npr: '',
         purchase_price_npr: '',
+        validity_days: '',
     });
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(`/admin/products/${product.slug}/variants`);
+        post(storeVariant.url(product));
     };
 
     return (
         <>
             <Head title={`Create Variant - ${product.title}`} />
 
-            <PagePanel title={`Create Variant for ${product.title}`} variant="transparent">
+            <PagePanel
+                title={`Create Variant for ${product.title}`}
+                variant="transparent"
+            >
                 <Card>
                     <CardHeader>
                         <CardTitle>Variant Details</CardTitle>
                         <CardDescription>
-                            Add a new pricing or options variant for this product.
+                            Add a new pricing or options variant for this
+                            product.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -52,7 +56,9 @@ export default function CreateVariant({ product }: { product: Product }) {
                                 <Input
                                     id="name"
                                     value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('name', e.target.value)
+                                    }
                                     required
                                     placeholder="e.g. 18 Months | Activation Link"
                                 />
@@ -68,7 +74,9 @@ export default function CreateVariant({ product }: { product: Product }) {
                                 <Textarea
                                     id="details"
                                     value={data.details}
-                                    onChange={(e) => setData('details', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('details', e.target.value)
+                                    }
                                     placeholder="Variant details or description"
                                     className="h-32"
                                 />
@@ -79,9 +87,11 @@ export default function CreateVariant({ product }: { product: Product }) {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="price_npr">Selling Price (NPR)</Label>
+                                    <Label htmlFor="price_npr">
+                                        Selling Price (NPR)
+                                    </Label>
                                     <Input
                                         id="price_npr"
                                         type="number"
@@ -99,18 +109,20 @@ export default function CreateVariant({ product }: { product: Product }) {
                                         </div>
                                     )}
                                 </div>
-
-
-
                                 <div className="grid gap-2">
-                                    <Label htmlFor="purchase_price_npr">Purchase Price (NPR)</Label>
+                                    <Label htmlFor="purchase_price_npr">
+                                        Purchase Price (NPR)
+                                    </Label>
                                     <Input
                                         id="purchase_price_npr"
                                         type="number"
                                         step="0.01"
                                         value={data.purchase_price_npr}
                                         onChange={(e) =>
-                                            setData('purchase_price_npr', e.target.value)
+                                            setData(
+                                                'purchase_price_npr',
+                                                e.target.value,
+                                            )
                                         }
                                         placeholder="1800"
                                     />
@@ -120,14 +132,39 @@ export default function CreateVariant({ product }: { product: Product }) {
                                         </div>
                                     )}
                                 </div>
+                            </div>
 
-
+                            <div className="grid gap-2">
+                                <Label htmlFor="validity_days">
+                                    Validity Days
+                                </Label>
+                                <Input
+                                    id="validity_days"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={data.validity_days}
+                                    onChange={(e) =>
+                                        setData('validity_days', e.target.value)
+                                    }
+                                    placeholder="30"
+                                />
+                                <div className="text-sm text-muted-foreground">
+                                    Leave this blank for lifetime or one-time
+                                    purchase products. Fill it only for timed
+                                    subscriptions.
+                                </div>
+                                {errors.validity_days && (
+                                    <div className="text-sm text-destructive">
+                                        {errors.validity_days}
+                                    </div>
+                                )}
                             </div>
 
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full sm:w-auto mt-2"
+                                className="mt-2 w-full sm:w-auto"
                             >
                                 Create Variant
                             </Button>

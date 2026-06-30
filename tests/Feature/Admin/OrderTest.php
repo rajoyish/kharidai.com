@@ -52,8 +52,87 @@ it('can update order status', function () {
         'id' => $order->id,
         'status' => 'delivering',
     ]);
+    $this->assertDatabaseMissing('subscriptions', [
+        'order_id' => $order->id,
+    ]);
 
     Notification::assertSentTo($this->user, OrderStatusUpdatedNotification::class);
+});
+
+it('creates a subscription when an admin completes an order', function () {
+    Notification::fake();
+
+    $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
+    $subscriptionVariant = ProductVariant::factory()->create([
+        'validity_days' => 30,
+    ]);
+    $oneTimeVariant = ProductVariant::factory()->create([
+        'validity_days' => null,
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'product_variant_id' => $subscriptionVariant->id,
+        'price' => 1200,
+        'purchase_price' => 800,
+        'quantity' => 2,
+    ]);
+    OrderItem::create([
+        'order_id' => $order->id,
+        'product_variant_id' => $oneTimeVariant->id,
+        'price' => 600,
+        'purchase_price' => 300,
+        'quantity' => 1,
+    ]);
+
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', [
+        'status' => 'completed',
+    ]);
+
+    $startDate = today()->toDateString();
+    $endDate = today()->addDays(60)->toDateString();
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('orders', [
+        'id' => $order->id,
+        'status' => 'completed',
+    ]);
+    $this->assertDatabaseHas('subscriptions', [
+        'order_id' => $order->id,
+        'user_id' => $this->user->id,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'days_left' => 60,
+    ]);
+    $this->assertDatabaseCount('subscriptions', 1);
+
+    Notification::assertSentTo($this->user, OrderStatusUpdatedNotification::class);
+});
+
+it('does not create subscriptions for non-subscription products', function () {
+    Notification::fake();
+
+    $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
+    $variant = ProductVariant::factory()->create([
+        'validity_days' => null,
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'product_variant_id' => $variant->id,
+        'price' => 500,
+        'purchase_price' => 250,
+        'quantity' => 1,
+    ]);
+
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', [
+        'status' => 'completed',
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseMissing('subscriptions', [
+        'order_id' => $order->id,
+    ]);
 });
 
 it('can update receipt status', function () {

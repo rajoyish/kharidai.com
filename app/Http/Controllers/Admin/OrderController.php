@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderCredential;
 use App\Models\PaymentReceipt;
+use App\Models\Subscription;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $order->load(['items.productVariant.product', 'user', 'paymentReceipt', 'credentials', 'messages.user']);
+        $order->load(['items.productVariant.product', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product']);
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
@@ -41,7 +42,14 @@ class OrderController extends Controller
             'status' => 'required|in:pending,delivering,completed',
         ]);
 
+        $previousStatus = $order->status;
+
         $order->update(['status' => $validated['status']]);
+
+        if ($validated['status'] === 'completed' && $previousStatus !== 'completed') {
+            $this->createSubscriptionsForCompletedItems($order);
+        }
+
         $order->user->notify(new OrderStatusUpdatedNotification($order, $validated['status']));
 
         return redirect()->back()->with('success', 'Order status updated.');
@@ -135,5 +143,31 @@ class OrderController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'User can now re-upload receipt.');
+    }
+
+    private function createSubscriptionsForCompletedItems(Order $order): void
+    {
+        $order->loadMissing('items.productVariant');
+
+        foreach ($order->items as $item) {
+            $validityDays = $item->productVariant?->validity_days;
+
+            if ($validityDays === null) {
+                continue;
+            }
+
+            $startDate = today();
+            $endDate = $startDate->copy()->addDays($validityDays * max($item->quantity, 1));
+
+            Subscription::query()->firstOrCreate(
+                ['order_item_id' => $item->id],
+                [
+                    'user_id' => $order->user_id,
+                    'order_id' => $order->id,
+                    'start_date' => $startDate->toDateString(),
+                    'end_date' => $endDate->toDateString(),
+                ],
+            );
+        }
     }
 }
