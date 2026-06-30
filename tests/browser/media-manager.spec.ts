@@ -12,12 +12,16 @@ const attachmentSource = readFileSync(
 );
 
 test.describe('media manager gallery', () => {
-    test('uses compact attachment thumbnails in a scrollable responsive gallery', () => {
+    test('opens the media gallery in a dialog with a width-fitting grid', () => {
+        expect(mediaManagerSource).toContain('@/components/ui/dialog');
+        expect(mediaManagerSource).toContain('<Dialog onOpenChange=');
+        expect(mediaManagerSource).toContain('<DialogTrigger asChild>');
+        expect(mediaManagerSource).toContain(
+            'grid-cols-[repeat(auto-fit,minmax(7rem,1fr))]',
+        );
         expect(mediaManagerSource).toContain('AttachmentGroup');
-        expect(mediaManagerSource).toContain('max-h-72');
         expect(mediaManagerSource).toContain('overflow-y-auto');
-        expect(mediaManagerSource).toContain('flex-wrap');
-        expect(mediaManagerSource).toContain('w-[92px] sm:w-[104px]');
+        expect(mediaManagerSource).toContain('w-full! min-w-0');
         expect(mediaManagerSource).toContain('size="icon"');
         expect(mediaManagerSource).toContain('Copy Markdown');
         expect(mediaManagerSource).toContain('Delete');
