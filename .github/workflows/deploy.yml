@@ -11,7 +11,7 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 1. SETUP PHP AND COMPOSER FIRST
       - name: Setup PHP
@@ -25,7 +25,7 @@ jobs:
 
       # 2. SETUP NODE AND BUILD ASSETS SECOND
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '26'
           cache: 'npm'
@@ -37,7 +37,7 @@ jobs:
 
       # 3. DEPLOYMENT STEPS REMAIN THE SAME
       - name: Setup SSH Key
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -61,7 +61,7 @@ jobs:
             ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_DESTINATION_PATH }}
             
       - name: Run Post-Deployment Artisan Commands
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
