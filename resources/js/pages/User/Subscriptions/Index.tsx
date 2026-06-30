@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { PagePanel } from '@/components/page-panel';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { home } from '@/routes';
 import { show as showOrder } from '@/routes/orders';
@@ -42,9 +43,11 @@ const breadcrumbs = [
 ];
 
 function EditableLabel({ subscription }: { subscription: Subscription }) {
+    const [isEditing, setIsEditing] = useState(false);
     const [label, setLabel] = useState(subscription.user_label || '');
 
     const handleBlur = () => {
+        setIsEditing(false);
         if (label !== (subscription.user_label || '')) {
             router.put(
                 update.url(subscription),
@@ -56,14 +59,46 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleBlur();
+        }
+    };
+
+    if (isEditing) {
+        return (
+            <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                placeholder="Add label (e.g. Personal)"
+                className="h-8 max-w-[200px]"
+            />
+        );
+    }
+
+    if (!subscription.user_label) {
+        return (
+            <Badge 
+                variant="secondary" 
+                className="cursor-pointer hover:bg-secondary/80 font-normal opacity-70"
+                onClick={() => setIsEditing(true)}
+            >
+                + Add label
+            </Badge>
+        );
+    }
+
     return (
-        <Input
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            onBlur={handleBlur}
-            placeholder="Add label (e.g. Personal)"
-            className="h-8 max-w-[200px]"
-        />
+        <Badge 
+            variant="outline" 
+            className="cursor-pointer hover:bg-accent"
+            onClick={() => setIsEditing(true)}
+        >
+            {subscription.user_label}
+        </Badge>
     );
 }
 
