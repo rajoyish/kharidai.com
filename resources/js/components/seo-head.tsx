@@ -27,21 +27,63 @@ export function SeoHead({
     return (
         <Head>
             <title>{pageTitle}</title>
-            {pageDescription && <meta name="description" content={pageDescription} />}
-            {pageUrl && <link rel="canonical" href={pageUrl} />}
+            {pageDescription && (
+                <meta
+                    head-key="description"
+                    name="description"
+                    content={pageDescription}
+                />
+            )}
+            {pageUrl && (
+                <link head-key="canonical" rel="canonical" href={pageUrl} />
+            )}
 
             {/* Open Graph */}
-            <meta property="og:title" content={pageTitle} />
-            {pageDescription && <meta property="og:description" content={pageDescription} />}
-            {pageImage && <meta property="og:image" content={pageImage} />}
-            {pageUrl && <meta property="og:url" content={pageUrl} />}
-            <meta property="og:type" content={type} />
+            <meta head-key="og:title" property="og:title" content={pageTitle} />
+            {pageDescription && (
+                <meta
+                    head-key="og:description"
+                    property="og:description"
+                    content={pageDescription}
+                />
+            )}
+            {pageImage && (
+                <meta
+                    head-key="og:image"
+                    property="og:image"
+                    content={pageImage}
+                />
+            )}
+            {pageUrl && (
+                <meta head-key="og:url" property="og:url" content={pageUrl} />
+            )}
+            <meta head-key="og:type" property="og:type" content={type} />
 
             {/* Twitter Card */}
-            <meta name="twitter:card" content="summary_large_image" />
-            <meta name="twitter:title" content={pageTitle} />
-            {pageDescription && <meta name="twitter:description" content={pageDescription} />}
-            {pageImage && <meta name="twitter:image" content={pageImage} />}
+            <meta
+                head-key="twitter:card"
+                name="twitter:card"
+                content="summary_large_image"
+            />
+            <meta
+                head-key="twitter:title"
+                name="twitter:title"
+                content={pageTitle}
+            />
+            {pageDescription && (
+                <meta
+                    head-key="twitter:description"
+                    name="twitter:description"
+                    content={pageDescription}
+                />
+            )}
+            {pageImage && (
+                <meta
+                    head-key="twitter:image"
+                    name="twitter:image"
+                    content={pageImage}
+                />
+            )}
 
             {children}
         </Head>

@@ -47,7 +47,7 @@ class HandleInertiaRequests extends Middleware
             'seo' => [
                 'name' => config('app.name'),
                 'description' => 'The best marketplace for your needs.',
-                'image' => url('/og-image.jpg'),
+                'image' => asset('kharidai_og.png'),
                 'url' => url()->current(),
             ],
         ];

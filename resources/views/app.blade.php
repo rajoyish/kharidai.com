@@ -56,6 +56,8 @@
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>
+            <meta data-inertia="og:image" property="og:image" content="{{ asset('kharidai_og.png') }}" />
+            <meta data-inertia="twitter:image" name="twitter:image" content="{{ asset('kharidai_og.png') }}" />
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
