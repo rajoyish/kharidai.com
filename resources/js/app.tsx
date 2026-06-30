@@ -1,4 +1,5 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { createRoot } from 'react-dom/client';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -25,10 +26,11 @@ createInertiaApp({
         }
     },
     strictMode: true,
-    withApp(app) {
-        return (
+    setup({ el, App, props }) {
+        const root = createRoot(el);
+        root.render(
             <TooltipProvider delayDuration={0}>
-                {app}
+                <App {...props} />
                 <Toaster />
             </TooltipProvider>
         );
