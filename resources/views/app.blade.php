@@ -52,6 +52,19 @@
 
         @fonts
 
+        @if(env('VITE_PUSHER_APP_KEY'))
+        <script>
+            window.EchoConfig = {
+                key: "{{ env('VITE_PUSHER_APP_KEY') }}",
+                cluster: "{{ env('VITE_PUSHER_APP_CLUSTER', 'mt1') }}",
+                wsHost: "{{ env('VITE_PUSHER_HOST', '') }}" || `ws-{{ env('VITE_PUSHER_APP_CLUSTER', 'mt1') }}.pusher.com`,
+                wsPort: {{ env('VITE_PUSHER_PORT', 80) }},
+                wssPort: {{ env('VITE_PUSHER_PORT', 443) }},
+                forceTLS: "{{ env('VITE_PUSHER_SCHEME', 'https') }}" === 'https',
+            };
+        </script>
+        @endif
+
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
