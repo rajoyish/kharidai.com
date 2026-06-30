@@ -62,6 +62,8 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
+        unset($validated['image']);
+
         if ($request->hasFile('image')) {
             if ($product->image) {
                 Storage::disk('public')->delete($product->image);

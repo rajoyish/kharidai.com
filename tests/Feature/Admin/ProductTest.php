@@ -4,6 +4,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -48,6 +50,61 @@ it('can update a product', function () {
         'title' => 'Updated Product',
         'in_stock' => false,
     ]);
+});
+
+it('preserves product image when updating without a new image', function () {
+    Storage::fake('public');
+
+    $oldImagePath = 'products/old-product.jpg';
+    Storage::disk('public')->put($oldImagePath, 'old image');
+    $product = Product::factory()->create([
+        'image' => $oldImagePath,
+        'title' => 'Old Product',
+    ]);
+
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug, [
+        'title' => 'Updated Product',
+        'description' => 'Updated description',
+        'image' => null,
+        'in_stock' => false,
+    ]);
+
+    $response->assertRedirect();
+
+    $product->refresh();
+
+    expect($product->image)->toBe($oldImagePath);
+    Storage::disk('public')->assertExists($oldImagePath);
+});
+
+it('replaces product image and deletes the old image when a new image is uploaded', function () {
+    Storage::fake('public');
+
+    $oldImagePath = 'products/old-product.jpg';
+    Storage::disk('public')->put($oldImagePath, 'old image');
+    $product = Product::factory()->create([
+        'image' => $oldImagePath,
+        'title' => 'Old Product',
+    ]);
+    $newImage = UploadedFile::fake()->image('new-product.jpg');
+
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug, [
+        'title' => 'Updated Product',
+        'description' => 'Updated description',
+        'image' => $newImage,
+        'in_stock' => false,
+    ]);
+
+    $response->assertRedirect();
+
+    $product->refresh();
+
+    expect($product->image)
+        ->not->toBe($oldImagePath)
+        ->and($product->image)->toStartWith('products/');
+
+    Storage::disk('public')->assertMissing($oldImagePath);
+    Storage::disk('public')->assertExists($product->image);
 });
 
 it('can delete a product', function () {
