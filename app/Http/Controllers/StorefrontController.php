@@ -124,10 +124,7 @@ class StorefrontController extends Controller
         $defaultImagePath = public_path('kharidai_og.png');
 
         return $this->seoImage(
-            $this->versionedUrl(
-                asset('kharidai_og.png'),
-                is_file($defaultImagePath) ? filemtime($defaultImagePath) : null,
-            ),
+            asset('kharidai_og.png'),
             $defaultImagePath,
         );
     }
@@ -152,24 +149,11 @@ class StorefrontController extends Controller
         $absoluteImagePath = $disk->exists($imagePath) ? $disk->path($imagePath) : null;
 
         return $this->seoImage(
-            $this->versionedUrl(
-                $url,
-                $product->updated_at?->timestamp,
-            ),
+            $url,
             $absoluteImagePath,
         );
     }
 
-    private function versionedUrl(string $url, int|false|null $version): string
-    {
-        if (! $version) {
-            return $url;
-        }
-
-        $separator = str_contains($url, '?') ? '&' : '?';
-
-        return $url.$separator.'v='.$version;
-    }
 
     /**
      * @return array{url: string, type: string|null, width: int|null, height: int|null}
