@@ -1,13 +1,13 @@
-import { Head } from '@inertiajs/react';
 import { PagePanel } from '@/components/page-panel';
 import { ProductForm  } from '@/components/ProductForm';
+import { SeoHead } from '@/components/seo-head';
 import type {Product} from '@/components/ProductForm';
 
 
 export default function EditProduct({ product, categories }: { product: Product, categories: any[] }) {
     return (
         <>
-            <Head title="Edit Product" />
+            <SeoHead title="Edit Product" />
 
             <PagePanel variant="transparent">
                 <ProductForm

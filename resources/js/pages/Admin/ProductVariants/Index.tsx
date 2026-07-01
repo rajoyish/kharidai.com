@@ -1,10 +1,11 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import {
     create as createVariant,
     destroy as destroyVariant,
     edit as editVariant,
 } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -46,7 +47,7 @@ export default function VariantsIndex({
 
     return (
         <>
-            <Head title={`Variants - ${product.title}`} />
+            <SeoHead title={`Variants - ${product.title}`} />
 
             <PagePanel
                 title="Product Variants"

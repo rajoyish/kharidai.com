@@ -1,5 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -36,7 +37,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
 
     return (
         <>
-            <Head title="User Management" />
+            <SeoHead title="User Management" />
 
             <PagePanel title="User Management" variant="transparent">
                 <Table>

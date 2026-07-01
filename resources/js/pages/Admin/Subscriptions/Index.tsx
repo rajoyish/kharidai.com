@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import {
     Table,
     TableBody,
@@ -50,7 +51,7 @@ export default function AdminSubscriptionIndex({
 }) {
     return (
         <>
-            <Head title="Subscriptions - Admin" />
+            <SeoHead title="Subscriptions - Admin" />
 
             <PagePanel title="Subscriptions" variant="transparent">
                 {subscriptions.data.length === 0 ? (

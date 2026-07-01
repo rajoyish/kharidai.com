@@ -62,10 +62,37 @@
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
+        @php($siteName = config('app.name', 'Laravel'))
+        @php($seo = array_replace([
+            'name' => $siteName,
+            'title' => $siteName,
+            'description' => 'Shop digital goods, subscriptions, services, and physical products from Kharidai.',
+            'image' => asset('kharidai_og.png'),
+            'imageAlt' => $siteName.' marketplace preview',
+            'url' => request()->url(),
+            'type' => 'website',
+            'robots' => 'noindex,nofollow',
+            'twitterCard' => 'summary_large_image',
+        ], data_get($page, 'props.seo', [])))
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
-            <meta data-inertia="og:image" property="og:image" content="{{ asset('kharidai_og.png') }}" />
-            <meta data-inertia="twitter:image" name="twitter:image" content="{{ asset('kharidai_og.png') }}" />
+            <title>{{ $seo['title'] }}</title>
+            <meta data-inertia="description" name="description" content="{{ $seo['description'] }}" />
+            <meta data-inertia="robots" name="robots" content="{{ $seo['robots'] }}" />
+            <link data-inertia="canonical" rel="canonical" href="{{ $seo['url'] }}" />
+
+            <meta data-inertia="og:type" property="og:type" content="{{ $seo['type'] }}" />
+            <meta data-inertia="og:site_name" property="og:site_name" content="{{ $seo['name'] }}" />
+            <meta data-inertia="og:title" property="og:title" content="{{ $seo['title'] }}" />
+            <meta data-inertia="og:description" property="og:description" content="{{ $seo['description'] }}" />
+            <meta data-inertia="og:image" property="og:image" content="{{ $seo['image'] }}" />
+            <meta data-inertia="og:image:alt" property="og:image:alt" content="{{ $seo['imageAlt'] }}" />
+            <meta data-inertia="og:url" property="og:url" content="{{ $seo['url'] }}" />
+
+            <meta data-inertia="twitter:card" name="twitter:card" content="{{ $seo['twitterCard'] }}" />
+            <meta data-inertia="twitter:title" name="twitter:title" content="{{ $seo['title'] }}" />
+            <meta data-inertia="twitter:description" name="twitter:description" content="{{ $seo['description'] }}" />
+            <meta data-inertia="twitter:image" name="twitter:image" content="{{ $seo['image'] }}" />
+            <meta data-inertia="twitter:image:alt" name="twitter:image:alt" content="{{ $seo['imageAlt'] }}" />
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

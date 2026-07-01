@@ -1,6 +1,7 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 
 
@@ -58,7 +59,7 @@ return;
 
     return (
         <>
-            <Head title="Your Cart - Kharidai" />
+            <SeoHead title="Your Cart" />
             <div className="flex min-h-screen flex-col bg-background text-foreground">
                 <header className="border-b">
                     <div className="container mx-auto flex items-center justify-between px-4 py-4">

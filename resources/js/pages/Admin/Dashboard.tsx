@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -44,7 +45,7 @@ export default function Dashboard({
 }) {
     return (
         <>
-            <Head title="Admin Dashboard" />
+            <SeoHead title="Admin Dashboard" />
 
             <PagePanel title="Admin Dashboard" variant="transparent">
                 <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-6">

@@ -1,5 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
@@ -48,7 +49,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
 
     return (
         <>
-            <Head title="Checkout - Kharidai" />
+            <SeoHead title="Checkout" />
             <div className="flex min-h-screen flex-col bg-background text-foreground">
 
 

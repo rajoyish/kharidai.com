@@ -1,7 +1,8 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +37,7 @@ export default function NprPayment({ order }: { order: Order }) {
 
     return (
         <>
-            <Head title="Complete Payment - Kharidai" />
+            <SeoHead title="Complete Payment" />
             <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 text-foreground">
                 <div className="w-full max-w-md space-y-8 rounded-xl border bg-card p-8 shadow-sm">
                     <div className="text-center">

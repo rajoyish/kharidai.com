@@ -1,6 +1,7 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { update as updateVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -50,7 +51,7 @@ export default function EditVariant({
 
     return (
         <>
-            <Head title={`Edit Variant - ${variant.name}`} />
+            <SeoHead title={`Edit Variant - ${variant.name}`} />
 
             <PagePanel
                 title={`Edit Variant for ${product.title}`}
