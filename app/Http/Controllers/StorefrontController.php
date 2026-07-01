@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,6 +13,8 @@ class StorefrontController extends Controller
 {
     public function index(): Response
     {
+        $defaultSeoImage = $this->defaultSeoImage();
+
         $categoriesQuery = Category::orderBy('name');
         $uncategorizedQuery = Product::whereNull('category_id')->where('in_stock', true)->with('variants');
 
@@ -34,8 +37,11 @@ class StorefrontController extends Controller
                 'name' => config('app.name'),
                 'title' => $this->pageTitle('Your all-in-one marketplace!'),
                 'description' => 'Shop digital goods, subscriptions, services, and physical products from Kharidai.',
-                'image' => asset('kharidai_og.png'),
+                'image' => $defaultSeoImage['url'],
                 'imageAlt' => config('app.name').' marketplace preview',
+                'imageType' => $defaultSeoImage['type'],
+                'imageWidth' => $defaultSeoImage['width'],
+                'imageHeight' => $defaultSeoImage['height'],
                 'url' => route('home'),
                 'type' => 'website',
                 'robots' => 'index,follow',
@@ -51,6 +57,7 @@ class StorefrontController extends Controller
         }
 
         $product->load('variants');
+        $productSeoImage = $this->productSeoImage($product);
 
         return Inertia::render('Products/Show', [
             'product' => $product,
@@ -58,12 +65,16 @@ class StorefrontController extends Controller
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($product->title),
                 'description' => $this->seoDescription($product->description, $product->title),
-                'image' => $this->productImageUrl($product->image),
+                'image' => $productSeoImage['url'],
                 'imageAlt' => $product->title,
+                'imageType' => $productSeoImage['type'],
+                'imageWidth' => $productSeoImage['width'],
+                'imageHeight' => $productSeoImage['height'],
                 'url' => route('products.show', $product),
                 'type' => 'product',
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
+                'updatedTime' => $product->updated_at?->toAtomString(),
             ],
         ]);
     }
@@ -75,7 +86,14 @@ class StorefrontController extends Controller
 
     private function seoDescription(?string $description, string $fallback): string
     {
-        $summary = Str::of(strip_tags((string) $description))
+        $descriptionHtml = (string) $description;
+        preg_match_all('/<p\b[^>]*>(.*?)<\/p>/is', $descriptionHtml, $paragraphMatches);
+
+        $summarySource = collect($paragraphMatches[1] ?? [])
+            ->map(fn (string $paragraph): string => $this->htmlToPlainText($paragraph))
+            ->first(fn (string $paragraph): bool => filled($paragraph));
+
+        $summary = Str::of($summarySource ?? $this->htmlToPlainText($descriptionHtml))
             ->squish()
             ->limit(160)
             ->value();
@@ -83,12 +101,97 @@ class StorefrontController extends Controller
         return filled($summary) ? $summary : $fallback;
     }
 
-    private function productImageUrl(?string $imagePath): string
+    private function htmlToPlainText(string $html): string
     {
-        if (! filled($imagePath)) {
-            return asset('kharidai_og.png');
+        $normalizedHtml = preg_replace(
+            '/<(\/?(br|div|h[1-6]|li|ol|p|section|article|blockquote|ul))[^>]*>/i',
+            ' ',
+            $html,
+        );
+
+        return html_entity_decode(
+            strip_tags($normalizedHtml ?? $html),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8',
+        );
+    }
+
+    /**
+     * @return array{url: string, type: string|null, width: int|null, height: int|null}
+     */
+    private function defaultSeoImage(): array
+    {
+        $defaultImagePath = public_path('kharidai_og.png');
+
+        return $this->seoImage(
+            $this->versionedUrl(
+                asset('kharidai_og.png'),
+                is_file($defaultImagePath) ? filemtime($defaultImagePath) : null,
+            ),
+            $defaultImagePath,
+        );
+    }
+
+    /**
+     * @return array{url: string, type: string|null, width: int|null, height: int|null}
+     */
+    private function productSeoImage(Product $product): array
+    {
+        if (! filled($product->image)) {
+            return $this->defaultSeoImage();
         }
 
-        return asset('storage/'.$imagePath);
+        $disk = Storage::disk('public');
+        $imagePath = $product->image;
+        $absoluteImagePath = $disk->exists($imagePath) ? $disk->path($imagePath) : null;
+
+        return $this->seoImage(
+            $this->versionedUrl(
+                asset('storage/'.$imagePath),
+                $product->updated_at?->timestamp,
+            ),
+            $absoluteImagePath,
+        );
+    }
+
+    private function versionedUrl(string $url, int|false|null $version): string
+    {
+        if (! $version) {
+            return $url;
+        }
+
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url.$separator.'v='.$version;
+    }
+
+    /**
+     * @return array{url: string, type: string|null, width: int|null, height: int|null}
+     */
+    private function seoImage(string $url, ?string $absolutePath): array
+    {
+        $image = [
+            'url' => $url,
+            'type' => null,
+            'width' => null,
+            'height' => null,
+        ];
+
+        if (! filled($absolutePath) || ! is_file($absolutePath)) {
+            return $image;
+        }
+
+        $details = getimagesize($absolutePath);
+
+        if ($details === false) {
+            return $image;
+        }
+
+        return [
+            'url' => $url,
+            'type' => $details['mime'] ?? null,
+            'width' => $details[0] ?? null,
+            'height' => $details[1] ?? null,
+        ];
     }
 }
