@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import AppLogo from '@/components/app-logo';
 import { JsonLd } from '@/components/json-ld';
+import { Footer } from '@/components/Footer';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -238,6 +239,7 @@ export default function Show({ product }: { product: Product }) {
                         </div>
                     </div>
                 </main>
+                <Footer />
             </div>
         </>
     );
