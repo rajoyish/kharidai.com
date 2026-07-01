@@ -70,6 +70,7 @@ jobs:
             cd ${{ secrets.SERVER_DESTINATION_PATH }}
             php artisan down --refresh=15
             php artisan migrate --force
+            php artisan storage:link
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
