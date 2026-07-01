@@ -110,8 +110,8 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
-                {auth.user.is_admin && <NavMain items={adminNavItems} />}
+                <NavMain items={mainNavItems} label="Personal" />
+                {auth.user.is_admin && <NavMain items={adminNavItems} label="Store Management" />}
             </SidebarContent>
 
             <SidebarFooter>
