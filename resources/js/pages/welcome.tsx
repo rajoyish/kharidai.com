@@ -3,6 +3,7 @@ import { ShoppingBag, Sparkles, Archive, CloudDownload, Star, Briefcase, Truck, 
 import { useState, useMemo } from 'react';
 import AppLogo from '@/components/app-logo';
 import { SeoHead } from '@/components/seo-head';
+import { Footer } from '@/components/Footer';
 import { Input } from '@/components/ui/input';
 
 type Product = {
@@ -347,6 +348,7 @@ export default function Welcome({
                         </div>
                     )}
                 </main>
+                <Footer />
             </div>
         </>
     );
