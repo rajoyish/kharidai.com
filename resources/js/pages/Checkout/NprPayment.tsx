@@ -1,5 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
-import { QrCode, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,8 @@ type Order = {
 };
 
 export default function NprPayment({ order }: { order: Order }) {
+    const [paymentMethod, setPaymentMethod] = useState<'default' | 'esewa' | 'khalti'>('default');
+
     const { data, setData, post, processing, errors, progress } = useForm({
         receipt: null as File | null,
     });
@@ -46,17 +49,62 @@ export default function NprPayment({ order }: { order: Order }) {
                     </div>
 
                     <div className="flex flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary/5 p-6">
-                        <div className="mb-4 rounded-xl bg-white p-4 shadow-sm">
-                            <QrCode className="h-32 w-32 text-primary" />
+                        <div className="mb-4 rounded-xl bg-white p-4 shadow-sm text-center">
+                            <img
+                                src={
+                                    paymentMethod === 'esewa'
+                                        ? '/images/QR-eSewa.jpeg'
+                                        : paymentMethod === 'khalti'
+                                            ? '/images/QR-Khalti.jpeg'
+                                            : '/images/QR-pay.png'
+                                }
+                                alt={`${paymentMethod} QR Code`}
+                                className="mx-auto h-48 w-48 object-contain"
+                            />
+                            <div className="mt-3 text-sm font-semibold">
+                                <div>
+                                    {paymentMethod === 'default'
+                                        ? 'HUES AND ARRAYS PVT LTD'
+                                        : 'RAJESH BUDHATHOKI'}
+                                </div>
+                                <div className="font-medium text-muted-foreground">Store: Kharidai.com</div>
+                            </div>
                         </div>
                         <h3 className="text-lg font-semibold">Scan to Pay</h3>
                         <p className="mt-2 text-2xl font-bold text-primary">
                             Rs. {order.total_amount}
                         </p>
                         <p className="mt-2 text-center text-sm text-muted-foreground">
-                            Scan the QR code above using eSewa, Khalti, or your
-                            Mobile Banking app to complete the payment.
+                            Scan the QR code using your mobile banking app. Please note that payments made via eSewa or Khalti may incur a transaction fee.
                         </p>
+                        {paymentMethod !== 'default' && (
+                            <p className="mt-2 text-center text-sm text-destructive">
+                                Escrow is not supported. Payments will be <span className='font-bold'>refunded</span> if any subscription errors occur.
+                            </p>
+                        )}
+                        <div className="mt-6 flex flex-wrap justify-center gap-3">
+                            <Button
+                                type="button"
+                                variant={paymentMethod === 'default' ? 'default' : 'outline'}
+                                onClick={() => setPaymentMethod('default')}
+                            >
+                                Mobile Banking
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={paymentMethod === 'esewa' ? 'default' : 'outline'}
+                                onClick={() => setPaymentMethod('esewa')}
+                            >
+                                eSewa
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={paymentMethod === 'khalti' ? 'default' : 'outline'}
+                                onClick={() => setPaymentMethod('khalti')}
+                            >
+                                Khalti
+                            </Button>
+                        </div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
