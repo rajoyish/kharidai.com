@@ -2,11 +2,7 @@ import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 
-interface FooterProps {
-    brandName?: string;
-}
-
-export function Footer({ brandName = 'KHARIDAI' }: FooterProps) {
+export function Footer() {
     const logoRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -24,13 +20,15 @@ export function Footer({ brandName = 'KHARIDAI' }: FooterProps) {
             }
         );
 
-        if (logoRef.current) {
-            observer.observe(logoRef.current);
+        const currentLogoRef = logoRef.current;
+
+        if (currentLogoRef) {
+            observer.observe(currentLogoRef);
         }
 
         return () => {
-            if (logoRef.current) {
-                observer.unobserve(logoRef.current);
+            if (currentLogoRef) {
+                observer.unobserve(currentLogoRef);
             }
         };
     }, []);
