@@ -1,5 +1,15 @@
 import { Link } from '@inertiajs/react';
-import { Eye } from 'lucide-react';
+import { 
+    Eye, 
+    Banknote, 
+    TrendingUp, 
+    HandHeart, 
+    Clock, 
+    Package, 
+    ShoppingBag, 
+    Loader, 
+    Users 
+} from 'lucide-react';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -53,53 +63,73 @@ export default function Dashboard({
 
             <PagePanel title="Admin Dashboard" variant="transparent">
                 <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-green-100 p-3 text-green-600 transition-colors duration-300 group-hover:bg-green-600 group-hover:text-white dark:bg-green-900/30 dark:text-green-400 dark:group-hover:bg-green-600 dark:group-hover:text-white">
+                            <Banknote className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Total Sales (Completed)</div>
                         <div className="mt-2 text-2xl font-bold">
-                            <div>Rs. {stats.total_sales_npr.toLocaleString()}</div>
+                            Rs. {stats.total_sales_npr.toLocaleString()}
                         </div>
                     </div>
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-blue-100 p-3 text-blue-600 transition-colors duration-300 group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-900/30 dark:text-blue-400 dark:group-hover:bg-blue-600 dark:group-hover:text-white">
+                            <TrendingUp className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Total Profit</div>
                         <div className="mt-2 text-2xl font-bold">
-                            <div>Rs. {stats.total_profit_npr.toLocaleString()}</div>
+                            Rs. {stats.total_profit_npr.toLocaleString()}
                         </div>
                     </div>
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-purple-100 p-3 text-purple-600 transition-colors duration-300 group-hover:bg-purple-600 group-hover:text-white dark:bg-purple-900/30 dark:text-purple-400 dark:group-hover:bg-purple-600 dark:group-hover:text-white">
+                            <HandHeart className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Total Tithes Collected (All Time)</div>
                         <div className="mt-2 text-2xl font-bold">
-                            <div>
-                                Rs. {stats.total_tithes_collected_npr.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}
-                            </div>
+                            Rs. {stats.total_tithes_collected_npr.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            })}
                         </div>
                     </div>
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-amber-100 p-3 text-amber-600 transition-colors duration-300 group-hover:bg-amber-600 group-hover:text-white dark:bg-amber-900/30 dark:text-amber-400 dark:group-hover:bg-amber-600 dark:group-hover:text-white">
+                            <Clock className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Pending Tithes (Unpaid)</div>
                         <div className="mt-2 text-2xl font-bold">
-                            <div>
-                                Rs. {stats.pending_tithes_npr.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}
-                            </div>
+                            Rs. {stats.pending_tithes_npr.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            })}
                         </div>
                     </div>
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-indigo-100 p-3 text-indigo-600 transition-colors duration-300 group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-900/30 dark:text-indigo-400 dark:group-hover:bg-indigo-600 dark:group-hover:text-white">
+                            <Package className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Total Orders</div>
                         <div className="mt-2 text-2xl font-bold">{stats.total_orders.toLocaleString()}</div>
                     </div>
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-teal-100 p-3 text-teal-600 transition-colors duration-300 group-hover:bg-teal-600 group-hover:text-white dark:bg-teal-900/30 dark:text-teal-400 dark:group-hover:bg-teal-600 dark:group-hover:text-white">
+                            <ShoppingBag className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Today's Orders</div>
                         <div className="mt-2 text-2xl font-bold">{stats.todays_orders.toLocaleString()}</div>
                     </div>
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-rose-100 p-3 text-rose-600 transition-colors duration-300 group-hover:bg-rose-600 group-hover:text-white dark:bg-rose-900/30 dark:text-rose-400 dark:group-hover:bg-rose-600 dark:group-hover:text-white">
+                            <Loader className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Pending Orders</div>
                         <div className="mt-2 text-2xl font-bold">{stats.pending_orders.toLocaleString()}</div>
                     </div>
-                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                        <div className="mb-4 rounded-full bg-cyan-100 p-3 text-cyan-600 transition-colors duration-300 group-hover:bg-cyan-600 group-hover:text-white dark:bg-cyan-900/30 dark:text-cyan-400 dark:group-hover:bg-cyan-600 dark:group-hover:text-white">
+                            <Users className="h-6 w-6" />
+                        </div>
                         <div className="text-sm font-medium text-muted-foreground">Total Users</div>
                         <div className="mt-2 text-2xl font-bold">{stats.total_users.toLocaleString()}</div>
                     </div>
