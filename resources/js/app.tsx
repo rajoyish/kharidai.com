@@ -8,10 +8,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import './echo';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Kharidai';
-
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
             case name === 'welcome':

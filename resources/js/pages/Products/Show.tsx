@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import AppLogo from '@/components/app-logo';
+import { JsonLd } from '@/components/json-ld';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { PageProps } from '@/types';
 
 type Variant = {
     id: number;
@@ -19,13 +21,13 @@ type Variant = {
 type Product = {
     id: number;
     title: string;
-    description: string;
-    image: string;
+    description: string | null;
+    image: string | null;
     variants: Variant[];
 };
 
 export default function Show({ product }: { product: Product }) {
-    const { auth, cartCount, seo } = usePage().props as any;
+    const { auth, cartCount, seo } = usePage<PageProps>().props;
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
         product.variants.length > 0 ? product.variants[0] : null,
     );
@@ -56,41 +58,24 @@ export default function Show({ product }: { product: Product }) {
 
     return (
         <>
-            <SeoHead
-                title={product.title}
-                description={
-                    product.description
-                        ?.substring(0, 160)
-                        .replace(/<[^>]*>?/gm, '') || product.title
-                }
-                image={
-                    product.image
-                        ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}`
-                        : undefined
-                }
-                type="product"
-            />
+            <SeoHead />
             {selectedVariant && (
-                <script type="application/ld+json">
-                    {JSON.stringify({
+                <JsonLd
+                    data={{
                         '@context': 'https://schema.org',
                         '@type': 'Product',
                         name: product.title,
-                        image: product.image
-                            ? `${seo?.url ? new URL(seo.url).origin : ''}/storage/${product.image}`
-                            : undefined,
-                        description: product.description?.replace(
-                            /<[^>]*>?/gm,
-                            '',
-                        ),
+                        image: seo.image,
+                        description: seo.description,
                         offers: {
                             '@type': 'Offer',
                             priceCurrency: 'NPR',
                             price: selectedVariant?.price_npr || '0.00',
                             availability: 'https://schema.org/InStock',
+                            url: seo.url,
                         },
-                    })}
-                </script>
+                    }}
+                />
             )}
             <div className="flex min-h-screen flex-col bg-background text-foreground">
                 <header className="border-b">

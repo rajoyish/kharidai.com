@@ -1,6 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -106,7 +107,7 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
 export default function SubscriptionIndex({ subscriptions }: { subscriptions: Subscription[] }) {
     return (
         <>
-            <Head title="My Subscriptions" />
+            <SeoHead title="My Subscriptions" />
 
             <PagePanel title="My Subscriptions" variant="transparent">
                 {subscriptions.length === 0 ? (

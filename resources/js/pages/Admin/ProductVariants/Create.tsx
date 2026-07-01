@@ -1,6 +1,7 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { store as storeVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -35,7 +36,7 @@ export default function CreateVariant({ product }: { product: Product }) {
 
     return (
         <>
-            <Head title={`Create Variant - ${product.title}`} />
+            <SeoHead title={`Create Variant - ${product.title}`} />
 
             <PagePanel
                 title={`Create Variant for ${product.title}`}

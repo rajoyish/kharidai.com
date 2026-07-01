@@ -1,9 +1,10 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 import { Copy, Upload, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 
@@ -58,7 +59,7 @@ export default function OrderShow({ order }: { order: Order }) {
 
     return (
         <>
-            <Head title={`Order ${order.order_number}`} />
+            <SeoHead title={`Order ${order.order_number}`} />
 
             <PagePanel
                 title={`Order ${order.order_number}`}

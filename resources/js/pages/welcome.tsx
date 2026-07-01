@@ -1,7 +1,8 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ShoppingBag, Sparkles, Archive, CloudDownload, Star, Briefcase, Truck, Search } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import AppLogo from '@/components/app-logo';
+import { SeoHead } from '@/components/seo-head';
 import { Input } from '@/components/ui/input';
 
 type Product = {
@@ -82,7 +83,7 @@ export default function Welcome({
 
     return (
         <>
-            <Head title="Kharidai - Your all-in-one marketplace!" />
+            <SeoHead />
             <div className="flex min-h-screen flex-col bg-[#FAFAFA] text-foreground">
 
                 {/* Hero Wrapper with Gradient */}

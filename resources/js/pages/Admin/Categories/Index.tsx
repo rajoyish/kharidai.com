@@ -1,7 +1,8 @@
-import { Head, useForm, router } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { destroy as destroyCategory } from '@/actions/App/Http/Controllers/Admin/CategoryController';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -91,7 +92,7 @@ export default function CategoriesIndex({
 
     return (
         <>
-            <Head title="Categories Management" />
+            <SeoHead title="Categories Management" />
 
             <PagePanel
                 title="Categories"

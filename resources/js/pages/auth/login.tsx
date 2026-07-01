@@ -1,10 +1,10 @@
-import { Head } from '@inertiajs/react';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 
 export default function Login() {
     return (
         <>
-            <Head title="Log in" />
+            <SeoHead title="Log in" />
 
             <div className="flex flex-col gap-6">
                 <div className="grid gap-6">

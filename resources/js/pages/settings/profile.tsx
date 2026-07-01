@@ -1,8 +1,9 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { MobileNumberInput } from '@/components/mobile-number-input';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +19,7 @@ export default function Profile() {
 
     return (
         <>
-            <Head title="Profile settings" />
+            <SeoHead title="Profile settings" />
 
             <h1 className="sr-only">Profile settings</h1>
 

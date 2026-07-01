@@ -1,7 +1,8 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { destroy as destroyProduct } from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -60,7 +61,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
 
     return (
         <>
-            <Head title="Products Management" />
+            <SeoHead title="Products Management" />
 
             <PagePanel
                 title="Products"

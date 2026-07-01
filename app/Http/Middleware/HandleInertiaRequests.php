@@ -36,19 +36,26 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $siteName = config('app.name');
+
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            'name' => $siteName,
             'auth' => [
                 'user' => $request->user(),
             ],
             'cartCount' => $request->user() ? Cart::where('user_id', $request->user()->id)->withSum('items', 'quantity')->first()?->items_sum_quantity ?? 0 : 0,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'seo' => [
-                'name' => config('app.name'),
-                'description' => 'The best marketplace for your needs.',
+                'name' => $siteName,
+                'title' => $siteName,
+                'description' => 'Shop digital goods, subscriptions, services, and physical products from Kharidai.',
                 'image' => asset('kharidai_og.png'),
-                'url' => url()->current(),
+                'imageAlt' => $siteName.' marketplace preview',
+                'url' => $request->url(),
+                'type' => 'website',
+                'robots' => $request->routeIs('home', 'products.show') ? 'index,follow' : 'noindex,nofollow',
+                'twitterCard' => 'summary_large_image',
             ],
         ];
     }

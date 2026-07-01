@@ -1,4 +1,4 @@
-import { Head, useForm, router } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import { Check, Pencil, Trash2, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ import {
     updateStatus as updateOrderStatus,
 } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -181,7 +182,7 @@ export default function AdminOrderShow({ order }: { order: Order }) {
 
     return (
         <>
-            <Head title={`Manage Order ${order.order_number}`} />
+            <SeoHead title={`Manage Order ${order.order_number}`} />
 
             <PagePanel
                 title={`Order ${order.order_number}`}

@@ -1,7 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 
 import { Eye, MessageCircle, Upload } from 'lucide-react';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -41,7 +42,7 @@ const breadcrumbs = [
 export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
     return (
         <>
-            <Head title="My Orders" />
+            <SeoHead title="My Orders" />
 
             <PagePanel title="My Orders" variant="transparent">
                 {orders.data.length === 0 ? (

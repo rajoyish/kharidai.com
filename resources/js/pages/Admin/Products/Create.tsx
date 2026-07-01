@@ -1,12 +1,12 @@
-import { Head } from '@inertiajs/react';
 import { PagePanel } from '@/components/page-panel';
 import { ProductForm } from '@/components/ProductForm';
+import { SeoHead } from '@/components/seo-head';
 
 
 export default function CreateProduct({ categories }: { categories: any[] }) {
     return (
         <>
-            <Head title="Create Product" />
+            <SeoHead title="Create Product" />
 
             <PagePanel variant="transparent">
                 <ProductForm submitUrl="/admin/products" categories={categories} />

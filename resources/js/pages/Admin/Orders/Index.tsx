@@ -1,8 +1,9 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { Eye, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { PagePanel } from '@/components/page-panel';
+import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -44,7 +45,7 @@ export default function AdminOrderIndex({
 
     return (
         <>
-            <Head title="Manage Orders" />
+            <SeoHead title="Manage Orders" />
 
             <PagePanel title="Manage Orders" variant="transparent">
 
