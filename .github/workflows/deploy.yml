@@ -46,6 +46,16 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Enable Maintenance Mode
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_DESTINATION_PATH }}
+            php artisan down --refresh=15 || true
+
       - name: Deploy with Rsync
         run: |
           rsync -avz --no-perms --no-owner --no-group --delete \
@@ -54,10 +64,7 @@ jobs:
             --exclude='.env' \
             --exclude='node_modules' \
             --exclude='tests' \
-            --exclude='storage/logs/*' \
-            --exclude='storage/framework/cache/*' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
+            --exclude='storage/' \
             ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_DESTINATION_PATH }}
             
       - name: Run Post-Deployment Artisan Commands
@@ -68,11 +75,33 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.SERVER_DESTINATION_PATH }}
-            php artisan down --refresh=15
+            mkdir -p storage/app/public
+            mkdir -p storage/framework/cache
+            mkdir -p storage/framework/sessions
+            mkdir -p storage/framework/views
+            mkdir -p storage/logs
+
+            if [ ! -L public/storage ]; then
+              rm -rf public/storage
+              php artisan storage:link
+            fi
+
+            php artisan optimize:clear
             php artisan migrate --force
-            php artisan storage:link
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
             php artisan event:cache
+            php artisan queue:restart || true
             php artisan up
+
+      - name: Disable Maintenance Mode
+        if: always()
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_DESTINATION_PATH }}
+            php artisan up || true

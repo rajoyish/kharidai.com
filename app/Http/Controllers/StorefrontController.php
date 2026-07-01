@@ -143,11 +143,17 @@ class StorefrontController extends Controller
 
         $disk = Storage::disk('public');
         $imagePath = $product->image;
+
+        $url = $disk->url($imagePath);
+        if (! str_starts_with($url, 'http')) {
+            $url = asset($url);
+        }
+
         $absoluteImagePath = $disk->exists($imagePath) ? $disk->path($imagePath) : null;
 
         return $this->seoImage(
             $this->versionedUrl(
-                asset('storage/'.$imagePath),
+                $url,
                 $product->updated_at?->timestamp,
             ),
             $absoluteImagePath,
@@ -170,18 +176,23 @@ class StorefrontController extends Controller
      */
     private function seoImage(string $url, ?string $absolutePath): array
     {
+        // Extract extension from URL without query parameters
+        $pathWithoutQuery = strtok($url, '?');
+        $extension = strtolower(pathinfo($pathWithoutQuery, PATHINFO_EXTENSION));
+        $fallbackType = $extension === 'jpg' ? 'image/jpeg' : ($extension ? 'image/'.$extension : null);
+
         $image = [
             'url' => $url,
-            'type' => null,
-            'width' => null,
-            'height' => null,
+            'type' => $fallbackType,
+            'width' => 1200, // Fallback width for social shares
+            'height' => 630, // Fallback height
         ];
 
         if (! filled($absolutePath) || ! is_file($absolutePath)) {
             return $image;
         }
 
-        $details = getimagesize($absolutePath);
+        $details = @getimagesize($absolutePath);
 
         if ($details === false) {
             return $image;
@@ -189,9 +200,9 @@ class StorefrontController extends Controller
 
         return [
             'url' => $url,
-            'type' => $details['mime'] ?? null,
-            'width' => $details[0] ?? null,
-            'height' => $details[1] ?? null,
+            'type' => $details['mime'] ?? $fallbackType,
+            'width' => $details[0] ?? 1200,
+            'height' => $details[1] ?? 630,
         ];
     }
 }
