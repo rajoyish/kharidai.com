@@ -7,16 +7,16 @@ type TableProps = React.HTMLAttributes<HTMLTableElement> & {
 }
 
 const stickyFirstColumnClasses = [
-  "[&_tr>*:first-child]:sticky",
-  "[&_tr>*:first-child]:left-0",
-  "[&_tr>*:first-child]:z-10",
-  "[&_tr>*:first-child]:border-r",
-  "[&_tr>*:first-child]:shadow-[8px_0_12px_-12px_rgba(0,0,0,0.45)]",
-  "[&_thead_tr>*:first-child]:z-20",
-  "[&_thead_tr>*:first-child]:bg-muted",
-  "[&_tbody_tr>*:first-child]:bg-card",
-  "[&_tbody_tr:hover>*:first-child]:bg-muted",
-  "[&_tfoot_tr>*:first-child]:bg-muted",
+  "md:[&_tr>*:first-child]:sticky",
+  "md:[&_tr>*:first-child]:left-0",
+  "md:[&_tr>*:first-child]:z-10",
+  "md:[&_tr>*:first-child]:border-r",
+  "md:[&_tr>*:first-child]:shadow-[8px_0_12px_-12px_rgba(0,0,0,0.45)]",
+  "md:[&_thead_tr>*:first-child]:z-20",
+  "md:[&_thead_tr>*:first-child]:bg-muted",
+  "md:[&_tbody_tr>*:first-child]:bg-card",
+  "md:[&_tbody_tr:hover>*:first-child]:bg-muted",
+  "md:[&_tfoot_tr>*:first-child]:bg-muted",
 ]
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
