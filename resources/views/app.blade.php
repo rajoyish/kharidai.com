@@ -3,6 +3,59 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        @php($siteName = config('app.name', 'Laravel'))
+        @php($seo = array_replace([
+            'name' => $siteName,
+            'title' => $siteName,
+            'description' => 'Shop digital goods, subscriptions, services, and physical products from Kharidai.',
+            'image' => asset('kharidai_og.png'),
+            'imageAlt' => $siteName.' marketplace preview',
+            'imageType' => 'image/png',
+            'imageWidth' => 1200,
+            'imageHeight' => 630,
+            'url' => request()->url(),
+            'type' => 'website',
+            'robots' => 'noindex,nofollow',
+            'twitterCard' => 'summary_large_image',
+            'updatedTime' => null,
+        ], data_get($page, 'props.seo', [])))
+        <x-inertia::head>
+            <title>{{ $seo['title'] }}</title>
+            <meta data-inertia="description" name="description" content="{{ $seo['description'] }}" />
+            <meta data-inertia="robots" name="robots" content="{{ $seo['robots'] }}" />
+            <link data-inertia="canonical" rel="canonical" href="{{ $seo['url'] }}" />
+            <link data-inertia="image_src" rel="image_src" href="{{ $seo['image'] }}" />
+
+            <meta data-inertia="og:type" property="og:type" content="{{ $seo['type'] }}" />
+            <meta data-inertia="og:site_name" property="og:site_name" content="{{ $seo['name'] }}" />
+            <meta data-inertia="og:title" property="og:title" content="{{ $seo['title'] }}" />
+            <meta data-inertia="og:description" property="og:description" content="{{ $seo['description'] }}" />
+            <meta data-inertia="og:image" property="og:image" content="{{ $seo['image'] }}" />
+            @if(str_starts_with($seo['image'], 'https://'))
+            <meta data-inertia="og:image:secure_url" property="og:image:secure_url" content="{{ $seo['image'] }}" />
+            @endif
+            @if(filled($seo['imageType']))
+            <meta data-inertia="og:image:type" property="og:image:type" content="{{ $seo['imageType'] }}" />
+            @endif
+            @if(filled($seo['imageWidth']))
+            <meta data-inertia="og:image:width" property="og:image:width" content="{{ $seo['imageWidth'] }}" />
+            @endif
+            @if(filled($seo['imageHeight']))
+            <meta data-inertia="og:image:height" property="og:image:height" content="{{ $seo['imageHeight'] }}" />
+            @endif
+            <meta data-inertia="og:image:alt" property="og:image:alt" content="{{ $seo['imageAlt'] }}" />
+            <meta data-inertia="og:url" property="og:url" content="{{ $seo['url'] }}" />
+            @if(filled($seo['updatedTime']))
+            <meta data-inertia="og:updated_time" property="og:updated_time" content="{{ $seo['updatedTime'] }}" />
+            @endif
+
+            <meta data-inertia="twitter:card" name="twitter:card" content="{{ $seo['twitterCard'] }}" />
+            <meta data-inertia="twitter:title" name="twitter:title" content="{{ $seo['title'] }}" />
+            <meta data-inertia="twitter:description" name="twitter:description" content="{{ $seo['description'] }}" />
+            <meta data-inertia="twitter:image" name="twitter:image" content="{{ $seo['image'] }}" />
+            <meta data-inertia="twitter:image:alt" name="twitter:image:alt" content="{{ $seo['imageAlt'] }}" />
+            <meta data-inertia="twitter:url" name="twitter:url" content="{{ $seo['url'] }}" />
+        </x-inertia::head>
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>
@@ -62,38 +115,6 @@
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
-        @php($siteName = config('app.name', 'Laravel'))
-        @php($seo = array_replace([
-            'name' => $siteName,
-            'title' => $siteName,
-            'description' => 'Shop digital goods, subscriptions, services, and physical products from Kharidai.',
-            'image' => asset('kharidai_og.png'),
-            'imageAlt' => $siteName.' marketplace preview',
-            'url' => request()->url(),
-            'type' => 'website',
-            'robots' => 'noindex,nofollow',
-            'twitterCard' => 'summary_large_image',
-        ], data_get($page, 'props.seo', [])))
-        <x-inertia::head>
-            <title>{{ $seo['title'] }}</title>
-            <meta data-inertia="description" name="description" content="{{ $seo['description'] }}" />
-            <meta data-inertia="robots" name="robots" content="{{ $seo['robots'] }}" />
-            <link data-inertia="canonical" rel="canonical" href="{{ $seo['url'] }}" />
-
-            <meta data-inertia="og:type" property="og:type" content="{{ $seo['type'] }}" />
-            <meta data-inertia="og:site_name" property="og:site_name" content="{{ $seo['name'] }}" />
-            <meta data-inertia="og:title" property="og:title" content="{{ $seo['title'] }}" />
-            <meta data-inertia="og:description" property="og:description" content="{{ $seo['description'] }}" />
-            <meta data-inertia="og:image" property="og:image" content="{{ $seo['image'] }}" />
-            <meta data-inertia="og:image:alt" property="og:image:alt" content="{{ $seo['imageAlt'] }}" />
-            <meta data-inertia="og:url" property="og:url" content="{{ $seo['url'] }}" />
-
-            <meta data-inertia="twitter:card" name="twitter:card" content="{{ $seo['twitterCard'] }}" />
-            <meta data-inertia="twitter:title" name="twitter:title" content="{{ $seo['title'] }}" />
-            <meta data-inertia="twitter:description" name="twitter:description" content="{{ $seo['description'] }}" />
-            <meta data-inertia="twitter:image" name="twitter:image" content="{{ $seo['image'] }}" />
-            <meta data-inertia="twitter:image:alt" name="twitter:image:alt" content="{{ $seo['imageAlt'] }}" />
-        </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
         <x-inertia::app />
