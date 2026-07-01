@@ -3,6 +3,7 @@
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -129,11 +130,23 @@ it('does not render the echo config when the pusher key is missing', function ()
 });
 
 it('can view a single product page', function () {
-    Storage::fake('public');
-    Storage::disk('public')->put(
-        'products/test-product.png',
-        file_get_contents(public_path('kharidai_og.png')),
+    $temporaryPublicDiskRoot = storage_path('framework/testing/disks/public-seo');
+
+    File::deleteDirectory($temporaryPublicDiskRoot);
+    File::ensureDirectoryExists($temporaryPublicDiskRoot.'/products');
+    File::copy(
+        public_path('kharidai_og.png'),
+        $temporaryPublicDiskRoot.'/products/test-product.png',
     );
+    config()->set('filesystems.disks.public', [
+        'driver' => 'local',
+        'root' => $temporaryPublicDiskRoot,
+        'url' => 'https://files.kharidai.test/storage',
+        'visibility' => 'public',
+        'throw' => false,
+        'report' => false,
+    ]);
+    Storage::forgetDisk('public');
 
     $product = Product::factory()->create([
         'title' => 'Test Product',
@@ -141,7 +154,7 @@ it('can view a single product page', function () {
         'image' => 'products/test-product.png',
         'in_stock' => true,
     ]);
-    $expectedImage = asset('storage/products/test-product.png').'?v='.$product->updated_at->timestamp;
+    $expectedImage = 'https://files.kharidai.test/storage/products/test-product.png?v='.$product->updated_at->timestamp;
 
     $response = $this->get('/products/'.$product->slug);
 
