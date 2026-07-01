@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
+use App\Http\Controllers\Admin\TitheController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\CartController;
@@ -79,6 +80,8 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::post('orders/{order}/messages', [AdminOrderController::class, 'storeMessage'])->name('orders.messages.store');
 
     Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::get('tithes', [TitheController::class, 'index'])->name('tithes.index');
+    Route::patch('tithes/{monthlyTithe}/toggle-status', [TitheController::class, 'toggleStatus'])->name('tithes.toggle-status');
 });
 
 require __DIR__.'/settings.php';
