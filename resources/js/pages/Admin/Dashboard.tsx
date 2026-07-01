@@ -11,6 +11,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { index as adminOrdersIndex } from '@/routes/admin/orders';
+import { index as adminTithesIndex } from '@/routes/admin/tithes';
 
 
 type Order = {
@@ -41,6 +43,8 @@ export default function Dashboard({
         todays_orders: number;
         pending_orders: number;
         total_users: number;
+        total_tithes_collected_npr: number;
+        pending_tithes_npr: number;
     };
 }) {
     return (
@@ -48,7 +52,7 @@ export default function Dashboard({
             <SeoHead title="Admin Dashboard" />
 
             <PagePanel title="Admin Dashboard" variant="transparent">
-                <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-6">
+                <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
                         <div className="text-sm font-medium text-muted-foreground">Total Sales (Completed)</div>
                         <div className="mt-2 text-2xl font-bold">
@@ -59,6 +63,28 @@ export default function Dashboard({
                         <div className="text-sm font-medium text-muted-foreground">Total Profit</div>
                         <div className="mt-2 text-2xl font-bold">
                             <div>Rs. {stats.total_profit_npr.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Total Tithes Collected (All Time)</div>
+                        <div className="mt-2 text-2xl font-bold">
+                            <div>
+                                Rs. {stats.total_tithes_collected_npr.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="text-sm font-medium text-muted-foreground">Pending Tithes (Unpaid)</div>
+                        <div className="mt-2 text-2xl font-bold">
+                            <div>
+                                Rs. {stats.pending_tithes_npr.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}
+                            </div>
                         </div>
                     </div>
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
@@ -81,9 +107,14 @@ export default function Dashboard({
 
                 <div className="mt-8 mb-4 flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Recent Orders</h2>
-                    <Button variant="outline" size="sm" asChild>
-                        <Link href="/admin/orders">View All Orders</Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={adminTithesIndex()}>Manage Tithes</Link>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={adminOrdersIndex()}>View All Orders</Link>
+                        </Button>
+                    </div>
                 </div>
                 <Table>
                     <TableHeader>
