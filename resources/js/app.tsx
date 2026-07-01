@@ -27,6 +27,10 @@ createInertiaApp({
     },
     strictMode: true,
     setup({ el, App, props }) {
+        if (!el) {
+            throw new Error('Inertia root element not found.');
+        }
+
         const root = createRoot(el);
         root.render(
             <TooltipProvider delayDuration={0}>

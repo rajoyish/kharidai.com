@@ -52,16 +52,11 @@
 
         @fonts
 
-        @if(env('VITE_PUSHER_APP_KEY'))
+        @php($echoConfig = config('broadcasting.connections.pusher.frontend'))
+
+        @if(filled($echoConfig['key'] ?? null))
         <script>
-            window.EchoConfig = {
-                key: "{{ env('VITE_PUSHER_APP_KEY') }}",
-                cluster: "{{ env('VITE_PUSHER_APP_CLUSTER', 'mt1') }}",
-                wsHost: "{{ env('VITE_PUSHER_HOST', '') }}" || `ws-{{ env('VITE_PUSHER_APP_CLUSTER', 'mt1') }}.pusher.com`,
-                wsPort: {{ env('VITE_PUSHER_PORT', 80) }},
-                wssPort: {{ env('VITE_PUSHER_PORT', 443) }},
-                forceTLS: "{{ env('VITE_PUSHER_SCHEME', 'https') }}" === 'https',
-            };
+            window.EchoConfig = @js($echoConfig);
         </script>
         @endif
 

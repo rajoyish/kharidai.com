@@ -59,6 +59,16 @@ return [
                 'encrypted' => true,
                 'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
             ],
+            'frontend' => [
+                'key' => env('VITE_PUSHER_APP_KEY', env('PUSHER_APP_KEY')),
+                'cluster' => env('VITE_PUSHER_APP_CLUSTER', env('PUSHER_APP_CLUSTER', 'mt1')),
+                'wsHost' => env('VITE_PUSHER_HOST')
+                    ?: (env('PUSHER_HOST')
+                        ?: 'ws-'.env('VITE_PUSHER_APP_CLUSTER', env('PUSHER_APP_CLUSTER', 'mt1')).'.pusher.com'),
+                'wsPort' => (int) env('VITE_PUSHER_PORT', env('PUSHER_PORT', 80)),
+                'wssPort' => (int) env('VITE_PUSHER_PORT', env('PUSHER_PORT', 443)),
+                'forceTLS' => env('VITE_PUSHER_SCHEME', env('PUSHER_SCHEME', 'https')) === 'https',
+            ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
             ],
