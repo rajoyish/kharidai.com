@@ -10,7 +10,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 uses(RefreshDatabase::class);
 
 it('can view the homepage', function () {
-    $expectedImage = asset('kharidai_og.png').'?v='.filemtime(public_path('kharidai_og.png'));
+    $expectedImage = asset('kharidai_og.png');
     $response = $this->get(route('home'));
 
     $response->assertSuccessful();
@@ -46,7 +46,7 @@ it('can view the homepage when categories include in-stock products', function (
 });
 
 it('renders the homepage seo tags in the app shell', function () {
-    $expectedImage = asset('kharidai_og.png').'?v='.filemtime(public_path('kharidai_og.png'));
+    $expectedImage = asset('kharidai_og.png');
     $response = $this->get(route('home'));
 
     $response->assertSuccessful();
@@ -154,7 +154,7 @@ it('can view a single product page', function () {
         'image' => 'products/test-product.png',
         'in_stock' => true,
     ]);
-    $expectedImage = 'https://files.kharidai.test/storage/products/test-product.png?v='.$product->updated_at->timestamp;
+    $expectedImage = 'https://files.kharidai.test/storage/products/test-product.png';
 
     $response = $this->get('/products/'.$product->slug);
 
