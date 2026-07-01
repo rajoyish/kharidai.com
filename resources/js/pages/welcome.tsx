@@ -218,7 +218,7 @@ export default function Welcome({
                             placeholder="Search products by name or description..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="flex-1 h-12 text-base border-gray-200 focus-visible:ring-accent rounded-xl bg-gray-50/50"
+                            className="w-full sm:w-auto sm:flex-1 h-12 text-base border-gray-200 focus-visible:ring-accent rounded-xl bg-gray-50/50"
                         />
                         <select
                             value={selectedCategory}
