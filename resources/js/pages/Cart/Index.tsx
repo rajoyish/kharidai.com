@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 
@@ -258,6 +259,7 @@ return;
                     )}
                 </main>
             </div>
+            <FloatingContactActions />
         </>
     );
 }

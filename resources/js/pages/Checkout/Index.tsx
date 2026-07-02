@@ -1,5 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
+import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -161,6 +162,7 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                     </form>
                 </main>
             </div>
+            <FloatingContactActions />
         </>
     );
 }
