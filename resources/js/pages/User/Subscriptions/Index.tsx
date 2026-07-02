@@ -23,6 +23,7 @@ type Subscription = {
     start_date: string;
     end_date: string | null;
     days_left: number | null;
+    is_expired: boolean;
     user_label: string | null;
     order: {
         id: number;
@@ -85,9 +86,9 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
 
     if (!subscription.user_label) {
         return (
-            <Badge 
-                variant="secondary" 
-                className="cursor-pointer hover:bg-secondary/80 font-normal opacity-70"
+            <Badge
+                variant="secondary"
+                className="cursor-pointer font-normal opacity-70 hover:bg-secondary/80"
                 onClick={() => setIsEditing(true)}
             >
                 + Add label
@@ -96,8 +97,8 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
     }
 
     return (
-        <Badge 
-            variant="outline" 
+        <Badge
+            variant="outline"
             className="cursor-pointer hover:bg-accent"
             onClick={() => setIsEditing(true)}
         >
@@ -106,7 +107,11 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
     );
 }
 
-export default function SubscriptionIndex({ subscriptions }: { subscriptions: Subscription[] }) {
+export default function SubscriptionIndex({
+    subscriptions,
+}: {
+    subscriptions: Subscription[];
+}) {
     return (
         <>
             <SeoHead title="My Subscriptions" />
@@ -134,10 +139,22 @@ export default function SubscriptionIndex({ subscriptions }: { subscriptions: Su
                                     <TableCell className="font-medium">
                                         {sub.order_item ? (
                                             <span>
-                                                {sub.order_item.product_variant.product.title} ({sub.order_item.product_variant.name})
+                                                {
+                                                    sub.order_item
+                                                        .product_variant.product
+                                                        .title
+                                                }{' '}
+                                                (
+                                                {
+                                                    sub.order_item
+                                                        .product_variant.name
+                                                }
+                                                )
                                             </span>
                                         ) : (
-                                            <span className="text-muted-foreground">N/A</span>
+                                            <span className="text-muted-foreground">
+                                                N/A
+                                            </span>
                                         )}
                                     </TableCell>
                                     <TableCell>
@@ -155,7 +172,12 @@ export default function SubscriptionIndex({ subscriptions }: { subscriptions: Su
                                         {sub.end_date || 'Lifetime'}
                                     </TableCell>
                                     <TableCell>
-                                        <DaysLeft startDate={sub.start_date} endDate={sub.end_date} initialDaysLeft={sub.days_left} />
+                                        <DaysLeft
+                                            startDate={sub.start_date}
+                                            endDate={sub.end_date}
+                                            initialDaysLeft={sub.days_left}
+                                            isExpired={sub.is_expired}
+                                        />
                                     </TableCell>
                                     <TableCell>
                                         <EditableLabel subscription={sub} />

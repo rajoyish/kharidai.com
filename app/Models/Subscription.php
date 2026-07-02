@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $start_date
  * @property Carbon|null $end_date
  * @property-read int|null $days_left
+ * @property-read bool $is_expired
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property string|null $user_label
@@ -26,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property Order $order
  * @property OrderItem|null $orderItem
  */
-#[Appends(['days_left'])]
+#[Appends(['days_left', 'is_expired'])]
 #[Fillable(['user_id', 'order_id', 'order_item_id', 'start_date', 'end_date', 'user_label'])]
 class Subscription extends Model
 {
@@ -51,6 +52,16 @@ class Subscription extends Model
     {
         return Attribute::make(
             get: fn (): ?int => $this->calculateDaysLeft(),
+        );
+    }
+
+    /**
+     * @return Attribute<bool, never>
+     */
+    protected function isExpired(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): bool => $this->hasExpired(),
         );
     }
 
@@ -95,5 +106,14 @@ class Subscription extends Model
             ),
             0,
         );
+    }
+
+    private function hasExpired(): bool
+    {
+        if ($this->end_date === null) {
+            return false;
+        }
+
+        return $this->end_date->copy()->startOfDay()->lt(now()->startOfDay());
     }
 }

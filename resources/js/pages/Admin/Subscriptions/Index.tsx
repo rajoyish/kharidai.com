@@ -20,6 +20,7 @@ type Subscription = {
     start_date: string;
     end_date: string | null;
     days_left: number | null;
+    is_expired: boolean;
     user: {
         id: number;
         name: string;
@@ -77,21 +78,40 @@ export default function AdminSubscriptionIndex({
                                 {subscriptions.data.map((sub) => (
                                     <TableRow key={sub.id}>
                                         <TableCell>
-                                            <div className="font-medium">{sub.user.name}</div>
-                                            <div className="text-xs text-muted-foreground">{sub.user.email}</div>
+                                            <div className="font-medium">
+                                                {sub.user.name}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {sub.user.email}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="font-medium">
                                             {sub.order_item ? (
                                                 <span>
-                                                    {sub.order_item.product_variant.product.title} ({sub.order_item.product_variant.name})
+                                                    {
+                                                        sub.order_item
+                                                            .product_variant
+                                                            .product.title
+                                                    }{' '}
+                                                    (
+                                                    {
+                                                        sub.order_item
+                                                            .product_variant
+                                                            .name
+                                                    }
+                                                    )
                                                 </span>
                                             ) : (
-                                                <span className="text-muted-foreground">N/A</span>
+                                                <span className="text-muted-foreground">
+                                                    N/A
+                                                </span>
                                             )}
                                         </TableCell>
                                         <TableCell>
                                             <Link
-                                                href={showAdminOrder(sub.order.id)}
+                                                href={showAdminOrder(
+                                                    sub.order.id,
+                                                )}
                                                 className="text-primary hover:underline"
                                             >
                                                 {sub.order.order_number}
@@ -104,7 +124,12 @@ export default function AdminSubscriptionIndex({
                                             {sub.end_date || 'Lifetime'}
                                         </TableCell>
                                         <TableCell>
-                                            <DaysLeft startDate={sub.start_date} endDate={sub.end_date} initialDaysLeft={sub.days_left} />
+                                            <DaysLeft
+                                                startDate={sub.start_date}
+                                                endDate={sub.end_date}
+                                                initialDaysLeft={sub.days_left}
+                                                isExpired={sub.is_expired}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))}

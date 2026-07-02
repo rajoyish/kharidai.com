@@ -4,6 +4,7 @@ use App\Models\Order;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -60,6 +61,59 @@ it('allows admins to view all subscriptions', function () {
         ->component('Admin/Subscriptions/Index')
         ->has('subscriptions.data', 3)
     );
+});
+
+it('serializes expired status for user and admin subscription listings', function () {
+    $this->travelTo(Carbon::parse('2026-07-02 12:00:00'));
+
+    try {
+        $user = User::factory()->create();
+        $admin = User::factory()->create(['is_admin' => true]);
+        $order = Order::factory()->create(['user_id' => $user->id]);
+
+        $expiredSubscription = Subscription::factory()->create([
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'start_date' => '2026-06-01',
+            'end_date' => '2026-07-01',
+        ]);
+        $activeSubscription = Subscription::factory()->create([
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-07-03',
+        ]);
+        $lifetimeSubscription = Subscription::factory()->create([
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'start_date' => '2026-05-01',
+            'end_date' => null,
+        ]);
+
+        expect($expiredSubscription->fresh()->is_expired)->toBeTrue();
+        expect($activeSubscription->fresh()->is_expired)->toBeFalse();
+        expect($lifetimeSubscription->fresh()->is_expired)->toBeFalse();
+
+        $userResponse = $this->actingAs($user)->get(route('subscriptions.index'));
+        $userResponse->assertSuccessful();
+
+        $userSubscriptions = collect($userResponse->inertiaProps('subscriptions'))->keyBy('id');
+
+        expect($userSubscriptions->get($expiredSubscription->id)['is_expired'])->toBeTrue();
+        expect($userSubscriptions->get($activeSubscription->id)['is_expired'])->toBeFalse();
+        expect($userSubscriptions->get($lifetimeSubscription->id)['is_expired'])->toBeFalse();
+
+        $adminResponse = $this->actingAs($admin)->get(route('admin.subscriptions.index'));
+        $adminResponse->assertSuccessful();
+
+        $adminSubscriptions = collect($adminResponse->inertiaProps('subscriptions.data'))->keyBy('id');
+
+        expect($adminSubscriptions->get($expiredSubscription->id)['is_expired'])->toBeTrue();
+        expect($adminSubscriptions->get($activeSubscription->id)['is_expired'])->toBeFalse();
+        expect($adminSubscriptions->get($lifetimeSubscription->id)['is_expired'])->toBeFalse();
+    } finally {
+        $this->travelBack();
+    }
 });
 
 it('prevents non-admins from viewing admin subscriptions panel', function () {
