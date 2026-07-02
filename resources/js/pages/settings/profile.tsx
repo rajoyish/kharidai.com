@@ -8,14 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
-import type { Auth } from '@/types';
+import type { PageProps } from '@/types';
 
-type PageProps = {
-    auth: Auth;
+type ProfilePageProps = PageProps & {
+    profile: {
+        name: string;
+        email: string;
+        mobile_number: string | null;
+    };
 };
 
 export default function Profile() {
-    const { auth } = usePage<PageProps>().props;
+    const { profile } = usePage<ProfilePageProps>().props;
 
     return (
         <>
@@ -45,7 +49,7 @@ export default function Profile() {
                                 <Input
                                     id="name"
                                     className="mt-1 block w-full"
-                                    defaultValue={auth.user.name}
+                                    defaultValue={profile.name}
                                     name="name"
                                     required
                                     autoComplete="name"
@@ -62,7 +66,7 @@ export default function Profile() {
                                 <MobileNumberInput
                                     id="mobile_number"
                                     className="mt-1 block w-full"
-                                    defaultValue={auth.user.mobile_number || ''}
+                                    defaultValue={profile.mobile_number || ''}
                                     name="mobile_number"
                                     autoComplete="tel"
                                     placeholder="Mobile number"
@@ -84,13 +88,13 @@ export default function Profile() {
                                     id="email_display"
                                     type="email"
                                     className="mt-1 block w-full"
-                                    defaultValue={auth.user.email}
+                                    defaultValue={profile.email}
                                     name="email_display"
                                     disabled
                                     autoComplete="username"
                                     placeholder="Email address"
                                 />
-                                <input type="hidden" name="email" value={auth.user.email} />
+                                <input type="hidden" name="email" value={profile.email} />
 
                                 <InputError
                                     className="mt-2"

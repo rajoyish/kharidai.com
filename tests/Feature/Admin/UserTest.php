@@ -1,18 +1,39 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Support\SessionKey;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 
 test('an admin can list users', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
-    User::factory()->count(3)->create();
+    $this->travelTo(Carbon::parse('2026-07-02 12:00:00'));
 
-    $this->actingAs($admin)
-        ->get(route('admin.users.index'))
-        ->assertSuccessful();
+    try {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+            'created_at' => Carbon::parse('2026-06-20 12:00:00'),
+        ]);
+        $user = User::factory()->create([
+            'created_at' => Carbon::parse('2026-06-29 12:00:00'),
+            'last_active_at' => Carbon::parse('2026-07-01 12:00:00'),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.users.index'))
+            ->assertSuccessful();
+
+        $listedUser = collect($response->inertiaProps('users'))->firstWhere('id', $user->id);
+
+        expect($listedUser)->not->toBeNull()
+            ->and($listedUser['created_at_relative'])->toBe('3 days ago')
+            ->and($listedUser['created_at_absolute'])->toBe('6/29/2026')
+            ->and($listedUser['last_active_relative'])->toBe('1 day ago')
+            ->and($listedUser['last_active_absolute'])->toBe('7/1/2026');
+    } finally {
+        $this->travelBack();
+    }
 });
 
 test('an admin can ban and unban another user', function () {
