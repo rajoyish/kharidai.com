@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
-import { SubscriptionStatusBadge } from '@/components/subscription-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {

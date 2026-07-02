@@ -3,7 +3,6 @@ import { Link } from '@inertiajs/react';
 import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
-import { SubscriptionStatusBadge } from '@/components/subscription-status-badge';
 import {
     Table,
     TableBody,
