@@ -1,5 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+
+import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -153,13 +155,7 @@ export default function SubscriptionIndex({ subscriptions }: { subscriptions: Su
                                         {sub.end_date || 'Lifetime'}
                                     </TableCell>
                                     <TableCell>
-                                        {sub.days_left !== null ? (
-                                            <span className={`font-bold ${sub.days_left <= 5 ? 'text-destructive' : 'text-green-600 dark:text-green-400'}`}>
-                                                {sub.days_left}
-                                            </span>
-                                        ) : (
-                                            <span className="text-muted-foreground">-</span>
-                                        )}
+                                        <DaysLeft startDate={sub.start_date} endDate={sub.end_date} initialDaysLeft={sub.days_left} />
                                     </TableCell>
                                     <TableCell>
                                         <EditableLabel subscription={sub} />
