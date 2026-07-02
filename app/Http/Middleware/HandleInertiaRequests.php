@@ -42,7 +42,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => $siteName,
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? $request->user()->only('id', 'name', 'email', 'avatar', 'is_admin') : null,
             ],
             'cartCount' => $request->user()
                 ? (int) (Cart::where('user_id', $request->user()->id)->withSum('items', 'quantity')->first()?->items_sum_quantity ?? 0)

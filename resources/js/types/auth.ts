@@ -3,11 +3,7 @@ export type User = {
     name: string;
     email: string;
     is_admin: boolean;
-    avatar?: string;
-    email_verified_at: string | null;
-    mobile_number?: string | null;
-    created_at: string;
-    updated_at: string;
+    avatar?: string | null;
     [key: string]: unknown;
 };
 

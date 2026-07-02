@@ -11,7 +11,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-
 type User = {
     id: number;
     name: string;
@@ -19,8 +18,34 @@ type User = {
     mobile_number: string | null;
     is_admin: boolean;
     banned_at: string | null;
-    created_at: string;
+    created_at: string | null;
+    created_at_relative: string | null;
+    created_at_absolute: string | null;
+    last_active_at: string | null;
+    last_active_relative: string | null;
+    last_active_absolute: string | null;
 };
+
+function UserDateCell({
+    absolute,
+    relative,
+    emptyLabel = '—',
+}: {
+    absolute: string | null;
+    relative: string | null;
+    emptyLabel?: string;
+}) {
+    if (!relative || !absolute) {
+        return <span className="text-muted-foreground">{emptyLabel}</span>;
+    }
+
+    return (
+        <div className="flex flex-col gap-1 whitespace-nowrap">
+            <span>{relative}</span>
+            <span className="text-xs text-muted-foreground">{absolute}</span>
+        </div>
+    );
+}
 
 export default function UsersIndex({ users }: { users: User[] }) {
     const { post, delete: destroy } = useForm();
@@ -46,6 +71,8 @@ export default function UsersIndex({ users }: { users: User[] }) {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Mobile</TableHead>
+                            <TableHead>Created at</TableHead>
+                            <TableHead>Last Active</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">
                                 Actions
@@ -60,6 +87,19 @@ export default function UsersIndex({ users }: { users: User[] }) {
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>{user.mobile_number || '-'}</TableCell>
+                                <TableCell>
+                                    <UserDateCell
+                                        absolute={user.created_at_absolute}
+                                        relative={user.created_at_relative}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <UserDateCell
+                                        absolute={user.last_active_absolute}
+                                        relative={user.last_active_relative}
+                                        emptyLabel="Never"
+                                    />
+                                </TableCell>
                                 <TableCell>
                                     {user.banned_at ? (
                                         <span className="inline-flex items-center rounded-full border border-transparent bg-destructive px-2.5 py-0.5 text-xs font-semibold text-white transition-colors hover:bg-destructive/80 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none">
@@ -100,7 +140,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
                         {users.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={5}
+                                    colSpan={7}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No users found.

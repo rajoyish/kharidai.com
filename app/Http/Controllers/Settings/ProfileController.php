@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,6 +21,7 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         return Inertia::render('settings/profile', [
+            'profile' => $request->user()->only('name', 'email', 'mobile_number'),
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
         ]);
@@ -34,7 +36,7 @@ class ProfileController extends Controller
 
         if ($request->user()->isDirty('name')) {
             if ($request->user()->name_changed_at && $request->user()->name_changed_at->clone()->addMonths(3)->isFuture()) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'name' => 'You can only change your name every 3 months.',
                 ]);
             }
