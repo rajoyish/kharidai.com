@@ -1,7 +1,8 @@
 import { useForm } from '@inertiajs/react';
-import { useState } from 'react';
 import { Upload } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -161,6 +162,7 @@ export default function NprPayment({ order }: { order: Order }) {
                     </form>
                 </div>
             </div>
+            <FloatingContactActions />
         </>
     );
 }

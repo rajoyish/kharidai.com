@@ -2,8 +2,9 @@ import { Link, usePage } from '@inertiajs/react';
 import { ShoppingBag, Sparkles, Archive, CloudDownload, Star, Briefcase, Truck, Search } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import AppLogo from '@/components/app-logo';
-import { SeoHead } from '@/components/seo-head';
+import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
+import { SeoHead } from '@/components/seo-head';
 import { Input } from '@/components/ui/input';
 
 type Product = {
@@ -68,13 +69,20 @@ export default function Welcome({
         categories.forEach(category => {
             category.products.forEach(product => {
                 count += 1;
-                if (product.variants) count += product.variants.length;
+
+                if (product.variants) {
+                    count += product.variants.length;
+                }
             });
         });
         uncategorizedProducts.forEach(product => {
             count += 1;
-            if (product.variants) count += product.variants.length;
+
+            if (product.variants) {
+                count += product.variants.length;
+            }
         });
+
         return count;
     }, [categories, uncategorizedProducts]);
 
@@ -350,6 +358,7 @@ export default function Welcome({
                 </main>
                 <Footer />
             </div>
+            <FloatingContactActions />
         </>
     );
 }

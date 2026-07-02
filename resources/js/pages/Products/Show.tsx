@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import AppLogo from '@/components/app-logo';
-import { JsonLd } from '@/components/json-ld';
+import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
+import { JsonLd } from '@/components/json-ld';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -241,6 +242,7 @@ export default function Show({ product }: { product: Product }) {
                 </main>
                 <Footer />
             </div>
+            <FloatingContactActions />
         </>
     );
 }
