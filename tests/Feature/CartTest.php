@@ -20,12 +20,14 @@ it('can add an item to the cart', function () {
     $user = User::factory()->create();
     $variant = ProductVariant::factory()->create();
 
-    $response = $this->actingAs($user)->post('/cart', [
-        'product_variant_id' => $variant->id,
-        'quantity' => 2,
-    ]);
+    $response = $this->actingAs($user)
+        ->from(route('products.show', $variant->product))
+        ->post(route('cart.add'), [
+            'product_variant_id' => $variant->id,
+            'quantity' => 2,
+        ]);
 
-    $response->assertRedirect(route('cart.index'));
+    $response->assertRedirect(route('products.show', $variant->product));
     $this->assertDatabaseHas('cart_items', [
         'product_variant_id' => $variant->id,
         'quantity' => 2,

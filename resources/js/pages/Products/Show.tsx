@@ -11,6 +11,9 @@ import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
+import { home } from '@/routes';
+import { index as cartIndex } from '@/routes/cart';
 import type { PageProps } from '@/types';
 
 type Variant = {
@@ -44,8 +47,10 @@ export default function Show({ product }: { product: Product }) {
             return;
         }
 
-        post('/cart', {
+        post(addToCart.url(), {
+            only: ['cartCount'],
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 toast.success('Added to cart');
             },
@@ -83,7 +88,7 @@ export default function Show({ product }: { product: Product }) {
                 <header className="border-b">
                     <div className="container mx-auto flex items-center justify-between px-4 py-4">
                         <Link
-                            href="/"
+                            href={home()}
                             className="group flex items-center gap-2 font-bold"
                         >
                             <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
@@ -91,7 +96,7 @@ export default function Show({ product }: { product: Product }) {
 
                         <nav className="flex items-center gap-4">
                             <Link
-                                href="/cart"
+                                href={cartIndex()}
                                 className="mr-4 flex items-center text-sm font-medium underline-offset-4 hover:underline"
                             >
                                 Cart

@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\CartItem;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CartController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
         $cart->load('items.productVariant.product');
@@ -19,7 +21,7 @@ class CartController extends Controller
         ]);
     }
 
-    public function add(Request $request)
+    public function add(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'product_variant_id' => 'required|exists:product_variants,id',
@@ -40,10 +42,10 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Added to cart.');
+        return redirect()->back()->with('success', 'Added to cart.');
     }
 
-    public function update(Request $request, CartItem $cartItem)
+    public function update(Request $request, CartItem $cartItem): RedirectResponse
     {
         if ($cartItem->cart->user_id !== $request->user()->id) {
             abort(403);
@@ -58,7 +60,7 @@ class CartController extends Controller
         return redirect()->back()->with('success', 'Cart updated.');
     }
 
-    public function remove(Request $request, CartItem $cartItem)
+    public function remove(Request $request, CartItem $cartItem): RedirectResponse
     {
         if ($cartItem->cart->user_id !== $request->user()->id) {
             abort(403);
