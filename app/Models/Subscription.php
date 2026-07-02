@@ -44,6 +44,9 @@ class Subscription extends Model
         ];
     }
 
+    /**
+     * @return Attribute<int|null, never>
+     */
     protected function daysLeft(): Attribute
     {
         return Attribute::make(

@@ -1,4 +1,6 @@
 import { Link } from '@inertiajs/react';
+
+import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import {
@@ -102,13 +104,7 @@ export default function AdminSubscriptionIndex({
                                             {sub.end_date || 'Lifetime'}
                                         </TableCell>
                                         <TableCell>
-                                            {sub.days_left !== null ? (
-                                                <span className={`font-bold ${sub.days_left <= 5 ? 'text-destructive' : 'text-green-600 dark:text-green-400'}`}>
-                                                    {sub.days_left}
-                                                </span>
-                                            ) : (
-                                                <span className="text-muted-foreground">-</span>
-                                            )}
+                                            <DaysLeft startDate={sub.start_date} endDate={sub.end_date} initialDaysLeft={sub.days_left} />
                                         </TableCell>
                                     </TableRow>
                                 ))}
