@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderCredential;
 use App\Models\PaymentReceipt;
-use App\Models\Subscription;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
@@ -147,7 +146,7 @@ class OrderController extends Controller
 
     private function createSubscriptionsForCompletedItems(Order $order): void
     {
-        $order->loadMissing('items.productVariant');
+        $order->loadMissing(['items.productVariant', 'items.subscriptions']);
 
         foreach ($order->items as $item) {
             $validityDays = $item->productVariant?->validity_days;
@@ -157,16 +156,22 @@ class OrderController extends Controller
             }
 
             $startDate = today();
-            $endDate = $startDate->copy()->addDays($validityDays * max($item->quantity, 1));
+            $endDate = $startDate->copy()->addDays($validityDays);
+            $missingSubscriptions = max($item->quantity - $item->subscriptions->count(), 0);
 
-            Subscription::query()->firstOrCreate(
-                ['order_item_id' => $item->id],
-                [
-                    'user_id' => $order->user_id,
-                    'order_id' => $order->id,
-                    'start_date' => $startDate->toDateString(),
-                    'end_date' => $endDate->toDateString(),
-                ],
+            if ($missingSubscriptions === 0) {
+                continue;
+            }
+
+            $subscriptionAttributes = [
+                'user_id' => $order->user_id,
+                'order_id' => $order->id,
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate->toDateString(),
+            ];
+
+            $item->subscriptions()->createMany(
+                array_fill(0, $missingSubscriptions, $subscriptionAttributes),
             );
         }
     }

@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\OrderMessage;
 use App\Models\PaymentReceipt;
 use App\Models\ProductVariant;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
@@ -59,7 +60,7 @@ it('can update order status', function () {
     Notification::assertSentTo($this->user, OrderStatusUpdatedNotification::class);
 });
 
-it('creates a subscription when an admin completes an order', function () {
+it('creates one subscription per purchased unit when an admin completes an order', function () {
     Notification::fake();
 
     $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
@@ -70,7 +71,7 @@ it('creates a subscription when an admin completes an order', function () {
         'validity_days' => null,
     ]);
 
-    OrderItem::create([
+    $subscriptionItem = OrderItem::create([
         'order_id' => $order->id,
         'product_variant_id' => $subscriptionVariant->id,
         'price' => 1200,
@@ -90,21 +91,24 @@ it('creates a subscription when an admin completes an order', function () {
     ]);
 
     $startDate = today()->toDateString();
-    $endDate = today()->addDays(60)->toDateString();
+    $endDate = today()->addDays(30)->toDateString();
+    $subscriptions = Subscription::query()
+        ->where('order_item_id', $subscriptionItem->id)
+        ->orderBy('id')
+        ->get();
 
     $response->assertRedirect();
     $this->assertDatabaseHas('orders', [
         'id' => $order->id,
         'status' => 'completed',
     ]);
-    $this->assertDatabaseHas('subscriptions', [
-        'order_id' => $order->id,
-        'user_id' => $this->user->id,
-        'start_date' => $startDate,
-        'end_date' => $endDate,
-        'days_left' => 60,
-    ]);
-    $this->assertDatabaseCount('subscriptions', 1);
+    expect($subscriptions)->toHaveCount(2);
+    expect($subscriptions->pluck('user_id')->unique()->all())->toBe([$this->user->id]);
+    expect($subscriptions->pluck('order_id')->unique()->all())->toBe([$order->id]);
+    expect($subscriptions->pluck('start_date')->map->toDateString()->unique()->all())->toBe([$startDate]);
+    expect($subscriptions->pluck('end_date')->map->toDateString()->unique()->all())->toBe([$endDate]);
+    expect($subscriptions->pluck('days_left')->unique()->all())->toBe([30]);
+    $this->assertDatabaseCount('subscriptions', 2);
 
     Notification::assertSentTo($this->user, OrderStatusUpdatedNotification::class);
 });

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -45,11 +45,11 @@ class OrderItem extends Model
     }
 
     /**
-     * @return HasOne<Subscription, $this>
+     * @return HasMany<Subscription, $this>
      */
-    public function subscription(): HasOne
+    public function subscriptions(): HasMany
     {
-        return $this->hasOne(Subscription::class);
+        return $this->hasMany(Subscription::class);
     }
 
     protected function price(): Attribute
