@@ -1,0 +1,231 @@
+- generic [ref=f3e2]:
+  - generic [ref=f3e3]:
+    - banner [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - generic [ref=f3e6]:
+          - link [ref=f3e7] [cursor=pointer]:
+            - /url: /
+            - img [ref=f3e8]
+          - generic [ref=f3e13]:
+            - link "Home" [ref=f3e14] [cursor=pointer]:
+              - /url: /
+            - navigation "Main" [ref=f3e15]:
+              - list [ref=f3e17]:
+                - listitem [ref=f3e18]:
+                  - button "Categories" [ref=f3e19]:
+                    - text: Categories
+                    - img [ref=f3e20]
+        - generic [ref=f3e22]:
+          - link "Account" [ref=f3e23] [cursor=pointer]:
+            - /url: /login
+            - img [ref=f3e24]
+            - generic [ref=f3e27]: Account
+          - link "Cart" [ref=f3e28] [cursor=pointer]:
+            - /url: /cart
+            - img [ref=f3e30]
+            - generic [ref=f3e34]: Cart
+    - generic [ref=f3e35]:
+      - generic [ref=f3e37]:
+        - heading "Your all-in-onemarketplace!" [level=1] [ref=f3e38]:
+          - generic [ref=f3e40]: Your all-in-one
+          - generic [ref=f3e42]: marketplace!
+        - paragraph [ref=f3e43]: Discover digital goods, premium subscriptions, trusted services, and physical products all at unbeatable prices. Shop smart. Shop reliable.
+        - button "Start Here" [ref=f3e45]
+      - generic [ref=f3e46]:
+        - generic [ref=f3e47] [cursor=pointer]:
+          - img [ref=f3e49]
+          - heading "Find exactly what you need, instantly." [level=3] [ref=f3e52]
+          - generic [ref=f3e53]:
+            - generic [ref=f3e54]: 49 items
+            - generic [ref=f3e56]: 24/7 delivery
+        - generic [ref=f3e57] [cursor=pointer]:
+          - img [ref=f3e59]
+          - heading "Premium Subscriptions" [level=3] [ref=f3e65]
+        - generic [ref=f3e66] [cursor=pointer]:
+          - img [ref=f3e68]
+          - heading "Trusted Physical Goods" [level=3] [ref=f3e72]
+    - generic [ref=f3e75]:
+      - generic [ref=f3e76]:
+        - heading "A path to better shopping" [level=2] [ref=f3e77]
+        - paragraph [ref=f3e78]: Kharidai helps you discover the best products without the hassle.
+      - generic [ref=f3e79]:
+        - generic [ref=f3e80]:
+          - img [ref=f3e81]
+          - heading "Digital Goods" [level=3] [ref=f3e85]
+          - paragraph [ref=f3e86]: Instant access to software, game keys, and digital content. Delivered directly to your email within seconds.
+        - generic [ref=f3e87]:
+          - img [ref=f3e88]
+          - heading "Premium Subscriptions" [level=3] [ref=f3e90]
+          - paragraph [ref=f3e91]: Unlock premium features on your favorite platforms at unbeatable discounted rates.
+        - generic [ref=f3e92]:
+          - img [ref=f3e93]
+          - heading "Trusted Services" [level=3] [ref=f3e96]
+          - paragraph [ref=f3e97]: Hire top-rated professionals for freelance work, consulting, and specialized services.
+        - generic [ref=f3e98]:
+          - img [ref=f3e99]
+          - heading "Physical Products" [level=3] [ref=f3e104]
+          - paragraph [ref=f3e105]: Shop for electronics, gadgets, and everyday essentials with fast, reliable shipping to your door.
+    - main [ref=f3e106]:
+      - generic [ref=f3e107]:
+        - heading "Explore by category" [level=2] [ref=f3e108]
+        - paragraph [ref=f3e109]: Browse each category on its own page and dive into the products that belong there.
+      - searchbox "Search categories or products..." [ref=f3e111]
+      - generic [ref=f3e112]:
+        - link "Category AI Subscriptions 5 products Open the AI Subscriptions page to browse every product in this category. Example Product Claude Code by Anthropic ChatGPT 1 Month Edited Perplexity AI | Year +1 more Browse category Example Product Example Product Claude Code by Anthropic Claude Code by Anthropic" [ref=f3e113] [cursor=pointer]:
+          - /url: /categories/ai-subscriptions
+          - generic [ref=f3e114]:
+            - generic [ref=f3e115]:
+              - paragraph [ref=f3e116]: Category
+              - generic [ref=f3e117]:
+                - heading "AI Subscriptions" [level=3] [ref=f3e118]
+                - generic [ref=f3e119]: 5 products
+              - paragraph [ref=f3e120]: Open the AI Subscriptions page to browse every product in this category.
+              - generic [ref=f3e121]:
+                - generic [ref=f3e122]: Example Product
+                - generic [ref=f3e123]: Claude Code by Anthropic
+                - generic [ref=f3e124]: ChatGPT 1 Month Edited
+                - generic [ref=f3e125]: Perplexity AI | Year
+                - generic [ref=f3e126]: +1 more
+              - generic [ref=f3e127]:
+                - text: Browse category
+                - img [ref=f3e128]
+            - generic [ref=f3e130]:
+              - generic [ref=f3e131]:
+                - img "Example Product" [ref=f3e133]
+                - paragraph [ref=f3e135]: Example Product
+              - generic [ref=f3e136]:
+                - img "Claude Code by Anthropic" [ref=f3e138]
+                - paragraph [ref=f3e140]: Claude Code by Anthropic
+        - link "Category Cloud Storage 2 products Open the Cloud Storage page to browse every product in this category. Google One Pro | Gemini AI Pro | 5 TB | 18 Months Microsoft Onedrive | 1 TB Browse category Google One Pro | Gemini AI Pro | 5 TB | 18 Months Microsoft Onedrive | 1 TB" [ref=f3e141] [cursor=pointer]:
+          - /url: /categories/cloud-storage
+          - generic [ref=f3e142]:
+            - generic [ref=f3e143]:
+              - paragraph [ref=f3e144]: Category
+              - generic [ref=f3e145]:
+                - heading "Cloud Storage" [level=3] [ref=f3e146]
+                - generic [ref=f3e147]: 2 products
+              - paragraph [ref=f3e148]: Open the Cloud Storage page to browse every product in this category.
+              - generic [ref=f3e149]:
+                - generic [ref=f3e150]: Google One Pro | Gemini AI Pro | 5 TB | 18 Months
+                - generic [ref=f3e151]: Microsoft Onedrive | 1 TB
+              - generic [ref=f3e152]:
+                - text: Browse category
+                - img [ref=f3e153]
+            - generic [ref=f3e155]:
+              - paragraph [ref=f3e159]: Google One Pro | Gemini AI Pro | 5 TB | 18 Months
+              - paragraph [ref=f3e163]: Microsoft Onedrive | 1 TB
+        - link "Category Creative Tools 1 product Open the Creative Tools page to browse every product in this category. Capcut Pro Browse category Capcut Pro" [ref=f3e164] [cursor=pointer]:
+          - /url: /categories/creative-tools
+          - generic [ref=f3e165]:
+            - generic [ref=f3e166]:
+              - paragraph [ref=f3e167]: Category
+              - generic [ref=f3e168]:
+                - heading "Creative Tools" [level=3] [ref=f3e169]
+                - generic [ref=f3e170]: 1 product
+              - paragraph [ref=f3e171]: Open the Creative Tools page to browse every product in this category.
+              - generic [ref=f3e173]: Capcut Pro
+              - generic [ref=f3e174]:
+                - text: Browse category
+                - img [ref=f3e175]
+            - paragraph [ref=f3e181]: Capcut Pro
+        - link "Category Productivity Software 4 products Open the Productivity Software page to browse every product in this category. Zoom Pro Grammarly Quillbot Premium Scribd Premium Browse category Zoom Pro Grammarly" [ref=f3e182] [cursor=pointer]:
+          - /url: /categories/productivity-software
+          - generic [ref=f3e183]:
+            - generic [ref=f3e184]:
+              - paragraph [ref=f3e185]: Category
+              - generic [ref=f3e186]:
+                - heading "Productivity Software" [level=3] [ref=f3e187]
+                - generic [ref=f3e188]: 4 products
+              - paragraph [ref=f3e189]: Open the Productivity Software page to browse every product in this category.
+              - generic [ref=f3e190]:
+                - generic [ref=f3e191]: Zoom Pro
+                - generic [ref=f3e192]: Grammarly
+                - generic [ref=f3e193]: Quillbot Premium
+                - generic [ref=f3e194]: Scribd Premium
+              - generic [ref=f3e195]:
+                - text: Browse category
+                - img [ref=f3e196]
+            - generic [ref=f3e198]:
+              - paragraph [ref=f3e202]: Zoom Pro
+              - paragraph [ref=f3e206]: Grammarly
+        - link "Category VPN Services 1 product Open the VPN Services page to browse every product in this category. NordVPN Browse category NordVPN" [ref=f3e207] [cursor=pointer]:
+          - /url: /categories/vpn-services
+          - generic [ref=f3e208]:
+            - generic [ref=f3e209]:
+              - paragraph [ref=f3e210]: Category
+              - generic [ref=f3e211]:
+                - heading "VPN Services" [level=3] [ref=f3e212]
+                - generic [ref=f3e213]: 1 product
+              - paragraph [ref=f3e214]: Open the VPN Services page to browse every product in this category.
+              - generic [ref=f3e216]: NordVPN
+              - generic [ref=f3e217]:
+                - text: Browse category
+                - img [ref=f3e218]
+            - paragraph [ref=f3e224]: NordVPN
+    - contentinfo [ref=f3e225]:
+      - generic [ref=f3e227]:
+        - generic [ref=f3e228]:
+          - link [ref=f3e229] [cursor=pointer]:
+            - /url: /
+            - img [ref=f3e230]
+          - paragraph [ref=f3e235]: Your all-in-one marketplace for digital goods, premium subscriptions, trusted services, and physical products.
+        - generic [ref=f3e236]:
+          - heading "Shop Categories" [level=3] [ref=f3e237]
+          - list [ref=f3e238]:
+            - listitem [ref=f3e239]:
+              - link "AI Subscriptions" [ref=f3e240] [cursor=pointer]:
+                - /url: /categories/ai-subscriptions
+            - listitem [ref=f3e241]:
+              - link "Cloud Storage" [ref=f3e242] [cursor=pointer]:
+                - /url: /categories/cloud-storage
+            - listitem [ref=f3e243]:
+              - link "Creative Tools" [ref=f3e244] [cursor=pointer]:
+                - /url: /categories/creative-tools
+        - generic [ref=f3e245]:
+          - heading "Explore More" [level=3] [ref=f3e246]
+          - list [ref=f3e247]:
+            - listitem [ref=f3e248]:
+              - link "Productivity Software" [ref=f3e249] [cursor=pointer]:
+                - /url: /categories/productivity-software
+            - listitem [ref=f3e250]:
+              - link "VPN Services" [ref=f3e251] [cursor=pointer]:
+                - /url: /categories/vpn-services
+        - generic [ref=f3e252]:
+          - heading "Contact" [level=3] [ref=f3e253]
+          - list [ref=f3e254]:
+            - listitem [ref=f3e255]:
+              - link "support@kharidai.com" [ref=f3e256] [cursor=pointer]:
+                - /url: mailto:support@kharidai.com
+            - listitem [ref=f3e257]:
+              - link "+977 974-0820005" [ref=f3e258] [cursor=pointer]:
+                - /url: tel:+9779740820005
+            - listitem [ref=f3e259]:
+              - generic [ref=f3e260]:
+                - text: Kathmandu, Nepal
+                - text: Bagmati Province
+      - generic [ref=f3e261]:
+        - generic [ref=f3e262]:
+          - paragraph [ref=f3e263]: © 2026 Kharidai.com | All rights reserved.
+          - generic [ref=f3e264]:
+            - generic [ref=f3e265]: Crafted by
+            - img [ref=f3e266]
+          - generic [ref=f3e271]:
+            - link "Home" [ref=f3e272] [cursor=pointer]:
+              - /url: /
+            - link "Cart" [ref=f3e273] [cursor=pointer]:
+              - /url: /cart
+        - generic [ref=f3e275]:
+          - img
+          - img [ref=f3e276]
+          - generic:
+            - img
+  - generic [ref=f3e281]:
+    - link "Chat with Kharidai on WhatsApp" [ref=f3e282] [cursor=pointer]:
+      - /url: https://wa.me/9779740820005
+      - img
+    - link "Chat with Kharidai on Messenger" [ref=f3e283] [cursor=pointer]:
+      - /url: https://m.me/kharidai
+      - img
+    - button "Scroll down" [ref=f3e284]:
+      - img
+  - region "Notifications alt+T"
