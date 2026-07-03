@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -14,21 +17,10 @@ class StorefrontController extends Controller
     public function index(): Response
     {
         $defaultSeoImage = $this->defaultSeoImage();
-
-        $categoriesQuery = Category::orderBy('name');
-        $uncategorizedQuery = Product::whereNull('category_id')->where('in_stock', true)->with('variants');
-
-        $categoriesQuery->with(['products' => function ($q): void {
-            $q->where('in_stock', true)->with('variants');
-        }]);
-
-        $categories = $categoriesQuery->get();
-        // Only keep categories that have products
-        $categories = $categories->filter(function ($category) {
-            return $category->products->count() > 0;
-        })->values();
-
-        $uncategorizedProducts = $uncategorizedQuery->latest()->get();
+        $categories = $this->storefrontCategories();
+        $uncategorizedProducts = $this->storefrontProductQuery(
+            Product::query()->whereNull('category_id'),
+        )->get();
 
         return Inertia::render('welcome', [
             'categories' => $categories,
@@ -43,6 +35,38 @@ class StorefrontController extends Controller
                 'imageWidth' => $defaultSeoImage['width'],
                 'imageHeight' => $defaultSeoImage['height'],
                 'url' => route('home'),
+                'type' => 'website',
+                'robots' => 'index,follow',
+                'twitterCard' => 'summary_large_image',
+            ],
+        ]);
+    }
+
+    public function category(Category $category): Response
+    {
+        $defaultSeoImage = $this->defaultSeoImage();
+
+        $category->load([
+            'products' => fn (HasMany $query): HasMany => $this->storefrontProductQuery($query),
+        ]);
+
+        $productCount = $category->products->count();
+
+        return Inertia::render('Categories/Show', [
+            'category' => $category,
+            'categories' => $this->storefrontCategoryNavigation(),
+            'seo' => [
+                'name' => config('app.name'),
+                'title' => $this->pageTitle($category->name),
+                'description' => $productCount > 0
+                    ? "Browse {$productCount} ".Str::plural('product', $productCount)." in the {$category->name} category on Kharidai."
+                    : "Browse the {$category->name} category on Kharidai.",
+                'image' => $defaultSeoImage['url'],
+                'imageAlt' => "{$category->name} category preview",
+                'imageType' => $defaultSeoImage['type'],
+                'imageWidth' => $defaultSeoImage['width'],
+                'imageHeight' => $defaultSeoImage['height'],
+                'url' => route('categories.show', $category),
                 'type' => 'website',
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
@@ -154,7 +178,6 @@ class StorefrontController extends Controller
         );
     }
 
-
     /**
      * @return array{url: string, type: string|null, width: int|null, height: int|null}
      */
@@ -188,5 +211,48 @@ class StorefrontController extends Controller
             'width' => $details[0] ?? 1200,
             'height' => $details[1] ?? 630,
         ];
+    }
+
+    /**
+     * @return Collection<int, Category>
+     */
+    private function storefrontCategories(): Collection
+    {
+        return Category::query()
+            ->orderBy('name')
+            ->with([
+                'products' => fn (HasMany $query): HasMany => $this->storefrontProductQuery($query),
+            ])
+            ->get()
+            ->filter(fn (Category $category): bool => $category->products->isNotEmpty())
+            ->values();
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string, slug: string, product_count: int}>
+     */
+    private function storefrontCategoryNavigation(): Collection
+    {
+        return Category::query()
+            ->orderBy('name')
+            ->whereHas('products', fn (Builder $query): Builder => $query->where('in_stock', true))
+            ->withCount([
+                'products as product_count' => fn (Builder $query): Builder => $query->where('in_stock', true),
+            ])
+            ->get(['id', 'name', 'slug'])
+            ->map(fn (Category $category): array => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'product_count' => $category->product_count,
+            ]);
+    }
+
+    private function storefrontProductQuery(Builder|HasMany $query): Builder|HasMany
+    {
+        return $query
+            ->where('in_stock', true)
+            ->with('variants')
+            ->latest();
     }
 }

@@ -23,6 +23,7 @@ Route::get('auth/google', [GoogleController::class, 'redirect'])->name('google.r
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
 
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
+Route::get('/categories/{category}', [StorefrontController::class, 'category'])->name('categories.show');
 Route::get('/products/{product}', [StorefrontController::class, 'show'])->name('products.show');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');

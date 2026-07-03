@@ -118,8 +118,18 @@ class ProductSeeder extends Seeder
             ]);
 
             $product->variants()->create([
+                'name' => $data['variant_name'] . ' (Basic)',
+                'price_npr' => $data['price_npr'] * 0.8,
+            ]);
+
+            $product->variants()->create([
                 'name' => $data['variant_name'],
                 'price_npr' => $data['price_npr'],
+            ]);
+
+            $product->variants()->create([
+                'name' => $data['variant_name'] . ' (Premium)',
+                'price_npr' => $data['price_npr'] * 1.5,
             ]);
         }
     }

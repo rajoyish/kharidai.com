@@ -45,6 +45,52 @@ it('can view the homepage when categories include in-stock products', function (
     );
 });
 
+it('can view a category page with its in-stock products', function () {
+    $category = Category::factory()->create([
+        'name' => 'Subscriptions',
+    ]);
+    $otherCategory = Category::factory()->create([
+        'name' => 'Tools',
+    ]);
+
+    Product::factory()->create([
+        'category_id' => $category->id,
+        'title' => 'Visible Product',
+        'in_stock' => true,
+    ]);
+    Product::factory()->create([
+        'category_id' => $category->id,
+        'title' => 'Hidden Product',
+        'in_stock' => false,
+    ]);
+    Product::factory()->create([
+        'category_id' => $otherCategory->id,
+        'title' => 'Other Category Product',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('categories.show', $category));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Categories/Show')
+        ->where('category.name', $category->name)
+        ->has('category.products', 1)
+        ->where('category.products.0.title', 'Visible Product')
+        ->has('categories', 2)
+        ->where('seo.title', $category->name.' - '.config('app.name'))
+        ->where('seo.url', route('categories.show', $category)),
+    );
+    $response->assertSee(
+        '<title>'.$category->name.' - '.config('app.name').'</title>',
+        false,
+    );
+    $response->assertSee(
+        '<meta data-inertia="twitter:url" name="twitter:url" content="'.route('categories.show', $category).'" />',
+        false,
+    );
+});
+
 it('renders the homepage seo tags in the app shell', function () {
     $expectedImage = asset('kharidai_og.png');
     $response = $this->get(route('home'));
