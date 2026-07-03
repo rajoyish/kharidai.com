@@ -1,8 +1,16 @@
 import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import AppLogo from '@/components/app-logo';
+import { home } from '@/routes';
+import { index as cartIndex } from '@/routes/cart';
+import { show as showCategory } from '@/routes/categories';
+import type { StorefrontNavigationCategory } from '@/types';
 
-export function Footer() {
+export function Footer({
+    categories,
+}: {
+    categories: StorefrontNavigationCategory[];
+}) {
     const logoRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -33,6 +41,10 @@ export function Footer() {
         };
     }, []);
 
+    const halfCategories = Math.ceil(categories.length / 2);
+    const leftCategories = categories.slice(0, halfCategories);
+    const rightCategories = categories.slice(halfCategories);
+
     return (
         <footer className="w-full bg-blue-950 text-primary-foreground pt-16 pb-8 border-t border-primary-foreground/10 overflow-hidden relative">
             {/* Top Section (Navigation) */}
@@ -40,7 +52,7 @@ export function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* Column 1: Brand / Logo */}
                     <div className="col-span-1 md:col-span-1 flex flex-col items-start">
-                        <Link href="/" className="mb-6">
+                        <Link href={home()} prefetch className="mb-6">
                             <AppLogo className="h-10 w-auto" />
                         </Link>
                         <p className="text-primary-foreground/70 text-sm leading-relaxed max-w-xs">
@@ -48,57 +60,31 @@ export function Footer() {
                         </p>
                     </div>
 
-                    {/* Column 2: Shop */}
+                    {/* Column 2: Categories (Left) */}
                     <div>
-                        <h3 className="text-primary-foreground font-bold mb-4 tracking-wider text-sm uppercase">Shop</h3>
+                        <h3 className="text-primary-foreground font-bold mb-4 tracking-wider text-sm uppercase">Shop Categories</h3>
                         <ul className="space-y-3">
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    All Products
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    Digital Goods
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    Subscriptions
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    Physical Goods
-                                </Link>
-                            </li>
+                            {leftCategories.map((category) => (
+                                <li key={category.id}>
+                                    <Link href={showCategory(category)} prefetch className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
+                                        {category.name}
+                                    </Link>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Column 3: Support */}
+                    {/* Column 3: Categories (Right) */}
                     <div>
-                        <h3 className="text-primary-foreground font-bold mb-4 tracking-wider text-sm uppercase">Support</h3>
+                        <h3 className="text-primary-foreground font-bold mb-4 tracking-wider text-sm uppercase">Explore More</h3>
                         <ul className="space-y-3">
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    Help Center
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    Track Order
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    Return Policy
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                    Shipping Info
-                                </Link>
-                            </li>
+                            {rightCategories.map((category) => (
+                                <li key={category.id}>
+                                    <Link href={showCategory(category)} prefetch className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
+                                        {category.name}
+                                    </Link>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
@@ -112,7 +98,7 @@ export function Footer() {
                                 </a>
                             </li>
                             <li>
-                                <a href="tel:+9779800000000" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
+                                <a href="tel:+9779740820005" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
                                     +977 974-0820005
                                 </a>
                             </li>
@@ -140,8 +126,8 @@ export function Footer() {
                     </div>
 
                     <div className="flex space-x-6 flex-1 justify-center md:justify-end">
-                        <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground text-sm font-medium transition-colors">Privacy Policy</Link>
-                        <Link href="#" className="text-primary-foreground/70 hover:text-primary-foreground text-sm font-medium transition-colors">Terms of Service</Link>
+                        <Link href={home()} prefetch className="text-primary-foreground/70 hover:text-primary-foreground text-sm font-medium transition-colors">Home</Link>
+                        <Link href={cartIndex()} prefetch className="text-primary-foreground/70 hover:text-primary-foreground text-sm font-medium transition-colors">Cart</Link>
                     </div>
                 </div>
 

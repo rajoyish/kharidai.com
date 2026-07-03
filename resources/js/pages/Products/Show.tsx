@@ -2,19 +2,18 @@ import { Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import AppLogo from '@/components/app-logo';
+import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
 import { JsonLd } from '@/components/json-ld';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
+import { StorefrontHeader } from '@/components/storefront-header';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
-import { home } from '@/routes';
-import { index as cartIndex } from '@/routes/cart';
-import type { PageProps } from '@/types';
+import { login } from '@/routes';
+import type { PageProps, StorefrontNavigationData } from '@/types';
 
 type Variant = {
     id: number;
@@ -31,8 +30,14 @@ type Product = {
     variants: Variant[];
 };
 
-export default function Show({ product }: { product: Product }) {
-    const { auth, cartCount, seo } = usePage<PageProps>().props;
+export default function Show({
+    product,
+    storefront,
+}: {
+    product: Product;
+    storefront: StorefrontNavigationData;
+}) {
+    const { auth, seo } = usePage<PageProps>().props;
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
         product.variants.length > 0 ? product.variants[0] : null,
     );
@@ -85,49 +90,7 @@ export default function Show({ product }: { product: Product }) {
                 />
             )}
             <div className="flex min-h-screen flex-col bg-background text-foreground">
-                <header className="border-b">
-                    <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                        <Link
-                            href={home()}
-                            className="group flex items-center gap-2 font-bold"
-                        >
-                            <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
-                        </Link>
-
-                        <nav className="flex items-center gap-4">
-                            <Link
-                                href={cartIndex()}
-                                className="mr-4 flex items-center text-sm font-medium underline-offset-4 hover:underline"
-                            >
-                                Cart
-                                {(cartCount as number) > 0 && (
-                                    <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                                        {cartCount as number}
-                                    </span>
-                                )}
-                            </Link>
-                            {auth.user ? (
-                                <Link
-                                    href={
-                                        auth.user.is_admin
-                                            ? '/admin'
-                                            : '/orders'
-                                    }
-                                    className="text-sm font-medium underline-offset-4 hover:underline"
-                                >
-                                    {auth.user.is_admin ? 'Admin' : 'My Orders'}
-                                </Link>
-                            ) : (
-                                <a
-                                    href="/auth/google"
-                                    className="text-sm font-medium underline-offset-4 hover:underline"
-                                >
-                                    Log in
-                                </a>
-                            )}
-                        </nav>
-                    </div>
-                </header>
+                <StorefrontHeader categories={storefront.categories} />
 
                 <main className="container mx-auto flex-1 px-4 py-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
@@ -215,12 +178,12 @@ export default function Show({ product }: { product: Product }) {
                                 {!auth.user && (
                                     <p className="text-center text-sm text-muted-foreground">
                                         You must{' '}
-                                        <a
-                                            href="/auth/google"
+                                        <Link
+                                            href={login()}
                                             className="text-foreground underline underline-offset-4"
                                         >
                                             log in
-                                        </a>{' '}
+                                        </Link>{' '}
                                         to purchase this product.
                                     </p>
                                 )}
@@ -245,7 +208,7 @@ export default function Show({ product }: { product: Product }) {
                         </div>
                     </div>
                 </main>
-                <Footer />
+                <Footer categories={storefront.categories} />
             </div>
             <FloatingContactActions />
         </>
