@@ -290,6 +290,12 @@ it('can view a single product page', function () {
         'image' => 'products/test-product.png',
         'in_stock' => true,
     ]);
+
+    $product->galleries()->create([
+        'image_path' => 'products/gallery/test-gallery.png',
+        'sort_order' => 0,
+    ]);
+
     $expectedImage = 'https://files.kharidai.test/storage/products/test-product.png';
 
     $response = $this->get('/products/'.$product->slug);
@@ -298,6 +304,7 @@ it('can view a single product page', function () {
     $response->assertInertia(fn (Assert $page) => $page
         ->component('Products/Show')
         ->where('seo.title', 'Test Product - '.config('app.name'))
+        ->has('product.galleries', 1)
         ->where('seo.description', 'This is a great product for testing.')
         ->where('seo.image', $expectedImage)
         ->where('seo.imageAlt', 'Test Product')

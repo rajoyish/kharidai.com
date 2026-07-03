@@ -6,14 +6,16 @@ interface ImageLightboxProps {
     open: boolean;
     close: () => void;
     slides: { src: string }[];
+    index?: number;
 }
 
 export default function ImageLightbox({
     open,
     close,
     slides,
+    index = 0,
 }: ImageLightboxProps) {
     return (
-        <Lightbox open={open} close={close} slides={slides} plugins={[Zoom]} />
+        <Lightbox open={open} close={close} slides={slides} index={index} plugins={[Zoom]} />
     );
 }

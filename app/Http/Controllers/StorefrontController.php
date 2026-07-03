@@ -83,7 +83,7 @@ class StorefrontController extends Controller
             abort(404);
         }
 
-        $product->load('variants');
+        $product->load(['variants', 'galleries']);
         $productSeoImage = $this->productSeoImage($product);
 
         return Inertia::render('Products/Show', [
