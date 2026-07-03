@@ -1,9 +1,11 @@
-import { Link, router, usePage } from '@inertiajs/react';
-import { Trash2, Plus, Minus } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
+import { Link, router } from '@inertiajs/react';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
+import { home } from '@/routes';
+import { remove as removeCartItem, update as updateCartItem } from '@/routes/cart';
+import { index as checkoutIndex } from '@/routes/checkout';
 
 
 type Product = {
@@ -32,21 +34,20 @@ type Cart = {
 };
 
 export default function CartIndex({ cart }: { cart: Cart }) {
-    const { auth, cartCount } = usePage().props;
     const handleUpdateQuantity = (item: CartItem, newQuantity: number) => {
         if (newQuantity < 1) {
-return;
-}
+            return;
+        }
 
         router.put(
-            `/cart/${item.id}`,
+            updateCartItem.url(item),
             { quantity: newQuantity },
             { preserveScroll: true },
         );
     };
 
     const handleRemove = (item: CartItem) => {
-        router.delete(`/cart/${item.id}`, {
+        router.delete(removeCartItem.url(item), {
             preserveScroll: true,
         });
     };
@@ -62,43 +63,6 @@ return;
         <>
             <SeoHead title="Your Cart" />
             <div className="flex min-h-screen flex-col bg-background text-foreground">
-                <header className="border-b">
-                    <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                        <Link href="/" className="flex items-center gap-2 font-bold group">
-                            <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
-                        </Link>
-
-                        <nav className="flex items-center gap-4">
-                            <Link
-                                href="/cart"
-                                className="mr-4 flex items-center text-sm font-medium underline-offset-4 hover:underline"
-                            >
-                                Cart
-                                {(cartCount as number) > 0 && (
-                                    <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                                        {cartCount as number}
-                                    </span>
-                                )}
-                            </Link>
-                            {auth.user ? (
-                                <Link
-                                    href={auth.user.is_admin ? '/admin' : '/orders'}
-                                    className="text-sm font-medium underline-offset-4 hover:underline"
-                                >
-                                    {auth.user.is_admin ? 'Admin' : 'My Orders'}
-                                </Link>
-                            ) : (
-                                <a
-                                    href="/auth/google"
-                                    className="text-sm font-medium underline-offset-4 hover:underline"
-                                >
-                                    Log in
-                                </a>
-                            )}
-                        </nav>
-                    </div>
-                </header>
-
                 <main className="container mx-auto max-w-5xl flex-1 px-4 py-8">
                     <h1 className="mb-8 text-3xl font-bold tracking-tight">
                         Your Cart
@@ -114,7 +78,7 @@ return;
                                 cart yet.
                             </p>
                             <Button asChild>
-                                <Link href="/">Start Shopping</Link>
+                                <Link href={home()}>Start Shopping</Link>
                             </Button>
                         </div>
                     ) : (
@@ -249,7 +213,7 @@ return;
                                         className="w-full"
                                         asChild
                                     >
-                                        <Link href="/checkout">
+                                        <Link href={checkoutIndex()}>
                                             Proceed to Checkout
                                         </Link>
                                     </Button>

@@ -3,6 +3,7 @@
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -43,6 +44,95 @@ it('can view the homepage when categories include in-stock products', function (
         ->where('categories.0.name', $category->name)
         ->where('categories.0.products.0.title', 'Categorized Product'),
     );
+});
+
+it('shares storefront navigation categories separately from page categories', function () {
+    $visibleCategory = Category::factory()->create([
+        'name' => 'Visible Category',
+    ]);
+    $hiddenCategory = Category::factory()->create([
+        'name' => 'Hidden Category',
+    ]);
+
+    Product::factory()->create([
+        'category_id' => $visibleCategory->id,
+        'title' => 'Visible Product',
+        'in_stock' => true,
+    ]);
+    Product::factory()->create([
+        'category_id' => $hiddenCategory->id,
+        'title' => 'Hidden Product',
+        'in_stock' => false,
+    ]);
+
+    $response = $this->get(route('home'));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('welcome')
+        ->has('categories', 1)
+        ->where('categories.0.name', $visibleCategory->name)
+        ->has('storefront.categories', 1)
+        ->where('storefront.categories.0.name', $visibleCategory->name)
+        ->missing('storefront.categories.0.products'),
+    );
+});
+
+it('refreshes cached storefront navigation when product stock changes', function () {
+    $category = Category::factory()->create([
+        'name' => 'Cached Category',
+    ]);
+    $product = Product::factory()->create([
+        'category_id' => $category->id,
+        'title' => 'Cached Product',
+        'in_stock' => true,
+    ]);
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('welcome')
+            ->has('categories', 1)
+            ->has('storefront.categories', 1)
+            ->where('storefront.categories.0.name', $category->name),
+        );
+
+    $product->update([
+        'in_stock' => false,
+    ]);
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('welcome')
+            ->has('categories', 0)
+            ->has('storefront.categories', 0),
+        );
+});
+
+it('recovers from an invalid storefront navigation cache payload', function () {
+    $category = Category::factory()->create([
+        'name' => 'Recovered Category',
+    ]);
+
+    Product::factory()->create([
+        'category_id' => $category->id,
+        'title' => 'Recovered Product',
+        'in_stock' => true,
+    ]);
+
+    Cache::put(
+        Category::STOREFRONT_NAVIGATION_CACHE_KEY,
+        new stdClass,
+    );
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('welcome')
+            ->has('storefront.categories', 1)
+            ->where('storefront.categories.0.name', $category->name),
+        );
 });
 
 it('can view a category page with its in-stock products', function () {

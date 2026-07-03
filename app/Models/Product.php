@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -32,7 +33,7 @@ class Product extends Model
     {
         static::saving(function (Product $product) {
             if (empty($product->slug) || $product->isDirty('title')) {
-                $slug = \Illuminate\Support\Str::slug($product->title);
+                $slug = Str::slug($product->title);
                 $originalSlug = $slug;
                 $count = 1;
                 while (static::where('slug', $slug)->where('id', '!=', $product->id)->exists()) {
@@ -42,6 +43,9 @@ class Product extends Model
                 $product->slug = $slug;
             }
         });
+
+        static::saved(fn () => Category::flushStorefrontNavigationCache());
+        static::deleted(fn () => Category::flushStorefrontNavigationCache());
     }
 
     public function getRouteKeyName(): string

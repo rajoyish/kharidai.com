@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -25,6 +26,7 @@ class StorefrontController extends Controller
         return Inertia::render('welcome', [
             'categories' => $categories,
             'uncategorizedProducts' => $uncategorizedProducts,
+            'storefront' => $this->storefrontNavigation(),
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle('Your all-in-one marketplace!'),
@@ -55,6 +57,7 @@ class StorefrontController extends Controller
         return Inertia::render('Categories/Show', [
             'category' => $category,
             'categories' => $this->storefrontCategoryNavigation(),
+            'storefront' => $this->storefrontNavigation(),
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($category->name),
@@ -85,6 +88,7 @@ class StorefrontController extends Controller
 
         return Inertia::render('Products/Show', [
             'product' => $product,
+            'storefront' => $this->storefrontNavigation(),
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($product->title),
@@ -246,6 +250,49 @@ class StorefrontController extends Controller
                 'slug' => $category->slug,
                 'product_count' => $category->product_count,
             ]);
+    }
+
+    /**
+     * @return array{categories: Collection<int, array{id: int, name: string, slug: string}>}
+     */
+    private function storefrontNavigation(): array
+    {
+        return [
+            'categories' => $this->storefrontNavigationCategories(),
+        ];
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string, slug: string}>
+     */
+    private function storefrontNavigationCategories(): Collection
+    {
+        $cachedCategories = Cache::get(
+            Category::STOREFRONT_NAVIGATION_CACHE_KEY,
+        );
+
+        if (! is_array($cachedCategories)) {
+            Cache::forget(Category::STOREFRONT_NAVIGATION_CACHE_KEY);
+
+            $cachedCategories = Cache::rememberForever(
+                Category::STOREFRONT_NAVIGATION_CACHE_KEY,
+                fn (): array => Category::query()
+                    ->orderBy('name')
+                    ->whereHas(
+                        'products',
+                        fn (Builder $query): Builder => $query->where('in_stock', true),
+                    )
+                    ->get(['id', 'name', 'slug'])
+                    ->map(fn (Category $category): array => [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                    ])
+                    ->all(),
+            );
+        }
+
+        return collect($cachedCategories);
     }
 
     private function storefrontProductQuery(Builder|HasMany $query): Builder|HasMany

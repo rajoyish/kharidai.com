@@ -5,6 +5,7 @@ use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -14,6 +15,10 @@ it('can view the cart', function () {
     $response = $this->actingAs($user)->get('/cart');
 
     $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Cart/Index')
+        ->missing('storefront'),
+    );
 });
 
 it('can add an item to the cart', function () {

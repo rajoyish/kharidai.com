@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import {
     Archive,
     ArrowRight,
@@ -12,16 +12,18 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import AppLogo from '@/components/app-logo';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
 import { SeoHead } from '@/components/seo-head';
+import { StorefrontHeader } from '@/components/storefront-header';
 import { StorefrontProductCard } from '@/components/storefront-product-card';
 import { Input } from '@/components/ui/input';
-import { index as cartIndex } from '@/routes/cart';
 import { show as showCategory } from '@/routes/categories';
-import { home } from '@/routes';
-import type { PageProps, StorefrontCategory, StorefrontProduct } from '@/types';
+import type {
+    StorefrontCategory,
+    StorefrontNavigationData,
+    StorefrontProduct,
+} from '@/types';
 
 function productMatchesQuery(
     product: StorefrontProduct,
@@ -36,11 +38,12 @@ function productMatchesQuery(
 export default function Welcome({
     uncategorizedProducts,
     categories,
+    storefront,
 }: {
     uncategorizedProducts: StorefrontProduct[];
     categories: StorefrontCategory[];
+    storefront: StorefrontNavigationData;
 }) {
-    const { auth, cartCount } = usePage<PageProps>().props;
     const [searchQuery, setSearchQuery] = useState('');
 
     const normalizedQuery = searchQuery.toLowerCase().trim();
@@ -113,77 +116,9 @@ export default function Welcome({
         <>
             <SeoHead />
             <div className="flex min-h-screen flex-col bg-[#FAFAFA] text-foreground">
-                <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-accent/10 pb-32 pt-4">
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
-
-                    <header className="relative z-10 container mx-auto flex items-center justify-between px-6 py-4">
-                        <Link
-                            href={home()}
-                            className="group flex items-center gap-2 font-bold"
-                        >
-                            <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
-                        </Link>
-
-                        <nav className="hidden items-center gap-8 text-sm font-medium text-gray-700 md:flex">
-                            <button
-                                onClick={scrollToShop}
-                                className="font-semibold transition-colors hover:text-black"
-                            >
-                                How It Works
-                            </button>
-                            <button
-                                onClick={scrollToShop}
-                                className="font-semibold transition-colors hover:text-black"
-                            >
-                                Categories
-                            </button>
-                            <Link
-                                href={home()}
-                                className="font-semibold transition-colors hover:text-black"
-                            >
-                                About
-                            </Link>
-                        </nav>
-
-                        <div className="flex items-center gap-4">
-                            <Link
-                                href={cartIndex()}
-                                className="flex items-center text-sm font-semibold text-gray-700 transition-colors hover:text-black"
-                            >
-                                Cart
-                                {(cartCount as number) > 0 && (
-                                    <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white shadow-sm">
-                                        {cartCount as number}
-                                    </span>
-                                )}
-                            </Link>
-                            {auth.user ? (
-                                <Link
-                                    href={
-                                        auth.user.is_admin ? '/admin' : '/orders'
-                                    }
-                                    className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
-                                >
-                                    {auth.user.is_admin ? 'Admin' : 'Dashboard'}
-                                </Link>
-                            ) : (
-                                <>
-                                    <a
-                                        href="/auth/google"
-                                        className="hidden text-sm font-semibold text-gray-700 transition-colors hover:text-black sm:block"
-                                    >
-                                        Log In
-                                    </a>
-                                    <a
-                                        href="/auth/google"
-                                        className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
-                                    >
-                                        Get Started
-                                    </a>
-                                </>
-                            )}
-                        </div>
-                    </header>
+                <StorefrontHeader categories={storefront.categories} />
+                <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-accent/10 pb-32">
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_0.0625rem,transparent_0.0625rem),linear-gradient(to_bottom,#80808012_0.0625rem,transparent_0.0625rem)] bg-[size:1.5rem_1.5rem] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
 
                     <div className="relative z-10 container mx-auto mt-20 max-w-4xl px-4 text-center">
                         <h1 className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-[#1A1A1A] md:text-7xl">
@@ -208,7 +143,7 @@ export default function Welcome({
                     </div>
 
                     <div className="relative z-10 mt-20 mx-auto flex h-64 max-w-5xl justify-center px-4 perspective-1000 md:h-80">
-                        <div className="absolute z-30 w-72 -translate-y-4 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:-translate-y-8 hover:scale-105 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:z-50 focus:-translate-y-8 focus:scale-105 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none">
+                        <div className="absolute z-30 w-72 -translate-y-4 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_1.25rem_3.125rem_-0.75rem_rgba(0,0,0,0.1)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:-translate-y-8 hover:scale-105 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:-translate-y-8 focus:scale-105 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none">
                             <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner">
                                 <ShoppingBag className="h-5 w-5" />
                             </div>
@@ -221,7 +156,7 @@ export default function Welcome({
                                 <span>24/7 delivery</span>
                             </div>
                         </div>
-                        <div className="absolute z-20 w-64 -translate-x-32 translate-y-12 rotate-[-8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none md:-translate-x-56">
+                        <div className="absolute z-20 w-64 -translate-x-32 translate-y-12 rotate-[-8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none md:-translate-x-56">
                             <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-accent shadow-inner">
                                 <Sparkles className="h-4 w-4" />
                             </div>
@@ -229,7 +164,7 @@ export default function Welcome({
                                 Premium Subscriptions
                             </h3>
                         </div>
-                        <div className="absolute z-20 w-64 translate-x-32 translate-y-12 rotate-[8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none md:translate-x-56">
+                        <div className="absolute z-20 w-64 translate-x-32 translate-y-12 rotate-[8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none md:translate-x-56">
                             <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary shadow-inner">
                                 <Archive className="h-4 w-4" />
                             </div>
@@ -241,9 +176,9 @@ export default function Welcome({
                 </div>
 
                 <div className="relative overflow-hidden bg-[#09090b] py-32">
-                    <div className="pointer-events-none absolute top-0 left-1/4 h-[40rem] w-[40rem] -translate-y-1/2 transform rounded-full bg-primary/20 blur-[128px] mix-blend-screen" />
-                    <div className="pointer-events-none absolute right-1/4 bottom-0 h-[40rem] w-[40rem] translate-y-1/3 transform rounded-full bg-accent/20 blur-[128px] mix-blend-screen" />
-                    <div className="pointer-events-none absolute top-1/2 left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-primary/10 blur-[128px] mix-blend-screen" />
+                    <div className="pointer-events-none absolute top-0 left-1/4 h-[40rem] w-[40rem] -translate-y-1/2 transform rounded-full bg-primary/20 blur-[8rem] mix-blend-screen" />
+                    <div className="pointer-events-none absolute right-1/4 bottom-0 h-[40rem] w-[40rem] translate-y-1/3 transform rounded-full bg-accent/20 blur-[8rem] mix-blend-screen" />
+                    <div className="pointer-events-none absolute top-1/2 left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-primary/10 blur-[8rem] mix-blend-screen" />
 
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                     <div className="container relative z-10 mx-auto max-w-5xl px-4">
@@ -258,7 +193,7 @@ export default function Welcome({
                         </div>
 
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
                                 <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <CloudDownload className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -270,7 +205,7 @@ export default function Welcome({
                                     email within seconds.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
                                 <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Star className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -281,7 +216,7 @@ export default function Welcome({
                                     platforms at unbeatable discounted rates.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
                                 <div className="pointer-events-none absolute -right-12 -bottom-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <Briefcase className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -292,7 +227,7 @@ export default function Welcome({
                                     work, consulting, and specialized services.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
                                 <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Truck className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -319,7 +254,7 @@ export default function Welcome({
                         </p>
                     </div>
 
-                    <div className="mb-16 flex flex-col items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:flex-row">
+                    <div className="mb-16 flex flex-col items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_0.5rem_1.875rem_rgba(0,0,0,0.04)] sm:flex-row">
                         <Input
                             type="search"
                             placeholder="Search categories or products..."
@@ -338,7 +273,7 @@ export default function Welcome({
                                     key={category.id}
                                     href={showCategory(category)}
                                     prefetch
-                                    className="group block overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_22px_60px_-42px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_28px_70px_-36px_rgba(17,118,188,0.3)] md:p-8"
+                                    className="group block overflow-hidden rounded-4xl border border-slate-200/80 bg-white/90 p-6 shadow-[0_1.375rem_3.75rem_-2.625rem_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_1.75rem_4.375rem_-2.25rem_rgba(17,118,188,0.3)] md:p-8"
                                 >
                                     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                                         <div>
@@ -464,7 +399,7 @@ export default function Welcome({
                             </div>
                         )}
                 </main>
-                <Footer />
+                <Footer categories={storefront.categories} />
             </div>
             <FloatingContactActions />
         </>

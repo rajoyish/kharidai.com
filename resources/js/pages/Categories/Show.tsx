@@ -1,77 +1,35 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 
-import AppLogo from '@/components/app-logo';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
 import { SeoHead } from '@/components/seo-head';
+import { StorefrontHeader } from '@/components/storefront-header';
 import { StorefrontProductCard } from '@/components/storefront-product-card';
-import { index as cartIndex } from '@/routes/cart';
-import { show as showCategory } from '@/routes/categories';
 import { home } from '@/routes';
+import { show as showCategory } from '@/routes/categories';
 import type {
-    PageProps,
     StorefrontCategory,
     StorefrontCategorySummary,
+    StorefrontNavigationData,
 } from '@/types';
 
 export default function Show({
     category,
     categories,
+    storefront,
 }: {
     category: StorefrontCategory;
     categories: StorefrontCategorySummary[];
+    storefront: StorefrontNavigationData;
 }) {
-    const { auth, cartCount } = usePage<PageProps>().props;
     const productCount = category.products.length;
 
     return (
         <>
             <SeoHead />
             <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_36%,#ffffff_100%)] text-foreground">
-                <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
-                    <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                        <Link
-                            href={home()}
-                            className="group flex items-center gap-2 font-bold"
-                        >
-                            <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
-                        </Link>
-
-                        <nav className="flex items-center gap-4">
-                            <Link
-                                href={cartIndex()}
-                                className="mr-4 flex items-center text-sm font-medium underline-offset-4 hover:underline"
-                            >
-                                Cart
-                                {(cartCount as number) > 0 && (
-                                    <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                                        {cartCount as number}
-                                    </span>
-                                )}
-                            </Link>
-                            {auth.user ? (
-                                <Link
-                                    href={
-                                        auth.user.is_admin
-                                            ? '/admin'
-                                            : '/orders'
-                                    }
-                                    className="text-sm font-medium underline-offset-4 hover:underline"
-                                >
-                                    {auth.user.is_admin ? 'Admin' : 'My Orders'}
-                                </Link>
-                            ) : (
-                                <a
-                                    href="/auth/google"
-                                    className="text-sm font-medium underline-offset-4 hover:underline"
-                                >
-                                    Log in
-                                </a>
-                            )}
-                        </nav>
-                    </div>
-                </header>
+                <StorefrontHeader categories={storefront.categories} />
 
                 <main className="container mx-auto px-4 py-10">
                     <Link
@@ -82,7 +40,7 @@ export default function Show({
                         Back to all categories
                     </Link>
 
-                    <section className="mb-10 overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 p-8 shadow-[0_30px_70px_-48px_rgba(15,23,42,0.4)] md:p-10">
+                    <section className="mb-10 overflow-hidden rounded-4xl border border-slate-200/80 bg-white/90 p-8 shadow-[0_1.875rem_4.375rem_-3rem_rgba(15,23,42,0.4)] md:p-10">
                         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                             <div className="max-w-2xl">
                                 <p className="text-sm font-semibold uppercase text-primary/80">
@@ -98,7 +56,7 @@ export default function Show({
                                 </p>
                             </div>
 
-                            <div className="grid gap-3 rounded-[1.5rem] text-center border border-slate-200 bg-slate-50/90 p-5 text-sm text-slate-600">
+                            <div className="grid gap-3 rounded-3xl border border-slate-200 bg-slate-50/90 p-5 text-center text-sm text-slate-600">
                                 <span className="font-medium text-slate-500">
                                     Available now
                                 </span>
@@ -165,7 +123,7 @@ export default function Show({
                             ))}
                         </section>
                     ) : (
-                        <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-[0_20px_50px_-40px_rgba(15,23,42,0.45)]">
+                        <section className="rounded-4xl border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-[0_1.25rem_3.125rem_-2.5rem_rgba(15,23,42,0.45)]">
                             <h2 className="text-2xl font-semibold text-slate-950">
                                 No products available right now
                             </h2>
@@ -183,7 +141,7 @@ export default function Show({
                     )}
                 </main>
 
-                <Footer />
+                <Footer categories={storefront.categories} />
             </div>
             <FloatingContactActions />
         </>

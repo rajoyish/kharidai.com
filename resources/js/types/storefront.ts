@@ -27,3 +27,13 @@ export type StorefrontCategorySummary = {
     slug: string;
     product_count: number;
 };
+
+export type StorefrontNavigationCategory = {
+    id: number;
+    name: string;
+    slug: string;
+};
+
+export type StorefrontNavigationData = {
+    categories: StorefrontNavigationCategory[];
+};
