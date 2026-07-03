@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react';
 
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
+import { MaskedLinesHeading } from '@/components/masked-lines-heading';
 import { SeoHead } from '@/components/seo-head';
 import { StorefrontHeader } from '@/components/storefront-header';
 import { StorefrontProductCard } from '@/components/storefront-product-card';
@@ -118,14 +119,14 @@ export default function Welcome({
             <div className="flex min-h-screen flex-col bg-[#FAFAFA] text-foreground">
                 <StorefrontHeader categories={storefront.categories} />
                 <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-accent/10 pb-32">
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_0.0625rem,transparent_0.0625rem),linear-gradient(to_bottom,#80808012_0.0625rem,transparent_0.0625rem)] bg-[size:1.5rem_1.5rem] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_0.0625rem,transparent_0.0625rem),linear-gradient(to_bottom,#80808012_0.0625rem,transparent_0.0625rem)] [mask-image:linear-gradient(to_bottom,white,transparent)] bg-[size:1.5rem_1.5rem]" />
 
                     <div className="relative z-10 container mx-auto mt-20 max-w-4xl px-4 text-center">
-                        <h1 className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-[#1A1A1A] md:text-7xl">
+                        <MaskedLinesHeading className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-[#1A1A1A] md:text-7xl">
                             Your all-in-one
                             <br />
                             marketplace!
-                        </h1>
+                        </MaskedLinesHeading>
                         <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl">
                             Discover digital goods, premium subscriptions,
                             trusted services, and physical products all at
@@ -142,7 +143,7 @@ export default function Welcome({
                         </div>
                     </div>
 
-                    <div className="relative z-10 mt-20 mx-auto flex h-64 max-w-5xl justify-center px-4 perspective-1000 md:h-80">
+                    <div className="perspective-1000 relative z-10 mx-auto mt-20 flex h-64 max-w-5xl justify-center px-4 md:h-80">
                         <div className="absolute z-30 w-72 -translate-y-4 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_1.25rem_3.125rem_-0.75rem_rgba(0,0,0,0.1)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:-translate-y-8 hover:scale-105 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:-translate-y-8 focus:scale-105 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none">
                             <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner">
                                 <ShoppingBag className="h-5 w-5" />
@@ -156,7 +157,7 @@ export default function Welcome({
                                 <span>24/7 delivery</span>
                             </div>
                         </div>
-                        <div className="absolute z-20 w-64 -translate-x-32 translate-y-12 rotate-[-8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none md:-translate-x-56">
+                        <div className="absolute z-20 w-64 -translate-x-32 translate-y-12 rotate-[-8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:scale-110 hover:rotate-0 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:scale-110 focus:rotate-0 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none md:-translate-x-56">
                             <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-accent shadow-inner">
                                 <Sparkles className="h-4 w-4" />
                             </div>
@@ -164,7 +165,7 @@ export default function Welcome({
                                 Premium Subscriptions
                             </h3>
                         </div>
-                        <div className="absolute z-20 w-64 translate-x-32 translate-y-12 rotate-[8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none md:translate-x-56">
+                        <div className="absolute z-20 w-64 translate-x-32 translate-y-12 rotate-[8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:scale-110 hover:rotate-0 hover:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:scale-110 focus:rotate-0 focus:shadow-[0_1.875rem_3.75rem_-0.9375rem_rgba(0,0,0,0.15)] focus:outline-none md:translate-x-56">
                             <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary shadow-inner">
                                 <Archive className="h-4 w-4" />
                             </div>
@@ -176,12 +177,12 @@ export default function Welcome({
                 </div>
 
                 <div className="relative overflow-hidden bg-[#09090b] py-32">
-                    <div className="pointer-events-none absolute top-0 left-1/4 h-[40rem] w-[40rem] -translate-y-1/2 transform rounded-full bg-primary/20 blur-[8rem] mix-blend-screen" />
-                    <div className="pointer-events-none absolute right-1/4 bottom-0 h-[40rem] w-[40rem] translate-y-1/3 transform rounded-full bg-accent/20 blur-[8rem] mix-blend-screen" />
-                    <div className="pointer-events-none absolute top-1/2 left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-primary/10 blur-[8rem] mix-blend-screen" />
+                    <div className="pointer-events-none absolute top-0 left-1/4 h-[40rem] w-[40rem] -translate-y-1/2 transform rounded-full bg-primary/20 mix-blend-screen blur-[8rem]" />
+                    <div className="pointer-events-none absolute right-1/4 bottom-0 h-[40rem] w-[40rem] translate-y-1/3 transform rounded-full bg-accent/20 mix-blend-screen blur-[8rem]" />
+                    <div className="pointer-events-none absolute top-1/2 left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-primary/10 mix-blend-screen blur-[8rem]" />
 
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                    <div className="container relative z-10 mx-auto max-w-5xl px-4">
+                    <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    <div className="relative z-10 container mx-auto max-w-5xl px-4">
                         <div className="mb-20 text-center">
                             <h2 className="mb-4 text-4xl text-white">
                                 A path to better shopping
@@ -243,7 +244,10 @@ export default function Welcome({
                     </div>
                 </div>
 
-                <main id="shop" className="container mx-auto max-w-7xl flex-1 px-4 py-24">
+                <main
+                    id="shop"
+                    className="container mx-auto max-w-7xl flex-1 px-4 py-24"
+                >
                     <div className="mb-12 text-center">
                         <h2 className="mb-4 text-3xl text-[#1A1A1A]">
                             Explore by category
@@ -277,7 +281,7 @@ export default function Welcome({
                                 >
                                     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                                         <div>
-                                            <p className="text-sm font-semibold uppercase text-primary/80">
+                                            <p className="text-sm font-semibold text-primary/80 uppercase">
                                                 Category
                                             </p>
                                             <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -288,13 +292,13 @@ export default function Welcome({
                                                     {category.products.length}{' '}
                                                     {hasActiveSearch
                                                         ? category.products
-                                                            .length === 1
+                                                              .length === 1
                                                             ? 'match'
                                                             : 'matches'
                                                         : category.products
-                                                            .length === 1
-                                                            ? 'product'
-                                                            : 'products'}
+                                                                .length === 1
+                                                          ? 'product'
+                                                          : 'products'}
                                                 </span>
                                             </div>
                                             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
@@ -315,13 +319,13 @@ export default function Welcome({
                                                     ))}
                                                 {category.products.length >
                                                     4 && (
-                                                        <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
-                                                            +
-                                                            {category.products
-                                                                .length - 4}{' '}
-                                                            more
-                                                        </span>
-                                                    )}
+                                                    <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
+                                                        +
+                                                        {category.products
+                                                            .length - 4}{' '}
+                                                        more
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                                                 Browse category
@@ -341,7 +345,9 @@ export default function Welcome({
                                                             {product.image ? (
                                                                 <img
                                                                     src={`/storage/${product.image}`}
-                                                                    alt={product.title}
+                                                                    alt={
+                                                                        product.title
+                                                                    }
                                                                     className="h-full w-full object-cover"
                                                                 />
                                                             ) : null}
@@ -375,12 +381,14 @@ export default function Welcome({
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                                {filteredUncategorizedProducts.map((product) => (
-                                    <StorefrontProductCard
-                                        key={product.id}
-                                        product={product}
-                                    />
-                                ))}
+                                {filteredUncategorizedProducts.map(
+                                    (product) => (
+                                        <StorefrontProductCard
+                                            key={product.id}
+                                            product={product}
+                                        />
+                                    ),
+                                )}
                             </div>
                         </section>
                     )}
