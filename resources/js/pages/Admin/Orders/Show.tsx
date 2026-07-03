@@ -12,6 +12,7 @@ import {
     updateReceiptStatus,
     updateStatus as updateOrderStatus,
 } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { SupportChat } from '@/components/SupportChat';
@@ -550,17 +551,13 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                             {order.payment_receipt ? (
                                 <div className="space-y-4">
                                     <div className="overflow-hidden rounded-lg border bg-muted p-2">
-                                        <a
-                                            href={`/storage/${order.payment_receipt.file_path}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <img
-                                                src={`/storage/${order.payment_receipt.file_path}`}
-                                                alt="Payment Receipt"
-                                                className="h-auto max-h-60 w-full object-contain"
-                                            />
-                                        </a>
+                                        <LightboxImageLink
+                                            src={`/storage/${order.payment_receipt.file_path}`}
+                                            alt="Payment Receipt"
+                                            ariaLabel="View full-size payment receipt"
+                                            className="w-full"
+                                            imageClassName="h-auto max-h-60 w-full object-contain transition-opacity hover:opacity-90"
+                                        />
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-muted-foreground">

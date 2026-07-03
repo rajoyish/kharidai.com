@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
+import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { JsonLd } from '@/components/json-ld';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
@@ -99,10 +100,12 @@ export default function Show({
                             {/* Product Image */}
                             <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
                                 {product.image ? (
-                                    <img
+                                    <LightboxImageLink
                                         src={`/storage/${product.image}`}
                                         alt={product.title}
-                                        className="h-full w-full object-cover"
+                                        ariaLabel="View full-size product image"
+                                        className="h-full w-full"
+                                        imageClassName="h-full w-full object-cover transition-opacity hover:opacity-90"
                                     />
                                 ) : (
                                     <div className="flex h-full w-full items-center justify-center text-muted-foreground">

@@ -3,6 +3,7 @@ import { Link, router } from '@inertiajs/react';
 import { Copy, Upload, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { SupportChat } from '@/components/SupportChat';
@@ -79,7 +80,6 @@ export default function OrderShow({ order }: { order: Order }) {
                 }
                 variant="transparent"
             >
-
                 {order.payment_receipt &&
                     order.payment_receipt.status === 'pending' && (
                         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
@@ -139,7 +139,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                 <div className="space-y-4">
                                     {order.credentials.map((cred) => {
                                         const parts = cred.content.split('```');
-                                        
+
                                         return (
                                             <div
                                                 key={cred.id}
@@ -147,27 +147,49 @@ export default function OrderShow({ order }: { order: Order }) {
                                             >
                                                 <div className="space-y-4">
                                                     {parts.map((part, i) => {
-                                                        const isCodeBlock = i % 2 === 1;
+                                                        const isCodeBlock =
+                                                            i % 2 === 1;
 
                                                         if (!part.trim()) {
-return null;
-}
+                                                            return null;
+                                                        }
 
                                                         if (isCodeBlock) {
-                                                            let codeText = part.trim();
+                                                            let codeText =
+                                                                part.trim();
 
-                                                            if (codeText.startsWith('link\n')) {
-                                                                codeText = codeText.substring(5).trim();
+                                                            if (
+                                                                codeText.startsWith(
+                                                                    'link\n',
+                                                                )
+                                                            ) {
+                                                                codeText =
+                                                                    codeText
+                                                                        .substring(
+                                                                            5,
+                                                                        )
+                                                                        .trim();
                                                             }
-                                                            
+
                                                             return (
-                                                                <div key={i} className="relative rounded-md bg-muted/80 p-4 font-mono text-sm border">
-                                                                    <pre className="overflow-x-auto whitespace-pre-wrap pr-10">{codeText}</pre>
+                                                                <div
+                                                                    key={i}
+                                                                    className="relative rounded-md border bg-muted/80 p-4 font-mono text-sm"
+                                                                >
+                                                                    <pre className="overflow-x-auto pr-10 whitespace-pre-wrap">
+                                                                        {
+                                                                            codeText
+                                                                        }
+                                                                    </pre>
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
-                                                                        onClick={() => copyToClipboard(codeText)}
-                                                                        className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                                        onClick={() =>
+                                                                            copyToClipboard(
+                                                                                codeText,
+                                                                            )
+                                                                        }
+                                                                        className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground"
                                                                         title="Copy to clipboard"
                                                                     >
                                                                         <Copy className="h-4 w-4" />
@@ -176,28 +198,60 @@ return null;
                                                             );
                                                         }
 
-                                                        const urlRegex = /(https?:\/\/[^\s]+)/g;
-                                                        const textParts = part.split(urlRegex);
+                                                        const urlRegex =
+                                                            /(https?:\/\/[^\s]+)/g;
+                                                        const textParts =
+                                                            part.split(
+                                                                urlRegex,
+                                                            );
 
                                                         return (
-                                                            <div key={i} className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                                                                {textParts.map((tPart, j) => {
-                                                                    if (tPart.match(urlRegex)) {
-                                                                        return (
-                                                                            <a
-                                                                                key={j}
-                                                                                href={tPart}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="text-primary font-medium hover:underline"
-                                                                            >
-                                                                                {tPart}
-                                                                            </a>
-                                                                        );
-                                                                    }
+                                                            <div
+                                                                key={i}
+                                                                className="text-sm leading-relaxed whitespace-pre-wrap text-foreground"
+                                                            >
+                                                                {textParts.map(
+                                                                    (
+                                                                        tPart,
+                                                                        j,
+                                                                    ) => {
+                                                                        if (
+                                                                            tPart.match(
+                                                                                urlRegex,
+                                                                            )
+                                                                        ) {
+                                                                            return (
+                                                                                <a
+                                                                                    key={
+                                                                                        j
+                                                                                    }
+                                                                                    href={
+                                                                                        tPart
+                                                                                    }
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="font-medium text-primary hover:underline"
+                                                                                >
+                                                                                    {
+                                                                                        tPart
+                                                                                    }
+                                                                                </a>
+                                                                            );
+                                                                        }
 
-                                                                    return <span key={j}>{tPart}</span>;
-                                                                })}
+                                                                        return (
+                                                                            <span
+                                                                                key={
+                                                                                    j
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    tPart
+                                                                                }
+                                                                            </span>
+                                                                        );
+                                                                    },
+                                                                )}
                                                             </div>
                                                         );
                                                     })}
@@ -245,17 +299,13 @@ return null;
                                     Payment Receipt
                                 </h3>
                                 <div className="overflow-hidden rounded-lg border bg-muted p-2">
-                                    <a
-                                        href={`/storage/${order.payment_receipt.file_path}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        <img
-                                            src={`/storage/${order.payment_receipt.file_path}`}
-                                            alt="Payment Receipt"
-                                            className="h-auto max-h-60 w-full object-contain"
-                                        />
-                                    </a>
+                                    <LightboxImageLink
+                                        src={`/storage/${order.payment_receipt.file_path}`}
+                                        alt="Payment Receipt"
+                                        ariaLabel="View full-size payment receipt"
+                                        className="w-full"
+                                        imageClassName="h-auto max-h-60 w-full object-contain transition-opacity hover:opacity-90"
+                                    />
                                 </div>
                                 <div className="mt-4 flex items-center justify-between">
                                     <span className="text-sm font-medium text-muted-foreground">
@@ -263,9 +313,11 @@ return null;
                                     </span>
                                     <span
                                         className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                            order.payment_receipt.status === 'approved'
+                                            order.payment_receipt.status ===
+                                            'approved'
                                                 ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-                                                : order.payment_receipt.status === 'rejected'
+                                                : order.payment_receipt
+                                                        .status === 'rejected'
                                                   ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
                                                   : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
                                         }`}
@@ -276,46 +328,63 @@ return null;
                                 {order.can_reupload_receipt ? (
                                     <div className="mt-4 border-t pt-4">
                                         <Button className="w-full" asChild>
-                                            <Link href={`/checkout/${order.id}/npr`}>
-                                                <Upload className="mr-2 h-4 w-4" /> Re-upload Receipt
+                                            <Link
+                                                href={`/checkout/${order.id}/npr`}
+                                            >
+                                                <Upload className="mr-2 h-4 w-4" />{' '}
+                                                Re-upload Receipt
                                             </Link>
                                         </Button>
                                     </div>
                                 ) : (
                                     <div className="mt-4 border-t pt-4">
-                                        <Button 
-                                            className="w-full" 
-                                            variant="outline" 
-                                            disabled={order.request_receipt_upload}
+                                        <Button
+                                            className="w-full"
+                                            variant="outline"
+                                            disabled={
+                                                order.request_receipt_upload
+                                            }
                                             onClick={() => {
-                                                router.post(`/orders/${order.id}/ask-reupload-receipt`, {}, { preserveScroll: true });
+                                                router.post(
+                                                    `/orders/${order.id}/ask-reupload-receipt`,
+                                                    {},
+                                                    { preserveScroll: true },
+                                                );
                                             }}
                                         >
                                             <AlertCircle className="mr-2 h-4 w-4" />
-                                            {order.request_receipt_upload ? 'Re-upload Requested' : 'Ask Admin to Re-upload'}
+                                            {order.request_receipt_upload
+                                                ? 'Re-upload Requested'
+                                                : 'Ask Admin to Re-upload'}
                                         </Button>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {!order.payment_receipt && order.status === 'pending' && (
-                            <div className="mt-6 rounded-xl border bg-card p-6">
-                                <h3 className="mb-4 text-lg font-semibold">
-                                    Payment Receipt
-                                </h3>
-                                <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-                                    No receipt uploaded yet. Please upload your payment receipt to process the order.
+                        {!order.payment_receipt &&
+                            order.status === 'pending' && (
+                                <div className="mt-6 rounded-xl border bg-card p-6">
+                                    <h3 className="mb-4 text-lg font-semibold">
+                                        Payment Receipt
+                                    </h3>
+                                    <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                                        No receipt uploaded yet. Please upload
+                                        your payment receipt to process the
+                                        order.
+                                    </div>
+                                    <div className="mt-4 border-t pt-4">
+                                        <Button className="w-full" asChild>
+                                            <Link
+                                                href={`/checkout/${order.id}/npr`}
+                                            >
+                                                <Upload className="mr-2 h-4 w-4" />{' '}
+                                                Upload Receipt
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </div>
-                                <div className="mt-4 border-t pt-4">
-                                    <Button className="w-full" asChild>
-                                        <Link href={`/checkout/${order.id}/npr`}>
-                                            <Upload className="mr-2 h-4 w-4" /> Upload Receipt
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                            )}
                     </div>
                 </div>
             </PagePanel>
