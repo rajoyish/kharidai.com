@@ -61,6 +61,14 @@ class Product extends Model
     }
 
     /**
+     * @return HasMany<Gallery, $this>
+     */
+    public function galleries(): HasMany
+    {
+        return $this->hasMany(Gallery::class)->orderBy('sort_order');
+    }
+
+    /**
      * @return HasMany<ProductVariant, $this>
      */
     public function variants(): HasMany

@@ -36,12 +36,14 @@ export function DaysLeft({
             if (now.getTime() > end.getTime()) {
                 setExpired(true);
                 setDaysLeft(0);
+
                 return;
             } else {
                 setExpired(false);
             }
 
             let start = now;
+
             if (startDate) {
                 const startParts = startDate.split(' ')[0].split('-');
                 start = new Date(

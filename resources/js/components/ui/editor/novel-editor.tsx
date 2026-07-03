@@ -52,7 +52,7 @@ export default function NovelEditor({
     return (
         <EditorRoot>
             <EditorContent
-                className="w-full min-h-[200px] border border-input rounded-md bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+                className="w-full min-h-[400px] border border-input rounded-md bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
                 initialContent={typeof initialValue === 'string' ? undefined : initialValue}
                 onCreate={({ editor }) => {
                     if (typeof initialValue === 'string' && initialValue) {

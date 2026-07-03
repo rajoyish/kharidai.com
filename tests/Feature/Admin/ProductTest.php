@@ -144,3 +144,91 @@ it('can toggle product stock status', function () {
         'in_stock' => false,
     ]);
 });
+
+it('can create a product with new galleries', function () {
+    Storage::fake('public');
+
+    $response = $this->actingAs($this->admin)->post('/admin/products', [
+        'title' => 'Product With Gallery',
+        'description' => 'Test description',
+        'in_stock' => true,
+        'update_galleries' => 1,
+        'new_galleries' => [
+            UploadedFile::fake()->image('gallery1.jpg'),
+            UploadedFile::fake()->image('gallery2.jpg'),
+        ],
+        'gallery_orders' => ['new:0', 'new:1'],
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('products', [
+        'title' => 'Product With Gallery',
+    ]);
+
+    $product = Product::where('title', 'Product With Gallery')->first();
+    expect($product->galleries)->toHaveCount(2);
+});
+
+it('enforces total gallery limit of 6 on create', function () {
+    Storage::fake('public');
+
+    $response = $this->actingAs($this->admin)->post('/admin/products', [
+        'title' => 'Product With Gallery',
+        'description' => 'Test description',
+        'in_stock' => true,
+        'new_galleries' => [
+            UploadedFile::fake()->image('gallery1.jpg'),
+            UploadedFile::fake()->image('gallery2.jpg'),
+            UploadedFile::fake()->image('gallery3.jpg'),
+            UploadedFile::fake()->image('gallery4.jpg'),
+            UploadedFile::fake()->image('gallery5.jpg'),
+            UploadedFile::fake()->image('gallery6.jpg'),
+            UploadedFile::fake()->image('gallery7.jpg'),
+        ],
+        'gallery_orders' => ['new:0', 'new:1', 'new:2', 'new:3', 'new:4', 'new:5', 'new:6'],
+    ]);
+
+    $response->assertSessionHasErrors('new_galleries');
+    $this->assertDatabaseMissing('products', [
+        'title' => 'Product With Gallery',
+    ]);
+});
+
+it('can update a product with galleries and delete removed ones safely', function () {
+    Storage::fake('public');
+
+    $product = Product::factory()->create();
+    $gallery1 = $product->galleries()->create([
+        'image_path' => 'products/gallery/1.jpg',
+        'sort_order' => 0,
+    ]);
+    $gallery2 = $product->galleries()->create([
+        'image_path' => 'products/gallery/2.jpg',
+        'sort_order' => 1,
+    ]);
+
+    Storage::disk('public')->put('products/gallery/1.jpg', 'content');
+    Storage::disk('public')->put('products/gallery/2.jpg', 'content');
+
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug, [
+        'title' => 'Updated Product',
+        'description' => 'Updated description',
+        'in_stock' => true,
+        'update_galleries' => 1,
+        'existing_galleries' => [$gallery1->id],
+        'new_galleries' => [
+            UploadedFile::fake()->image('gallery3.jpg'),
+        ],
+        'gallery_orders' => ['existing:'.$gallery1->id, 'new:0'],
+    ]);
+
+    $response->assertRedirect();
+
+    $product->refresh();
+    expect($product->galleries)->toHaveCount(2);
+
+    // Check old file deleted
+    Storage::disk('public')->assertMissing('products/gallery/2.jpg');
+    // Check kept file exists
+    Storage::disk('public')->assertExists('products/gallery/1.jpg');
+});

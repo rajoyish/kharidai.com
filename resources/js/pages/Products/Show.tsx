@@ -1,12 +1,12 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
-import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { JsonLd } from '@/components/json-ld';
+import { LightboxImageAnchor, shouldOpenLightboxFromClick } from '@/components/lightbox-image-link';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
 import { StorefrontHeader } from '@/components/storefront-header';
@@ -16,11 +16,19 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { login } from '@/routes';
 import type { PageProps, StorefrontNavigationData } from '@/types';
 
+const ImageLightbox = lazy(() => import('@/components/image-lightbox'));
+
 type Variant = {
     id: number;
     name: string;
     details: string | null;
     price_npr: string;
+};
+
+type ProductGallery = {
+    id: number;
+    image_path: string;
+    sort_order: number;
 };
 
 type Product = {
@@ -29,6 +37,7 @@ type Product = {
     description: string | null;
     image: string | null;
     variants: Variant[];
+    galleries?: ProductGallery[];
 };
 
 export default function Show({
@@ -42,6 +51,19 @@ export default function Show({
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
         product.variants.length > 0 ? product.variants[0] : null,
     );
+
+    const galleryImages = useMemo(() => {
+        return (product.galleries ?? []).map((img) => `/storage/${img.image_path}`);
+    }, [product.galleries]);
+
+    const allImages = useMemo(() => {
+        return product.image
+            ? [`/storage/${product.image}`, ...galleryImages]
+            : galleryImages;
+    }, [product.image, galleryImages]);
+
+    const [mainImageIndex, setMainImageIndex] = useState(0);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
 
     const { setData, post, processing } = useForm({
         product_variant_id: selectedVariant?.id,
@@ -95,24 +117,55 @@ export default function Show({
 
                 <main className="container mx-auto flex-1 px-4 py-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
-                        {/* Block A: Image + Variants (First on mobile, second on desktop) */}
                         <div className="order-1 flex flex-col gap-8 md:order-2">
-                            {/* Product Image */}
-                            <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
-                                {product.image ? (
-                                    <LightboxImageLink
-                                        src={`/storage/${product.image}`}
-                                        alt={product.title}
-                                        ariaLabel="View full-size product image"
-                                        className="h-full w-full"
-                                        imageClassName="h-full w-full object-cover transition-opacity hover:opacity-90"
-                                    />
-                                ) : (
-                                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                        No image available
+                            {/* Mobile Title & Price (Hidden on Desktop) */}
+                            <div className="flex flex-col md:hidden">
+                                <h1 className="mb-2 text-3xl font-bold tracking-tight">
+                                    {product.title}
+                                </h1>
+
+                                {auth.user && selectedVariant && (
+                                    <div className="text-2xl font-semibold text-primary">
+                                        Rs. {selectedVariant.price_npr}
                                     </div>
                                 )}
                             </div>
+
+                            {/* Main Image */}
+                            {product.image || galleryImages.length > 0 ? (
+                                <LightboxImageAnchor
+                                    src={product.image ? `/storage/${product.image}` : galleryImages[0]}
+                                    alt={product.title}
+                                    ariaLabel={`View main image for ${product.title}`}
+                                    className="aspect-[1200/630] w-full overflow-hidden rounded-lg border bg-muted"
+                                    imageClassName="h-full w-full object-cover transition-opacity hover:opacity-90"
+                                    onClick={(event) => {
+                                        if (!shouldOpenLightboxFromClick(event)) {
+                                            return;
+                                        }
+
+                                        event.preventDefault();
+                                        setMainImageIndex(0);
+                                        setLightboxOpen(true);
+                                    }}
+                                />
+                            ) : (
+                                <div className="flex aspect-[1200/630] w-full items-center justify-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
+                                    <span className="text-sm font-medium">No image available</span>
+                                </div>
+                            )}
+
+                            {/* Lightbox */}
+                            {lightboxOpen && (
+                                <Suspense fallback={null}>
+                                    <ImageLightbox
+                                        open={lightboxOpen}
+                                        close={() => setLightboxOpen(false)}
+                                        slides={allImages.map((src) => ({ src }))}
+                                        index={mainImageIndex}
+                                    />
+                                </Suspense>
+                            )}
 
                             {/* Variants Selection */}
                             {auth.user && product.variants.length > 0 && (
@@ -193,15 +246,42 @@ export default function Show({
                             </div>
                         </div>
 
-                        {/* Block B: Details (Second on mobile, first on desktop) */}
                         <div className="order-2 flex flex-col md:order-1">
-                            <h1 className="mb-2 text-3xl font-bold tracking-tight">
-                                {product.title}
-                            </h1>
+                            {/* Desktop Title & Price (Hidden on Mobile) */}
+                            <div className="hidden md:block">
+                                <h1 className="mb-2 text-3xl font-bold tracking-tight">
+                                    {product.title}
+                                </h1>
 
-                            {auth.user && selectedVariant && (
-                                <div className="mb-6 text-2xl font-semibold text-primary">
-                                    Rs. {selectedVariant.price_npr}
+                                {auth.user && selectedVariant && (
+                                    <div className="mb-6 text-2xl font-semibold text-primary">
+                                        Rs. {selectedVariant.price_npr}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Product Gallery (Below Price) */}
+                            {galleryImages.length > 0 && (
+                                <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+                                    {galleryImages.map((imgSrc, idx) => (
+                                        <LightboxImageAnchor
+                                            key={idx}
+                                            src={imgSrc}
+                                            alt={`${product.title} gallery ${idx + 1}`}
+                                            ariaLabel={`View gallery image ${idx + 1} for ${product.title}`}
+                                            className="aspect-square overflow-hidden rounded-md border-2 border-transparent hover:border-primary/50 transition-colors"
+                                            imageClassName="h-full w-full object-cover"
+                                            onClick={(event) => {
+                                                if (!shouldOpenLightboxFromClick(event)) {
+                                                    return;
+                                                }
+
+                                                event.preventDefault();
+                                                setMainImageIndex(product.image ? idx + 1 : idx);
+                                                setLightboxOpen(true);
+                                            }}
+                                        />
+                                    ))}
                                 </div>
                             )}
 
