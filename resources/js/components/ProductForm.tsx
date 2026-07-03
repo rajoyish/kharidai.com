@@ -97,7 +97,10 @@ export function ProductForm({
 
     // Keep the latest gallery state available to the unmount cleanup below.
     const galleryImagesRef = useRef(galleryImages);
-    galleryImagesRef.current = galleryImages;
+    
+    useEffect(() => {
+        galleryImagesRef.current = galleryImages;
+    }, [galleryImages]);
 
     useEffect(() => {
         return () => {
