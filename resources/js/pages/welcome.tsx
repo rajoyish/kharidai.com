@@ -1,73 +1,91 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ShoppingBag, Sparkles, Archive, CloudDownload, Star, Briefcase, Truck, Search } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import {
+    Archive,
+    ArrowRight,
+    Briefcase,
+    CloudDownload,
+    Search,
+    ShoppingBag,
+    Sparkles,
+    Star,
+    Truck,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+
 import AppLogo from '@/components/app-logo';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { Footer } from '@/components/Footer';
 import { SeoHead } from '@/components/seo-head';
+import { StorefrontProductCard } from '@/components/storefront-product-card';
 import { Input } from '@/components/ui/input';
+import { index as cartIndex } from '@/routes/cart';
+import { show as showCategory } from '@/routes/categories';
+import { home } from '@/routes';
+import type { PageProps, StorefrontCategory, StorefrontProduct } from '@/types';
 
-type Product = {
-    id: number;
-    title: string;
-    slug: string;
-    description: string;
-    image: string;
-    variants: Variant[];
-};
-
-type Variant = {
-    id: number;
-    name: string;
-    price_npr: string;
-};
+function productMatchesQuery(
+    product: StorefrontProduct,
+    normalizedQuery: string,
+): boolean {
+    return (
+        product.title.toLowerCase().includes(normalizedQuery) ||
+        (product.description ?? '').toLowerCase().includes(normalizedQuery)
+    );
+}
 
 export default function Welcome({
     uncategorizedProducts,
     categories,
 }: {
-    uncategorizedProducts: Product[];
-    categories: { id: number; name: string; slug: string; products: Product[] }[];
+    uncategorizedProducts: StorefrontProduct[];
+    categories: StorefrontCategory[];
 }) {
-    const { auth, cartCount } = usePage().props;
+    const { auth, cartCount } = usePage<PageProps>().props;
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-    const { filteredCategories, filteredUncategorizedProducts } = useMemo(() => {
-        const query = searchQuery.toLowerCase().trim();
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+    const hasActiveSearch = normalizedQuery.length > 0;
 
-        let cats = categories;
-        let uncategorized = uncategorizedProducts;
-
-        // Filter by selected category dropdown
-        if (selectedCategory !== 'all') {
-            cats = cats.filter(c => c.id.toString() === selectedCategory);
-            uncategorized = []; // If a specific category is selected, uncategorized products are hidden
+    const filteredCategories = useMemo(() => {
+        if (!normalizedQuery) {
+            return categories;
         }
 
-        // Filter by search query
-        if (query) {
-            cats = cats.map(category => ({
-                ...category,
-                products: category.products.filter(p =>
-                    p.title.toLowerCase().includes(query) ||
-                    (p.description && p.description.toLowerCase().includes(query))
-                )
-            })).filter(category => category.products.length > 0);
+        return categories
+            .map((category) => {
+                const categoryMatches = category.name
+                    .toLowerCase()
+                    .includes(normalizedQuery);
 
-            uncategorized = uncategorized.filter(p =>
-                p.title.toLowerCase().includes(query) ||
-                (p.description && p.description.toLowerCase().includes(query))
-            );
+                if (categoryMatches) {
+                    return category;
+                }
+
+                return {
+                    ...category,
+                    products: category.products.filter((product) =>
+                        productMatchesQuery(product, normalizedQuery),
+                    ),
+                };
+            })
+            .filter((category) => category.products.length > 0);
+    }, [categories, normalizedQuery]);
+
+    const filteredUncategorizedProducts = useMemo(() => {
+        if (!normalizedQuery) {
+            return uncategorizedProducts;
         }
 
-        return { filteredCategories: cats, filteredUncategorizedProducts: uncategorized };
-    }, [categories, uncategorizedProducts, searchQuery, selectedCategory]);
+        return uncategorizedProducts.filter((product) =>
+            productMatchesQuery(product, normalizedQuery),
+        );
+    }, [normalizedQuery, uncategorizedProducts]);
 
     const totalItemsCount = useMemo(() => {
         let count = 0;
-        categories.forEach(category => {
-            category.products.forEach(product => {
+
+        categories.forEach((category) => {
+            category.products.forEach((product) => {
                 count += 1;
 
                 if (product.variants) {
@@ -75,7 +93,8 @@ export default function Welcome({
                 }
             });
         });
-        uncategorizedProducts.forEach(product => {
+
+        uncategorizedProducts.forEach((product) => {
             count += 1;
 
             if (product.variants) {
@@ -94,26 +113,42 @@ export default function Welcome({
         <>
             <SeoHead />
             <div className="flex min-h-screen flex-col bg-[#FAFAFA] text-foreground">
-
-                {/* Hero Wrapper with Gradient */}
                 <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-accent/10 pb-32 pt-4">
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_bottom,white,transparent)]"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
 
                     <header className="relative z-10 container mx-auto flex items-center justify-between px-6 py-4">
-                        <Link href="/" className="flex items-center gap-2 font-bold group">
+                        <Link
+                            href={home()}
+                            className="group flex items-center gap-2 font-bold"
+                        >
                             <AppLogo className="h-9 w-auto transition-transform group-hover:scale-105" />
                         </Link>
 
-                        <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-gray-700">
-                            <button onClick={scrollToShop} className="hover:text-black transition-colors font-semibold">How It Works</button>
-                            <button onClick={scrollToShop} className="hover:text-black transition-colors font-semibold">Products</button>
-                            <Link href="/" className="hover:text-black transition-colors font-semibold">About</Link>
+                        <nav className="hidden items-center gap-8 text-sm font-medium text-gray-700 md:flex">
+                            <button
+                                onClick={scrollToShop}
+                                className="font-semibold transition-colors hover:text-black"
+                            >
+                                How It Works
+                            </button>
+                            <button
+                                onClick={scrollToShop}
+                                className="font-semibold transition-colors hover:text-black"
+                            >
+                                Categories
+                            </button>
+                            <Link
+                                href={home()}
+                                className="font-semibold transition-colors hover:text-black"
+                            >
+                                About
+                            </Link>
                         </nav>
 
                         <div className="flex items-center gap-4">
                             <Link
-                                href="/cart"
-                                className="text-sm font-semibold text-gray-700 hover:text-black transition-colors flex items-center"
+                                href={cartIndex()}
+                                className="flex items-center text-sm font-semibold text-gray-700 transition-colors hover:text-black"
                             >
                                 Cart
                                 {(cartCount as number) > 0 && (
@@ -124,19 +159,24 @@ export default function Welcome({
                             </Link>
                             {auth.user ? (
                                 <Link
-                                    href={auth.user.is_admin ? '/admin' : '/orders'}
-                                    className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-md hover:shadow-lg"
+                                    href={
+                                        auth.user.is_admin ? '/admin' : '/orders'
+                                    }
+                                    className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
                                 >
                                     {auth.user.is_admin ? 'Admin' : 'Dashboard'}
                                 </Link>
                             ) : (
                                 <>
-                                    <a href="/auth/google" className="hidden sm:block text-sm font-semibold text-gray-700 hover:text-black transition-colors">
+                                    <a
+                                        href="/auth/google"
+                                        className="hidden text-sm font-semibold text-gray-700 transition-colors hover:text-black sm:block"
+                                    >
                                         Log In
                                     </a>
                                     <a
                                         href="/auth/google"
-                                        className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-md hover:shadow-lg"
+                                        className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
                                     >
                                         Get Started
                                     </a>
@@ -145,216 +185,284 @@ export default function Welcome({
                         </div>
                     </header>
 
-                    <div className="relative z-10 container mx-auto mt-20 px-4 text-center max-w-4xl">
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-[#1A1A1A] leading-[1.1] mb-6">
-                            Your all-in-one<br />marketplace!
+                    <div className="relative z-10 container mx-auto mt-20 max-w-4xl px-4 text-center">
+                        <h1 className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-[#1A1A1A] md:text-7xl">
+                            Your all-in-one
+                            <br />
+                            marketplace!
                         </h1>
-                        <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-10">
-                            Discover digital goods, premium subscriptions, trusted services, and physical products—all at unbeatable prices. Shop smart. Shop reliable.
+                        <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl">
+                            Discover digital goods, premium subscriptions,
+                            trusted services, and physical products all at
+                            unbeatable prices. Shop smart. Shop reliable.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <button onClick={scrollToShop} className="rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                            <button
+                                onClick={scrollToShop}
+                                className="rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl"
+                            >
                                 Start Here
                             </button>
                         </div>
                     </div>
 
-                    {/* Floating Cards Graphic */}
-                    <div className="relative z-10 mt-20 flex justify-center max-w-5xl mx-auto px-4 h-64 md:h-80 perspective-1000">
-                        {/* Center Card */}
-                        <div 
-                            tabIndex={0}
-                            className="absolute z-30 w-72 bg-white p-8 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-gray-100 transform -translate-y-4 transition-[transform,box-shadow,z-index] duration-500 ease-out hover:-translate-y-8 hover:scale-105 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] hover:z-50 focus:-translate-y-8 focus:scale-105 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:z-50 focus:outline-none cursor-pointer"
-                        >
-                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-6 mx-auto shadow-inner"><ShoppingBag className="w-5 h-5" /></div>
-                            <h3 className="text-center text-xl text-gray-900 leading-snug mb-3">Find exactly what you need, instantly.</h3>
-                            <div className="flex justify-center items-center gap-3 text-xs font-medium text-gray-400 mt-6">
+                    <div className="relative z-10 mt-20 mx-auto flex h-64 max-w-5xl justify-center px-4 perspective-1000 md:h-80">
+                        <div className="absolute z-30 w-72 -translate-y-4 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:-translate-y-8 hover:scale-105 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:z-50 focus:-translate-y-8 focus:scale-105 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none">
+                            <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner">
+                                <ShoppingBag className="h-5 w-5" />
+                            </div>
+                            <h3 className="mb-3 text-center text-xl text-gray-900">
+                                Find exactly what you need, instantly.
+                            </h3>
+                            <div className="mt-6 flex items-center justify-center gap-3 text-xs font-medium text-gray-400">
                                 <span>{totalItemsCount} items</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                                <span className="h-1.5 w-1.5 rounded-full bg-primary/40" />
                                 <span>24/7 delivery</span>
                             </div>
                         </div>
-                        {/* Left Card */}
-                        <div 
-                            tabIndex={0}
-                            className="absolute z-20 w-64 bg-white p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform -rotate-[8deg] -translate-x-32 md:-translate-x-56 translate-y-12 transition-[transform,box-shadow,z-index] duration-500 ease-out hover:rotate-0 hover:translate-y-0 hover:scale-110 hover:z-50 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:rotate-0 focus:translate-y-0 focus:scale-110 focus:z-50 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none cursor-pointer"
-                        >
-                            <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center mb-4 mx-auto shadow-inner"><Sparkles className="w-4 h-4" /></div>
-                            <h3 className="text-center text-lg text-gray-800 leading-snug">Premium Subscriptions</h3>
+                        <div className="absolute z-20 w-64 -translate-x-32 translate-y-12 rotate-[-8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none md:-translate-x-56">
+                            <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-accent shadow-inner">
+                                <Sparkles className="h-4 w-4" />
+                            </div>
+                            <h3 className="text-center text-lg text-gray-800">
+                                Premium Subscriptions
+                            </h3>
                         </div>
-                        {/* Right Card */}
-                        <div 
-                            tabIndex={0}
-                            className="absolute z-20 w-64 bg-white p-6 rounded-3xl shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 transform rotate-[8deg] translate-x-32 md:translate-x-56 translate-y-12 transition-[transform,box-shadow,z-index] duration-500 ease-out hover:rotate-0 hover:translate-y-0 hover:scale-110 hover:z-50 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:rotate-0 focus:translate-y-0 focus:scale-110 focus:z-50 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none cursor-pointer"
-                        >
-                            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center mb-4 mx-auto shadow-inner"><Archive className="w-4 h-4" /></div>
-                            <h3 className="text-center text-lg text-gray-800 leading-snug">Trusted Physical Goods</h3>
+                        <div className="absolute z-20 w-64 translate-x-32 translate-y-12 rotate-[8deg] transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_15px_40px_-12px_rgba(0,0,0,0.08)] transition-[transform,box-shadow,z-index] duration-500 ease-out hover:z-50 hover:translate-y-0 hover:rotate-0 hover:scale-110 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:z-50 focus:translate-y-0 focus:rotate-0 focus:scale-110 focus:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] focus:outline-none md:translate-x-56">
+                            <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary shadow-inner">
+                                <Archive className="h-4 w-4" />
+                            </div>
+                            <h3 className="text-center text-lg text-gray-800">
+                                Trusted Physical Goods
+                            </h3>
                         </div>
                     </div>
                 </div>
 
-                <div className="py-32 relative overflow-hidden bg-[#09090b]">
-                    {/* Mesh Gradient Orbs */}
-                    <div className="absolute top-0 left-1/4 w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[128px] pointer-events-none mix-blend-screen transform -translate-y-1/2"></div>
-                    <div className="absolute bottom-0 right-1/4 w-[40rem] h-[40rem] bg-accent/20 rounded-full blur-[128px] pointer-events-none mix-blend-screen transform translate-y-1/3"></div>
-                    <div className="absolute top-1/2 left-1/2 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-[128px] pointer-events-none mix-blend-screen transform -translate-x-1/2 -translate-y-1/2"></div>
+                <div className="relative overflow-hidden bg-[#09090b] py-32">
+                    <div className="pointer-events-none absolute top-0 left-1/4 h-[40rem] w-[40rem] -translate-y-1/2 transform rounded-full bg-primary/20 blur-[128px] mix-blend-screen" />
+                    <div className="pointer-events-none absolute right-1/4 bottom-0 h-[40rem] w-[40rem] translate-y-1/3 transform rounded-full bg-accent/20 blur-[128px] mix-blend-screen" />
+                    <div className="pointer-events-none absolute top-1/2 left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-primary/10 blur-[128px] mix-blend-screen" />
 
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                    <div className="container mx-auto px-4 max-w-5xl relative z-10">
-                        <div className="text-center mb-20">
-                            <h2 className="text-4xl text-white mb-4">A path to better shopping</h2>
-                            <p className="text-gray-400 text-lg">Kharidai helps you discover the best products without the hassle.</p>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
-                                <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors pointer-events-none"></div>
-                                <CloudDownload className="w-8 h-8 text-accent mb-4 relative z-10" />
-                                <h3 className="text-2xl text-white mb-3 relative z-10">Digital Goods</h3>
-                                <p className="text-gray-400 leading-relaxed relative z-10">Instant access to software, game keys, and digital content. Delivered directly to your email within seconds.</p>
-                            </div>
-                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
-                                <div className="absolute -top-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors pointer-events-none"></div>
-                                <Star className="w-8 h-8 text-primary mb-4 relative z-10" />
-                                <h3 className="text-2xl text-white mb-3 relative z-10">Premium Subscriptions</h3>
-                                <p className="text-gray-400 leading-relaxed relative z-10">Unlock premium features on your favorite platforms at unbeatable discounted rates.</p>
-                            </div>
-                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
-                                <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-colors pointer-events-none"></div>
-                                <Briefcase className="w-8 h-8 text-accent mb-4 relative z-10" />
-                                <h3 className="text-2xl text-white mb-3 relative z-10">Trusted Services</h3>
-                                <p className="text-gray-400 leading-relaxed relative z-10">Hire top-rated professionals for freelance work, consulting, and specialized services.</p>
-                            </div>
-                            <div className="bg-white/[0.03] backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-2xl">
-                                <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors pointer-events-none"></div>
-                                <Truck className="w-8 h-8 text-primary mb-4 relative z-10" />
-                                <h3 className="text-2xl text-white mb-3 relative z-10">Physical Products</h3>
-                                <p className="text-gray-400 leading-relaxed relative z-10">Shop for electronics, gadgets, and everyday essentials with fast, reliable shipping to your door.</p>
-                            </div>
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    <div className="container relative z-10 mx-auto max-w-5xl px-4">
+                        <div className="mb-20 text-center">
+                            <h2 className="mb-4 text-4xl text-white">
+                                A path to better shopping
+                            </h2>
+                            <p className="text-lg text-gray-400">
+                                Kharidai helps you discover the best products
+                                without the hassle.
+                            </p>
                         </div>
 
-
+                        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                                <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
+                                <CloudDownload className="relative z-10 mb-4 h-8 w-8 text-accent" />
+                                <h3 className="relative z-10 mb-3 text-2xl text-white">
+                                    Digital Goods
+                                </h3>
+                                <p className="relative z-10 leading-relaxed text-gray-400">
+                                    Instant access to software, game keys, and
+                                    digital content. Delivered directly to your
+                                    email within seconds.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                                <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
+                                <Star className="relative z-10 mb-4 h-8 w-8 text-primary" />
+                                <h3 className="relative z-10 mb-3 text-2xl text-white">
+                                    Premium Subscriptions
+                                </h3>
+                                <p className="relative z-10 leading-relaxed text-gray-400">
+                                    Unlock premium features on your favorite
+                                    platforms at unbeatable discounted rates.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                                <div className="pointer-events-none absolute -right-12 -bottom-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
+                                <Briefcase className="relative z-10 mb-4 h-8 w-8 text-accent" />
+                                <h3 className="relative z-10 mb-3 text-2xl text-white">
+                                    Trusted Services
+                                </h3>
+                                <p className="relative z-10 leading-relaxed text-gray-400">
+                                    Hire top-rated professionals for freelance
+                                    work, consulting, and specialized services.
+                                </p>
+                            </div>
+                            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                                <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
+                                <Truck className="relative z-10 mb-4 h-8 w-8 text-primary" />
+                                <h3 className="relative z-10 mb-3 text-2xl text-white">
+                                    Physical Products
+                                </h3>
+                                <p className="relative z-10 leading-relaxed text-gray-400">
+                                    Shop for electronics, gadgets, and everyday
+                                    essentials with fast, reliable shipping to
+                                    your door.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Shop Section */}
-                <main id="shop" className="container mx-auto flex-1 px-4 py-24 max-w-7xl">
+                <main id="shop" className="container mx-auto max-w-7xl flex-1 px-4 py-24">
                     <div className="mb-12 text-center">
-                        <h2 className="text-3xl text-[#1A1A1A] mb-4">Explore Our Catalog</h2>
-                        <p className="text-gray-500">Find the best deals across all categories.</p>
+                        <h2 className="mb-4 text-3xl text-[#1A1A1A]">
+                            Explore by category
+                        </h2>
+                        <p className="text-gray-500">
+                            Browse each category on its own page and dive into
+                            the products that belong there.
+                        </p>
                     </div>
 
-                    {/* Search and Filter */}
-                    <div className="mb-16 flex flex-col sm:flex-row gap-4 items-center bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                    <div className="mb-16 flex flex-col items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:flex-row">
                         <Input
                             type="search"
-                            placeholder="Search products by name or description..."
+                            placeholder="Search categories or products..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full sm:w-auto sm:flex-1 h-12 text-base border-gray-200 focus-visible:ring-accent rounded-xl bg-gray-50/50"
+                            onChange={(event) =>
+                                setSearchQuery(event.target.value)
+                            }
+                            className="h-12 w-full rounded-xl border-gray-200 bg-gray-50/50 text-base focus-visible:ring-accent sm:flex-1"
                         />
-                        <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="flex h-12 w-full sm:w-64 items-center justify-between whitespace-nowrap rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2 text-base shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 font-medium text-gray-700"
-                        >
-                            <option value="all">All Categories</option>
-                            {categories.map(category => (
-                                <option key={category.id} value={category.id.toString()}>{category.name}</option>
-                            ))}
-                        </select>
                     </div>
 
-                    {filteredCategories.map((category) => (
-                        category.products && category.products.length > 0 && (
-                            <div key={category.id} className="mb-16">
-                                <h2 className="mb-8 text-2xl text-gray-900 border-b border-gray-100 pb-4">
-                                    {category.name}
-                                </h2>
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
-                                    {category.products.map((product) => (
-                                        <Link
-                                            key={product.id}
-                                            href={`/products/${product.slug}`}
-                                            className="group relative rounded-2xl border border-gray-100 bg-white p-5 text-card-foreground transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 block"
-                                        >
-                                            <div className="mb-5 aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-50">
-                                                {product.image ? (
-                                                    <img
-                                                        src={`/storage/${product.image}`}
-                                                        alt={product.title}
-                                                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                                        No image
-                                                    </div>
-                                                )}
+                    {filteredCategories.length > 0 && (
+                        <section className="grid grid-cols-1 gap-6">
+                            {filteredCategories.map((category) => (
+                                <Link
+                                    key={category.id}
+                                    href={showCategory(category)}
+                                    prefetch
+                                    className="group block overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_22px_60px_-42px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_28px_70px_-36px_rgba(17,118,188,0.3)] md:p-8"
+                                >
+                                    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+                                        <div>
+                                            <p className="text-sm font-semibold uppercase text-primary/80">
+                                                Category
+                                            </p>
+                                            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                <h3 className="text-3xl font-semibold tracking-tight text-slate-950">
+                                                    {category.name}
+                                                </h3>
+                                                <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
+                                                    {category.products.length}{' '}
+                                                    {hasActiveSearch
+                                                        ? category.products
+                                                            .length === 1
+                                                            ? 'match'
+                                                            : 'matches'
+                                                        : category.products
+                                                            .length === 1
+                                                            ? 'product'
+                                                            : 'products'}
+                                                </span>
                                             </div>
-                                            <h3 className="text-lg text-gray-900 leading-tight mb-2">
-                                                {product.title}
-                                            </h3>
-                                            {product.variants && product.variants.length > 0 && (
-                                                <div className="text-xl font-bold mt-2">
-                                                    Rs. {parseFloat(product.variants[0].price_npr).toLocaleString()}
-                                                </div>
-                                            )}
-                                        </Link>
-                                    ))}
+                                            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+                                                Open the {category.name} page to
+                                                browse every product in this
+                                                category.
+                                            </p>
+                                            <div className="mt-6 flex flex-wrap gap-2">
+                                                {category.products
+                                                    .slice(0, 4)
+                                                    .map((product) => (
+                                                        <span
+                                                            key={product.id}
+                                                            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600"
+                                                        >
+                                                            {product.title}
+                                                        </span>
+                                                    ))}
+                                                {category.products.length >
+                                                    4 && (
+                                                        <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
+                                                            +
+                                                            {category.products
+                                                                .length - 4}{' '}
+                                                            more
+                                                        </span>
+                                                    )}
+                                            </div>
+                                            <div className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                                                Browse category
+                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {category.products
+                                                .slice(0, 2)
+                                                .map((product) => (
+                                                    <div
+                                                        key={product.id}
+                                                        className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50"
+                                                    >
+                                                        <div className="aspect-[4/3] bg-[radial-gradient(circle_at_top,#dbeafe,transparent_58%),linear-gradient(135deg,#e2e8f0,#f8fafc)]">
+                                                            {product.image ? (
+                                                                <img
+                                                                    src={`/storage/${product.image}`}
+                                                                    alt={product.title}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            ) : null}
+                                                        </div>
+                                                        <div className="p-4">
+                                                            <p className="line-clamp-2 text-sm font-medium text-slate-700">
+                                                                {product.title}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </section>
+                    )}
+
+                    {filteredUncategorizedProducts.length > 0 && (
+                        <section className="mt-16">
+                            <div className="mb-8 flex items-end justify-between gap-4">
+                                <div>
+                                    <h2 className="text-2xl font-semibold text-slate-950">
+                                        Other Products
+                                    </h2>
+                                    <p className="mt-2 text-slate-600">
+                                        These items are still available even
+                                        though they are not assigned to a public
+                                        category yet.
+                                    </p>
                                 </div>
                             </div>
-                        )
-                    ))}
-
-                    {filteredUncategorizedProducts && filteredUncategorizedProducts.length > 0 && (
-                        <div className="mb-16">
-                            <h2 className="mb-8 text-2xl text-gray-900 border-b border-gray-100 pb-4">
-                                Other Products
-                            </h2>
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                                 {filteredUncategorizedProducts.map((product) => (
-                                    <Link
+                                    <StorefrontProductCard
                                         key={product.id}
-                                        href={`/products/${product.slug}`}
-                                        className="group relative rounded-2xl border border-gray-100 bg-white p-5 text-card-foreground transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 block"
-                                    >
-                                        <div className="mb-5 aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-50">
-                                            {product.image ? (
-                                                <img
-                                                    src={`/storage/${product.image}`}
-                                                    alt={product.title}
-                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                />
-                                            ) : (
-                                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                                    No image
-                                                </div>
-                                            )}
-                                        </div>
-                                        <h3 className="text-lg text-gray-900 leading-tight mb-2">
-                                            {product.title}
-                                        </h3>
-                                        {product.variants &&
-                                            product.variants.length > 0 && (
-                                                <div className="text-sm font-medium text-primary">
-                                                    Starting at Rs.{' '}
-                                                    {product.variants[0].price_npr}
-                                                </div>
-                                            )}
-                                    </Link>
+                                        product={product}
+                                    />
                                 ))}
                             </div>
-                        </div>
+                        </section>
                     )}
 
-                    {filteredCategories.length === 0 && (!filteredUncategorizedProducts || filteredUncategorizedProducts.length === 0) && (
-                        <div className="mt-20 text-center bg-gray-50 rounded-2xl p-12 border border-gray-100">
-                            <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-xl text-gray-900 mb-2">No products found</h3>
-                            <p className="text-gray-500">We couldn't find any products matching your current filters.</p>
-                        </div>
-                    )}
+                    {filteredCategories.length === 0 &&
+                        filteredUncategorizedProducts.length === 0 && (
+                            <div className="mt-20 rounded-2xl border border-gray-100 bg-gray-50 p-12 text-center">
+                                <Search className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                                <h3 className="mb-2 text-xl text-gray-900">
+                                    No products found
+                                </h3>
+                                <p className="text-gray-500">
+                                    We couldn&apos;t find any categories or
+                                    products matching your search.
+                                </p>
+                            </div>
+                        )}
                 </main>
                 <Footer />
             </div>
