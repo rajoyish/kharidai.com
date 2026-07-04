@@ -22,16 +22,15 @@ import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as cartIndex } from '@/routes/cart';
 import { show as showCategory } from '@/routes/categories';
 import { index as ordersIndex } from '@/routes/orders';
-import type { SharedData, StorefrontNavigationCategory } from '@/types';
+import type { SharedData } from '@/types';
 
 export function StorefrontHeader({
-    categories,
     hideNavigation = false,
 }: {
-    categories: StorefrontNavigationCategory[];
     hideNavigation?: boolean;
 }) {
-    const { auth, cartCount } = usePage<SharedData>().props;
+    const { auth, cartCount, storefront } = usePage<SharedData>().props;
+    const categories = storefront?.categories || [];
     const accountHref = auth.user
         ? auth.user.is_admin
             ? adminDashboard()

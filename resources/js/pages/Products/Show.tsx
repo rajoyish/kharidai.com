@@ -3,18 +3,16 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
-import { FloatingContactActions } from '@/components/floating-contact-actions';
-import { Footer } from '@/components/Footer';
 import { JsonLd } from '@/components/json-ld';
 import { LightboxImageAnchor, shouldOpenLightboxFromClick } from '@/components/lightbox-image-link';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
-import { StorefrontHeader } from '@/components/storefront-header';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { StorefrontLayout } from '@/layouts/storefront-layout';
 import { login } from '@/routes';
-import type { PageProps, StorefrontNavigationData } from '@/types';
+import type { PageProps } from '@/types';
 
 const ImageLightbox = lazy(() => import('@/components/image-lightbox'));
 
@@ -42,10 +40,8 @@ type Product = {
 
 export default function Show({
     product,
-    storefront,
 }: {
     product: Product;
-    storefront: StorefrontNavigationData;
 }) {
     const { auth, seo } = usePage<PageProps>().props;
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
@@ -112,9 +108,6 @@ export default function Show({
                     }}
                 />
             )}
-            <div className="flex min-h-screen flex-col bg-background text-foreground">
-                <StorefrontHeader categories={storefront.categories} />
-
                 <main className="container mx-auto flex-1 px-4 py-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
                         <div className="order-1 flex flex-col gap-8 md:order-2">
@@ -291,9 +284,8 @@ export default function Show({
                         </div>
                     </div>
                 </main>
-                <Footer categories={storefront.categories} />
-            </div>
-            <FloatingContactActions />
         </>
     );
 }
+
+Show.layout = (page: React.ReactNode) => <StorefrontLayout>{page}</StorefrontLayout>;

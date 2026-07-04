@@ -3,7 +3,10 @@
 namespace App\Http\Middleware;
 
 use App\Models\Cart;
+use App\Models\Category;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -47,6 +50,24 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => $request->user()
                 ? (int) (Cart::where('user_id', $request->user()->id)->withSum('items', 'quantity')->first()?->items_sum_quantity ?? 0)
                 : 0,
+            'storefront' => fn () => [
+                'categories' => Cache::rememberForever(
+                    Category::STOREFRONT_NAVIGATION_CACHE_KEY,
+                    fn () => Category::query()
+                        ->orderBy('name')
+                        ->whereHas(
+                            'products',
+                            fn (Builder $query) => $query->where('in_stock', true),
+                        )
+                        ->get(['id', 'name', 'slug'])
+                        ->map(fn (Category $category) => [
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'slug' => $category->slug,
+                        ])
+                        ->all()
+                ),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'seo' => [
                 'name' => $siteName,

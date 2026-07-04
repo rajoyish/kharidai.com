@@ -6,10 +6,16 @@ import { useEffect, useRef } from 'react';
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Wraps a set of full-height "panel" sections and applies GSAP's
- * "Pinned panels with overscroll" effect (GreenSock pen bGRdvMy): each panel
- * pins once it fills the viewport, then scales down and fades while the next
- * panel scrolls up over it, producing a layered, stacked scroll.
+ * Wraps a set of full-height "panel" sections and applies a layered, stacked
+ * scroll (adapted from GreenSock pen bGRdvMy): each panel pins once it fills the
+ * viewport, then its content scales down and fades while the next panel scrolls
+ * up over it.
+ *
+ * Only the inner content (`data-panel-inner`) is scaled/faded — the panel itself
+ * stays pinned full-bleed so its background always fills the viewport. Scaling
+ * the whole panel would shrink its background inward and expose the page behind
+ * it as gutters; keeping the background fixed and receding only the content
+ * preserves the depth effect without that reveal.
  *
  * Mark each panel with `data-panel` and its scrollable content with
  * `data-panel-inner`. When a panel's content is taller than the viewport its
@@ -110,13 +116,20 @@ export function PinnedPanels({ children }: { children: ReactNode }) {
                         });
                     }
 
+                    // Recede only the content: the panel stays full-bleed so
+                    // its background never shrinks to reveal the page behind it.
                     timeline
                         .fromTo(
-                            panel,
+                            inner,
                             { scale: 1, opacity: 1 },
-                            { scale: 0.7, opacity: 0.5, duration: 0.9 },
+                            {
+                                scale: 0.7,
+                                opacity: 0.5,
+                                duration: 0.9,
+                                transformOrigin: 'center center',
+                            },
                         )
-                        .to(panel, { opacity: 0, duration: 0.1 });
+                        .to(inner, { opacity: 0, duration: 0.1 });
                 });
 
                 // Pin positions depend on final layout, so recompute once fonts
