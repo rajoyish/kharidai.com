@@ -2,38 +2,18 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-type TableProps = React.HTMLAttributes<HTMLTableElement> & {
-  stickyFirstColumn?: boolean
-}
-
-const stickyFirstColumnClasses = [
-  "md:[&_tr>*:first-child]:sticky",
-  "md:[&_tr>*:first-child]:left-0",
-  "md:[&_tr>*:first-child]:z-10",
-  "md:[&_tr>*:first-child]:border-r",
-  "md:[&_tr>*:first-child]:shadow-[8px_0_12px_-12px_rgba(0,0,0,0.45)]",
-  "md:[&_thead_tr>*:first-child]:z-20",
-  "md:[&_thead_tr>*:first-child]:bg-muted",
-  "md:[&_tbody_tr>*:first-child]:bg-card",
-  "md:[&_tbody_tr:hover>*:first-child]:bg-muted",
-  "md:[&_tfoot_tr>*:first-child]:bg-muted",
-]
-
-const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, stickyFirstColumn = true, ...props }, ref) => (
-    <div className="relative w-full overflow-x-auto overflow-y-hidden rounded-xl border bg-card shadow-sm">
-      <table
-        ref={ref}
-        className={cn(
-          "w-full min-w-max text-left text-sm",
-          stickyFirstColumn && stickyFirstColumnClasses,
-          className
-        )}
-        {...props}
-      />
-    </div>
-  )
-)
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-x-auto overflow-y-hidden rounded-xl border bg-card shadow-sm">
+    <table
+      ref={ref}
+      className={cn("w-full min-w-max text-left text-sm", className)}
+      {...props}
+    />
+  </div>
+))
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef<
