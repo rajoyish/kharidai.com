@@ -18,15 +18,26 @@ class StorefrontController extends Controller
     public function index(): Response
     {
         $defaultSeoImage = $this->defaultSeoImage();
-        $categories = $this->storefrontCategories();
-        $uncategorizedProducts = $this->storefrontProductQuery(
+        $search = request('search');
+        
+        $categories = $this->storefrontCategories($search);
+        
+        $uncategorizedQuery = $this->storefrontProductQuery(
             Product::query()->whereNull('category_id'),
-        )->get();
+        );
+        
+        if ($search) {
+            $uncategorizedQuery->where(function (Builder $query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        
+        $uncategorizedProducts = $uncategorizedQuery->get();
 
         return Inertia::render('welcome', [
             'categories' => $categories,
             'uncategorizedProducts' => $uncategorizedProducts,
-            'storefront' => $this->storefrontNavigation(),
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle('Your all-in-one marketplace!'),
@@ -48,16 +59,13 @@ class StorefrontController extends Controller
     {
         $defaultSeoImage = $this->defaultSeoImage();
 
-        $category->load([
-            'products' => fn (HasMany $query): HasMany => $this->storefrontProductQuery($query),
-        ]);
-
-        $productCount = $category->products->count();
+        $products = $this->storefrontProductQuery($category->products())->paginate(12)->withQueryString();
+        $productCount = $products->total();
 
         return Inertia::render('Categories/Show', [
             'category' => $category,
+            'products' => $products,
             'categories' => $this->storefrontCategoryNavigation(),
-            'storefront' => $this->storefrontNavigation(),
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($category->name),
@@ -88,7 +96,6 @@ class StorefrontController extends Controller
 
         return Inertia::render('Products/Show', [
             'product' => $product,
-            'storefront' => $this->storefrontNavigation(),
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($product->title),
@@ -220,14 +227,37 @@ class StorefrontController extends Controller
     /**
      * @return Collection<int, Category>
      */
-    private function storefrontCategories(): Collection
+    private function storefrontCategories(?string $search = null): Collection
     {
         return Category::query()
             ->orderBy('name')
             ->with([
                 'products' => fn (HasMany $query): HasMany => $this->storefrontProductQuery($query),
             ])
+            ->when($search, function (Builder $query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhereHas('products', function (Builder $q) use ($search) {
+                          $q->where('title', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                      });
+            })
             ->get()
+            ->map(function (Category $category) use ($search) {
+                if (! $search) {
+                    return $category;
+                }
+
+                if (stripos($category->name, $search) !== false) {
+                    return $category;
+                }
+
+                $category->setRelation('products', $category->products->filter(function ($product) use ($search) {
+                    return stripos($product->title, $search) !== false ||
+                           stripos((string) $product->description, $search) !== false;
+                })->values());
+
+                return $category;
+            })
             ->filter(fn (Category $category): bool => $category->products->isNotEmpty())
             ->values();
     }
@@ -252,48 +282,7 @@ class StorefrontController extends Controller
             ]);
     }
 
-    /**
-     * @return array{categories: Collection<int, array{id: int, name: string, slug: string}>}
-     */
-    private function storefrontNavigation(): array
-    {
-        return [
-            'categories' => $this->storefrontNavigationCategories(),
-        ];
-    }
 
-    /**
-     * @return Collection<int, array{id: int, name: string, slug: string}>
-     */
-    private function storefrontNavigationCategories(): Collection
-    {
-        $cachedCategories = Cache::get(
-            Category::STOREFRONT_NAVIGATION_CACHE_KEY,
-        );
-
-        if (! is_array($cachedCategories)) {
-            Cache::forget(Category::STOREFRONT_NAVIGATION_CACHE_KEY);
-
-            $cachedCategories = Cache::rememberForever(
-                Category::STOREFRONT_NAVIGATION_CACHE_KEY,
-                fn (): array => Category::query()
-                    ->orderBy('name')
-                    ->whereHas(
-                        'products',
-                        fn (Builder $query): Builder => $query->where('in_stock', true),
-                    )
-                    ->get(['id', 'name', 'slug'])
-                    ->map(fn (Category $category): array => [
-                        'id' => $category->id,
-                        'name' => $category->name,
-                        'slug' => $category->slug,
-                    ])
-                    ->all(),
-            );
-        }
-
-        return collect($cachedCategories);
-    }
 
     private function storefrontProductQuery(Builder|HasMany $query): Builder|HasMany
     {

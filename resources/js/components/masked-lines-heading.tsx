@@ -1,9 +1,10 @@
 import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 
-gsap.registerPlugin(SplitText);
+gsap.registerPlugin(SplitText, ScrollTrigger);
 
 /**
  * SplitText options that build the "masked lines" structure: each rendered
@@ -35,13 +36,21 @@ export const maskedLinesRevealVars = {
  * The animation is client-side only (runs inside useEffect), waits for fonts
  * so lines are measured correctly, respects `prefers-reduced-motion`, and
  * fully reverts the SplitText instance on unmount to avoid DOM/tween leaks.
+ *
+ * By default the reveal plays once on mount. Pass `animateOnScroll` to instead
+ * drive it with a ScrollTrigger so it replays every time the heading scrolls
+ * into view (both directions) as well as on load. When mounting this in an
+ * Inertia page whose heading text changes between client-side visits, give it a
+ * `key` tied to that text so React remounts it and the split is rebuilt.
  */
 export function MaskedLinesHeading({
     className,
     children,
+    animateOnScroll = false,
 }: {
     className?: string;
     children: ReactNode;
+    animateOnScroll?: boolean;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -73,9 +82,25 @@ export function MaskedLinesHeading({
             split = SplitText.create(element, {
                 ...maskedLinesSplitVars,
                 // The tween returned from onSplit is tracked and reverted
-                // automatically by GSAP on re-split.
+                // automatically by GSAP on re-split (e.g. autoSplit on resize).
                 onSplit(self) {
-                    return gsap.from(self.lines, maskedLinesRevealVars);
+                    return gsap.from(self.lines, {
+                        ...maskedLinesRevealVars,
+                        ...(animateOnScroll
+                            ? {
+                                  scrollTrigger: {
+                                      trigger: element,
+                                      // Reveal as it enters; reset once fully
+                                      // past the top edge so scrolling back in
+                                      // (either direction) replays cleanly.
+                                      start: 'top 85%',
+                                      end: 'bottom top',
+                                      toggleActions:
+                                          'restart reset restart reset',
+                                  },
+                              }
+                            : {}),
+                    });
                 },
             });
         });
@@ -83,8 +108,18 @@ export function MaskedLinesHeading({
         return () => {
             cancelled = true;
             split?.revert();
+
+            // Belt-and-suspenders: kill any ScrollTrigger still bound to this
+            // heading so an autoSplit re-split can never orphan one.
+            if (animateOnScroll) {
+                ScrollTrigger.getAll().forEach((trigger) => {
+                    if (trigger.trigger === element) {
+                        trigger.kill();
+                    }
+                });
+            }
         };
-    }, []);
+    }, [animateOnScroll]);
 
     return (
         <h1 ref={headingRef} className={className}>

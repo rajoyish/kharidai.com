@@ -1,35 +1,41 @@
 import { Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 
-import { FloatingContactActions } from '@/components/floating-contact-actions';
-import { Footer } from '@/components/Footer';
+import { MaskedLinesHeading } from '@/components/masked-lines-heading';
 import { SeoHead } from '@/components/seo-head';
-import { StorefrontHeader } from '@/components/storefront-header';
 import { StorefrontProductCard } from '@/components/storefront-product-card';
+import { StorefrontLayout } from '@/layouts/storefront-layout';
 import { home } from '@/routes';
 import { show as showCategory } from '@/routes/categories';
 import type {
     StorefrontCategory,
     StorefrontCategorySummary,
-    StorefrontNavigationData,
+    StorefrontProduct,
 } from '@/types';
+
+type PaginationData<T> = {
+    data: T[];
+    next_page_url: string | null;
+    prev_page_url: string | null;
+    total: number;
+    from: number;
+    to: number;
+};
 
 export default function Show({
     category,
     categories,
-    storefront,
+    products,
 }: {
     category: StorefrontCategory;
     categories: StorefrontCategorySummary[];
-    storefront: StorefrontNavigationData;
+    products: PaginationData<StorefrontProduct>;
 }) {
-    const productCount = category.products.length;
+    const productCount = products.total;
 
     return (
         <>
             <SeoHead />
-            <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_36%,#ffffff_100%)] text-foreground">
-                <StorefrontHeader categories={storefront.categories} />
 
                 <main className="container mx-auto px-4 py-10">
                     <Link
@@ -43,12 +49,16 @@ export default function Show({
                     <section className="mb-10 overflow-hidden rounded-4xl border border-slate-200/80 bg-white/90 p-8 shadow-[0_1.875rem_4.375rem_-3rem_rgba(15,23,42,0.4)] md:p-10">
                         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                             <div className="max-w-2xl">
-                                <p className="text-sm font-semibold uppercase text-primary/80">
+                                <p className="text-sm font-semibold text-primary/80 uppercase">
                                     Category
                                 </p>
-                                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+                                <MaskedLinesHeading
+                                    key={category.slug}
+                                    animateOnScroll
+                                    className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl"
+                                >
                                     {category.name}
-                                </h1>
+                                </MaskedLinesHeading>
                                 <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
                                     {productCount > 0
                                         ? `Explore all ${productCount} products currently available in ${category.name}.`
@@ -75,7 +85,7 @@ export default function Show({
                     {categories.length > 0 && (
                         <section className="mb-10">
                             <div className="mb-4 flex items-center justify-between gap-4">
-                                <h2 className="text-sm font-semibold uppercase text-slate-500">
+                                <h2 className="text-sm font-semibold text-slate-500 uppercase">
                                     Browse Categories
                                 </h2>
                             </div>
@@ -92,19 +102,23 @@ export default function Show({
                                                 storefrontCategory,
                                             )}
                                             prefetch
-                                            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${isCurrentCategory
-                                                ? 'border-primary bg-primary text-white shadow-sm'
-                                                : 'border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary'
-                                                }`}
+                                            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                                                isCurrentCategory
+                                                    ? 'border-primary bg-primary text-white shadow-sm'
+                                                    : 'border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary'
+                                            }`}
                                         >
                                             {storefrontCategory.name}
                                             <span
-                                                className={`ml-2 rounded-full px-2 py-0.5 text-xs ${isCurrentCategory
-                                                    ? 'bg-white/15 text-white'
-                                                    : 'bg-slate-100 text-slate-500'
-                                                    }`}
+                                                className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                                                    isCurrentCategory
+                                                        ? 'bg-white/15 text-white'
+                                                        : 'bg-slate-100 text-slate-500'
+                                                }`}
                                             >
-                                                {storefrontCategory.product_count}
+                                                {
+                                                    storefrontCategory.product_count
+                                                }
                                             </span>
                                         </Link>
                                     );
@@ -114,14 +128,53 @@ export default function Show({
                     )}
 
                     {productCount > 0 ? (
-                        <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                            {category.products.map((product) => (
-                                <StorefrontProductCard
-                                    key={product.id}
-                                    product={product}
-                                />
-                            ))}
-                        </section>
+                        <>
+                            <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                {products.data.map((product) => (
+                                    <StorefrontProductCard
+                                        key={product.id}
+                                        product={product}
+                                    />
+                                ))}
+                            </section>
+                            
+                            <div className="mt-12 flex items-center justify-between border-t border-slate-200/50 pt-6">
+                                <div>
+                                    <p className="text-sm text-slate-500">
+                                        Showing <span className="font-medium text-slate-900">{products.from}</span> to <span className="font-medium text-slate-900">{products.to}</span> of <span className="font-medium text-slate-900">{products.total}</span> results
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    {products.prev_page_url ? (
+                                        <Link
+                                            href={products.prev_page_url}
+                                            preserveScroll
+                                            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-primary"
+                                        >
+                                            Previous
+                                        </Link>
+                                    ) : (
+                                        <span className="inline-flex cursor-not-allowed items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400">
+                                            Previous
+                                        </span>
+                                    )}
+                                    
+                                    {products.next_page_url ? (
+                                        <Link
+                                            href={products.next_page_url}
+                                            preserveScroll
+                                            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-primary"
+                                        >
+                                            Next
+                                        </Link>
+                                    ) : (
+                                        <span className="inline-flex cursor-not-allowed items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400">
+                                            Next
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </>
                     ) : (
                         <section className="rounded-4xl border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-[0_1.25rem_3.125rem_-2.5rem_rgba(15,23,42,0.45)]">
                             <h2 className="text-2xl font-semibold text-slate-950">
@@ -140,10 +193,8 @@ export default function Show({
                         </section>
                     )}
                 </main>
-
-                <Footer categories={storefront.categories} />
-            </div>
-            <FloatingContactActions />
         </>
     );
 }
+
+Show.layout = (page: React.ReactNode) => <StorefrontLayout className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_36%,#ffffff_100%)] text-foreground">{page}</StorefrontLayout>;

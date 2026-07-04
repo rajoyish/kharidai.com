@@ -15,14 +15,16 @@ type RestState = {
 
 /**
  * A trio of overlapping "hero" cards that fan out on mount and lift toward the
- * viewer on hover/focus, mirroring the storefront marketing visual.
+ * viewer on hover, focus, or touch, mirroring the storefront marketing visual.
  *
  * All motion is GSAP-driven and client-side only. `gsap.matchMedia()` owns the
- * responsive breakpoints, the entrance timeline, and the hover listeners; its
+ * responsive breakpoints, the entrance timeline, and the pointer listeners; its
  * single `revert()` on unmount kills every tween, removes every listener, and
  * strips the inline styles GSAP added — so there are no dangling timers or
- * leaked handlers. `prefers-reduced-motion` skips the entrance/hover motion
- * while still placing the cards in their final positions.
+ * leaked handlers. On touch devices a card lifts when tapped and settles when
+ * another card or empty space is tapped, tracked via a single capture-phase
+ * document listener that is also torn down. `prefers-reduced-motion` skips the
+ * entrance/lift motion while still placing the cards in their final positions.
  */
 export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -43,16 +45,22 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
 
         mm.add(
             {
+                // `isDesktop` and `isMobile` together cover every width so the
+                // callback always runs — matchMedia only invokes it when at
+                // least one query matches, and a lone `min-width` gate would
+                // leave phones (where nothing matches) with no positioning.
                 isDesktop: '(min-width: 48rem)',
+                isMobile: '(max-width: 47.999rem)',
                 reduceMotion: '(prefers-reduced-motion: reduce)',
             },
             (context) => {
                 const { isDesktop, reduceMotion } = context.conditions as {
                     isDesktop: boolean;
+                    isMobile: boolean;
                     reduceMotion: boolean;
                 };
 
-                const spread = isDesktop ? 224 : 128;
+                const spread = isDesktop ? 224 : 120;
                 const rest: RestState[] = [
                     { x: -spread, y: 48, rotate: -8 }, // left card
                     { x: 0, y: -16, rotate: 0 }, // center card
@@ -79,6 +87,11 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
                         clearProps: 'opacity',
                     });
                 }
+
+                // Which card the current touch is holding open, plus its
+                // matching settle, so a tap elsewhere can put it back.
+                let activeCard: HTMLElement | null = null;
+                let activeSettle: (() => void) | null = null;
 
                 const teardowns = cards.map((card, index) => {
                     const lift = () => {
@@ -124,20 +137,61 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
                         });
                     };
 
+                    // On touch there is no hover, so a tap promotes this card
+                    // and records how to settle it later. The capture-phase
+                    // document listener below has already settled the card that
+                    // was previously open before this fires.
+                    const activate = () => {
+                        activeCard = card;
+                        activeSettle = settle;
+                        lift();
+                    };
+
                     card.addEventListener('mouseenter', lift);
                     card.addEventListener('mouseleave', settle);
                     card.addEventListener('focusin', lift);
                     card.addEventListener('focusout', settle);
+                    card.addEventListener('touchstart', activate, {
+                        passive: true,
+                    });
 
                     return () => {
                         card.removeEventListener('mouseenter', lift);
                         card.removeEventListener('mouseleave', settle);
                         card.removeEventListener('focusin', lift);
                         card.removeEventListener('focusout', settle);
+                        card.removeEventListener('touchstart', activate);
                     };
                 });
 
+                // Settle the open card when a touch lands outside it (empty
+                // space, or another card — which then lifts via its own
+                // handler). Capture phase guarantees this runs before the
+                // per-card `touchstart` above.
+                const settleOnOutsideTouch = (event: TouchEvent) => {
+                    const target = event.target as Node | null;
+
+                    if (
+                        activeCard &&
+                        (!target || !activeCard.contains(target))
+                    ) {
+                        activeSettle?.();
+                        activeCard = null;
+                        activeSettle = null;
+                    }
+                };
+
+                document.addEventListener('touchstart', settleOnOutsideTouch, {
+                    passive: true,
+                    capture: true,
+                });
+
                 return () => {
+                    document.removeEventListener(
+                        'touchstart',
+                        settleOnOutsideTouch,
+                        { capture: true },
+                    );
                     teardowns.forEach((teardown) => teardown());
                 };
             },
@@ -156,7 +210,7 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
             <div
                 data-fan-card
                 tabIndex={0}
-                className="absolute z-20 w-64 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                className="absolute z-20 w-52 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 md:w-64"
             >
                 <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-accent shadow-inner">
                     <Sparkles className="h-4 w-4" />
@@ -169,7 +223,7 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
             <div
                 data-fan-card
                 tabIndex={0}
-                className="absolute z-30 w-72 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_1.25rem_3.125rem_-0.75rem_rgba(0,0,0,0.1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                className="absolute z-30 w-60 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_1.25rem_3.125rem_-0.75rem_rgba(0,0,0,0.1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:w-72 md:p-8"
             >
                 <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner">
                     <ShoppingBag className="h-5 w-5" />
@@ -187,7 +241,7 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
             <div
                 data-fan-card
                 tabIndex={0}
-                className="absolute z-20 w-64 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                className="absolute z-20 w-52 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:w-64"
             >
                 <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary shadow-inner">
                     <Archive className="h-4 w-4" />

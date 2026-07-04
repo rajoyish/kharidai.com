@@ -1,16 +1,14 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { home } from '@/routes';
 import { index as cartIndex } from '@/routes/cart';
 import { show as showCategory } from '@/routes/categories';
-import type { StorefrontNavigationCategory } from '@/types';
+import type { PageProps } from '@/types';
 
-export function Footer({
-    categories,
-}: {
-    categories: StorefrontNavigationCategory[];
-}) {
+export function Footer() {
+    const { storefront } = usePage<PageProps>().props;
+    const categories = storefront?.categories || [];
     const logoRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
 

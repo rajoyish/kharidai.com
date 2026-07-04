@@ -1,4 +1,5 @@
 import type { Auth } from './auth';
+import type { StorefrontNavigationData } from './storefront';
 
 export type SeoData = {
     name: string;
@@ -22,6 +23,7 @@ export type SharedData = {
     cartCount: number;
     sidebarOpen: boolean;
     seo: SeoData;
+    storefront: StorefrontNavigationData;
 };
 
 export type PageProps = SharedData & {
