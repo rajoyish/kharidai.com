@@ -1,5 +1,5 @@
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
 type Zone = {
@@ -50,14 +50,17 @@ export function ShippingSelector({
 }) {
     const applySavedAddress = (id: string) => {
         const address = addresses.find((a) => a.id === Number(id));
+
         if (!address) {
             return;
         }
+
         setData('recipient_name', address.recipient_name);
         setData('mobile_number', address.mobile_number);
         setData('address_line', address.address_line);
         setData('city', address.city);
         setData('landmark', address.landmark ?? '');
+
         if (address.shipping_zone_id) {
             setData('shipping_zone_id', address.shipping_zone_id);
         }

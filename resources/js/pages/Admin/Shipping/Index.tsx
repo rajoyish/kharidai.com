@@ -77,6 +77,7 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (isCreating) {
             post('/admin/shipping', { onSuccess: handleCancel });
         } else if (editingZone) {
