@@ -1,4 +1,5 @@
-import { useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
+import { create as createUser } from '@/actions/App/Http/Controllers/Admin/UserController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -64,7 +65,15 @@ export default function UsersIndex({ users }: { users: User[] }) {
         <>
             <SeoHead title="User Management" />
 
-            <PagePanel title="User Management" variant="transparent">
+            <PagePanel
+                title="User Management"
+                variant="transparent"
+                actions={
+                    <Button asChild className="w-full sm:w-auto">
+                        <Link href={createUser.url()}>New User</Link>
+                    </Button>
+                }
+            >
                 <Table>
                     <TableHeader>
                         <TableRow>

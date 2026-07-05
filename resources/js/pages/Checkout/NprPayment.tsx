@@ -12,6 +12,9 @@ type Order = {
     id: number;
     order_number: string;
     total_amount: string;
+    amount_due_now: string;
+    balance_due: string;
+    payment_option: string | null;
     currency: string;
 };
 
@@ -74,8 +77,15 @@ export default function NprPayment({ order }: { order: Order }) {
                         </div>
                         <h3 className="text-lg font-semibold">Scan to Pay</h3>
                         <p className="mt-2 text-2xl font-bold text-primary">
-                            Rs. {order.total_amount}
+                            Rs. {order.amount_due_now}
                         </p>
+                        {Number(order.balance_due) > 0 && (
+                            <p className="mt-1 text-center text-sm text-muted-foreground">
+                                Pay Rs. {order.amount_due_now} now (shipping).
+                                Remaining Rs. {order.balance_due} is collected on
+                                delivery.
+                            </p>
+                        )}
                         <p className="mt-2 text-center text-sm text-muted-foreground">
                             Scan the QR code using your mobile banking app. Please note that payments made via eSewa or Khalti may incur a transaction fee.
                         </p>

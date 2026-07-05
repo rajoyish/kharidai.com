@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentOption;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,12 +20,34 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property string $status
  * @property float $total_amount
+ * @property float $items_total
+ * @property float $shipping_total
+ * @property float $amount_due_now
+ * @property float $balance_due
+ * @property PaymentOption|null $payment_option
+ * @property int|null $shipping_address_id
  * @property array|null $additional_data
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property User $user
+ * @property Shipment|null $shipment
+ * @property ShippingAddress|null $shippingAddress
  */
-#[Fillable(['order_number', 'user_id', 'status', 'total_amount', 'additional_data', 'can_reupload_receipt', 'request_receipt_upload'])]
+#[Fillable([
+    'order_number',
+    'user_id',
+    'status',
+    'total_amount',
+    'items_total',
+    'shipping_total',
+    'amount_due_now',
+    'balance_due',
+    'payment_option',
+    'shipping_address_id',
+    'additional_data',
+    'can_reupload_receipt',
+    'request_receipt_upload',
+])]
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
@@ -39,6 +62,7 @@ class Order extends Model
             'additional_data' => 'array',
             'can_reupload_receipt' => 'boolean',
             'request_receipt_upload' => 'boolean',
+            'payment_option' => PaymentOption::class,
         ];
     }
 
@@ -90,6 +114,22 @@ class Order extends Model
         return $this->hasMany(OrderMessage::class);
     }
 
+    /**
+     * @return HasOne<Shipment, $this>
+     */
+    public function shipment(): HasOne
+    {
+        return $this->hasOne(Shipment::class);
+    }
+
+    /**
+     * @return BelongsTo<ShippingAddress, $this>
+     */
+    public function shippingAddress(): BelongsTo
+    {
+        return $this->belongsTo(ShippingAddress::class);
+    }
+
     protected $appends = ['profit'];
 
     public function getProfitAttribute(): float
@@ -117,6 +157,38 @@ class Order extends Model
         return Attribute::make(
             get: fn ($value) => $value / 100,
             set: fn ($value) => $value * 100,
+        );
+    }
+
+    protected function itemsTotal(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => (float) $value / 100,
+            set: fn ($value) => (int) round($value * 100),
+        );
+    }
+
+    protected function shippingTotal(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => (float) $value / 100,
+            set: fn ($value) => (int) round($value * 100),
+        );
+    }
+
+    protected function amountDueNow(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => (float) $value / 100,
+            set: fn ($value) => (int) round($value * 100),
+        );
+    }
+
+    protected function balanceDue(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => (float) $value / 100,
+            set: fn ($value) => (int) round($value * 100),
         );
     }
 }

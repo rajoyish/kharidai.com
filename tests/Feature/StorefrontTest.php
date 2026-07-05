@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ProductType;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,8 +27,10 @@ it('can view the homepage', function () {
     );
 });
 
-it('can view the homepage when categories include in-stock products', function () {
-    $category = Category::factory()->create();
+it('groups the homepage into digital, physical and service sections', function () {
+    $category = Category::factory()->create([
+        'type' => ProductType::Digital,
+    ]);
 
     Product::factory()->create([
         'category_id' => $category->id,
@@ -40,18 +43,60 @@ it('can view the homepage when categories include in-stock products', function (
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('welcome')
-        ->has('categories', 1)
-        ->where('categories.0.name', $category->name)
-        ->where('categories.0.products.0.title', 'Categorized Product'),
+        ->has('sections', 3)
+        ->where('sections.0.type', 'digital')
+        ->where('sections.0.label', 'Digital Products')
+        ->has('sections.0.categories', 1)
+        ->where('sections.0.categories.0.name', $category->name)
+        ->where('sections.0.categories.0.products.0.title', 'Categorized Product')
+        ->where('sections.1.type', 'physical')
+        ->has('sections.1.categories', 0)
+        ->where('sections.2.type', 'service')
+        ->has('sections.2.categories', 0),
     );
 });
 
-it('shares storefront navigation categories separately from page categories', function () {
+it('scopes homepage sections strictly by product type', function () {
+    $digitalCategory = Category::factory()->create([
+        'name' => 'Digital Downloads',
+        'type' => ProductType::Digital,
+    ]);
+    $physicalCategory = Category::factory()->create([
+        'name' => 'Gadgets',
+        'type' => ProductType::Physical,
+    ]);
+
+    Product::factory()->create([
+        'category_id' => $digitalCategory->id,
+        'title' => 'A Digital Item',
+        'in_stock' => true,
+    ]);
+    Product::factory()->physical()->create([
+        'category_id' => $physicalCategory->id,
+        'title' => 'A Physical Item',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('home'));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('welcome')
+        ->has('sections.0.categories', 1)
+        ->where('sections.0.categories.0.name', 'Digital Downloads')
+        ->has('sections.1.categories', 1)
+        ->where('sections.1.categories.0.name', 'Gadgets'),
+    );
+});
+
+it('shares storefront navigation grouped by product type', function () {
     $visibleCategory = Category::factory()->create([
         'name' => 'Visible Category',
+        'type' => ProductType::Digital,
     ]);
     $hiddenCategory = Category::factory()->create([
         'name' => 'Hidden Category',
+        'type' => ProductType::Digital,
     ]);
 
     Product::factory()->create([
@@ -70,17 +115,22 @@ it('shares storefront navigation categories separately from page categories', fu
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('welcome')
-        ->has('categories', 1)
-        ->where('categories.0.name', $visibleCategory->name)
-        ->has('storefront.categories', 1)
-        ->where('storefront.categories.0.name', $visibleCategory->name)
-        ->missing('storefront.categories.0.products'),
+        ->where('sections.0.type', 'digital')
+        ->has('sections.0.categories', 1)
+        ->where('sections.0.categories.0.name', $visibleCategory->name)
+        ->has('storefront.groups', 1)
+        ->where('storefront.groups.0.type', 'digital')
+        ->where('storefront.groups.0.label', 'Digital Products')
+        ->has('storefront.groups.0.categories', 1)
+        ->where('storefront.groups.0.categories.0.name', $visibleCategory->name)
+        ->missing('storefront.groups.0.categories.0.products'),
     );
 });
 
 it('refreshes cached storefront navigation when product stock changes', function () {
     $category = Category::factory()->create([
         'name' => 'Cached Category',
+        'type' => ProductType::Digital,
     ]);
     $product = Product::factory()->create([
         'category_id' => $category->id,
@@ -92,9 +142,9 @@ it('refreshes cached storefront navigation when product stock changes', function
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->component('welcome')
-            ->has('categories', 1)
-            ->has('storefront.categories', 1)
-            ->where('storefront.categories.0.name', $category->name),
+            ->has('sections.0.categories', 1)
+            ->has('storefront.groups', 1)
+            ->where('storefront.groups.0.categories.0.name', $category->name),
         );
 
     $product->update([
@@ -105,14 +155,15 @@ it('refreshes cached storefront navigation when product stock changes', function
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->component('welcome')
-            ->has('categories', 0)
-            ->has('storefront.categories', 0),
+            ->has('sections.0.categories', 0)
+            ->has('storefront.groups', 0),
         );
 });
 
 it('recovers from an invalid storefront navigation cache payload', function () {
     $category = Category::factory()->create([
         'name' => 'Recovered Category',
+        'type' => ProductType::Digital,
     ]);
 
     Product::factory()->create([
@@ -130,8 +181,8 @@ it('recovers from an invalid storefront navigation cache payload', function () {
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->component('welcome')
-            ->has('storefront.categories', 1)
-            ->where('storefront.categories.0.name', $category->name),
+            ->has('storefront.groups', 1)
+            ->where('storefront.groups.0.categories.0.name', $category->name),
         );
 });
 
@@ -165,8 +216,8 @@ it('can view a category page with its in-stock products', function () {
     $response->assertInertia(fn (Assert $page) => $page
         ->component('Categories/Show')
         ->where('category.name', $category->name)
-        ->has('category.products', 1)
-        ->where('category.products.0.title', 'Visible Product')
+        ->has('products.data', 1)
+        ->where('products.data.0.title', 'Visible Product')
         ->has('categories', 2)
         ->where('seo.title', $category->name.' - '.config('app.name'))
         ->where('seo.url', route('categories.show', $category)),
@@ -178,6 +229,94 @@ it('can view a category page with its in-stock products', function () {
     $response->assertSee(
         '<meta data-inertia="twitter:url" name="twitter:url" content="'.route('categories.show', $category).'" />',
         false,
+    );
+});
+
+it('renders the digital products page scoped to digital data only', function () {
+    $digitalCategory = Category::factory()->create([
+        'name' => 'Digital Downloads',
+        'type' => ProductType::Digital,
+    ]);
+    $physicalCategory = Category::factory()->create([
+        'name' => 'Gadgets',
+        'type' => ProductType::Physical,
+    ]);
+
+    Product::factory()->create([
+        'category_id' => $digitalCategory->id,
+        'title' => 'Digital Item',
+        'in_stock' => true,
+    ]);
+    Product::factory()->physical()->create([
+        'category_id' => $physicalCategory->id,
+        'title' => 'Physical Item',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('digital-products.index'));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/DigitalProducts')
+        ->where('type', 'digital')
+        ->where('label', 'Digital Products')
+        ->has('categories', 1)
+        ->where('categories.0.name', 'Digital Downloads')
+        ->where('categories.0.products.0.title', 'Digital Item')
+        ->where('seo.title', 'Digital Products - '.config('app.name'))
+        ->where('seo.url', route('digital-products.index')),
+    );
+});
+
+it('renders the physical products page scoped to physical data only', function () {
+    $physicalCategory = Category::factory()->create([
+        'name' => 'Gadgets',
+        'type' => ProductType::Physical,
+    ]);
+
+    Category::factory()->create([
+        'name' => 'Digital Downloads',
+        'type' => ProductType::Digital,
+    ]);
+
+    Product::factory()->physical()->create([
+        'category_id' => $physicalCategory->id,
+        'title' => 'Physical Item',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('physical-products.index'));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/PhysicalProducts')
+        ->where('type', 'physical')
+        ->has('categories', 1)
+        ->where('categories.0.name', 'Gadgets'),
+    );
+});
+
+it('renders the public services page scoped to service data only', function () {
+    $serviceCategory = Category::factory()->create([
+        'name' => 'Consulting',
+        'type' => ProductType::Service,
+    ]);
+
+    Product::factory()->service()->create([
+        'category_id' => $serviceCategory->id,
+        'title' => 'Advisory Service',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('services.index'));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/Services')
+        ->where('type', 'service')
+        ->where('label', 'Services')
+        ->has('categories', 1)
+        ->where('categories.0.name', 'Consulting'),
     );
 });
 

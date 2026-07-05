@@ -31,6 +31,8 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import { ServiceConfigFields } from './ServiceConfigFields';
+
 export type ProductGallery = {
     id: number;
     image_path: string;
@@ -39,11 +41,13 @@ export type ProductGallery = {
 
 export type Product = {
     id: number;
+    type?: string;
     title: string;
     slug?: string;
     description: string;
     image?: string;
     in_stock?: boolean;
+    is_visible?: boolean;
     category_id?: number | null;
     galleries?: ProductGallery[];
 };
@@ -53,11 +57,29 @@ type Category = {
     name: string;
 };
 
+type ProductTypeOption = {
+    value: string;
+    label: string;
+};
+
 type ProductFormProps = {
-    product?: Product;
+    product?: Product & {
+        serviceDetail?: {
+            pricing_strategy?: string;
+            pricing_config?: any;
+            requires_brief?: boolean;
+            delivery_days?: number | null;
+            revisions?: number | null;
+            requires_contract?: boolean;
+            requires_advance?: boolean;
+            advance_type?: string | null;
+            advance_value?: number | null;
+        };
+    };
     submitUrl: string;
     isEditing?: boolean;
     categories?: Category[];
+    productTypes?: ProductTypeOption[];
 };
 
 type GalleryImage = {
@@ -73,14 +95,26 @@ export function ProductForm({
     submitUrl,
     isEditing = false,
     categories = [],
+    productTypes = [],
 }: ProductFormProps) {
     const { data, setData, post, processing, errors, transform } = useForm({
         _method: isEditing ? 'put' : 'post',
+        type: product?.type || 'digital',
         title: product?.title || '',
         description: product?.description || '',
         image: null as File | null,
         in_stock: product?.in_stock ?? true,
+        is_visible: product?.is_visible ?? true,
         category_id: product?.category_id || '',
+        pricing_strategy: product?.serviceDetail?.pricing_strategy || '',
+        pricing_config: product?.serviceDetail?.pricing_config || {},
+        requires_brief: product?.serviceDetail?.requires_brief ?? true,
+        delivery_days: product?.serviceDetail?.delivery_days || '',
+        revisions: product?.serviceDetail?.revisions || '',
+        requires_contract: product?.serviceDetail?.requires_contract ?? false,
+        requires_advance: product?.serviceDetail?.requires_advance ?? false,
+        advance_type: product?.serviceDetail?.advance_type || 'percent',
+        advance_value: product?.serviceDetail?.advance_value || '',
     });
 
     const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => {
@@ -132,6 +166,7 @@ export function ProductForm({
         return {
             ...data,
             in_stock: data.in_stock ? 1 : 0,
+            is_visible: data.is_visible ? 1 : 0,
             update_galleries: 1,
             existing_galleries,
             new_galleries,
@@ -234,7 +269,17 @@ return;
                     </CardDescription>
                 </CardHeader>
                 <form onSubmit={submit}>
-                    <CardContent className="grid gap-6 pb-6">
+                    {Object.keys(errors).length > 0 && (
+                        <div className="mx-6 mt-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                            <p className="font-semibold mb-1">Please fix the following errors:</p>
+                            <ul className="list-disc pl-5">
+                                {Object.entries(errors).map(([key, error]) => (
+                                    <li key={key}>{error}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    <CardContent className="grid gap-6 pb-6 pt-6">
                         <div className="grid gap-2">
                             <Label htmlFor="title">Title</Label>
                             <Input
@@ -252,6 +297,34 @@ return;
                                 </div>
                             )}
                         </div>
+
+                        {productTypes.length > 0 && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="type">Product Type</Label>
+                                <select
+                                    id="type"
+                                    className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-sm ring-offset-background placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                                    value={data.type}
+                                    onChange={(e) =>
+                                        setData('type', e.target.value)
+                                    }
+                                >
+                                    {productTypes.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.type && (
+                                    <div className="text-sm font-medium text-destructive">
+                                        {errors.type}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="grid gap-2">
                             <Label htmlFor="category_id">Category</Label>
@@ -297,6 +370,32 @@ return;
                                 </div>
                             )}
                         </div>
+
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                id="is_visible"
+                                checked={data.is_visible}
+                                onCheckedChange={(checked) =>
+                                    setData('is_visible', checked)
+                                }
+                            />
+                            <Label htmlFor="is_visible">
+                                Visible on the storefront
+                            </Label>
+                            {errors.is_visible && (
+                                <div className="ml-2 text-sm font-medium text-destructive">
+                                    {errors.is_visible}
+                                </div>
+                            )}
+                        </div>
+
+                        {data.type === 'service' && (
+                            <ServiceConfigFields
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                            />
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Product Gallery */}

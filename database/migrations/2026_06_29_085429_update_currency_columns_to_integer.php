@@ -17,7 +17,7 @@ return new class extends Migration
                 $table->dropColumn('purchase_price_usd');
             });
         }
-        
+
         // Multiply by 100 first to preserve data
         DB::statement('UPDATE product_variants SET price_npr = price_npr * 100, purchase_price_npr = purchase_price_npr * 100');
         DB::statement('UPDATE order_items SET price = price * 100, purchase_price = purchase_price * 100');

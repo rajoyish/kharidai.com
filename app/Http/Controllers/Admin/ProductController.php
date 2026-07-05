@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AdvanceType;
+use App\Enums\PricingStrategy;
+use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
@@ -9,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -24,12 +28,16 @@ class ProductController extends Controller
     {
         return Inertia::render('Admin/Products/Create', [
             'categories' => Category::orderBy('name')->get(),
+            'productTypes' => $this->productTypeOptions(),
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate($this->productValidationRules(), $this->productValidationMessages());
+        $validated = $request->validate(
+            array_merge($this->productValidationRules(), $this->serviceValidationRules($request)),
+            $this->productValidationMessages(),
+        );
 
         $uploadedFiles = [];
 
@@ -44,6 +52,7 @@ class ProductController extends Controller
             DB::transaction(function () use ($validated, $request, $galleryPaths) {
                 $product = Product::create($validated);
                 $this->syncGalleries($request, $product, $galleryPaths);
+                $this->syncServiceDetail($request, $product);
             });
         } catch (\Throwable $e) {
             if (! empty($uploadedFiles)) {
@@ -62,12 +71,16 @@ class ProductController extends Controller
         return Inertia::render('Admin/Products/Edit', [
             'product' => $product,
             'categories' => Category::orderBy('name')->get(),
+            'productTypes' => $this->productTypeOptions(),
         ]);
     }
 
     public function update(Request $request, Product $product)
     {
-        $validated = $request->validate($this->productValidationRules(), $this->productValidationMessages());
+        $validated = $request->validate(
+            array_merge($this->productValidationRules(), $this->serviceValidationRules($request)),
+            $this->productValidationMessages(),
+        );
 
         unset($validated['image']);
         $oldImage = null;
@@ -87,6 +100,7 @@ class ProductController extends Controller
             DB::transaction(function () use ($validated, $request, $product, $galleryPaths) {
                 $product->update($validated);
                 $this->syncGalleries($request, $product, $galleryPaths);
+                $this->syncServiceDetail($request, $product);
             });
 
             if ($oldImage) {
@@ -126,16 +140,42 @@ class ProductController extends Controller
         return redirect()->back()->with('success', "Product is now {$status}.");
     }
 
+    public function toggleVisibility(Product $product)
+    {
+        $product->update([
+            'is_visible' => ! $product->is_visible,
+        ]);
+
+        $status = $product->is_visible ? 'visible on the storefront' : 'hidden from the storefront';
+
+        return redirect()->back()->with('success', "Product is now {$status}.");
+    }
+
+    /**
+     * The selectable product types for admin forms.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    protected function productTypeOptions(): array
+    {
+        return array_map(
+            fn (ProductType $type): array => ['value' => $type->value, 'label' => $type->label()],
+            ProductType::cases(),
+        );
+    }
+
     /**
      * @return array<string, string>
      */
     protected function productValidationRules(): array
     {
         return [
+            'type' => ['nullable', Rule::enum(ProductType::class)],
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'in_stock' => 'boolean',
+            'is_visible' => 'boolean',
             'category_id' => 'nullable|exists:categories,id',
             'update_galleries' => 'nullable|boolean',
             'new_galleries' => 'nullable|array|max:6',
@@ -156,6 +196,69 @@ class ProductController extends Controller
             'gallery_orders.max' => 'A product can have a maximum of 6 gallery images.',
             'new_galleries.*.max' => 'Each new image must be strictly under 1 MB.',
         ];
+    }
+
+    /**
+     * Validation rules for the service configuration, only enforced when the
+     * product being saved is a service. The `pricing_config` payload is validated
+     * against the selected strategy's own rules so nothing is hardcoded here.
+     *
+     * @return array<string, mixed>
+     */
+    protected function serviceValidationRules(Request $request): array
+    {
+        if ($request->input('type') !== ProductType::Service->value) {
+            return [];
+        }
+
+        $rules = [
+            'pricing_strategy' => ['required', Rule::enum(PricingStrategy::class)],
+            'pricing_config' => ['nullable', 'array'],
+            'requires_brief' => ['boolean'],
+            'delivery_days' => ['nullable', 'integer', 'min:0'],
+            'revisions' => ['nullable', 'integer', 'min:0'],
+            'requires_contract' => ['boolean'],
+            'requires_advance' => ['boolean'],
+            'advance_type' => [Rule::requiredIf($request->boolean('requires_advance')), 'nullable', Rule::enum(AdvanceType::class)],
+            'advance_value' => [Rule::requiredIf($request->boolean('requires_advance')), 'nullable', 'integer', 'min:0'],
+        ];
+
+        $strategy = PricingStrategy::tryFrom((string) $request->input('pricing_strategy'));
+
+        if ($strategy !== null) {
+            foreach ($strategy->calculator()->configRules() as $key => $rule) {
+                $rules["pricing_config.{$key}"] = $rule;
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Create or update the service detail for a service product, and remove it
+     * when a product is no longer a service.
+     */
+    protected function syncServiceDetail(Request $request, Product $product): void
+    {
+        if ($product->type !== ProductType::Service) {
+            $product->serviceDetail()->delete();
+
+            return;
+        }
+
+        $product->serviceDetail()->updateOrCreate([], [
+            'requires_brief' => $request->boolean('requires_brief', true),
+            'delivery_days' => $request->input('delivery_days'),
+            'revisions' => $request->input('revisions'),
+            'pricing_strategy' => $request->input('pricing_strategy'),
+            'pricing_config' => $request->input('pricing_config'),
+            'requires_contract' => $request->boolean('requires_contract'),
+            'requires_advance' => $request->boolean('requires_advance'),
+            'advance_type' => $request->boolean('requires_advance') ? $request->input('advance_type') : null,
+            'advance_value' => $request->boolean('requires_advance') ? $request->input('advance_value') : null,
+        ]);
+
+        $product->ensureOrderableVariant();
     }
 
     /**

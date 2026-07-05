@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ProductType;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,9 +19,26 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
+            'type' => ProductType::Digital,
             'title' => $this->faker->words(3, true),
             'description' => $this->faker->paragraph(),
             'in_stock' => true,
+            'is_visible' => true,
         ];
+    }
+
+    public function physical(): static
+    {
+        return $this->state(['type' => ProductType::Physical]);
+    }
+
+    public function service(): static
+    {
+        return $this->state(['type' => ProductType::Service]);
+    }
+
+    public function hidden(): static
+    {
+        return $this->state(['is_visible' => false]);
     }
 }

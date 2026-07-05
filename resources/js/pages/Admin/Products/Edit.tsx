@@ -4,7 +4,9 @@ import { ProductForm  } from '@/components/ProductForm';
 import type {Product} from '@/components/ProductForm';
 import { SeoHead } from '@/components/seo-head';
 
-export default function EditProduct({ product, categories }: { product: Product, categories: any[] }) {
+type ProductTypeOption = { value: string; label: string };
+
+export default function EditProduct({ product, categories, productTypes }: { product: Product, categories: any[], productTypes: ProductTypeOption[] }) {
     return (
         <>
             <SeoHead title="Edit Product" />
@@ -15,6 +17,7 @@ export default function EditProduct({ product, categories }: { product: Product,
                     submitUrl={update.url({ product: product.slug! })}
                     isEditing={true}
                     categories={categories}
+                    productTypes={productTypes}
                 />
             </PagePanel>
         </>

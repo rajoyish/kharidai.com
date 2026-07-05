@@ -1,10 +1,11 @@
 import { useForm } from '@inertiajs/react';
-import { CheckCircle2 } from 'lucide-react';
+import { useMemo } from 'react';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
+import { PaymentOptionToggle } from '@/components/payment-option-toggle';
 import { SeoHead } from '@/components/seo-head';
+import { ShippingSelector } from '@/components/shipping-selector';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-
 import { Textarea } from '@/components/ui/textarea';
 
 type Product = {
@@ -32,16 +33,74 @@ type Cart = {
     items: CartItem[];
 };
 
-export default function CheckoutIndex({ cart }: { cart: Cart }) {
+type Zone = {
+    id: number;
+    name: string;
+    fee: number;
+    min_days: number | null;
+    max_days: number | null;
+};
+
+type SavedAddress = {
+    id: number;
+    recipient_name: string;
+    mobile_number: string;
+    address_line: string;
+    city: string;
+    landmark: string | null;
+    shipping_zone_id: number | null;
+};
+
+const rupees = (value: number) => `Rs. ${value.toFixed(0)}`;
+
+export default function CheckoutIndex({
+    cart,
+    hasPhysicalItems,
+    isPhysicalOnly,
+    zones,
+    addresses,
+}: {
+    cart: Cart;
+    hasPhysicalItems: boolean;
+    isPhysicalOnly: boolean;
+    zones: Zone[];
+    addresses: SavedAddress[];
+}) {
     const { data, setData, post, processing, errors } = useForm({
         additional_data: '',
+        shipping_zone_id: hasPhysicalItems ? (zones[0]?.id ?? '') : ('' as number | ''),
+        recipient_name: '',
+        mobile_number: '',
+        address_line: '',
+        city: '',
+        landmark: '',
+        save_address: false as boolean,
+        payment_option: 'full',
     });
 
-    const totalNpr = cart.items.reduce((total, item) => {
-        return (
-            total + parseFloat(item.product_variant.price_npr) * item.quantity
-        );
-    }, 0);
+    const itemsTotal = useMemo(
+        () =>
+            cart.items.reduce(
+                (total, item) =>
+                    total +
+                    parseFloat(item.product_variant.price_npr) * item.quantity,
+                0,
+            ),
+        [cart.items],
+    );
+
+    const selectedZone = zones.find((zone) => zone.id === data.shipping_zone_id);
+    const shippingTotal = hasPhysicalItems ? (selectedZone?.fee ?? 0) : 0;
+    const total = itemsTotal + shippingTotal;
+    const amountDueNow =
+        data.payment_option === 'shipping_only' ? shippingTotal : total;
+    const balanceDue =
+        data.payment_option === 'shipping_only' ? itemsTotal : 0;
+
+
+    const handleSetData = (field: string, value: any) => {
+        setData(field as any, value);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,8 +111,6 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
         <>
             <SeoHead title="Checkout" />
             <div className="flex min-h-screen flex-col bg-background text-foreground">
-
-
                 <main className="container mx-auto max-w-5xl flex-1 px-4 py-8">
                     <h1 className="mb-8 text-3xl font-bold tracking-tight">
                         Checkout
@@ -64,37 +121,40 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                         className="grid grid-cols-1 gap-8 lg:grid-cols-3"
                     >
                         <div className="space-y-8 lg:col-span-2">
-                            <div className="rounded-lg border bg-card p-6">
-                                <h2 className="mb-4 text-xl font-semibold">
-                                    Payment Method
-                                </h2>
-                                <div className="space-y-4">
-                                    <div className="flex items-start justify-between rounded-md border-2 border-primary bg-primary/5 p-4">
-                                        <Label
-                                            className="flex-1 cursor-default font-medium"
-                                        >
-                                            Pay via QR (NPR)
-                                            <p className="mt-1 text-sm font-normal text-muted-foreground">
-                                                Manual payment via local
-                                                bank/wallet transfer.
-                                            </p>
-                                        </Label>
-                                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
-                                    </div>
-                                </div>
-                            </div>
+                            {hasPhysicalItems && (
+                                <ShippingSelector
+                                    data={data as any}
+                                    setData={handleSetData}
+                                    errors={errors}
+                                    zones={zones}
+                                    addresses={addresses}
+                                />
+                            )}
+
+                            <PaymentOptionToggle
+                                data={data as any}
+                                setData={handleSetData}
+                                errors={errors}
+                                isPhysicalOnly={isPhysicalOnly}
+                                itemsTotal={itemsTotal}
+                                shippingTotal={shippingTotal}
+                            />
 
                             <div className="rounded-lg border bg-card p-6">
                                 <h2 className="mb-4 text-xl font-semibold">
                                     Additional Information (Optional)
                                 </h2>
                                 <div className="space-y-2">
-                                    <Label htmlFor="additional_data" className='inline-block mb-2'>
-                                        Special Instructions or Account Information
+                                    <Label
+                                        htmlFor="additional_data"
+                                        className="mb-2 inline-block"
+                                    >
+                                        Special Instructions or Account
+                                        Information
                                     </Label>
                                     <Textarea
                                         id="additional_data"
-                                        placeholder="Add any specific details required for this order (e.g.  Account Information for top-ups)"
+                                        placeholder="Add any specific details required for this order (e.g. Account Information for top-ups)"
                                         value={data.additional_data}
                                         onChange={(e) =>
                                             setData(
@@ -134,19 +194,46 @@ export default function CheckoutIndex({ cart }: { cart: Cart }) {
                                                 ({item.product_variant.name})
                                             </span>
                                             <span className="text-right font-medium">
-                                                {`Rs. ${(parseFloat(item.product_variant.price_npr) * item.quantity).toFixed(0)}`}
+                                                {rupees(
+                                                    parseFloat(
+                                                        item.product_variant
+                                                            .price_npr,
+                                                    ) * item.quantity,
+                                                )}
                                             </span>
                                         </div>
                                     ))}
                                 </div>
 
                                 <div className="mb-6 space-y-2 border-t pt-4">
-                                    <div className="flex justify-between text-lg font-bold">
-                                        <span>Total</span>
-                                        <span>
-                                            {`Rs. ${totalNpr.toFixed(0)}`}
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">
+                                            Subtotal
                                         </span>
+                                        <span>{rupees(itemsTotal)}</span>
                                     </div>
+                                    {hasPhysicalItems && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">
+                                                Shipping
+                                            </span>
+                                            <span>{rupees(shippingTotal)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between border-t pt-2 text-lg font-bold">
+                                        <span>Total</span>
+                                        <span>{rupees(total)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm font-semibold text-primary">
+                                        <span>Pay now</span>
+                                        <span>{rupees(amountDueNow)}</span>
+                                    </div>
+                                    {balanceDue > 0 && (
+                                        <div className="flex justify-between text-sm text-muted-foreground">
+                                            <span>Due on delivery</span>
+                                            <span>{rupees(balanceDue)}</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <Button

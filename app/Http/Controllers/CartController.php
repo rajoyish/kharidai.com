@@ -26,7 +26,10 @@ class CartController extends Controller
         $validated = $request->validate([
             'product_variant_id' => 'required|exists:product_variants,id',
             'quantity' => 'required|integer|min:1',
+            'brief' => 'nullable|string|max:5000',
         ]);
+
+        $brief = ! empty($validated['brief']) ? ['note' => $validated['brief']] : null;
 
         $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
 
@@ -34,11 +37,15 @@ class CartController extends Controller
 
         if ($cartItem) {
             $cartItem->quantity += $validated['quantity'];
+            if ($brief !== null) {
+                $cartItem->brief = $brief;
+            }
             $cartItem->save();
         } else {
             $cart->items()->create([
                 'product_variant_id' => $validated['product_variant_id'],
                 'quantity' => $validated['quantity'],
+                'brief' => $brief,
             ]);
         }
 

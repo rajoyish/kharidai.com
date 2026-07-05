@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight } from 'lucide-react';
 
+import { Badge } from '@/components/ui/badge';
 import { show as showProduct } from '@/routes/products';
 import type { StorefrontProduct } from '@/types';
 
@@ -49,11 +50,15 @@ export function StorefrontProductCard({
 
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h3 className="text-lg leading-tight font-semibold text-slate-950">
-                        {product.title}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg leading-tight font-semibold text-slate-950">
+                            {product.title}
+                        </h3>
+                        {product.type === 'physical' && <Badge variant="secondary" className="text-xs py-0 h-5">Physical</Badge>}
+                        {product.type === 'service' && <Badge variant="secondary" className="text-xs py-0 h-5 bg-blue-100 text-blue-700 hover:bg-blue-200">Service</Badge>}
+                    </div>
                     {startingPrice && (
-                        <p className="mt-2 text-sm font-medium text-slate-600">
+                        <p className="mt-1 text-sm font-medium text-slate-600">
                             Starting at{' '}
                             <span className="text-base font-semibold text-primary">
                                 Rs. {startingPrice}
@@ -61,7 +66,7 @@ export function StorefrontProductCard({
                         </p>
                     )}
                 </div>
-                <span className="mt-0.5 rounded-full bg-slate-950 p-2 text-white transition-colors group-hover:bg-primary">
+                <span className="mt-0.5 rounded-full bg-accent p-2 text-white transition-colors group-hover:bg-primary">
                     <ArrowUpRight className="h-4 w-4" />
                 </span>
             </div>

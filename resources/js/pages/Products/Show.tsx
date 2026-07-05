@@ -6,6 +6,7 @@ import { add as addToCart } from '@/actions/App/Http/Controllers/CartController'
 import { JsonLd } from '@/components/json-ld';
 import { LightboxImageAnchor, shouldOpenLightboxFromClick } from '@/components/lightbox-image-link';
 import { ProductDescription } from '@/components/product-description';
+import { ServiceBriefForm } from '@/components/service-brief-form';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -34,8 +35,11 @@ type Product = {
     title: string;
     description: string | null;
     image: string | null;
+    type: string;
     variants: Variant[];
     galleries?: ProductGallery[];
+    physical_detail?: { weight_grams: number | null; free_shipping: boolean; } | null;
+    service_detail?: { delivery_days: number | null; revisions: number | null; requires_brief: boolean; } | null;
 };
 
 export default function Show({
@@ -61,18 +65,45 @@ export default function Show({
     const [mainImageIndex, setMainImageIndex] = useState(0);
     const [lightboxOpen, setLightboxOpen] = useState(false);
 
-    const { setData, post, processing } = useForm({
+    const requiresBrief =
+        product.type === 'service' && !!product.service_detail?.requires_brief;
+
+    // A service is priced after the work is scoped, so its default unit carries
+    // no upfront price: show it as "price on request" and skip the single-option
+    // variant picker. Multi-package services still let the customer choose.
+    const showVariantSelector =
+        product.type === 'service'
+            ? product.variants.length > 1
+            : product.variants.length > 0;
+    const showPrice =
+        !!selectedVariant && Number(selectedVariant.price_npr) > 0;
+
+    const { data, setData, post, processing, transform } = useForm({
         product_variant_id: selectedVariant?.id,
         quantity: 1,
+        brief: '',
     });
+
+    // Only submit the brief for services that require it; otherwise send null.
+    transform((formData) => ({
+        ...formData,
+        brief: requiresBrief ? formData.brief : null,
+    }));
 
     const handleAddToCart = () => {
         if (!selectedVariant) {
             return;
         }
 
+        if (requiresBrief && !data.brief.trim()) {
+            toast.error(
+                'Please provide brief information before adding to cart.',
+            );
+            return;
+        }
+
         post(addToCart.url(), {
-            only: ['cartCount'],
+            only: ['cartCount', 'errors'],
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -117,9 +148,9 @@ export default function Show({
                                     {product.title}
                                 </h1>
 
-                                {auth.user && selectedVariant && (
+                                {auth.user && showPrice && (
                                     <div className="text-2xl font-semibold text-primary">
-                                        Rs. {selectedVariant.price_npr}
+                                        Rs. {selectedVariant?.price_npr}
                                     </div>
                                 )}
                             </div>
@@ -161,7 +192,7 @@ export default function Show({
                             )}
 
                             {/* Variants Selection */}
-                            {auth.user && product.variants.length > 0 && (
+                            {auth.user && showVariantSelector && (
                                 <div>
                                     <h3 className="mb-3 text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Select Variant
@@ -208,6 +239,10 @@ export default function Show({
                                 </div>
                             )}
 
+                            {auth.user && product.type === 'service' && product.service_detail?.requires_brief && (
+                                <ServiceBriefForm brief={data.brief} setBrief={(val) => setData('brief', val)} />
+                            )}
+
                             {/* Add to Cart Actions */}
                             <div className="mt-2 flex flex-col gap-4">
                                 <Button
@@ -246,9 +281,27 @@ export default function Show({
                                     {product.title}
                                 </h1>
 
-                                {auth.user && selectedVariant && (
+                                {auth.user && showPrice && (
                                     <div className="mb-6 text-2xl font-semibold text-primary">
-                                        Rs. {selectedVariant.price_npr}
+                                        Rs. {selectedVariant?.price_npr}
+                                    </div>
+                                )}
+
+                                {product.type === 'physical' && product.physical_detail && (
+                                    <div className="mb-6 rounded-md bg-slate-50 p-4 border text-sm text-slate-700">
+                                        <p><strong>Physical Item</strong></p>
+                                        {product.physical_detail.weight_grams !== null && (
+                                            <p>Weight: {product.physical_detail.weight_grams} g</p>
+                                        )}
+                                        {product.physical_detail.free_shipping && <p>Free shipping.</p>}
+                                    </div>
+                                )}
+
+                                {product.type === 'service' && product.service_detail && (
+                                    <div className="mb-6 rounded-md bg-blue-50/50 p-4 border border-blue-100 text-sm text-slate-700">
+                                        <p><strong>Service Item</strong></p>
+                                        {product.service_detail.delivery_days && <p>Delivery within {product.service_detail.delivery_days} days</p>}
+                                        {product.service_detail.revisions !== null && <p>Revisions included: {product.service_detail.revisions}</p>}
                                     </div>
                                 )}
                             </div>

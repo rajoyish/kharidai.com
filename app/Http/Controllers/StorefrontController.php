@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProductType;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -19,25 +19,19 @@ class StorefrontController extends Controller
     {
         $defaultSeoImage = $this->defaultSeoImage();
         $search = request('search');
-        
-        $categories = $this->storefrontCategories($search);
-        
-        $uncategorizedQuery = $this->storefrontProductQuery(
-            Product::query()->whereNull('category_id'),
-        );
-        
-        if ($search) {
-            $uncategorizedQuery->where(function (Builder $query) use ($search) {
-                $query->where('title', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-        
-        $uncategorizedProducts = $uncategorizedQuery->get();
+
+        $sections = collect(ProductType::cases())
+            ->map(fn (ProductType $type): array => [
+                'type' => $type->value,
+                'label' => $type->pluralLabel(),
+                'tagline' => $type->tagline(),
+                'categories' => $this->storefrontCategories($type, $search),
+                'uncategorizedProducts' => $this->uncategorizedProducts($type, $search),
+            ])
+            ->all();
 
         return Inertia::render('welcome', [
-            'categories' => $categories,
-            'uncategorizedProducts' => $uncategorizedProducts,
+            'sections' => $sections,
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle('Your all-in-one marketplace!'),
@@ -55,17 +49,63 @@ class StorefrontController extends Controller
         ]);
     }
 
+    public function digitalProducts(): Response
+    {
+        return $this->renderTypePage(ProductType::Digital, 'digital-products.index', 'Storefront/DigitalProducts');
+    }
+
+    public function physicalProducts(): Response
+    {
+        return $this->renderTypePage(ProductType::Physical, 'physical-products.index', 'Storefront/PhysicalProducts');
+    }
+
+    public function services(): Response
+    {
+        return $this->renderTypePage(ProductType::Service, 'services.index', 'Storefront/Services');
+    }
+
+    /**
+     * Render a dedicated storefront page scoped exclusively to a single product type.
+     */
+    private function renderTypePage(ProductType $type, string $routeName, string $component): Response
+    {
+        $defaultSeoImage = $this->defaultSeoImage();
+        $search = request('search');
+
+        return Inertia::render($component, [
+            'type' => $type->value,
+            'label' => $type->pluralLabel(),
+            'tagline' => $type->tagline(),
+            'categories' => $this->storefrontCategories($type, $search),
+            'uncategorizedProducts' => $this->uncategorizedProducts($type, $search),
+            'seo' => [
+                'name' => config('app.name'),
+                'title' => $this->pageTitle($type->pluralLabel()),
+                'description' => $type->tagline(),
+                'image' => $defaultSeoImage['url'],
+                'imageAlt' => $type->pluralLabel().' on '.config('app.name'),
+                'imageType' => $defaultSeoImage['type'],
+                'imageWidth' => $defaultSeoImage['width'],
+                'imageHeight' => $defaultSeoImage['height'],
+                'url' => route($routeName),
+                'type' => 'website',
+                'robots' => 'index,follow',
+                'twitterCard' => 'summary_large_image',
+            ],
+        ]);
+    }
+
     public function category(Category $category): Response
     {
         $defaultSeoImage = $this->defaultSeoImage();
 
-        $products = $this->storefrontProductQuery($category->products())->paginate(12)->withQueryString();
+        $products = $this->storefrontProductQuery($category->products(), $category->type)->paginate(12)->withQueryString();
         $productCount = $products->total();
 
         return Inertia::render('Categories/Show', [
             'category' => $category,
             'products' => $products,
-            'categories' => $this->storefrontCategoryNavigation(),
+            'categories' => $this->storefrontCategoryNavigation($category->type),
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($category->name),
@@ -87,11 +127,18 @@ class StorefrontController extends Controller
 
     public function show(Product $product): Response
     {
-        if (! $product->in_stock) {
+        if (! $product->in_stock || ! $product->is_visible) {
             abort(404);
         }
 
-        $product->load(['variants', 'galleries']);
+        $relations = ['variants', 'galleries'];
+        if ($product->type === ProductType::Physical) {
+            $relations[] = 'physicalDetail';
+        } elseif ($product->type === ProductType::Service) {
+            $relations[] = 'serviceDetail';
+        }
+
+        $product->load($relations);
         $productSeoImage = $this->productSeoImage($product);
 
         return Inertia::render('Products/Show', [
@@ -124,7 +171,7 @@ class StorefrontController extends Controller
         $descriptionHtml = (string) $description;
         preg_match_all('/<p\b[^>]*>(.*?)<\/p>/is', $descriptionHtml, $paragraphMatches);
 
-        $summarySource = collect($paragraphMatches[1] ?? [])
+        $summarySource = collect($paragraphMatches[1])
             ->map(fn (string $paragraph): string => $this->htmlToPlainText($paragraph))
             ->first(fn (string $paragraph): bool => filled($paragraph));
 
@@ -195,7 +242,7 @@ class StorefrontController extends Controller
     private function seoImage(string $url, ?string $absolutePath): array
     {
         // Extract extension from URL without query parameters
-        $pathWithoutQuery = strtok($url, '?');
+        $pathWithoutQuery = Str::before($url, '?');
         $extension = strtolower(pathinfo($pathWithoutQuery, PATHINFO_EXTENSION));
         $fallbackType = $extension === 'jpg' ? 'image/jpeg' : ($extension ? 'image/'.$extension : null);
 
@@ -218,77 +265,158 @@ class StorefrontController extends Controller
 
         return [
             'url' => $url,
-            'type' => $details['mime'] ?? $fallbackType,
-            'width' => $details[0] ?? 1200,
-            'height' => $details[1] ?? 630,
+            'type' => $details['mime'],
+            'width' => $details[0],
+            'height' => $details[1],
         ];
     }
 
     /**
+     * Top-level storefront categories, optionally scoped to a single product type.
+     * When a type is given, categories, their subcategories, and their products
+     * are all filtered to that type so nothing from another type leaks through.
+     *
      * @return Collection<int, Category>
      */
-    private function storefrontCategories(?string $search = null): Collection
+    private function storefrontCategories(?ProductType $type = null, ?string $search = null): Collection
     {
         return Category::query()
+            ->whereNull('parent_id') // only top-level
+            ->when($type, fn ($query) => $query->where('type', $type))
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->with([
-                'products' => fn (HasMany $query): HasMany => $this->storefrontProductQuery($query),
+                'children' => function (Relation $query) use ($type): Relation {
+                    $query
+                        ->when($type, fn ($q) => $q->where('type', $type))
+                        ->orderBy('sort_order')
+                        ->orderBy('name');
+
+                    return $query;
+                },
+                'products' => fn (Relation $query): Relation => $this->storefrontProductQuery($query, $type),
+                'children.products' => fn (Relation $query): Relation => $this->storefrontProductQuery($query, $type),
             ])
             ->when($search, function (Builder $query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhereHas('products', function (Builder $q) use ($search) {
-                          $q->where('title', 'like', "%{$search}%")
-                            ->orWhere('description', 'like', "%{$search}%");
-                      });
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('products', function (Builder $q) use ($search) {
+                            $q->where('title', 'like', "%{$search}%")
+                                ->orWhere('description', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('children', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhereHas('products', function (Builder $q) use ($search) {
+                                    $q->where('title', 'like', "%{$search}%")
+                                        ->orWhere('description', 'like', "%{$search}%");
+                                });
+                        });
+                });
             })
             ->get()
             ->map(function (Category $category) use ($search) {
-                if (! $search) {
-                    return $category;
-                }
+                if ($search) {
+                    $category->setRelation('products', $category->products->filter(function ($product) use ($search) {
+                        return stripos($product->title, $search) !== false ||
+                               stripos((string) $product->description, $search) !== false;
+                    })->values());
 
-                if (stripos($category->name, $search) !== false) {
-                    return $category;
+                    $category->children->each(function ($child) use ($search) {
+                        $child->setRelation('products', $child->products->filter(function ($product) use ($search) {
+                            return stripos($product->title, $search) !== false ||
+                                   stripos((string) $product->description, $search) !== false;
+                        })->values());
+                    });
                 }
-
-                $category->setRelation('products', $category->products->filter(function ($product) use ($search) {
-                    return stripos($product->title, $search) !== false ||
-                           stripos((string) $product->description, $search) !== false;
-                })->values());
 
                 return $category;
             })
-            ->filter(fn (Category $category): bool => $category->products->isNotEmpty())
+            ->filter(function (Category $category) use ($search) {
+                if ($search && stripos($category->name, $search) !== false) {
+                    return true;
+                }
+
+                return $category->products->isNotEmpty() || $category->children->contains(fn ($child) => $child->products->isNotEmpty());
+            })
             ->values();
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, slug: string, product_count: int}>
+     * Products with no category, scoped to a single product type, that should
+     * still surface on the storefront.
+     *
+     * @return Collection<int, Product>
      */
-    private function storefrontCategoryNavigation(): Collection
+    private function uncategorizedProducts(ProductType $type, ?string $search = null): Collection
+    {
+        return Product::query()
+            ->whereNull('category_id')
+            ->ofType($type)
+            ->visible()
+            ->where('in_stock', true)
+            ->with('variants')
+            ->when($search, fn ($query) => $query->where(function (Builder $inner) use ($search) {
+                $inner->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            }))
+            ->latest()
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string, slug: string, product_count: int, children: array<int, array{id: int, name: string, slug: string, product_count: int}>}>
+     */
+    private function storefrontCategoryNavigation(?ProductType $type = null): Collection
     {
         return Category::query()
+            ->whereNull('parent_id')
+            ->when($type, fn ($query) => $query->where('type', $type))
+            ->orderBy('sort_order')
             ->orderBy('name')
-            ->whereHas('products', fn (Builder $query): Builder => $query->where('in_stock', true))
-            ->withCount([
-                'products as product_count' => fn (Builder $query): Builder => $query->where('in_stock', true),
+            ->where(function (Builder $query) {
+                $query->whereHas('products', fn (Builder $q) => $q->where('in_stock', true)->where('is_visible', true))
+                    ->orWhereHas('children.products', fn (Builder $q) => $q->where('in_stock', true)->where('is_visible', true));
+            })
+            ->with([
+                'children' => function ($q) use ($type) {
+                    $q->when($type, fn ($inner) => $inner->where('type', $type))
+                        ->orderBy('sort_order')
+                        ->orderBy('name')
+                        ->whereHas('products', fn (Builder $q) => $q->where('in_stock', true)->where('is_visible', true))
+                        ->withCount(['products as product_count' => fn (Builder $q) => $q->where('in_stock', true)->where('is_visible', true)]);
+                },
             ])
-            ->get(['id', 'name', 'slug'])
+            ->withCount([
+                'products as product_count' => fn (Builder $query): Builder => $query->where('in_stock', true)->where('is_visible', true),
+            ])
+            ->get(['id', 'name', 'slug', 'parent_id', 'sort_order'])
             ->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'slug' => $category->slug,
-                'product_count' => $category->product_count,
+                'product_count' => (int) $category->getAttribute('product_count'),
+                'children' => $category->children->map(fn (Category $child): array => [
+                    'id' => $child->id,
+                    'name' => $child->name,
+                    'slug' => $child->slug,
+                    'product_count' => (int) $child->getAttribute('product_count'),
+                ])->all(),
             ]);
     }
 
-
-
-    private function storefrontProductQuery(Builder|HasMany $query): Builder|HasMany
+    /**
+     * @param  Relation<Product, Category, *>  $query
+     * @return Relation<Product, Category, *>
+     */
+    private function storefrontProductQuery(Relation $query, ?ProductType $type = null): Relation
     {
-        return $query
+        $query
+            ->when($type, fn ($inner) => $inner->where('type', $type))
             ->where('in_stock', true)
+            ->where('is_visible', true)
             ->with('variants')
             ->latest();
+
+        return $query;
     }
 }

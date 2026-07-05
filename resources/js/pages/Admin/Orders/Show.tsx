@@ -6,10 +6,12 @@ import {
     allowReceiptReupload,
     destroy as destroyOrder,
     destroyCredential,
+    markBalancePaid,
     storeCredential,
     storeMessage,
     updateCredential,
     updateReceiptStatus,
+    updateShipmentStatus,
     updateStatus as updateOrderStatus,
 } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
@@ -23,11 +25,27 @@ type Order = {
     id: number;
     order_number: string;
     total_amount: string;
+    items_total: string;
+    shipping_total: string;
+    amount_due_now: string;
+    balance_due: string;
+    payment_option: string | null;
     status: string;
     created_at: string;
     can_reupload_receipt: boolean;
     request_receipt_upload: boolean;
     additional_data: { note?: string } | null;
+    shipment: {
+        id: number;
+        status: string;
+        recipient_name: string;
+        mobile_number: string;
+        address_line: string;
+        city: string;
+        landmark: string | null;
+        zone_name: string | null;
+        tracking_note: string | null;
+    } | null;
     user: {
         id: number;
         name: string;
@@ -84,7 +102,13 @@ type Order = {
     }[];
 };
 
-export default function AdminOrderShow({ order }: { order: Order }) {
+export default function AdminOrderShow({
+    order,
+    shipmentStatuses,
+}: {
+    order: Order;
+    shipmentStatuses: string[];
+}) {
     const {
         data: statusData,
         setData: setStatusData,
@@ -542,6 +566,118 @@ export default function AdminOrderShow({ order }: { order: Order }) {
                                 </div>
                             )}
                         </div>
+
+                        {/* Payment breakdown */}
+                        <div className="rounded-xl border bg-card p-6">
+                            <h2 className="mb-4 text-xl font-semibold">
+                                Payment Breakdown
+                            </h2>
+                            <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Items
+                                    </span>
+                                    <span>Rs. {order.items_total}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Shipping
+                                    </span>
+                                    <span>Rs. {order.shipping_total}</span>
+                                </div>
+                                <div className="flex justify-between border-t pt-1 font-semibold">
+                                    <span>Total</span>
+                                    <span>Rs. {order.total_amount}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Paid / due now
+                                    </span>
+                                    <span>Rs. {order.amount_due_now}</span>
+                                </div>
+                                {Number(order.balance_due) > 0 && (
+                                    <div className="flex items-center justify-between text-amber-600">
+                                        <span>Balance due on delivery</span>
+                                        <span className="flex items-center gap-2">
+                                            Rs. {order.balance_due}
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    router.patch(
+                                                        markBalancePaid(order)
+                                                            .url,
+                                                        {},
+                                                        { preserveScroll: true },
+                                                    )
+                                                }
+                                            >
+                                                Mark paid
+                                            </Button>
+                                        </span>
+                                    </div>
+                                )}
+                                {order.payment_option && (
+                                    <p className="pt-1 text-xs text-muted-foreground">
+                                        Payment option:{' '}
+                                        {order.payment_option === 'shipping_only'
+                                            ? 'Shipping only (rest on delivery)'
+                                            : 'Full payment'}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Shipment */}
+                        {order.shipment && (
+                            <div className="rounded-xl border bg-card p-6">
+                                <h2 className="mb-4 text-xl font-semibold">
+                                    Shipment
+                                </h2>
+                                <div className="mb-4 text-sm">
+                                    <p className="font-medium">
+                                        {order.shipment.recipient_name} ·{' '}
+                                        {order.shipment.mobile_number}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                        {order.shipment.address_line},{' '}
+                                        {order.shipment.city}
+                                        {order.shipment.landmark
+                                            ? ` (${order.shipment.landmark})`
+                                            : ''}
+                                    </p>
+                                    {order.shipment.zone_name && (
+                                        <p className="text-muted-foreground">
+                                            Zone: {order.shipment.zone_name}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {shipmentStatuses.map((status) => (
+                                        <Button
+                                            key={status}
+                                            size="sm"
+                                            variant={
+                                                order.shipment?.status === status
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
+                                            className="capitalize"
+                                            onClick={() =>
+                                                router.patch(
+                                                    updateShipmentStatus(order)
+                                                        .url,
+                                                    { status },
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                        >
+                                            {status}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Payment Receipt */}
                         <div className="rounded-xl border bg-card p-6">

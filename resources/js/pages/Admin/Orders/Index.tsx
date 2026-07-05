@@ -37,9 +37,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function AdminOrderIndex({
-    orders,
+    physicalOrders,
+    digitalOrders,
+    serviceOrders,
 }: {
-    orders: { data: Order[] };
+    physicalOrders: { data: Order[] };
+    digitalOrders: { data: Order[] };
+    serviceOrders: { data: Order[] };
 }) {
     const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
 
@@ -47,142 +51,31 @@ export default function AdminOrderIndex({
         <>
             <SeoHead title="Manage Orders" />
 
-            <PagePanel title="Manage Orders" variant="transparent">
+            <div className="space-y-8">
+                <PagePanel title="Digital Orders" variant="transparent">
+                    <OrderTable
+                        orders={digitalOrders.data}
+                        deletingOrderId={deletingOrderId}
+                        setDeletingOrderId={setDeletingOrderId}
+                    />
+                </PagePanel>
 
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Order #</TableHead>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Profit</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Receipt</TableHead>
-                            <TableHead className="text-right">
-                                Actions
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {orders.data.map((order) => (
-                            <TableRow key={order.id}>
-                                <TableCell className="font-medium text-primary">
-                                    <Link
-                                        href={`/admin/orders/${order.id}`}
-                                    >
-                                        {order.order_number}
-                                    </Link>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="font-medium">
-                                        {order.user.name}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {order.user.email}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="whitespace-nowrap">
-                                    {new Date(
-                                        order.created_at,
-                                    ).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell className="font-bold">
-                                    Rs. {order.total_amount}
-                                </TableCell>
-                                <TableCell className="font-medium text-green-600">
-                                    {order.status === 'completed' ? (
-                                        <>Rs. {order.profit.toFixed(0)}</>
-                                    ) : (
-                                        <span className="text-muted-foreground">—</span>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    <span
-                                        className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
-                                            order.status === 'completed'
-                                                ? 'bg-green-100 text-green-800'
-                                                : order.status ===
-                                                    'delivering'
-                                                  ? 'bg-blue-100 text-blue-800'
-                                                  : 'bg-yellow-100 text-yellow-800'
-                                        }`}
-                                    >
-                                        {order.status}
-                                    </span>
-                                </TableCell>
-                                <TableCell>
-                                    {order.payment_receipt ? (
-                                        <span
-                                            className={`rounded-md px-2 py-1 text-xs ${
-                                                order.payment_receipt
-                                                    .status ===
-                                                'approved'
-                                                    ? 'border border-green-200 bg-green-100/50 text-green-700'
-                                                    : order.payment_receipt
-                                                            .status ===
-                                                        'rejected'
-                                                      ? 'border border-red-200 bg-red-100/50 text-red-700'
-                                                      : 'border border-amber-200 bg-amber-100/50 text-amber-700'
-                                            }`}
-                                        >
-                                            {order.payment_receipt.status}
-                                        </span>
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground italic">
-                                            Missing
-                                        </span>
-                                    )}
-                                </TableCell>
-                                <TableCell className="flex justify-end gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        asChild
-                                    >
-                                        <Link
-                                            href={`/admin/orders/${order.id}`}
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                            View
-                                        </Link>
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                        disabled={deletingOrderId === order.id}
-                                        onClick={() => {
-                                            if (confirm('Are you sure you want to delete this order?')) {
-                                                setDeletingOrderId(order.id);
+                <PagePanel title="Physical Orders" variant="transparent">
+                    <OrderTable
+                        orders={physicalOrders.data}
+                        deletingOrderId={deletingOrderId}
+                        setDeletingOrderId={setDeletingOrderId}
+                    />
+                </PagePanel>
 
-                                                router.delete(destroyOrder(order), {
-                                                    preserveScroll: true,
-                                                    onFinish: () => {
-                                                        setDeletingOrderId(null);
-                                                    },
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {orders.data.length === 0 && (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={8}
-                                    className="h-24 text-center text-muted-foreground"
-                                >
-                                    No orders found.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </PagePanel>
+                <PagePanel title="Service Orders" variant="transparent">
+                    <OrderTable
+                        orders={serviceOrders.data}
+                        deletingOrderId={deletingOrderId}
+                        setDeletingOrderId={setDeletingOrderId}
+                    />
+                </PagePanel>
+            </div>
         </>
     );
 }
@@ -190,3 +83,126 @@ export default function AdminOrderIndex({
 AdminOrderIndex.layout = {
     breadcrumbs: breadcrumbs,
 };
+
+function OrderTable({
+    orders,
+    deletingOrderId,
+    setDeletingOrderId,
+}: {
+    orders: Order[];
+    deletingOrderId: number | null;
+    setDeletingOrderId: (id: number | null) => void;
+}) {
+    return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Profit</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Receipt</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {orders.map((order) => (
+                    <TableRow key={order.id}>
+                        <TableCell className="font-medium text-primary">
+                            <Link href={`/admin/orders/${order.id}`}>
+                                {order.order_number}
+                            </Link>
+                        </TableCell>
+                        <TableCell>
+                            <div className="font-medium">{order.user.name}</div>
+                            <div className="text-xs text-muted-foreground">{order.user.email}</div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                            {new Date(order.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="font-bold">
+                            Rs. {order.total_amount}
+                        </TableCell>
+                        <TableCell className="font-medium text-green-600">
+                            {order.status === 'completed' ? (
+                                <>Rs. {order.profit?.toFixed(0) ?? '0'}</>
+                            ) : (
+                                <span className="text-muted-foreground">—</span>
+                            )}
+                        </TableCell>
+                        <TableCell>
+                            <span
+                                className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${order.status === 'completed'
+                                        ? 'bg-green-100 text-green-800'
+                                        : order.status === 'delivering'
+                                            ? 'bg-blue-100 text-blue-800'
+                                            : 'bg-yellow-100 text-yellow-800'
+                                    }`}
+                            >
+                                {order.status}
+                            </span>
+                        </TableCell>
+                        <TableCell>
+                            {order.payment_receipt ? (
+                                <span
+                                    className={`rounded-md px-2 py-1 text-xs ${order.payment_receipt.status === 'approved'
+                                            ? 'border border-green-200 bg-green-100/50 text-green-700'
+                                            : order.payment_receipt.status === 'rejected'
+                                                ? 'border border-red-200 bg-red-100/50 text-red-700'
+                                                : 'border border-amber-200 bg-amber-100/50 text-amber-700'
+                                        }`}
+                                >
+                                    {order.payment_receipt.status}
+                                </span>
+                            ) : (
+                                <span className="text-xs text-muted-foreground italic">
+                                    Missing
+                                </span>
+                            )}
+                        </TableCell>
+                        <TableCell className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href={`/admin/orders/${order.id}`}>
+                                    <Eye className="h-4 w-4" />
+                                    View
+                                </Link>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                disabled={deletingOrderId === order.id}
+                                onClick={() => {
+                                    if (confirm('Are you sure you want to delete this order?')) {
+                                        setDeletingOrderId(order.id);
+
+                                        router.delete(destroyOrder(order), {
+                                            preserveScroll: true,
+                                            onFinish: () => {
+                                                setDeletingOrderId(null);
+                                            },
+                                        });
+                                    }
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                ))}
+                {orders.length === 0 && (
+                    <TableRow>
+                        <TableCell
+                            colSpan={8}
+                            className="h-24 text-center text-muted-foreground"
+                        >
+                            No orders found.
+                        </TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
+    );
+}

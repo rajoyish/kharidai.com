@@ -7,32 +7,71 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderCredential;
 use App\Models\PaymentReceipt;
+use App\Models\Shipment;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = Order::with(['user', 'paymentReceipt', 'items'])
-            ->latest()
-            ->paginate(15);
+        $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product'])->latest();
+
+        $digitalOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
+            $q->where('type', 'digital');
+        })->paginate(10, ['*'], 'digital_page')->withQueryString();
+
+        $physicalOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
+            $q->where('type', 'physical');
+        })->paginate(10, ['*'], 'physical_page')->withQueryString();
+
+        $serviceOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
+            $q->where('type', 'service');
+        })->paginate(10, ['*'], 'service_page')->withQueryString();
 
         return Inertia::render('Admin/Orders/Index', [
-            'orders' => $orders,
+            'digitalOrders' => $digitalOrders,
+            'physicalOrders' => $physicalOrders,
+            'serviceOrders' => $serviceOrders,
         ]);
     }
 
     public function show(Order $order)
     {
-        $order->load(['items.productVariant.product', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product']);
+        $order->load(['items.productVariant.product', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product', 'shipment', 'shippingAddress']);
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
+            'shipmentStatuses' => Shipment::STATUSES,
         ]);
+    }
+
+    public function updateShipmentStatus(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(Shipment::STATUSES)],
+        ]);
+
+        $shipment = $order->shipment;
+
+        if ($shipment === null) {
+            return redirect()->back()->with('error', 'This order has no shipment to update.');
+        }
+
+        $shipment->update(['status' => $validated['status']]);
+
+        return redirect()->back()->with('success', 'Shipment status updated.');
+    }
+
+    public function markBalancePaid(Order $order)
+    {
+        $order->update(['balance_due' => 0]);
+
+        return redirect()->back()->with('success', 'Balance marked as paid.');
     }
 
     public function updateStatus(Request $request, Order $order)

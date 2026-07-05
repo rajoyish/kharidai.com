@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ServiceEngagementController;
+use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
 use App\Http\Controllers\Admin\TitheController;
 use App\Http\Controllers\Admin\UserController;
@@ -16,6 +18,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\User\OrderController;
+use App\Http\Controllers\User\ServiceController as UserServiceController;
 use App\Http\Controllers\User\SubscriptionController as UserSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +26,9 @@ Route::get('auth/google', [GoogleController::class, 'redirect'])->name('google.r
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
 
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
+Route::get('/digital-products', [StorefrontController::class, 'digitalProducts'])->name('digital-products.index');
+Route::get('/physical-products', [StorefrontController::class, 'physicalProducts'])->name('physical-products.index');
+Route::get('/services', [StorefrontController::class, 'services'])->name('services.index');
 Route::get('/categories/{category}', [StorefrontController::class, 'category'])->name('categories.show');
 Route::get('/products/{product}', [StorefrontController::class, 'show'])->name('products.show');
 
@@ -43,6 +49,7 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('subscriptions', [UserSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::put('subscriptions/{subscription}', [UserSubscriptionController::class, 'update'])->name('subscriptions.update');
+    Route::get('account/services', [UserServiceController::class, 'index'])->name('account.services.index');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
@@ -54,8 +61,21 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
 Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::post('users/{user}/ban', [UserController::class, 'ban'])->name('users.ban');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    Route::get('services', [ServiceEngagementController::class, 'index'])->name('services.index');
+    Route::get('services/create', [ServiceEngagementController::class, 'create'])->name('services.create');
+    Route::post('services', [ServiceEngagementController::class, 'store'])->name('services.store');
+    Route::post('services/{serviceEngagement}/contract', [ServiceEngagementController::class, 'signContract'])->name('services.contract.sign');
+    Route::post('services/{serviceEngagement}/advance', [ServiceEngagementController::class, 'recordAdvance'])->name('services.advance.record');
+    Route::post('services/{serviceEngagement}/measurement', [ServiceEngagementController::class, 'recordMeasurement'])->name('services.measurement.record');
+    Route::post('services/{serviceEngagement}/negotiate', [ServiceEngagementController::class, 'negotiate'])->name('services.negotiate');
+    Route::post('services/{serviceEngagement}/complete', [ServiceEngagementController::class, 'complete'])->name('services.complete');
+    Route::patch('services/{serviceEngagement}/status', [ServiceEngagementController::class, 'updateStatus'])->name('services.status.update');
+    Route::delete('services/{serviceEngagement}', [ServiceEngagementController::class, 'destroy'])->name('services.destroy');
 
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
 
@@ -63,6 +83,7 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::post('products/{product}/media', [ProductController::class, 'uploadMedia'])->name('products.media.store');
     Route::delete('products/{product}/media/{media}', [ProductController::class, 'deleteMedia'])->name('products.media.destroy');
     Route::patch('products/{product}/toggle-stock', [ProductController::class, 'toggleStock'])->name('products.toggle-stock');
+    Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
     Route::resource('products.variants', ProductVariantController::class)->except(['show']);
 
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
@@ -74,11 +95,18 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::delete('orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
     Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status.update');
     Route::patch('orders/{order}/allow-reupload', [AdminOrderController::class, 'allowReceiptReupload'])->name('orders.allow-reupload');
+    Route::patch('orders/{order}/shipment-status', [AdminOrderController::class, 'updateShipmentStatus'])->name('orders.shipment-status.update');
+    Route::patch('orders/{order}/mark-balance-paid', [AdminOrderController::class, 'markBalancePaid'])->name('orders.mark-balance-paid');
     Route::patch('receipts/{paymentReceipt}/status', [AdminOrderController::class, 'updateReceiptStatus'])->name('receipts.status.update');
     Route::post('orders/{order}/credentials', [AdminOrderController::class, 'storeCredential'])->name('orders.credentials.store');
     Route::put('orders/{order}/credentials/{credential}', [AdminOrderController::class, 'updateCredential'])->name('orders.credentials.update');
     Route::delete('orders/{order}/credentials/{credential}', [AdminOrderController::class, 'destroyCredential'])->name('orders.credentials.destroy');
     Route::post('orders/{order}/messages', [AdminOrderController::class, 'storeMessage'])->name('orders.messages.store');
+
+    Route::get('shipping', [ShippingController::class, 'index'])->name('shipping.index');
+    Route::post('shipping', [ShippingController::class, 'store'])->name('shipping.store');
+    Route::put('shipping/{shippingZone}', [ShippingController::class, 'update'])->name('shipping.update');
+    Route::delete('shipping/{shippingZone}', [ShippingController::class, 'destroy'])->name('shipping.destroy');
 
     Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::get('tithes', [TitheController::class, 'index'])->name('tithes.index');
