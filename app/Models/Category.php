@@ -2,21 +2,32 @@
 
 namespace App\Models;
 
+use App\Enums\ProductType;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'slug'])]
+/**
+ * @property int $id
+ * @property int|null $parent_id
+ * @property string $name
+ * @property string $slug
+ * @property ProductType|null $type
+ * @property int $sort_order
+ * @property Category|null $parent
+ */
+#[Fillable(['parent_id', 'name', 'slug', 'type', 'sort_order'])]
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
-    public const STOREFRONT_NAVIGATION_CACHE_KEY = 'storefront:navigation:categories';
+    public const STOREFRONT_NAVIGATION_CACHE_KEY = 'storefront:navigation:groups';
 
     protected static function booted(): void
     {
@@ -42,9 +53,36 @@ class Category extends Model
         Cache::forget(self::STOREFRONT_NAVIGATION_CACHE_KEY);
     }
 
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'type' => ProductType::class,
+            'sort_order' => 'integer',
+        ];
+    }
+
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * @return BelongsTo<Category, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<Category, $this>
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(Category::class, 'parent_id')->orderBy('sort_order');
     }
 
     /**
@@ -53,5 +91,37 @@ class Category extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * The IDs of this category and every category above it in the tree.
+     * Used to prevent assigning a parent that would create a cycle.
+     *
+     * @return list<int>
+     */
+    public function ancestorIds(): array
+    {
+        $ids = [];
+        $current = $this->parent;
+
+        while ($current !== null && ! in_array($current->id, $ids, true)) {
+            $ids[] = $current->id;
+            $current = $current->parent;
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Whether assigning the given parent would introduce a cycle
+     * (i.e. the parent is this category or one of its descendants).
+     */
+    public function wouldCreateCycleWith(Category $parent): bool
+    {
+        if ($parent->id === $this->id) {
+            return true;
+        }
+
+        return in_array($this->id, $parent->ancestorIds(), true);
     }
 }

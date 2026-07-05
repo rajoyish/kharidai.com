@@ -52,6 +52,14 @@ class OrderItem extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    /**
+     * @return HasMany<ServiceEngagement, $this>
+     */
+    public function serviceEngagements(): HasMany
+    {
+        return $this->hasMany(ServiceEngagement::class);
+    }
+
     protected function price(): Attribute
     {
         return Attribute::make(

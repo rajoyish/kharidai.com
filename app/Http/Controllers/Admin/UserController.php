@@ -2,14 +2,45 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Concerns\PasswordValidationRules;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class UserController extends Controller
 {
+    use PasswordValidationRules;
+
+    public function create(): Response
+    {
+        return Inertia::render('Admin/Users/Create');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'mobile_number' => ['nullable', 'string', 'max:30'],
+            'password' => $this->passwordRules(),
+            'is_admin' => ['nullable', 'boolean'],
+        ]);
+
+        $user = new User;
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->mobile_number = $validated['mobile_number'] ?? null;
+        $user->password = $validated['password']; // hashed by the model cast
+        $user->is_admin = $validated['is_admin'] ?? false;
+        $user->email_verified_at = now();
+        $user->save();
+
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
+    }
+
     public function index(): Response
     {
         $userTable = (new User)->getTable();

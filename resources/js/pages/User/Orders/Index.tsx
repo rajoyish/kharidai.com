@@ -32,6 +32,9 @@ type Order = {
             };
         };
     }[];
+    shipment: {
+        status: string;
+    } | null;
 };
 
 const breadcrumbs = [
@@ -58,6 +61,7 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                 <TableHead className="min-w-[250px] w-1/3">Items</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Shipment</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -99,6 +103,23 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                         >
                                             {order.status}
                                         </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        {order.shipment ? (
+                                            <span
+                                                className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
+                                                    order.shipment.status === 'delivered'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                        : order.shipment.status === 'shipped'
+                                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                                }`}
+                                            >
+                                                {order.shipment.status}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground text-xs">-</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="flex justify-end gap-2">
                                         {(order.can_reupload_receipt || order.status === 'pending') && (

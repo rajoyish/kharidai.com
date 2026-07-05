@@ -73,3 +73,52 @@ it('can delete a category without deleting its products', function () {
         'category_id' => null,
     ]);
 });
+
+it('can create a subcategory nested under a parent', function () {
+    $parent = Category::factory()->create(['name' => 'Clothes']);
+
+    $response = $this->actingAs($this->admin)->post('/admin/categories', [
+        'name' => 'Watches',
+        'parent_id' => $parent->id,
+        'type' => 'physical',
+        'sort_order' => 2,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('categories', [
+        'name' => 'Watches',
+        'parent_id' => $parent->id,
+        'type' => 'physical',
+        'sort_order' => 2,
+    ]);
+});
+
+it('prevents nesting a category under one of its own descendants', function () {
+    $parent = Category::factory()->create(['name' => 'Clothes']);
+    $child = Category::factory()->childOf($parent)->create(['name' => 'Watches']);
+
+    $response = $this->actingAs($this->admin)->patch('/admin/categories/'.$parent->slug, [
+        'name' => 'Clothes',
+        'parent_id' => $child->id,
+    ]);
+
+    $response->assertSessionHasErrors('parent_id');
+    $this->assertDatabaseHas('categories', [
+        'id' => $parent->id,
+        'parent_id' => null,
+    ]);
+});
+
+it('reassigns children to the grandparent when a category is deleted', function () {
+    $parent = Category::factory()->create();
+    $middle = Category::factory()->childOf($parent)->create();
+    $leaf = Category::factory()->childOf($middle)->create();
+
+    $this->actingAs($this->admin)->delete('/admin/categories/'.$middle->slug);
+
+    $this->assertDatabaseMissing('categories', ['id' => $middle->id]);
+    $this->assertDatabaseHas('categories', [
+        'id' => $leaf->id,
+        'parent_id' => $parent->id,
+    ]);
+});

@@ -23,6 +23,18 @@ class CategoryFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name),
+            'sort_order' => 0,
         ];
+    }
+
+    /**
+     * Nest this category under the given parent.
+     */
+    public function childOf(Category $parent): static
+    {
+        return $this->state([
+            'parent_id' => $parent->id,
+            'type' => $parent->type,
+        ]);
     }
 }

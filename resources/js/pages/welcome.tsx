@@ -1,38 +1,47 @@
-import { Link, router, usePage } from '@inertiajs/react';
-import {
-    ArrowRight,
-    Briefcase,
-    CloudDownload,
-    Search,
-    Star,
-    Truck,
-} from 'lucide-react';
+import { router, usePage } from '@inertiajs/react';
+import { Briefcase, CloudDownload, Search, Star, Truck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { HeroFanCards } from '@/components/hero-fan-cards';
 import { MaskedLinesHeading } from '@/components/masked-lines-heading';
 import { PinnedPanels } from '@/components/pinned-panels';
 import { SeoHead } from '@/components/seo-head';
-import { StorefrontProductCard } from '@/components/storefront-product-card';
+import { StorefrontHomeSection } from '@/components/storefront-home-section';
 import { Input } from '@/components/ui/input';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
 import { home } from '@/routes';
-import { show as showCategory } from '@/routes/categories';
-import type { StorefrontCategory, StorefrontProduct } from '@/types';
+import { index as digitalProducts } from '@/routes/digital-products';
+import { index as physicalProducts } from '@/routes/physical-products';
+import { index as services } from '@/routes/services';
+import type {
+    StorefrontProduct,
+    StorefrontSection,
+    StorefrontType,
+} from '@/types';
+
+const SECTION_HREF: Record<
+    StorefrontType,
+    ReturnType<typeof digitalProducts>
+> = {
+    digital: digitalProducts(),
+    physical: physicalProducts(),
+    service: services(),
+};
+
+function countProduct(product: StorefrontProduct): number {
+    return 1 + (product.variants?.length ?? 0);
+}
 
 export default function Welcome({
-    uncategorizedProducts,
-    categories,
+    sections,
 }: {
-    uncategorizedProducts: StorefrontProduct[];
-    categories: StorefrontCategory[];
+    sections: StorefrontSection[];
 }) {
     const { url } = usePage();
     const searchParams = new URLSearchParams(url.split('?')[1] || '');
     const initialSearch = searchParams.get('search') || '';
 
     const [searchQuery, setSearchQuery] = useState(initialSearch);
-    const hasActiveSearch = searchQuery.trim().length > 0;
     const isFirstRender = useRef(true);
 
     useEffect(() => {
@@ -50,7 +59,7 @@ export default function Welcome({
                     preserveState: true,
                     preserveScroll: true,
                     replace: true,
-                    only: ['categories', 'uncategorizedProducts'],
+                    only: ['sections'],
                 },
             );
         }, 300);
@@ -58,29 +67,51 @@ export default function Welcome({
         return () => clearTimeout(handler);
     }, [searchQuery]);
 
-    const totalItemsCount = useMemo(() => {
-        let count = 0;
+    const totalItemsCount = useMemo(
+        () =>
+            sections.reduce((total, section) => {
+                const categorized = section.categories.reduce(
+                    (sum, category) => {
+                        const own = category.products.reduce(
+                            (acc, product) => acc + countProduct(product),
+                            0,
+                        );
+                        const children = (category.children ?? []).reduce(
+                            (acc, child) =>
+                                acc +
+                                (child.products ?? []).reduce(
+                                    (childAcc, product) =>
+                                        childAcc + countProduct(product),
+                                    0,
+                                ),
+                            0,
+                        );
 
-        categories.forEach((category) => {
-            category.products.forEach((product) => {
-                count += 1;
+                        return sum + own + children;
+                    },
+                    0,
+                );
 
-                if (product.variants) {
-                    count += product.variants.length;
-                }
-            });
-        });
+                const uncategorized = section.uncategorizedProducts.reduce(
+                    (sum, product) => sum + countProduct(product),
+                    0,
+                );
 
-        uncategorizedProducts.forEach((product) => {
-            count += 1;
+                return total + categorized + uncategorized;
+            }, 0),
+        [sections],
+    );
 
-            if (product.variants) {
-                count += product.variants.length;
-            }
-        });
-
-        return count;
-    }, [categories, uncategorizedProducts]);
+    const hasResults = sections.some(
+        (section) =>
+            section.categories.some(
+                (category) =>
+                    category.products.length > 0 ||
+                    (category.children ?? []).some(
+                        (child) => (child.products?.length ?? 0) > 0,
+                    ),
+            ) || section.uncategorizedProducts.length > 0,
+    );
 
     const scrollToShop = () => {
         document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
@@ -112,7 +143,7 @@ export default function Welcome({
                             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                                 <button
                                     onClick={scrollToShop}
-                                    className="rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl"
+                                    className="rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-primary hover:shadow-xl"
                                 >
                                     Start Here
                                 </button>
@@ -205,11 +236,11 @@ export default function Welcome({
                 >
                     <div className="mb-12 text-center">
                         <h2 className="mb-4 text-3xl text-[#1A1A1A]">
-                            Explore by category
+                            Explore the marketplace
                         </h2>
                         <p className="text-gray-500">
-                            Browse each category on its own page and dive into
-                            the products that belong there.
+                            Digital products, physical products, and services —
+                            each in its own space.
                         </p>
                     </div>
 
@@ -225,140 +256,28 @@ export default function Welcome({
                         />
                     </div>
 
-                    {categories.length > 0 && (
-                        <section className="grid grid-cols-1 gap-6">
-                            {categories.map((category) => (
-                                <Link
-                                    key={category.id}
-                                    href={showCategory(category)}
-                                    prefetch
-                                    className="group block overflow-hidden rounded-4xl border border-slate-200/80 bg-white/90 p-6 shadow-[0_1.375rem_3.75rem_-2.625rem_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_1.75rem_4.375rem_-2.25rem_rgba(17,118,188,0.3)] md:p-8"
-                                >
-                                    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-                                        <div>
-                                            <p className="text-sm font-semibold text-primary/80 uppercase">
-                                                Category
-                                            </p>
-                                            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                                <h3 className="text-3xl font-semibold tracking-tight text-slate-950">
-                                                    {category.name}
-                                                </h3>
-                                                <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-                                                    {category.products.length}{' '}
-                                                    {hasActiveSearch
-                                                        ? category.products
-                                                              .length === 1
-                                                            ? 'match'
-                                                            : 'matches'
-                                                        : category.products
-                                                                .length === 1
-                                                          ? 'product'
-                                                          : 'products'}
-                                                </span>
-                                            </div>
-                                            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-                                                Open the {category.name} page to
-                                                browse every product in this
-                                                category.
-                                            </p>
-                                            <div className="mt-6 flex flex-wrap gap-2">
-                                                {category.products
-                                                    .slice(0, 4)
-                                                    .map((product) => (
-                                                        <span
-                                                            key={product.id}
-                                                            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600"
-                                                        >
-                                                            {product.title}
-                                                        </span>
-                                                    ))}
-                                                {category.products.length >
-                                                    4 && (
-                                                    <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
-                                                        +
-                                                        {category.products
-                                                            .length - 4}{' '}
-                                                        more
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                                                Browse category
-                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {category.products
-                                                .slice(0, 2)
-                                                .map((product) => (
-                                                    <div
-                                                        key={product.id}
-                                                        className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50"
-                                                    >
-                                                        <div className="aspect-[4/3] bg-[radial-gradient(circle_at_top,#dbeafe,transparent_58%),linear-gradient(135deg,#e2e8f0,#f8fafc)]">
-                                                            {product.image ? (
-                                                                <img
-                                                                    src={`/storage/${product.image}`}
-                                                                    alt={
-                                                                        product.title
-                                                                    }
-                                                                    className="h-full w-full object-cover"
-                                                                />
-                                                            ) : null}
-                                                        </div>
-                                                        <div className="p-4">
-                                                            <p className="line-clamp-2 text-sm font-medium text-slate-700">
-                                                                {product.title}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    </div>
-                                </Link>
+                    {hasResults ? (
+                        <div className="space-y-20">
+                            {sections.map((section) => (
+                                <StorefrontHomeSection
+                                    key={section.type}
+                                    section={section}
+                                    href={SECTION_HREF[section.type]}
+                                />
                             ))}
-                        </section>
+                        </div>
+                    ) : (
+                        <div className="mt-8 rounded-2xl border border-gray-100 bg-gray-50 p-12 text-center">
+                            <Search className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                            <h3 className="mb-2 text-xl text-gray-900">
+                                No products found
+                            </h3>
+                            <p className="text-gray-500">
+                                We couldn&apos;t find any categories or products
+                                matching your search.
+                            </p>
+                        </div>
                     )}
-
-                    {uncategorizedProducts.length > 0 && (
-                        <section className="mt-16">
-                            <div className="mb-8 flex items-end justify-between gap-4">
-                                <div>
-                                    <h2 className="text-2xl font-semibold text-slate-950">
-                                        Other Products
-                                    </h2>
-                                    <p className="mt-2 text-slate-600">
-                                        These items are still available even
-                                        though they are not assigned to a public
-                                        category yet.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                                {uncategorizedProducts.map((product) => (
-                                    <StorefrontProductCard
-                                        key={product.id}
-                                        product={product}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {categories.length === 0 &&
-                        uncategorizedProducts.length === 0 && (
-                            <div className="mt-20 rounded-2xl border border-gray-100 bg-gray-50 p-12 text-center">
-                                <Search className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-                                <h3 className="mb-2 text-xl text-gray-900">
-                                    No products found
-                                </h3>
-                                <p className="text-gray-500">
-                                    We couldn&apos;t find any categories or
-                                    products matching your search.
-                                </p>
-                            </div>
-                        )}
                 </main>
             </div>
         </>

@@ -1,14 +1,19 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { home } from '@/routes';
 import { index as cartIndex } from '@/routes/cart';
-import { show as showCategory } from '@/routes/categories';
-import type { PageProps } from '@/types';
+import { index as digitalProducts } from '@/routes/digital-products';
+import { index as physicalProducts } from '@/routes/physical-products';
+import { index as services } from '@/routes/services';
+
+const shopLinks = [
+    { label: 'Digital Products', href: digitalProducts() },
+    { label: 'Physical Products', href: physicalProducts() },
+    { label: 'Services', href: services() },
+];
 
 export function Footer() {
-    const { storefront } = usePage<PageProps>().props;
-    const categories = storefront?.categories || [];
     const logoRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -23,7 +28,7 @@ export function Footer() {
             },
             {
                 threshold: 0.5,
-            }
+            },
         );
 
         const currentLogoRef = logoRef.current;
@@ -39,70 +44,69 @@ export function Footer() {
         };
     }, []);
 
-    const halfCategories = Math.ceil(categories.length / 2);
-    const leftCategories = categories.slice(0, halfCategories);
-    const rightCategories = categories.slice(halfCategories);
-
     return (
-        <footer className="w-full bg-blue-950 text-primary-foreground pt-16 pb-8 border-t border-primary-foreground/10 overflow-hidden relative">
+        <footer className="relative w-full overflow-hidden border-t border-primary-foreground/10 bg-blue-950 pt-16 pb-8 text-primary-foreground">
             {/* Top Section (Navigation) */}
-            <div className="container mx-auto px-4 md:px-8 mb-16">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="container mx-auto mb-16 px-4 md:px-8">
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                     {/* Column 1: Brand / Logo */}
-                    <div className="col-span-1 md:col-span-1 flex flex-col items-start">
+                    <div className="col-span-1 flex flex-col items-start md:col-span-1">
                         <Link href={home()} prefetch className="mb-6">
                             <AppLogo className="h-10 w-auto" />
                         </Link>
-                        <p className="text-primary-foreground/70 text-sm leading-relaxed max-w-xs">
-                            Your all-in-one marketplace for digital goods, premium subscriptions, trusted services, and physical products.
+                        <p className="max-w-xs text-sm leading-relaxed text-primary-foreground/70">
+                            Your all-in-one marketplace for digital goods,
+                            premium subscriptions, trusted services, and
+                            physical products.
                         </p>
                     </div>
 
-                    {/* Column 2: Categories (Left) */}
+                    {/* Column 2: Shop by type */}
                     <div>
-                        <h3 className="text-primary-foreground font-bold mb-4 tracking-wider text-sm uppercase">Shop Categories</h3>
+                        <h3 className="mb-4 text-sm font-bold tracking-wider text-primary-foreground uppercase">
+                            Shop
+                        </h3>
                         <ul className="space-y-3">
-                            {leftCategories.map((category) => (
-                                <li key={category.id}>
-                                    <Link href={showCategory(category)} prefetch className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                        {category.name}
+                            {shopLinks.map((link) => (
+                                <li key={link.label}>
+                                    <Link
+                                        href={link.href}
+                                        prefetch
+                                        className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+                                    >
+                                        {link.label}
                                     </Link>
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                    {/* Column 3: Categories (Right) */}
+                    {/* Column 3: Contact */}
                     <div>
-                        <h3 className="text-primary-foreground font-bold mb-4 tracking-wider text-sm uppercase">Explore More</h3>
-                        <ul className="space-y-3">
-                            {rightCategories.map((category) => (
-                                <li key={category.id}>
-                                    <Link href={showCategory(category)} prefetch className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
-                                        {category.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 4: Contact */}
-                    <div>
-                        <h3 className="text-primary-foreground font-bold mb-4 tracking-wider text-sm uppercase">Contact</h3>
+                        <h3 className="mb-4 text-sm font-bold tracking-wider text-primary-foreground uppercase">
+                            Contact
+                        </h3>
                         <ul className="space-y-3">
                             <li>
-                                <a href="mailto:support@kharidai.com" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
+                                <a
+                                    href="mailto:support@kharidai.com"
+                                    className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+                                >
                                     support@kharidai.com
                                 </a>
                             </li>
                             <li>
-                                <a href="tel:+9779740820005" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm font-medium">
+                                <a
+                                    href="tel:+9779740820005"
+                                    className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+                                >
                                     +977 974-0820005
                                 </a>
                             </li>
                             <li>
-                                <address className="text-primary-foreground/70 not-italic mt-2 text-sm">
-                                    Kathmandu, Nepal<br />
+                                <address className="mt-2 text-sm text-primary-foreground/70 not-italic">
+                                    Kathmandu, Nepal
+                                    <br />
                                     Bagmati Province
                                 </address>
                             </li>
@@ -113,29 +117,53 @@ export function Footer() {
 
             {/* Bottom Section (Copyright & Animated Text) */}
             <div className="container mx-auto px-4 md:px-8">
-                <div className="flex flex-col md:flex-row justify-between items-center border-t border-primary-foreground/10 pt-8 mb-8 gap-4">
-                    <p className="text-primary-foreground/70 text-sm font-medium text-center md:text-left flex-1">
-                        &copy; {new Date().getFullYear()} Kharidai.com | All rights reserved.
+                <div className="mb-8 flex flex-col items-center justify-between gap-4 border-t border-primary-foreground/10 pt-8 md:flex-row">
+                    <p className="flex-1 text-center text-sm font-medium text-primary-foreground/70 md:text-left">
+                        &copy; {new Date().getFullYear()} Kharidai.com | All
+                        rights reserved.
                     </p>
 
-                    <div className="flex-1 flex justify-center items-center">
-                        <span className="text-primary-foreground/50 text-sm font-medium mr-2">Crafted by</span>
-                        <AppLogo className="h-5 w-auto grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+                    <div className="flex flex-1 items-center justify-center">
+                        <span className="mr-2 text-sm font-medium text-primary-foreground/50">
+                            Crafted by
+                        </span>
+                        <AppLogo className="h-5 w-auto opacity-60 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0" />
                     </div>
 
-                    <div className="flex space-x-6 flex-1 justify-center md:justify-end">
-                        <Link href={home()} prefetch className="text-primary-foreground/70 hover:text-primary-foreground text-sm font-medium transition-colors">Home</Link>
-                        <Link href={cartIndex()} prefetch className="text-primary-foreground/70 hover:text-primary-foreground text-sm font-medium transition-colors">Cart</Link>
+                    <div className="flex flex-1 justify-center space-x-6 md:justify-end">
+                        <Link
+                            href={home()}
+                            prefetch
+                            className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+                        >
+                            Home
+                        </Link>
+                        <Link
+                            href={cartIndex()}
+                            prefetch
+                            className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+                        >
+                            Cart
+                        </Link>
                     </div>
                 </div>
 
                 {/* Massive Animated Logo Container */}
-                <div className="w-full flex justify-center mt-12 mb-4">
-                    <div ref={logoRef} className="relative w-full max-w-5xl px-4 faded-bottom opacity-30 saturate-50 mix-blend-screen">
+                <div className="mt-12 mb-4 flex w-full justify-center">
+                    <div
+                        ref={logoRef}
+                        className="faded-bottom relative w-full max-w-5xl px-4 opacity-30 mix-blend-screen saturate-50"
+                    >
                         {/* Define the gradient for the SVG fill */}
                         <svg width="0" height="0" className="absolute">
                             <defs>
-                                <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <linearGradient
+                                    id="brand-gradient"
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="100%"
+                                    y2="0%"
+                                >
                                     <stop offset="0%" stopColor="#8dc641" />
                                     <stop offset="100%" stopColor="#1176bc" />
                                 </linearGradient>
@@ -143,24 +171,27 @@ export function Footer() {
                         </svg>
 
                         {/* Base Hollow Logo */}
-                        <AppLogo className="w-full h-auto hollow-logo" />
+                        <AppLogo className="hollow-logo h-auto w-full" />
 
                         {/* Filled Animated Logo Layer */}
                         <div
-                            className="absolute inset-0 px-4 transition-all duration-[2000ms] ease-out pointer-events-none"
+                            className="pointer-events-none absolute inset-0 px-4 transition-all duration-[2000ms] ease-out"
                             style={{
-                                clipPath: isVisible ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)'
+                                clipPath: isVisible
+                                    ? 'inset(0 0% 0 0)'
+                                    : 'inset(0 100% 0 0)',
                             }}
                         >
-                            <AppLogo className="w-full h-auto filled-logo" />
+                            <AppLogo className="filled-logo h-auto w-full" />
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Custom Styles for the stroke, background clip, and animation */}
-            <style dangerouslySetInnerHTML={{
-                __html: `
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
                 /* Target all paths inside the base logo to make them invisible but keep layout space */
                 .hollow-logo path {
                     fill: transparent !important;
@@ -178,7 +209,9 @@ export function Footer() {
                     -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 100%);
                     mask-image: linear-gradient(to bottom, black 20%, transparent 100%);
                 }
-            `}} />
+            `,
+                }}
+            />
         </footer>
     );
 }

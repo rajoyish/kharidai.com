@@ -26,9 +26,14 @@ type Order = {
             product: {
                 title: string;
                 image: string;
+                type: 'physical' | 'digital' | 'service';
             };
         };
     }[];
+    shipment: {
+        status: string;
+        tracking_note: string | null;
+    } | null;
     credentials: {
         id: number;
         content: string;
@@ -66,17 +71,32 @@ export default function OrderShow({ order }: { order: Order }) {
                 title={`Order ${order.order_number}`}
                 description={`Placed on ${new Date(order.created_at).toLocaleString()}`}
                 actions={
-                    <span
-                        className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize ${
-                            order.status === 'completed'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : order.status === 'delivering'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        }`}
-                    >
-                        {order.status}
-                    </span>
+                    <div className="flex items-center gap-3">
+                        <span
+                            className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize ${
+                                order.status === 'completed'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                    : order.status === 'delivering'
+                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                            }`}
+                        >
+                            {order.status}
+                        </span>
+                        {order.shipment && (
+                            <span
+                                className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize border ${
+                                    order.shipment.status === 'delivered'
+                                        ? 'border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-950/30'
+                                        : order.shipment.status === 'shipped'
+                                          ? 'border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-950/30'
+                                          : 'border-yellow-200 text-yellow-700 bg-yellow-50 dark:border-yellow-800 dark:text-yellow-300 dark:bg-yellow-950/30'
+                                }`}
+                            >
+                                Shipment: {order.shipment.status}
+                            </span>
+                        )}
+                    </div>
                 }
                 variant="transparent"
             >
@@ -131,10 +151,11 @@ export default function OrderShow({ order }: { order: Order }) {
                         </div>
 
                         {/* Digital Delivery Credentials */}
-                        <div className="rounded-xl border bg-card p-6">
-                            <h2 className="mb-4 text-xl font-semibold">
-                                Digital Delivery
-                            </h2>
+                        {order.items.some(item => item.product_variant.product.type === 'digital') && (
+                            <div className="rounded-xl border bg-card p-6">
+                                <h2 className="mb-4 text-xl font-semibold">
+                                    Digital Delivery
+                                </h2>
                             {order.credentials.length > 0 ? (
                                 <div className="space-y-4">
                                     {order.credentials.map((cred) => {
@@ -262,13 +283,13 @@ export default function OrderShow({ order }: { order: Order }) {
                                 </div>
                             ) : (
                                 <div className="rounded-lg border border-dashed bg-muted/30 py-8 text-center text-muted-foreground">
-                                    {order.status === 'pending' ||
-                                    order.status === 'delivering'
+                                    {order.status === 'pending' || order.status === 'delivering'
                                         ? 'Your digital items will appear here once delivered.'
                                         : 'No digital items attached to this order.'}
                                 </div>
                             )}
                         </div>
+                        )}
 
                         {/* Order Messages */}
                         <SupportChat

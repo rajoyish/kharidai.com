@@ -15,7 +15,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = Order::with('items.productVariant.product')
+        $orders = Order::with(['items.productVariant.product', 'shipment'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->paginate(10);
@@ -31,7 +31,7 @@ class OrderController extends Controller
             abort(403);
         }
 
-        $order->load(['items.productVariant.product', 'paymentReceipt', 'credentials', 'messages.user']);
+        $order->load(['items.productVariant.product', 'paymentReceipt', 'credentials', 'messages.user', 'shipment']);
 
         return Inertia::render('User/Orders/Show', [
             'order' => $order,

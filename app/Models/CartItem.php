@@ -16,10 +16,11 @@ use Illuminate\Support\Carbon;
  * @property int $quantity
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property array|null $brief
  * @property Cart $cart
  * @property ProductVariant $productVariant
  */
-#[Fillable(['cart_id', 'product_variant_id', 'quantity'])]
+#[Fillable(['cart_id', 'product_variant_id', 'quantity', 'brief'])]
 class CartItem extends Model
 {
     /** @use HasFactory<CartItemFactory> */
@@ -39,5 +40,12 @@ class CartItem extends Model
     public function productVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'brief' => 'array',
+        ];
     }
 }

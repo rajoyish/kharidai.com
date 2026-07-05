@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Briefcase,
     CalendarDays,
     ClipboardList,
     HandCoins,
@@ -8,6 +9,7 @@ import {
     Package,
     ShoppingCart,
     Tags,
+    Truck,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -29,10 +31,13 @@ import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCategoriesIndex } from '@/routes/admin/categories';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
 import { index as adminProductsIndex } from '@/routes/admin/products';
+import { index as adminServicesIndex } from '@/routes/admin/services';
+import { index as adminShippingIndex } from '@/routes/admin/shipping';
 import { index as adminSubscriptionsIndex } from '@/routes/admin/subscriptions';
 import { index as adminTithesIndex } from '@/routes/admin/tithes';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as ordersIndex } from '@/routes/orders';
+import { index as servicesIndex } from '@/routes/account/services';
 import { index as subscriptionsIndex } from '@/routes/subscriptions';
 import type { NavItem, SharedData } from '@/types';
 
@@ -51,6 +56,11 @@ const mainNavItems: NavItem[] = [
         title: 'My Subscriptions',
         href: subscriptionsIndex(),
         icon: CalendarDays,
+    },
+    {
+        title: 'My Services',
+        href: servicesIndex(),
+        icon: Briefcase,
     },
 ];
 
@@ -89,6 +99,16 @@ const adminNavItems: NavItem[] = [
         title: 'Categories',
         href: adminCategoriesIndex(),
         icon: Tags,
+    },
+    {
+        title: 'Shipping',
+        href: adminShippingIndex(),
+        icon: Truck,
+    },
+    {
+        title: 'Services',
+        href: adminServicesIndex(),
+        icon: Briefcase,
     },
 ];
 

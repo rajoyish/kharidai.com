@@ -75,4 +75,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(Subscription::class);
     }
+
+    /**
+     * Get the user's saved shipping addresses.
+     *
+     * @return HasMany<ShippingAddress, $this>
+     */
+    public function shippingAddresses(): HasMany
+    {
+        return $this->hasMany(ShippingAddress::class);
+    }
+
+    /**
+     * Get the user's service engagements.
+     *
+     * @return HasMany<ServiceEngagement, $this>
+     */
+    public function serviceEngagements(): HasMany
+    {
+        return $this->hasMany(ServiceEngagement::class);
+    }
 }
