@@ -27,8 +27,8 @@ type Product = {
     };
 };
 
-const PRODUCT_IMAGE_COLUMN_CLASSES = 'w-[88px] min-w-[88px] max-w-[88px] px-4';
-const PRODUCT_STATUS_COLUMN_CLASSES = 'w-[132px] min-w-[132px]';
+const PRODUCT_IMAGE_COLUMN_CLASSES = 'w-22 min-w-22 max-w-22 px-4';
+const PRODUCT_STATUS_COLUMN_CLASSES = 'w-33 min-w-33';
 
 export default function ProductsIndex({ products }: { products: Product[] }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -120,7 +120,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         </div>
                                     )}
                                 </TableCell>
-                                <TableCell className="max-w-[200px] truncate font-medium sm:max-w-none">
+                                <TableCell className="max-w-50 truncate font-medium sm:max-w-none">
                                     {product.title}
                                 </TableCell>
                                 <TableCell>
@@ -141,7 +141,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                             : 'Out of Stock'}
                                     </span>
                                 </TableCell>
-                                <TableCell className="flex h-[72px] items-center justify-end gap-1.5">
+                                <TableCell className="flex h-18 items-center justify-end gap-1.5">
                                     <Button
                                         variant="outline"
                                         size="sm"

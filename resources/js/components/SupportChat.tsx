@@ -95,7 +95,7 @@ e.preventDefault();
     };
 
     return (
-        <div className="flex h-[500px] flex-col rounded-xl border bg-card p-6">
+        <div className="flex h-125 flex-col rounded-xl border bg-card p-6">
             <div className="mb-4 flex flex-shrink-0 items-start justify-between">
                 <div>
                     <h2 className="text-xl font-semibold">Support Chat</h2>
@@ -191,12 +191,12 @@ e.preventDefault();
                         }
                     }}
                     placeholder="Type your message..."
-                    className="min-h-[60px] resize-none"
+                    className="min-h-15 resize-none"
                 />
                 <Button
                     type="submit"
                     disabled={processing || !data.message.trim()}
-                    className="h-[60px] px-8"
+                    className="h-15 px-8"
                 >
                     Send
                 </Button>
