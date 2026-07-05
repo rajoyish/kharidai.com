@@ -79,7 +79,7 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
                 onKeyDown={handleKeyDown}
                 autoFocus
                 placeholder="Add label (e.g. Personal)"
-                className="h-8 max-w-[200px]"
+                className="h-8 max-w-50"
             />
         );
     }

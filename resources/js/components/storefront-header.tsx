@@ -107,7 +107,7 @@ export function StorefrontHeader({
                 <div className="hidden items-center gap-6 md:flex">
                     <Link href={accountHref} prefetch className="flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary">
                         <User className="h-5 w-5 shrink-0" />
-                        <span className="max-w-[10rem] truncate">{accountLabel}</span>
+                        <span className="max-w-40 truncate">{accountLabel}</span>
                     </Link>
                     <Link href={cartIndex()} prefetch className="relative flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary">
                         <div className="relative">

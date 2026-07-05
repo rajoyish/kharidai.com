@@ -17,6 +17,27 @@ import type { PageProps } from '@/types';
 
 const ImageLightbox = lazy(() => import('@/components/image-lightbox'));
 
+/** Drop trailing ".00" so whole-rupee prices read cleanly (e.g. "2160.00" → "2160"). */
+function formatNpr(value: string): string {
+    const amount = Number(value);
+
+    return Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+}
+
+/** Price with a small muted "Rs." and a large bold amount, matching the variant header. */
+function VariantPrice({ value }: { value: string }) {
+    return (
+        <div className="flex items-baseline gap-1 leading-none">
+            <span className="text-base font-medium text-muted-foreground">
+                Rs.
+            </span>
+            <span className="text-3xl font-bold tracking-tight">
+                {formatNpr(value)}
+            </span>
+        </div>
+    );
+}
+
 type Variant = {
     id: number;
     name: string;
@@ -149,7 +170,7 @@ export default function Show({
                                     {product.title}
                                 </h1>
 
-                                {auth.user && showPrice && (
+                                {auth.user && showPrice && !showVariantSelector && (
                                     <div className="text-2xl font-semibold text-primary">
                                         Rs. {selectedVariant?.price_npr}
                                     </div>
@@ -195,9 +216,16 @@ export default function Show({
                             {/* Variants Selection */}
                             {auth.user && showVariantSelector && (
                                 <div>
-                                    <h3 className="mb-3 text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                                        Select Variant
-                                    </h3>
+                                    <div className="mb-3 flex items-baseline justify-between gap-4">
+                                        <h3 className="text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                                            Select Variant
+                                        </h3>
+                                        {showPrice && selectedVariant && (
+                                            <VariantPrice
+                                                value={selectedVariant.price_npr}
+                                            />
+                                        )}
+                                    </div>
                                     <RadioGroup
                                         value={selectedVariant?.id.toString()}
                                         onValueChange={(value) => {
@@ -282,7 +310,7 @@ export default function Show({
                                     {product.title}
                                 </h1>
 
-                                {auth.user && showPrice && (
+                                {auth.user && showPrice && !showVariantSelector && (
                                     <div className="mb-6 text-2xl font-semibold text-primary">
                                         Rs. {selectedVariant?.price_npr}
                                     </div>

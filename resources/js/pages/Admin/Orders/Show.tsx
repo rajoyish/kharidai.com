@@ -382,7 +382,7 @@ export default function AdminOrderShow({
                                                             e.target.value,
                                                         )
                                                     }
-                                                    className="mb-2 min-h-[100px] font-mono text-sm"
+                                                    className="mb-2 min-h-25 font-mono text-sm"
                                                 />
                                                 <div className="flex justify-end gap-2">
                                                     <Button
@@ -472,7 +472,7 @@ export default function AdminOrderShow({
                                         setCredData('content', e.target.value)
                                     }
                                     placeholder="Enter login details, activation codes, or secure links here..."
-                                    className="mb-2 min-h-[100px] font-mono text-sm"
+                                    className="mb-2 min-h-25 font-mono text-sm"
                                 />
                                 <div className="flex justify-end">
                                     <Button

@@ -123,7 +123,7 @@ export default function Welcome({
             <PinnedPanels>
                 <div
                     data-panel
-                    className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-accent/10 pb-32"
+                    className="relative overflow-hidden bg-linear-to-br from-primary/10 via-white to-accent/10 pb-32"
                 >
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_0.0625rem,transparent_0.0625rem),linear-gradient(to_bottom,#80808012_0.0625rem,transparent_0.0625rem)] [mask-image:linear-gradient(to_bottom,white,transparent)] bg-[size:1.5rem_1.5rem]" />
 
@@ -158,11 +158,11 @@ export default function Welcome({
                     data-panel
                     className="relative overflow-hidden bg-[#09090b] py-32"
                 >
-                    <div className="pointer-events-none absolute top-0 left-1/4 h-[40rem] w-[40rem] -translate-y-1/2 transform rounded-full bg-primary/20 mix-blend-screen blur-[8rem]" />
-                    <div className="pointer-events-none absolute right-1/4 bottom-0 h-[40rem] w-[40rem] translate-y-1/3 transform rounded-full bg-accent/20 mix-blend-screen blur-[8rem]" />
-                    <div className="pointer-events-none absolute top-1/2 left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-primary/10 mix-blend-screen blur-[8rem]" />
+                    <div className="pointer-events-none absolute top-0 left-1/4 size-160 -translate-y-1/2 transform rounded-full bg-primary/20 mix-blend-screen blur-[8rem]" />
+                    <div className="pointer-events-none absolute right-1/4 bottom-0 size-160 translate-y-1/3 transform rounded-full bg-accent/20 mix-blend-screen blur-[8rem]" />
+                    <div className="pointer-events-none absolute top-1/2 left-1/2 size-120 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-primary/10 mix-blend-screen blur-[8rem]" />
 
-                    <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    <div className="absolute top-0 right-0 left-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
                     <div
                         data-panel-inner
                         className="relative z-10 container mx-auto max-w-5xl px-4"
@@ -178,7 +178,7 @@ export default function Welcome({
                         </div>
 
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <CloudDownload className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -190,7 +190,7 @@ export default function Welcome({
                                     email within seconds.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Star className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -201,7 +201,7 @@ export default function Welcome({
                                     platforms at unbeatable discounted rates.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -right-12 -bottom-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <Briefcase className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -212,7 +212,7 @@ export default function Welcome({
                                     work, consulting, and specialized services.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/[0.03] p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]">
+                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Truck className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">

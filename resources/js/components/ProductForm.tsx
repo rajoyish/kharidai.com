@@ -484,7 +484,7 @@ return;
                                         </AttachmentGroup>
                                     </TooltipProvider>
                                 ) : (
-                                    <div className="flex flex-1 min-h-[144px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground mt-2">
+                                    <div className="flex flex-1 min-h-36 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground mt-2">
                                         No gallery images uploaded yet.
                                     </div>
                                 )}
@@ -503,7 +503,7 @@ return;
                             {/* Main Product Image */}
                             <div className="flex flex-col h-full gap-2">
                                 <Label>Main Product Image</Label>
-                                <div className="mt-2 flex flex-1 min-h-[144px] justify-center rounded-lg border border-dashed border-muted-foreground/25 px-6 py-10 items-center">
+                                <div className="mt-2 flex flex-1 min-h-36 justify-center rounded-lg border border-dashed border-muted-foreground/25 px-6 py-10 items-center">
                                     <div className="text-center">
                                         <UploadCloud
                                             className="mx-auto h-12 w-12 text-muted-foreground/50"
