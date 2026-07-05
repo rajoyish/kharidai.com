@@ -1,9 +1,8 @@
 import { useForm } from '@inertiajs/react';
-import { CheckCircle2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
-import { SeoHead } from '@/components/seo-head';
 import { PaymentOptionToggle } from '@/components/payment-option-toggle';
+import { SeoHead } from '@/components/seo-head';
 import { ShippingSelector } from '@/components/shipping-selector';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -52,9 +51,6 @@ type SavedAddress = {
     shipping_zone_id: number | null;
 };
 
-const selectClassName =
-    'flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
-
 const rupees = (value: number) => `Rs. ${value.toFixed(0)}`;
 
 export default function CheckoutIndex({
@@ -101,21 +97,6 @@ export default function CheckoutIndex({
     const balanceDue =
         data.payment_option === 'shipping_only' ? itemsTotal : 0;
 
-    const applySavedAddress = (id: string) => {
-        const address = addresses.find((a) => a.id === Number(id));
-        if (!address) {
-            return;
-        }
-        setData((prev) => ({
-            ...prev,
-            recipient_name: address.recipient_name,
-            mobile_number: address.mobile_number,
-            address_line: address.address_line,
-            city: address.city,
-            landmark: address.landmark ?? '',
-            shipping_zone_id: address.shipping_zone_id ?? prev.shipping_zone_id,
-        }));
-    };
 
     const handleSetData = (field: string, value: any) => {
         setData(field as any, value);
