@@ -27,6 +27,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { home } from '@/routes';
+import { index as servicesIndex } from '@/routes/account/services';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCategoriesIndex } from '@/routes/admin/categories';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
@@ -37,7 +38,6 @@ import { index as adminSubscriptionsIndex } from '@/routes/admin/subscriptions';
 import { index as adminTithesIndex } from '@/routes/admin/tithes';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as ordersIndex } from '@/routes/orders';
-import { index as servicesIndex } from '@/routes/account/services';
 import { index as subscriptionsIndex } from '@/routes/subscriptions';
 import type { NavItem, SharedData } from '@/types';
 

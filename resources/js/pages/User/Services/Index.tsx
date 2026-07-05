@@ -27,9 +27,11 @@ const statusVariant = (status: string) => {
     if (status === 'completed' || status === 'delivered') {
         return 'default' as const;
     }
+
     if (status === 'cancelled') {
         return 'destructive' as const;
     }
+
     return 'secondary' as const;
 };
 

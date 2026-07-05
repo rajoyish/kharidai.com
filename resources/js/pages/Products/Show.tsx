@@ -6,8 +6,8 @@ import { add as addToCart } from '@/actions/App/Http/Controllers/CartController'
 import { JsonLd } from '@/components/json-ld';
 import { LightboxImageAnchor, shouldOpenLightboxFromClick } from '@/components/lightbox-image-link';
 import { ProductDescription } from '@/components/product-description';
-import { ServiceBriefForm } from '@/components/service-brief-form';
 import { SeoHead } from '@/components/seo-head';
+import { ServiceBriefForm } from '@/components/service-brief-form';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -99,6 +99,7 @@ export default function Show({
             toast.error(
                 'Please provide brief information before adding to cart.',
             );
+
             return;
         }
 
