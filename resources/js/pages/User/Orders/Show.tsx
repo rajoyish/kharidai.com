@@ -348,7 +348,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                 </div>
                                 {order.can_reupload_receipt ? (
                                     <div className="mt-4 border-t pt-4">
-                                        <Button className="w-full" asChild>
+                                        <Button className="w-fit" asChild>
                                             <Link
                                                 href={`/checkout/${order.id}/npr`}
                                             >
@@ -360,7 +360,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                 ) : (
                                     <div className="mt-4 border-t pt-4">
                                         <Button
-                                            className="w-full"
+                                            className="w-fit"
                                             variant="outline"
                                             disabled={
                                                 order.request_receipt_upload
@@ -395,7 +395,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                         order.
                                     </div>
                                     <div className="mt-4 border-t pt-4">
-                                        <Button className="w-full" asChild>
+                                        <Button className="w-fit" asChild>
                                             <Link
                                                 href={`/checkout/${order.id}/npr`}
                                             >

@@ -5,9 +5,11 @@ namespace App\Models;
 use App\Enums\ProductType;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -20,6 +22,7 @@ use Illuminate\Support\Str;
  * @property ProductType|null $type
  * @property int $sort_order
  * @property Category|null $parent
+ * @property int|null $product_variants_count
  */
 #[Fillable(['parent_id', 'name', 'slug', 'type', 'sort_order'])]
 class Category extends Model
@@ -86,11 +89,27 @@ class Category extends Model
     }
 
     /**
-     * @return HasMany<Product, $this>
+     * @return BelongsToMany<Product, $this>
      */
-    public function products(): HasMany
+    public function products(): BelongsToMany
     {
-        return $this->hasMany(Product::class);
+        return $this->belongsToMany(Product::class);
+    }
+
+    /**
+     * Eager-load the total number of product variants belonging to products
+     * directly assigned to this category, as a `product_variants_count`
+     * attribute. Resolved with a single correlated subquery to avoid N+1.
+     *
+     * @param  Builder<Category>  $query
+     */
+    public function scopeWithProductVariantsCount(Builder $query): void
+    {
+        $query->addSelect(['product_variants_count' => ProductVariant::query()
+            ->selectRaw('count(*)')
+            ->join('category_product', 'category_product.product_id', '=', 'product_variants.product_id')
+            ->whereColumn('category_product.category_id', 'categories.id'),
+        ]);
     }
 
     /**

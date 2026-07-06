@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { destroy as destroyProduct } from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -22,9 +23,10 @@ type Product = {
     image: string;
     slug: string;
     in_stock: boolean;
-    category?: {
+    categories?: {
+        id: number;
         name: string;
-    };
+    }[];
 };
 
 const PRODUCT_IMAGE_COLUMN_CLASSES = 'w-22 min-w-22 max-w-22 px-4';
@@ -67,14 +69,14 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                 title="Products"
                 variant="transparent"
                 actions={
-                    <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row">
+                    <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
                         <Input
                             placeholder="Search products..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full sm:w-64"
                         />
-                        <Button asChild className="w-full sm:w-auto">
+                        <Button asChild className="w-fit">
                             <Link href="/admin/products/create">
                                 Add Product
                             </Link>
@@ -124,7 +126,21 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                     {product.title}
                                 </TableCell>
                                 <TableCell>
-                                    {product.category?.name || (
+                                    {product.categories &&
+                                    product.categories.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1">
+                                            {product.categories.map(
+                                                (category) => (
+                                                    <Badge
+                                                        key={category.id}
+                                                        variant="secondary"
+                                                    >
+                                                        {category.name}
+                                                    </Badge>
+                                                ),
+                                            )}
+                                        </div>
+                                    ) : (
                                         <span className="text-xs text-muted-foreground italic">
                                             Uncategorized
                                         </span>

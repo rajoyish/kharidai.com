@@ -101,7 +101,7 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                 title="Shipping Zones"
                 variant="transparent"
                 actions={
-                    <Button onClick={handleCreate} className="w-full sm:w-auto">
+                    <Button onClick={handleCreate} className="w-fit">
                         Add Zone
                     </Button>
                 }

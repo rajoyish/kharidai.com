@@ -54,7 +54,7 @@ export default function ServicesIndex({
                 title="Service Engagements"
                 variant="transparent"
                 actions={
-                    <Button asChild className="w-full sm:w-auto">
+                    <Button asChild className="w-fit">
                         <Link href={createEngagement.url()}>Assign Service</Link>
                     </Button>
                 }

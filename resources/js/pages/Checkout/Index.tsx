@@ -239,7 +239,7 @@ export default function CheckoutIndex({
                                 <Button
                                     type="submit"
                                     size="lg"
-                                    className="w-full"
+                                    className="w-fit"
                                     disabled={processing}
                                 >
                                     Place Order

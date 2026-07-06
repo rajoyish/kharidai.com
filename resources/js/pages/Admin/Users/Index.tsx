@@ -69,7 +69,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
                 title="User Management"
                 variant="transparent"
                 actions={
-                    <Button asChild className="w-full sm:w-auto">
+                    <Button asChild className="w-fit">
                         <Link href={createUser.url()}>New User</Link>
                     </Button>
                 }

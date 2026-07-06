@@ -2,9 +2,11 @@
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -18,6 +20,23 @@ it('can list categories', function () {
     $response = $this->actingAs($this->admin)->get('/admin/categories');
 
     $response->assertSuccessful();
+});
+
+it('counts product variants rather than base products for each category', function () {
+    $category = Category::factory()->create();
+
+    // One base product with two variants must count as two items.
+    $product = Product::factory()->hasAttached($category)->create();
+    ProductVariant::factory()->count(2)->for($product)->create();
+
+    $response = $this->actingAs($this->admin)->get('/admin/categories');
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Admin/Categories/Index')
+        ->where('categories.0.id', $category->id)
+        ->where('categories.0.product_variants_count', 2),
+    );
 });
 
 it('can create a category', function () {
@@ -60,7 +79,7 @@ it('can delete a category', function () {
 
 it('can delete a category without deleting its products', function () {
     $category = Category::factory()->create();
-    $product = Product::factory()->create(['category_id' => $category->id]);
+    $product = Product::factory()->hasAttached($category)->create();
 
     $response = $this->actingAs($this->admin)->delete('/admin/categories/'.$category->slug);
 
@@ -70,7 +89,10 @@ it('can delete a category without deleting its products', function () {
     ]);
     $this->assertDatabaseHas('products', [
         'id' => $product->id,
-        'category_id' => null,
+    ]);
+    $this->assertDatabaseMissing('category_product', [
+        'category_id' => $category->id,
+        'product_id' => $product->id,
     ]);
 });
 

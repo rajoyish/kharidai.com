@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -33,6 +34,42 @@ it('can create a product', function () {
         'title' => 'New Product',
         'in_stock' => true,
     ]);
+});
+
+it('assigns multiple categories to a product on create', function () {
+    $categories = Category::factory()->count(2)->create();
+
+    $response = $this->actingAs($this->admin)->post('/admin/products', [
+        'title' => 'Multi Category Product',
+        'description' => 'Test description',
+        'in_stock' => true,
+        'category_ids' => $categories->pluck('id')->all(),
+    ]);
+
+    $response->assertRedirect();
+
+    $product = Product::where('title', 'Multi Category Product')->firstOrFail();
+
+    expect($product->categories->pluck('id')->all())
+        ->toEqualCanonicalizing($categories->pluck('id')->all());
+});
+
+it('syncs categories when a product is updated', function () {
+    $original = Category::factory()->create();
+    $replacement = Category::factory()->create();
+    $product = Product::factory()->hasAttached($original)->create();
+
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug, [
+        'title' => $product->title,
+        'description' => 'Updated description',
+        'in_stock' => true,
+        'category_ids' => [$replacement->id],
+    ]);
+
+    $response->assertRedirect();
+
+    expect($product->fresh()->categories->pluck('id')->all())
+        ->toEqual([$replacement->id]);
 });
 
 it('can update a product', function () {

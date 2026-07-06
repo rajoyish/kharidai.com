@@ -276,7 +276,7 @@ export default function Show({
                             <div className="mt-2 flex flex-col gap-4">
                                 <Button
                                     size="lg"
-                                    className="h-14 w-full text-lg"
+                                    className="h-14 w-fit text-lg"
                                     onClick={handleAddToCart}
                                     disabled={
                                         processing ||

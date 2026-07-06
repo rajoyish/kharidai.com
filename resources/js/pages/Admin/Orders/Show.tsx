@@ -759,7 +759,7 @@ export default function AdminOrderShow({
                                             )}
                                             <Button
                                                 variant="outline"
-                                                className="w-full"
+                                                className="w-fit"
                                                 onClick={() => {
                                                     router.patch(
                                                         allowReceiptReupload(

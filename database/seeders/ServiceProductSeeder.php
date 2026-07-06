@@ -94,8 +94,9 @@ class ServiceProductSeeder extends Seeder
                 'image' => null,
                 'in_stock' => true,
                 'is_visible' => $data['is_visible'],
-                'category_id' => $category?->id,
             ]);
+
+            $product->categories()->sync(array_filter([$category?->id]));
 
             // A single reference variant carries a rough estimate; the real cost is
             // calculated after completion and then negotiated.
