@@ -131,7 +131,17 @@ class StorefrontController extends Controller
             abort(404);
         }
 
-        $relations = ['variants', 'galleries'];
+        // Digital variant details stay behind authentication; physical and
+        // service variants are public. Guests viewing a digital product never
+        // receive the individual variant rows — only an aggregate "starting"
+        // price computed in the database — so protected pricing never reaches
+        // the browser.
+        $canViewVariants = $product->type !== ProductType::Digital || auth()->check();
+
+        $relations = ['galleries'];
+        if ($canViewVariants) {
+            $relations[] = 'variants';
+        }
         if ($product->type === ProductType::Physical) {
             $relations[] = 'physicalDetail';
         } elseif ($product->type === ProductType::Service) {
@@ -139,10 +149,17 @@ class StorefrontController extends Controller
         }
 
         $product->load($relations);
+
+        $startingPriceInCents = $canViewVariants
+            ? null
+            : $product->variants()->min('price_npr');
+
         $productSeoImage = $this->productSeoImage($product);
 
         return Inertia::render('Products/Show', [
             'product' => $product,
+            'canViewVariants' => $canViewVariants,
+            'startingPrice' => $startingPriceInCents !== null ? $startingPriceInCents / 100 : null,
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($product->title),
@@ -354,7 +371,8 @@ class StorefrontController extends Controller
             ->ofType($type)
             ->visible()
             ->where('in_stock', true)
-            ->with('variants')
+            ->withCount('variants')
+            ->withMin('variants as starting_price_cents', 'price_npr')
             ->when($search, fn ($query) => $query->where(function (Builder $inner) use ($search) {
                 $inner->where('title', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
@@ -414,7 +432,8 @@ class StorefrontController extends Controller
             ->when($type, fn ($inner) => $inner->where('type', $type))
             ->where('in_stock', true)
             ->where('is_visible', true)
-            ->with('variants')
+            ->withCount('variants')
+            ->withMin('variants as starting_price_cents', 'price_npr')
             ->latest();
 
         return $query;

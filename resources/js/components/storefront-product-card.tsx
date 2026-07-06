@@ -6,19 +6,15 @@ import { show as showProduct } from '@/routes/products';
 import type { StorefrontProduct } from '@/types';
 
 function formatStartingPrice(product: StorefrontProduct): string | null {
-    if (!product.variants || product.variants.length === 0) {
+    const cents = product.starting_price_cents;
+
+    // No priced variant (null) or a price-on-request placeholder (0) shows no
+    // "Starting at" line, matching the product detail page.
+    if (cents == null || cents <= 0) {
         return null;
     }
 
-    const startingPrice = Math.min(
-        ...product.variants.map((v) => Number.parseFloat(v.price_npr)),
-    );
-
-    if (Number.isNaN(startingPrice)) {
-        return null;
-    }
-
-    return startingPrice.toLocaleString();
+    return (cents / 100).toLocaleString();
 }
 
 export function StorefrontProductCard({

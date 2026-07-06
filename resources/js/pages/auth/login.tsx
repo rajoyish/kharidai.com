@@ -10,7 +10,7 @@ export default function Login() {
                 <div className="grid gap-6">
                     <Button
                         type="button"
-                        className="w-fit"
+                        className="mx-auto w-fit"
                         onClick={() => (window.location.href = '/auth/google')}
                     >
                         Sign in with Google

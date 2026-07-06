@@ -30,7 +30,7 @@ const SECTION_HREF: Record<
 };
 
 function countProduct(product: StorefrontProduct): number {
-    return 1 + (product.variants?.length ?? 0);
+    return 1 + (product.variants_count ?? 0);
 }
 
 export default function Welcome({

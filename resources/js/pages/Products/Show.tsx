@@ -4,7 +4,10 @@ import { toast } from 'sonner';
 
 import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
 import { JsonLd } from '@/components/json-ld';
-import { LightboxImageAnchor, shouldOpenLightboxFromClick } from '@/components/lightbox-image-link';
+import {
+    LightboxImageAnchor,
+    shouldOpenLightboxFromClick,
+} from '@/components/lightbox-image-link';
 import { ProductDescription } from '@/components/product-description';
 import { SeoHead } from '@/components/seo-head';
 import { ServiceBriefForm } from '@/components/service-brief-form';
@@ -57,24 +60,43 @@ type Product = {
     description: string | null;
     image: string | null;
     type: string;
-    variants: Variant[];
+    /**
+     * Absent for digital products viewed by a guest — those visitors receive
+     * only `startingPrice` so protected per-variant pricing never leaves the
+     * server. Always present for physical and service products.
+     */
+    variants?: Variant[];
     galleries?: ProductGallery[];
-    physical_detail?: { weight_grams: number | null; free_shipping: boolean; } | null;
-    service_detail?: { delivery_days: number | null; revisions: number | null; requires_brief: boolean; } | null;
+    physical_detail?: {
+        weight_grams: number | null;
+        free_shipping: boolean;
+    } | null;
+    service_detail?: {
+        delivery_days: number | null;
+        revisions: number | null;
+        requires_brief: boolean;
+    } | null;
 };
 
 export default function Show({
     product,
+    canViewVariants,
+    startingPrice,
 }: {
     product: Product;
+    canViewVariants: boolean;
+    startingPrice: number | null;
 }) {
     const { auth, seo } = usePage<PageProps>().props;
+    const variants = product.variants ?? [];
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
-        product.variants.length > 0 ? product.variants[0] : null,
+        variants.length > 0 ? variants[0] : null,
     );
 
     const galleryImages = useMemo(() => {
-        return (product.galleries ?? []).map((img) => `/storage/${img.image_path}`);
+        return (product.galleries ?? []).map(
+            (img) => `/storage/${img.image_path}`,
+        );
     }, [product.galleries]);
 
     const allImages = useMemo(() => {
@@ -93,11 +115,14 @@ export default function Show({
     // no upfront price: show it as "price on request" and skip the single-option
     // variant picker. Multi-package services still let the customer choose.
     const showVariantSelector =
-        product.type === 'service'
-            ? product.variants.length > 1
-            : product.variants.length > 0;
+        product.type === 'service' ? variants.length > 1 : variants.length > 0;
     const showPrice =
         !!selectedVariant && Number(selectedVariant.price_npr) > 0;
+
+    // Guests never see digital variant details; instead they get a database-
+    // computed "Starting at" price so they still know the entry point cost.
+    const showStartingPrice =
+        !canViewVariants && startingPrice !== null && startingPrice > 0;
 
     const { data, setData, post, processing, transform } = useForm({
         product_variant_id: selectedVariant?.id,
@@ -161,8 +186,26 @@ export default function Show({
                     }}
                 />
             )}
+            {!selectedVariant && showStartingPrice && (
+                <JsonLd
+                    data={{
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: product.title,
+                        image: seo.image,
+                        description: seo.description,
+                        offers: {
+                            '@type': 'AggregateOffer',
+                            priceCurrency: 'NPR',
+                            lowPrice: formatNpr(String(startingPrice)),
+                            availability: 'https://schema.org/InStock',
+                            url: seo.url,
+                        },
+                    }}
+                />
+            )}
             <main className="container mx-auto flex-1 px-4 py-8">
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
+                <div className="my-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:my-12 lg:gap-20">
                     <div className="order-1 flex flex-col gap-8 md:order-2">
                         {/* Mobile Title & Price (Hidden on Desktop) */}
                         <div className="flex flex-col md:hidden">
@@ -170,20 +213,26 @@ export default function Show({
                                 {product.title}
                             </h1>
 
-                            {auth.user && showPrice && !showVariantSelector && (
-                                <div className="text-2xl font-semibold text-primary">
-                                    Rs. {selectedVariant?.price_npr}
-                                </div>
-                            )}
+                            {canViewVariants &&
+                                showPrice &&
+                                !showVariantSelector && (
+                                    <div className="text-2xl font-semibold text-primary">
+                                        Rs. {selectedVariant?.price_npr}
+                                    </div>
+                                )}
                         </div>
 
                         {/* Main Image */}
                         {product.image || galleryImages.length > 0 ? (
                             <LightboxImageAnchor
-                                src={product.image ? `/storage/${product.image}` : galleryImages[0]}
+                                src={
+                                    product.image
+                                        ? `/storage/${product.image}`
+                                        : galleryImages[0]
+                                }
                                 alt={product.title}
                                 ariaLabel={`View main image for ${product.title}`}
-                                className="aspect-[1200/630] w-full overflow-hidden rounded-lg border bg-muted"
+                                className="aspect-1200/630 w-full overflow-hidden rounded-lg border bg-muted"
                                 imageClassName="h-full w-full object-cover transition-opacity hover:opacity-90"
                                 onClick={(event) => {
                                     if (!shouldOpenLightboxFromClick(event)) {
@@ -196,8 +245,10 @@ export default function Show({
                                 }}
                             />
                         ) : (
-                            <div className="flex aspect-[1200/630] w-full items-center justify-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
-                                <span className="text-sm font-medium">No image available</span>
+                            <div className="flex aspect-1200/630 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
+                                <span className="text-sm font-medium">
+                                    No image available
+                                </span>
                             </div>
                         )}
 
@@ -214,7 +265,7 @@ export default function Show({
                         )}
 
                         {/* Variants Selection */}
-                        {auth.user && showVariantSelector && (
+                        {canViewVariants && showVariantSelector && (
                             <div>
                                 <div className="mb-3 flex items-baseline justify-between gap-4">
                                     <h3 className="text-sm font-medium tracking-wider text-muted-foreground uppercase">
@@ -229,12 +280,9 @@ export default function Show({
                                 <RadioGroup
                                     value={selectedVariant?.id.toString()}
                                     onValueChange={(value) => {
-                                        const variant =
-                                            product.variants.find(
-                                                (v) =>
-                                                    v.id.toString() ===
-                                                    value,
-                                            );
+                                        const variant = variants.find(
+                                            (v) => v.id.toString() === value,
+                                        );
 
                                         if (variant) {
                                             handleVariantChange(variant);
@@ -242,7 +290,7 @@ export default function Show({
                                     }}
                                     className="grid gap-4"
                                 >
-                                    {product.variants.map((variant) => (
+                                    {variants.map((variant) => (
                                         <Label
                                             key={variant.id}
                                             htmlFor={`variant-${variant.id}`}
@@ -268,9 +316,26 @@ export default function Show({
                             </div>
                         )}
 
-                        {auth.user && product.type === 'service' && product.service_detail?.requires_brief && (
-                            <ServiceBriefForm brief={data.brief} setBrief={(val) => setData('brief', val)} />
+                        {/* Guest fallback for digital products: no variant
+                            selector, just the database-computed entry price,
+                            shown in the same slot as the variant price above. */}
+                        {showStartingPrice && (
+                            <div>
+                                <h3 className="mb-3 text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                                    Starting at
+                                </h3>
+                                <VariantPrice value={String(startingPrice)} />
+                            </div>
                         )}
+
+                        {auth.user &&
+                            product.type === 'service' &&
+                            product.service_detail?.requires_brief && (
+                                <ServiceBriefForm
+                                    brief={data.brief}
+                                    setBrief={(val) => setData('brief', val)}
+                                />
+                            )}
 
                         {/* Add to Cart Actions */}
                         <div className="mt-2 flex flex-col gap-4">
@@ -279,9 +344,7 @@ export default function Show({
                                 className="h-14 w-fit text-lg"
                                 onClick={handleAddToCart}
                                 disabled={
-                                    processing ||
-                                    !selectedVariant ||
-                                    !auth.user
+                                    processing || !selectedVariant || !auth.user
                                 }
                             >
                                 {auth.user
@@ -306,33 +369,71 @@ export default function Show({
                     <div className="order-2 flex flex-col md:order-1">
                         {/* Desktop Title & Price (Hidden on Mobile) */}
                         <div className="hidden md:block">
-                            <h1 className="mb-2 text-3xl font-bold tracking-tight">
+                            <h1 className="mb-8 text-3xl font-bold tracking-tight lg:mb-16">
                                 {product.title}
                             </h1>
 
-                            {auth.user && showPrice && !showVariantSelector && (
-                                <div className="mb-6 text-2xl font-semibold text-primary">
-                                    Rs. {selectedVariant?.price_npr}
-                                </div>
-                            )}
+                            {canViewVariants &&
+                                showPrice &&
+                                !showVariantSelector && (
+                                    <div className="mb-6 text-2xl font-semibold text-primary">
+                                        Rs. {selectedVariant?.price_npr}
+                                    </div>
+                                )}
 
-                            {product.type === 'physical' && product.physical_detail && (
-                                <div className="mb-6 rounded-md bg-slate-50 p-4 border text-sm text-slate-700">
-                                    <p><strong>Physical Item</strong></p>
-                                    {product.physical_detail.weight_grams !== null && (
-                                        <p>Weight: {product.physical_detail.weight_grams} g</p>
-                                    )}
-                                    {product.physical_detail.free_shipping && <p>Free shipping.</p>}
-                                </div>
-                            )}
+                            {product.type === 'physical' &&
+                                product.physical_detail && (
+                                    <div className="mb-6 rounded-md border bg-slate-50 p-4 text-sm text-slate-700">
+                                        <p>
+                                            <strong>Physical Item</strong>
+                                        </p>
+                                        {product.physical_detail
+                                            .weight_grams !== null && (
+                                            <p>
+                                                Weight:{' '}
+                                                {
+                                                    product.physical_detail
+                                                        .weight_grams
+                                                }{' '}
+                                                g
+                                            </p>
+                                        )}
+                                        {product.physical_detail
+                                            .free_shipping && (
+                                            <p>Free shipping.</p>
+                                        )}
+                                    </div>
+                                )}
 
-                            {product.type === 'service' && product.service_detail && (
-                                <div className="mb-6 rounded-md bg-blue-50/50 p-4 border border-blue-100 text-sm text-slate-700">
-                                    <p><strong>Service Item</strong></p>
-                                    {product.service_detail.delivery_days && <p>Delivery within {product.service_detail.delivery_days} days</p>}
-                                    {product.service_detail.revisions !== null && <p>Revisions included: {product.service_detail.revisions}</p>}
-                                </div>
-                            )}
+                            {product.type === 'service' &&
+                                product.service_detail && (
+                                    <div className="mb-6 rounded-md border border-blue-100 bg-blue-50/50 p-4 text-sm text-slate-700">
+                                        <p>
+                                            <strong>Service Item</strong>
+                                        </p>
+                                        {product.service_detail
+                                            .delivery_days && (
+                                            <p>
+                                                Delivery within{' '}
+                                                {
+                                                    product.service_detail
+                                                        .delivery_days
+                                                }{' '}
+                                                days
+                                            </p>
+                                        )}
+                                        {product.service_detail.revisions !==
+                                            null && (
+                                            <p>
+                                                Revisions included:{' '}
+                                                {
+                                                    product.service_detail
+                                                        .revisions
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                         </div>
 
                         {/* Product Gallery (Below Price) */}
@@ -344,15 +445,21 @@ export default function Show({
                                         src={imgSrc}
                                         alt={`${product.title} gallery ${idx + 1}`}
                                         ariaLabel={`View gallery image ${idx + 1} for ${product.title}`}
-                                        className="aspect-square overflow-hidden rounded-md border-2 border-transparent hover:border-primary/50 transition-colors"
+                                        className="aspect-square overflow-hidden rounded-md border-2 border-transparent transition-colors hover:border-primary/50"
                                         imageClassName="h-full w-full object-cover"
                                         onClick={(event) => {
-                                            if (!shouldOpenLightboxFromClick(event)) {
+                                            if (
+                                                !shouldOpenLightboxFromClick(
+                                                    event,
+                                                )
+                                            ) {
                                                 return;
                                             }
 
                                             event.preventDefault();
-                                            setMainImageIndex(product.image ? idx + 1 : idx);
+                                            setMainImageIndex(
+                                                product.image ? idx + 1 : idx,
+                                            );
                                             setLightboxOpen(true);
                                         }}
                                     />
@@ -360,9 +467,7 @@ export default function Show({
                             </div>
                         )}
 
-                        <ProductDescription
-                            description={product.description}
-                        />
+                        <ProductDescription description={product.description} />
                     </div>
                 </div>
             </main>
@@ -370,4 +475,6 @@ export default function Show({
     );
 }
 
-Show.layout = (page: React.ReactNode) => <StorefrontLayout>{page}</StorefrontLayout>;
+Show.layout = (page: React.ReactNode) => (
+    <StorefrontLayout>{page}</StorefrontLayout>
+);

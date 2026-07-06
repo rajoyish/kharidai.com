@@ -14,7 +14,6 @@ function makeProduct(id: number, title: string): StorefrontProduct {
         slug: `product-${id}`,
         description: null,
         image: null,
-        variants: [],
     };
 }
 
