@@ -14,7 +14,14 @@ export type StorefrontProduct = {
     slug: string;
     description: string | null;
     image: string | null;
-    variants: StorefrontVariant[];
+    /**
+     * Lowest variant price in paisa (1/100 NPR), aggregated in the database via
+     * `withMin`. Used to render the "Starting at" price without exposing the
+     * individual variant rows — which stay protected for digital products.
+     */
+    starting_price_cents?: number | null;
+    /** Number of variants, aggregated via `withCount` for storefront tallies. */
+    variants_count?: number;
 };
 
 export type StorefrontCategory = {
