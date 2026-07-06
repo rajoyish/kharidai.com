@@ -114,8 +114,9 @@ class ProductSeeder extends Seeder
                 'title' => $data['title'],
                 'description' => $data['description'],
                 'image' => null,
-                'category_id' => $data['category_id'],
             ]);
+
+            $product->categories()->sync(array_filter([$data['category_id']]));
 
             $product->variants()->create([
                 'name' => $data['variant_name'].' (Basic)',

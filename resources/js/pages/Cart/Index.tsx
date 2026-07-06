@@ -210,7 +210,7 @@ export default function CartIndex({ cart }: { cart: Cart }) {
 
                                     <Button
                                         size="lg"
-                                        className="w-full"
+                                        className="w-fit"
                                         asChild
                                     >
                                         <Link href={checkoutIndex()}>

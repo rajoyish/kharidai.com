@@ -4,6 +4,7 @@ import {
     FolderTree,
     Hash,
     Layers,
+    Package,
     Pencil,
     Plus,
     Tag,
@@ -35,6 +36,8 @@ type Category = {
     type: string | null;
     sort_order: number;
     parent?: { id: number; name: string } | null;
+    /** Total product variants across products directly assigned to this category. */
+    product_variants_count?: number;
 };
 
 type ProductTypeOption = {
@@ -120,6 +123,15 @@ export default function CategoriesIndex({
     const tree = useMemo(() => buildTree(categories), [categories]);
     const topLevelCount = tree.length;
     const subCount = categories.length - topLevelCount;
+    const totalItemCount = useMemo(
+        () =>
+            categories.reduce(
+                (total, category) =>
+                    total + (category.product_variants_count ?? 0),
+                0,
+            ),
+        [categories],
+    );
 
     const isDialogOpen = isCreating || editingCategory !== null;
 
@@ -194,14 +206,14 @@ export default function CategoriesIndex({
                 description="Organize your catalog into a tidy, nested hierarchy."
                 variant="transparent"
                 actions={
-                    <Button onClick={openCreate} className="w-full sm:w-auto">
+                    <Button onClick={openCreate} className="w-fit">
                         <Plus className="size-4" />
                         Add Category
                     </Button>
                 }
             >
                 <div className="flex flex-col gap-4">
-                    <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+                    <div className="grid grid-cols-2 gap-3 sm:max-w-2xl sm:grid-cols-3">
                         <div className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm">
                             <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <FolderTree className="size-5" />
@@ -225,6 +237,19 @@ export default function CategoriesIndex({
                                 </div>
                                 <div className="mt-1 text-xs text-muted-foreground">
                                     Subcategories
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm">
+                            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <Package className="size-5" />
+                            </div>
+                            <div>
+                                <div className="text-2xl leading-none font-bold">
+                                    {totalItemCount}
+                                </div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                    Items
                                 </div>
                             </div>
                         </div>
@@ -301,7 +326,9 @@ export default function CategoriesIndex({
                             <Input
                                 id="name"
                                 value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
+                                onChange={(e) =>
+                                    setData('name', e.target.value)
+                                }
                                 placeholder="e.g. Clothes"
                                 autoFocus
                                 required
@@ -330,7 +357,10 @@ export default function CategoriesIndex({
                             >
                                 <option value="">None (top level)</option>
                                 {parentOptions.map(({ category, depth }) => (
-                                    <option key={category.id} value={category.id}>
+                                    <option
+                                        key={category.id}
+                                        value={category.id}
+                                    >
                                         {`${'  '.repeat(depth)}${
                                             depth > 0 ? '└ ' : ''
                                         }${category.name}`}
@@ -350,7 +380,9 @@ export default function CategoriesIndex({
                                 id="type"
                                 className={selectClassName}
                                 value={data.type}
-                                onChange={(e) => setData('type', e.target.value)}
+                                onChange={(e) =>
+                                    setData('type', e.target.value)
+                                }
                             >
                                 <option value="">Any</option>
                                 {productTypes.map((option) => (
@@ -377,7 +409,10 @@ export default function CategoriesIndex({
                                 min={0}
                                 value={data.sort_order}
                                 onChange={(e) =>
-                                    setData('sort_order', Number(e.target.value))
+                                    setData(
+                                        'sort_order',
+                                        Number(e.target.value),
+                                    )
                                 }
                             />
                             {errors.sort_order && (
@@ -421,6 +456,7 @@ function CategoryRow({
 }) {
     const isChild = depth > 0;
     const childCount = countDescendants(node);
+    const itemCount = node.product_variants_count ?? 0;
 
     return (
         <li>
@@ -449,9 +485,7 @@ function CategoryRow({
                             <span
                                 className={cn(
                                     'truncate',
-                                    isChild
-                                        ? 'font-medium'
-                                        : 'font-semibold',
+                                    isChild ? 'font-medium' : 'font-semibold',
                                 )}
                             >
                                 {node.name}
@@ -471,6 +505,10 @@ function CategoryRow({
                                     {childCount === 1 ? 'sub' : 'subs'}
                                 </Badge>
                             )}
+                            <Badge variant="outline" className="gap-1">
+                                <Package className="size-3" />
+                                {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                            </Badge>
                         </div>
                         <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                             <span className="truncate font-mono">
@@ -484,7 +522,7 @@ function CategoryRow({
                     </div>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
                     <Button
                         variant="ghost"
                         size="icon"

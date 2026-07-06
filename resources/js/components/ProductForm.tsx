@@ -31,6 +31,8 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import { CategoryMultiSelect } from './category-multi-select';
+import type { CategoryOption } from './category-multi-select';
 import { ServiceConfigFields } from './ServiceConfigFields';
 
 export type ProductGallery = {
@@ -48,14 +50,11 @@ export type Product = {
     image?: string;
     in_stock?: boolean;
     is_visible?: boolean;
-    category_id?: number | null;
+    categories?: { id: number }[];
     galleries?: ProductGallery[];
 };
 
-type Category = {
-    id: number;
-    name: string;
-};
+type Category = CategoryOption;
 
 type ProductTypeOption = {
     value: string;
@@ -105,7 +104,9 @@ export function ProductForm({
         image: null as File | null,
         in_stock: product?.in_stock ?? true,
         is_visible: product?.is_visible ?? true,
-        category_id: product?.category_id || '',
+        category_ids: (product?.categories ?? []).map(
+            (category) => category.id,
+        ) as number[],
         pricing_strategy: product?.serviceDetail?.pricing_strategy || '',
         pricing_config: product?.serviceDetail?.pricing_config || {},
         requires_brief: product?.serviceDetail?.requires_brief ?? true,
@@ -131,7 +132,7 @@ export function ProductForm({
 
     // Keep the latest gallery state available to the unmount cleanup below.
     const galleryImagesRef = useRef(galleryImages);
-    
+
     useEffect(() => {
         galleryImagesRef.current = galleryImages;
     }, [galleryImages]);
@@ -178,8 +179,8 @@ export function ProductForm({
         const files = Array.from(e.target.files || []);
 
         if (!files.length) {
-return;
-}
+            return;
+        }
 
         const validFiles = files.filter((f) => f.size <= 1024 * 1024);
 
@@ -191,8 +192,8 @@ return;
             toast.error('Maximum of 6 gallery images allowed.');
 
             if (galleryInputRef.current) {
-galleryInputRef.current.value = '';
-}
+                galleryInputRef.current.value = '';
+            }
 
             return;
         }
@@ -208,8 +209,8 @@ galleryInputRef.current.value = '';
         });
 
         if (galleryInputRef.current) {
-galleryInputRef.current.value = '';
-}
+            galleryInputRef.current.value = '';
+        }
     };
 
     const handleDragStart = (index: number) => {
@@ -224,8 +225,8 @@ galleryInputRef.current.value = '';
         e.preventDefault();
 
         if (draggedIndex === null || draggedIndex === targetIndex) {
-return;
-}
+            return;
+        }
 
         setGalleryImages((prev) => {
             const next = [...prev];
@@ -271,7 +272,9 @@ return;
                 <form onSubmit={submit}>
                     {Object.keys(errors).length > 0 && (
                         <div className="mx-6 mt-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                            <p className="font-semibold mb-1">Please fix the following errors:</p>
+                            <p className="mb-1 font-semibold">
+                                Please fix the following errors:
+                            </p>
                             <ul className="list-disc pl-5">
                                 {Object.entries(errors).map(([key, error]) => (
                                     <li key={key}>{error}</li>
@@ -279,7 +282,7 @@ return;
                             </ul>
                         </div>
                     )}
-                    <CardContent className="grid gap-6 pb-6 pt-6">
+                    <CardContent className="grid gap-6 pt-6 pb-6">
                         <div className="grid gap-2">
                             <Label htmlFor="title">Title</Label>
                             <Input
@@ -327,28 +330,22 @@ return;
                         )}
 
                         <div className="grid gap-2">
-                            <Label htmlFor="category_id">Category</Label>
-                            <select
-                                id="category_id"
-                                className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-sm ring-offset-background placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
-                                value={data.category_id || ''}
-                                onChange={(e) =>
-                                    setData('category_id', e.target.value ? Number(e.target.value) : '')
-                                }
-                            >
-                                <option value="">Select a category</option>
-                                {categories.map((category) => (
-                                    <option
-                                        key={category.id}
-                                        value={category.id}
-                                    >
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.category_id && (
+                            <Label htmlFor="category_ids">Categories</Label>
+                            <CategoryMultiSelect
+                                inputId="category_ids"
+                                categories={categories}
+                                productType={data.type}
+                                value={data.category_ids}
+                                onChange={(ids) => setData('category_ids', ids)}
+                                invalid={Boolean(errors.category_ids)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Only categories matching the selected product
+                                type are shown.
+                            </p>
+                            {errors.category_ids && (
                                 <div className="text-sm font-medium text-destructive">
-                                    {errors.category_id}
+                                    {errors.category_ids}
                                 </div>
                             )}
                         </div>
@@ -397,13 +394,18 @@ return;
                             />
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             {/* Product Gallery */}
-                            <div className="flex flex-col h-full gap-2">
+                            <div className="flex h-full flex-col gap-2">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <Label>Product Gallery (Max 6, 1MB each)</Label>
-                                        <p className="text-sm text-muted-foreground">Upload and reorder extra images for the product page.</p>
+                                        <Label>
+                                            Product Gallery (Max 6, 1MB each)
+                                        </Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Upload and reorder extra images for
+                                            the product page.
+                                        </p>
                                     </div>
                                     <input
                                         type="file"
@@ -415,7 +417,9 @@ return;
                                     />
                                     <Button
                                         type="button"
-                                        onClick={() => galleryInputRef.current?.click()}
+                                        onClick={() =>
+                                            galleryInputRef.current?.click()
+                                        }
                                         variant="secondary"
                                         size="sm"
                                         disabled={galleryImages.length >= 6}
@@ -428,82 +432,131 @@ return;
 
                                 {galleryImages.length > 0 ? (
                                     <TooltipProvider>
-                                        <AttachmentGroup className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 content-start pt-2">
-                                            {galleryImages.map((media, index) => (
-                                                <div
-                                                    key={media.type === 'existing' ? `existing-${media.id}` : `new-${index}`}
-                                                    draggable
-                                                    onDragStart={() => handleDragStart(index)}
-                                                    onDragOver={handleDragOver}
-                                                    onDrop={(e) => handleDrop(e, index)}
-                                                    className={`relative cursor-grab active:cursor-grabbing ${
-                                                        draggedIndex === index ? 'opacity-50' : 'opacity-100'
-                                                    }`}
-                                                >
-                                                    <Attachment
-                                                        size="xs"
-                                                        orientation="vertical"
-                                                        className="w-full! min-w-0 has-data-[slot=attachment-content]:w-full! pointer-events-none"
+                                        <AttachmentGroup className="grid w-full grid-cols-2 content-start gap-4 pt-2 md:grid-cols-3">
+                                            {galleryImages.map(
+                                                (media, index) => (
+                                                    <div
+                                                        key={
+                                                            media.type ===
+                                                            'existing'
+                                                                ? `existing-${media.id}`
+                                                                : `new-${index}`
+                                                        }
+                                                        draggable
+                                                        onDragStart={() =>
+                                                            handleDragStart(
+                                                                index,
+                                                            )
+                                                        }
+                                                        onDragOver={
+                                                            handleDragOver
+                                                        }
+                                                        onDrop={(e) =>
+                                                            handleDrop(e, index)
+                                                        }
+                                                        className={`relative cursor-grab active:cursor-grabbing ${
+                                                            draggedIndex ===
+                                                            index
+                                                                ? 'opacity-50'
+                                                                : 'opacity-100'
+                                                        }`}
                                                     >
-                                                        <AttachmentMedia
-                                                            variant="image"
-                                                            className="w-full! rounded-md"
+                                                        <Attachment
+                                                            size="xs"
+                                                            orientation="vertical"
+                                                            className="pointer-events-none w-full! min-w-0 has-data-[slot=attachment-content]:w-full!"
                                                         >
-                                                            <img
-                                                                src={media.type === 'existing' ? media.image_path : media.previewUrl}
-                                                                alt="Gallery preview"
-                                                                loading="lazy"
-                                                            />
-                                                        </AttachmentMedia>
-                                                    </Attachment>
-                                                    <div className="absolute top-1 left-1 bg-background/90 shadow-sm backdrop-blur-sm rounded-md p-1 opacity-80 hover:opacity-100">
-                                                        <GripVertical className="size-4" />
-                                                    </div>
-                                                    <AttachmentActions className="absolute top-1 right-1 gap-1 opacity-100 pointer-events-auto">
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <AttachmentAction
-                                                                    type="button"
-                                                                    size="icon"
-                                                                    variant="destructive"
-                                                                    className="size-7 shadow-sm"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        removeImage(index);
-                                                                    }}
+                                                            <AttachmentMedia
+                                                                variant="image"
+                                                                className="w-full! rounded-md"
+                                                            >
+                                                                <img
+                                                                    src={
+                                                                        media.type ===
+                                                                        'existing'
+                                                                            ? media.image_path
+                                                                            : media.previewUrl
+                                                                    }
+                                                                    alt="Gallery preview"
+                                                                    loading="lazy"
+                                                                />
+                                                            </AttachmentMedia>
+                                                        </Attachment>
+                                                        <div className="absolute top-1 left-1 rounded-md bg-background/90 p-1 opacity-80 shadow-sm backdrop-blur-sm hover:opacity-100">
+                                                            <GripVertical className="size-4" />
+                                                        </div>
+                                                        <AttachmentActions className="pointer-events-auto absolute top-1 right-1 gap-1 opacity-100">
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
                                                                 >
-                                                                    <Trash2 className="size-3.5" />
-                                                                    <span className="sr-only">Delete</span>
-                                                                </AttachmentAction>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>Delete</TooltipContent>
-                                                        </Tooltip>
-                                                    </AttachmentActions>
-                                                </div>
-                                            ))}
+                                                                    <AttachmentAction
+                                                                        type="button"
+                                                                        size="icon"
+                                                                        variant="destructive"
+                                                                        className="size-7 shadow-sm"
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.stopPropagation();
+                                                                            removeImage(
+                                                                                index,
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="size-3.5" />
+                                                                        <span className="sr-only">
+                                                                            Delete
+                                                                        </span>
+                                                                    </AttachmentAction>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Delete
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </AttachmentActions>
+                                                    </div>
+                                                ),
+                                            )}
                                         </AttachmentGroup>
                                     </TooltipProvider>
                                 ) : (
-                                    <div className="flex flex-1 min-h-36 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground mt-2">
+                                    <div className="mt-2 flex min-h-36 flex-1 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
                                         No gallery images uploaded yet.
                                     </div>
                                 )}
-                                
-                                {Object.keys(errors).filter((key) => key === 'new_galleries' || key.startsWith('new_galleries.')).length > 0 && (
+
+                                {Object.keys(errors).filter(
+                                    (key) =>
+                                        key === 'new_galleries' ||
+                                        key.startsWith('new_galleries.'),
+                                ).length > 0 && (
                                     <div className="text-sm font-medium text-destructive">
                                         {Object.keys(errors)
-                                            .filter((key) => key === 'new_galleries' || key.startsWith('new_galleries.'))
+                                            .filter(
+                                                (key) =>
+                                                    key === 'new_galleries' ||
+                                                    key.startsWith(
+                                                        'new_galleries.',
+                                                    ),
+                                            )
                                             .map((key) => (
-                                                <div key={key}>{errors[key as keyof typeof errors]}</div>
+                                                <div key={key}>
+                                                    {
+                                                        errors[
+                                                            key as keyof typeof errors
+                                                        ]
+                                                    }
+                                                </div>
                                             ))}
                                     </div>
                                 )}
                             </div>
 
                             {/* Main Product Image */}
-                            <div className="flex flex-col h-full gap-2">
+                            <div className="flex h-full flex-col gap-2">
                                 <Label>Main Product Image</Label>
-                                <div className="mt-2 flex flex-1 min-h-36 justify-center rounded-lg border border-dashed border-muted-foreground/25 px-6 py-10 items-center">
+                                <div className="mt-2 flex min-h-36 flex-1 items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 px-6 py-10">
                                     <div className="text-center">
                                         <UploadCloud
                                             className="mx-auto h-12 w-12 text-muted-foreground/50"

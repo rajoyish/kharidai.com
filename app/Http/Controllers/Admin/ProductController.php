@@ -8,6 +8,7 @@ use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +20,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with('category')->latest()->get();
+        $products = Product::with('categories:id,name')->latest()->get();
 
         return Inertia::render('Admin/Products/Index', ['products' => $products]);
     }
@@ -27,7 +28,7 @@ class ProductController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Products/Create', [
-            'categories' => Category::orderBy('name')->get(),
+            'categories' => $this->categoryOptions(),
             'productTypes' => $this->productTypeOptions(),
         ]);
     }
@@ -51,6 +52,7 @@ class ProductController extends Controller
 
             DB::transaction(function () use ($validated, $request, $galleryPaths) {
                 $product = Product::create($validated);
+                $product->categories()->sync($request->input('category_ids', []));
                 $this->syncGalleries($request, $product, $galleryPaths);
                 $this->syncServiceDetail($request, $product);
             });
@@ -66,11 +68,11 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load('galleries');
+        $product->load('galleries', 'categories:id');
 
         return Inertia::render('Admin/Products/Edit', [
             'product' => $product,
-            'categories' => Category::orderBy('name')->get(),
+            'categories' => $this->categoryOptions(),
             'productTypes' => $this->productTypeOptions(),
         ]);
     }
@@ -99,6 +101,7 @@ class ProductController extends Controller
 
             DB::transaction(function () use ($validated, $request, $product, $galleryPaths) {
                 $product->update($validated);
+                $product->categories()->sync($request->input('category_ids', []));
                 $this->syncGalleries($request, $product, $galleryPaths);
                 $this->syncServiceDetail($request, $product);
             });
@@ -152,6 +155,17 @@ class ProductController extends Controller
     }
 
     /**
+     * The selectable categories for admin forms, carrying their `type` so the
+     * form can filter the options to match the chosen product type.
+     *
+     * @return Collection<int, Category>
+     */
+    protected function categoryOptions()
+    {
+        return Category::orderBy('name')->get(['id', 'parent_id', 'name', 'type']);
+    }
+
+    /**
      * The selectable product types for admin forms.
      *
      * @return list<array{value: string, label: string}>
@@ -176,7 +190,8 @@ class ProductController extends Controller
             'image' => 'nullable|image|max:2048',
             'in_stock' => 'boolean',
             'is_visible' => 'boolean',
-            'category_id' => 'nullable|exists:categories,id',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'integer|exists:categories,id',
             'update_galleries' => 'nullable|boolean',
             'new_galleries' => 'nullable|array|max:6',
             'new_galleries.*' => 'image|max:1024',

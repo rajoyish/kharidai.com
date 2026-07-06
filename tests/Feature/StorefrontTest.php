@@ -32,8 +32,7 @@ it('groups the homepage into digital, physical and service sections', function (
         'type' => ProductType::Digital,
     ]);
 
-    Product::factory()->create([
-        'category_id' => $category->id,
+    Product::factory()->hasAttached($category)->create([
         'title' => 'Categorized Product',
         'in_stock' => true,
     ]);
@@ -66,13 +65,11 @@ it('scopes homepage sections strictly by product type', function () {
         'type' => ProductType::Physical,
     ]);
 
-    Product::factory()->create([
-        'category_id' => $digitalCategory->id,
+    Product::factory()->hasAttached($digitalCategory)->create([
         'title' => 'A Digital Item',
         'in_stock' => true,
     ]);
-    Product::factory()->physical()->create([
-        'category_id' => $physicalCategory->id,
+    Product::factory()->physical()->hasAttached($physicalCategory)->create([
         'title' => 'A Physical Item',
         'in_stock' => true,
     ]);
@@ -99,13 +96,11 @@ it('shares storefront navigation grouped by product type', function () {
         'type' => ProductType::Digital,
     ]);
 
-    Product::factory()->create([
-        'category_id' => $visibleCategory->id,
+    Product::factory()->hasAttached($visibleCategory)->create([
         'title' => 'Visible Product',
         'in_stock' => true,
     ]);
-    Product::factory()->create([
-        'category_id' => $hiddenCategory->id,
+    Product::factory()->hasAttached($hiddenCategory)->create([
         'title' => 'Hidden Product',
         'in_stock' => false,
     ]);
@@ -132,8 +127,7 @@ it('refreshes cached storefront navigation when product stock changes', function
         'name' => 'Cached Category',
         'type' => ProductType::Digital,
     ]);
-    $product = Product::factory()->create([
-        'category_id' => $category->id,
+    $product = Product::factory()->hasAttached($category)->create([
         'title' => 'Cached Product',
         'in_stock' => true,
     ]);
@@ -166,8 +160,7 @@ it('recovers from an invalid storefront navigation cache payload', function () {
         'type' => ProductType::Digital,
     ]);
 
-    Product::factory()->create([
-        'category_id' => $category->id,
+    Product::factory()->hasAttached($category)->create([
         'title' => 'Recovered Product',
         'in_stock' => true,
     ]);
@@ -194,18 +187,15 @@ it('can view a category page with its in-stock products', function () {
         'name' => 'Tools',
     ]);
 
-    Product::factory()->create([
-        'category_id' => $category->id,
+    Product::factory()->hasAttached($category)->create([
         'title' => 'Visible Product',
         'in_stock' => true,
     ]);
-    Product::factory()->create([
-        'category_id' => $category->id,
+    Product::factory()->hasAttached($category)->create([
         'title' => 'Hidden Product',
         'in_stock' => false,
     ]);
-    Product::factory()->create([
-        'category_id' => $otherCategory->id,
+    Product::factory()->hasAttached($otherCategory)->create([
         'title' => 'Other Category Product',
         'in_stock' => true,
     ]);
@@ -242,13 +232,11 @@ it('renders the digital products page scoped to digital data only', function () 
         'type' => ProductType::Physical,
     ]);
 
-    Product::factory()->create([
-        'category_id' => $digitalCategory->id,
+    Product::factory()->hasAttached($digitalCategory)->create([
         'title' => 'Digital Item',
         'in_stock' => true,
     ]);
-    Product::factory()->physical()->create([
-        'category_id' => $physicalCategory->id,
+    Product::factory()->physical()->hasAttached($physicalCategory)->create([
         'title' => 'Physical Item',
         'in_stock' => true,
     ]);
@@ -279,8 +267,7 @@ it('renders the physical products page scoped to physical data only', function (
         'type' => ProductType::Digital,
     ]);
 
-    Product::factory()->physical()->create([
-        'category_id' => $physicalCategory->id,
+    Product::factory()->physical()->hasAttached($physicalCategory)->create([
         'title' => 'Physical Item',
         'in_stock' => true,
     ]);
@@ -302,8 +289,7 @@ it('renders the public services page scoped to service data only', function () {
         'type' => ProductType::Service,
     ]);
 
-    Product::factory()->service()->create([
-        'category_id' => $serviceCategory->id,
+    Product::factory()->service()->hasAttached($serviceCategory)->create([
         'title' => 'Advisory Service',
         'in_stock' => true,
     ]);

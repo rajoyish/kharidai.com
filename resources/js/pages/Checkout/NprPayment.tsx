@@ -162,7 +162,7 @@ export default function NprPayment({ order }: { order: Order }) {
 
                         <Button
                             type="submit"
-                            className="w-full"
+                            className="w-fit"
                             size="lg"
                             disabled={processing || !data.receipt}
                         >

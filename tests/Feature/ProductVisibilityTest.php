@@ -30,14 +30,12 @@ it('hides products flagged as not visible from the product page', function () {
 it('excludes hidden products from category listings', function () {
     $category = Category::factory()->create();
 
-    Product::factory()->create([
-        'category_id' => $category->id,
+    Product::factory()->hasAttached($category)->create([
         'title' => 'Visible Product',
         'in_stock' => true,
         'is_visible' => true,
     ]);
-    Product::factory()->hidden()->create([
-        'category_id' => $category->id,
+    Product::factory()->hidden()->hasAttached($category)->create([
         'title' => 'Hidden Product',
         'in_stock' => true,
     ]);

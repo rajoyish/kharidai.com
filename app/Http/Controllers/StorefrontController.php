@@ -350,7 +350,7 @@ class StorefrontController extends Controller
     private function uncategorizedProducts(ProductType $type, ?string $search = null): Collection
     {
         return Product::query()
-            ->whereNull('category_id')
+            ->whereDoesntHave('categories')
             ->ofType($type)
             ->visible()
             ->where('in_stock', true)

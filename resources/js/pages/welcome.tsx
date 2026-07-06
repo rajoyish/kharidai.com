@@ -143,7 +143,7 @@ export default function Welcome({
                             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                                 <button
                                     onClick={scrollToShop}
-                                    className="rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-primary hover:shadow-xl"
+                                    className="rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer hover:bg-primary hover:shadow-xl"
                                 >
                                     Start Here
                                 </button>

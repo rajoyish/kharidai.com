@@ -191,7 +191,7 @@ export default function CreateVariant({ product }: { product: Product }) {
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="mt-2 w-full sm:w-auto"
+                                className="mt-2 mr-auto"
                             >
                                 Create Variant
                             </Button>

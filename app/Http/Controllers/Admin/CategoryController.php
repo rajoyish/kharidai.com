@@ -17,10 +17,12 @@ class CategoryController extends Controller
     {
         return Inertia::render('Admin/Categories/Index', [
             'categories' => Category::query()
+                ->select(['id', 'parent_id', 'name', 'slug', 'type', 'sort_order'])
                 ->with('parent:id,name')
+                ->withProductVariantsCount()
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->get(['id', 'parent_id', 'name', 'slug', 'type', 'sort_order']),
+                ->get(),
             'productTypes' => $this->productTypeOptions(),
         ]);
     }
@@ -46,7 +48,7 @@ class CategoryController extends Controller
     public function destroy(Category $category): RedirectResponse
     {
         // Detach products and re-parent children to keep the tree consistent.
-        $category->products()->update(['category_id' => null]);
+        $category->products()->detach();
         $category->children()->update(['parent_id' => $category->parent_id]);
         $category->delete();
 
