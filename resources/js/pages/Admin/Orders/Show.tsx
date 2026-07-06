@@ -62,6 +62,7 @@ type Order = {
             product: {
                 title: string;
                 image: string;
+                type: 'physical' | 'digital' | 'service';
             };
         };
     }[];
@@ -356,6 +357,7 @@ export default function AdminOrderShow({
                         )}
 
                         {/* Digital Delivery Credentials */}
+                        {order.items.some(item => item.product_variant.product.type === 'digital') && (
                         <div className="rounded-xl border bg-card p-6">
                             <h2 className="mb-4 text-xl font-semibold">
                                 Digital Delivery
@@ -487,6 +489,7 @@ export default function AdminOrderShow({
                                 </div>
                             </form>
                         </div>
+                        )}
                     </div>
 
                     <div className="space-y-6">
