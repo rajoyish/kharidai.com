@@ -2,21 +2,10 @@ import { Link } from '@inertiajs/react';
 import { ArrowRight, PackageOpen } from 'lucide-react';
 
 import { StorefrontProductCard } from '@/components/storefront-product-card';
+import { collectCategoryProducts } from '@/lib/storefront-products';
 import { home } from '@/routes';
 import { show as showCategory } from '@/routes/categories';
 import type { StorefrontCategory, StorefrontProduct } from '@/types';
-
-/**
- * All in-stock products that belong to a category, including any that live in
- * its subcategories, flattened into a single list for display.
- */
-function collectProducts(category: StorefrontCategory): StorefrontProduct[] {
-    const childProducts = (category.children ?? []).flatMap(
-        (child) => child.products ?? [],
-    );
-
-    return [...category.products, ...childProducts];
-}
 
 /**
  * Full, type-scoped product catalogue for a dedicated storefront page. Renders a
@@ -35,7 +24,7 @@ export function StorefrontCatalog({
     emptyDescription: string;
 }) {
     const populatedCategories = categories.filter(
-        (category) => collectProducts(category).length > 0,
+        (category) => collectCategoryProducts(category).length > 0,
     );
     const hasUncategorized = uncategorizedProducts.length > 0;
 
@@ -62,7 +51,7 @@ export function StorefrontCatalog({
     return (
         <div className="space-y-16">
             {populatedCategories.map((category) => {
-                const products = collectProducts(category);
+                const products = collectCategoryProducts(category);
 
                 return (
                     <section
