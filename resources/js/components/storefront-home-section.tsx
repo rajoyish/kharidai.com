@@ -4,6 +4,10 @@ import { ArrowRight, Cpu, Package, Wrench } from 'lucide-react';
 import type { ComponentType } from 'react';
 
 import { StorefrontProductCard } from '@/components/storefront-product-card';
+import {
+    collectAllProducts,
+    collectCategoryProducts,
+} from '@/lib/storefront-products';
 import { show as showCategory } from '@/routes/categories';
 import type {
     StorefrontCategory,
@@ -21,21 +25,14 @@ const TYPE_ICON: Record<
 };
 
 function categoryItemCount(category: StorefrontCategory): number {
-    const childCount = (category.children ?? []).reduce(
-        (sum, child) => sum + (child.products?.length ?? 0),
-        0,
-    );
-
-    return category.products.length + childCount;
+    return collectCategoryProducts(category).length;
 }
 
 function sectionItemCount(section: StorefrontSection): number {
-    const categorized = section.categories.reduce(
-        (total, category) => total + categoryItemCount(category),
-        0,
-    );
-
-    return categorized + section.uncategorizedProducts.length;
+    return collectAllProducts(
+        section.categories,
+        section.uncategorizedProducts,
+    ).length;
 }
 
 /**
@@ -120,7 +117,8 @@ export function StorefrontHomeSection({
                                         .map((product) => (
                                             <span
                                                 key={product.id}
-                                                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600"
+                                                title={product.title}
+                                                className="max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600"
                                             >
                                                 {product.title}
                                             </span>

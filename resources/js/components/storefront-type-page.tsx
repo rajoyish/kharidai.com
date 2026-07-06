@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 
 import { SeoHead } from '@/components/seo-head';
 import { StorefrontCatalog } from '@/components/storefront-catalog';
+import { collectAllProducts } from '@/lib/storefront-products';
 import type {
     StorefrontCategory,
     StorefrontProduct,
@@ -17,22 +18,6 @@ const TYPE_ICON: Record<
     physical: Package,
     service: Wrench,
 };
-
-function countItems(
-    categories: StorefrontCategory[],
-    uncategorizedProducts: StorefrontProduct[],
-): number {
-    const categorized = categories.reduce((total, category) => {
-        const childProducts = (category.children ?? []).reduce(
-            (sum, child) => sum + (child.products?.length ?? 0),
-            0,
-        );
-
-        return total + category.products.length + childProducts;
-    }, 0);
-
-    return categorized + uncategorizedProducts.length;
-}
 
 /**
  * Shared body for the dedicated, single-type storefront pages
@@ -53,7 +38,10 @@ export function StorefrontTypePage({
     uncategorizedProducts: StorefrontProduct[];
 }) {
     const Icon = TYPE_ICON[type];
-    const itemCount = countItems(categories, uncategorizedProducts);
+    const itemCount = collectAllProducts(
+        categories,
+        uncategorizedProducts,
+    ).length;
 
     return (
         <>

@@ -9,6 +9,7 @@ import { SeoHead } from '@/components/seo-head';
 import { StorefrontHomeSection } from '@/components/storefront-home-section';
 import { Input } from '@/components/ui/input';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
+import { collectAllProducts } from '@/lib/storefront-products';
 import { home } from '@/routes';
 import { index as digitalProducts } from '@/routes/digital-products';
 import { index as physicalProducts } from '@/routes/physical-products';
@@ -70,34 +71,18 @@ export default function Welcome({
     const totalItemsCount = useMemo(
         () =>
             sections.reduce((total, section) => {
-                const categorized = section.categories.reduce(
-                    (sum, category) => {
-                        const own = category.products.reduce(
-                            (acc, product) => acc + countProduct(product),
-                            0,
-                        );
-                        const children = (category.children ?? []).reduce(
-                            (acc, child) =>
-                                acc +
-                                (child.products ?? []).reduce(
-                                    (childAcc, product) =>
-                                        childAcc + countProduct(product),
-                                    0,
-                                ),
-                            0,
-                        );
-
-                        return sum + own + children;
-                    },
-                    0,
+                const products = collectAllProducts(
+                    section.categories,
+                    section.uncategorizedProducts,
                 );
 
-                const uncategorized = section.uncategorizedProducts.reduce(
-                    (sum, product) => sum + countProduct(product),
-                    0,
+                return (
+                    total +
+                    products.reduce(
+                        (sum, product) => sum + countProduct(product),
+                        0,
+                    )
                 );
-
-                return total + categorized + uncategorized;
             }, 0),
         [sections],
     );
