@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface PagePanelProps {
-    title?: string;
+    title?: ReactNode;
+    eyebrow?: string;
     description?: string;
     actions?: ReactNode;
     children: ReactNode;
@@ -12,6 +13,7 @@ interface PagePanelProps {
 
 export function PagePanel({
     title,
+    eyebrow,
     description,
     actions,
     children,
@@ -25,14 +27,22 @@ export function PagePanel({
                 className,
             )}
         >
-            {(title || description || actions) && (
+            {(title || eyebrow || description || actions) && (
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
-                        {title && (
-                            <h1 className="text-2xl font-bold tracking-tight">
-                                {title}
-                            </h1>
+                        {eyebrow && (
+                            <span className="block text-base font-normal text-muted-foreground">
+                                {eyebrow}
+                            </span>
                         )}
+                        {title &&
+                            (typeof title === 'string' ? (
+                                <h1 className="text-2xl font-bold tracking-tight">
+                                    {title}
+                                </h1>
+                            ) : (
+                                title
+                            ))}
                         {description && (
                             <p className="mt-1 text-sm text-muted-foreground">
                                 {description}

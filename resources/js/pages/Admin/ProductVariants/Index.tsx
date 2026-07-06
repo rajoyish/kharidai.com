@@ -83,7 +83,7 @@ export default function VariantsIndex({
                                     {variant.purchase_price_npr || '0.00'}
                                 </TableCell>
                                 <TableCell>
-                                    {variant.validity_days === null
+                                    {!variant.validity_days
                                         ? 'One-time / Lifetime'
                                         : `${variant.validity_days} days`}
                                 </TableCell>

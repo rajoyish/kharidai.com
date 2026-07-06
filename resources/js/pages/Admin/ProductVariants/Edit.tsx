@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { update as updateVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import {
     Card,
     CardContent,
@@ -36,6 +38,10 @@ export default function EditVariant({
     product: Product;
     variant: Variant;
 }) {
+    const [hasValidity, setHasValidity] = useState(
+        variant.validity_days != null,
+    );
+
     const { data, setData, patch, processing, errors } = useForm({
         name: variant.name,
         details: variant.details || '',
@@ -54,7 +60,8 @@ export default function EditVariant({
             <SeoHead title={`Edit Variant - ${variant.name}`} />
 
             <PagePanel
-                title={`Edit Variant for ${product.title}`}
+                eyebrow="Edit Variant"
+                title={product.title}
                 variant="transparent"
             >
                 <Card>
@@ -150,28 +157,49 @@ export default function EditVariant({
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="validity_days">
-                                    Validity Days
-                                </Label>
-                                <Input
-                                    id="validity_days"
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={data.validity_days}
-                                    onChange={(e) =>
-                                        setData('validity_days', e.target.value)
-                                    }
-                                    placeholder="30"
-                                />
-                                <div className="text-sm text-muted-foreground">
-                                    Leave this blank for lifetime or one-time
-                                    purchase products. Fill it only for timed
-                                    subscriptions.
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="has_validity"
+                                        checked={hasValidity}
+                                        onCheckedChange={(checked) => {
+                                            setHasValidity(checked);
+                                            setData('validity_days', '');
+                                        }}
+                                    />
+                                    <Label htmlFor="has_validity">
+                                        Enable Validity Days
+                                    </Label>
                                 </div>
-                                {errors.validity_days && (
-                                    <div className="text-sm text-destructive">
-                                        {errors.validity_days}
+
+                                {hasValidity && (
+                                    <div className="mt-2 grid gap-2">
+                                        <Label htmlFor="validity_days">
+                                            Validity Days
+                                        </Label>
+                                        <Input
+                                            id="validity_days"
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={data.validity_days}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'validity_days',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="30"
+                                        />
+                                        <div className="text-sm text-muted-foreground">
+                                            Leave this blank for lifetime or
+                                            one-time purchase products. Fill it
+                                            only for timed subscriptions.
+                                        </div>
+                                        {errors.validity_days && (
+                                            <div className="text-sm text-destructive">
+                                                {errors.validity_days}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
