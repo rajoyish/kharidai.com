@@ -95,11 +95,11 @@ class Subscription extends Model
             return null;
         }
 
-        $comparisonStart = $this->start_date?->isFuture() === true
+        $comparisonStart = $this->start_date->isFuture()
             ? $this->start_date->copy()->startOfDay()
             : today()->startOfDay();
 
-        return max(
+        return (int) max(
             $comparisonStart->diffInDays(
                 $this->end_date->copy()->startOfDay(),
                 false,

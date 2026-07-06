@@ -10,6 +10,7 @@ import {
     AttachmentGroup,
     AttachmentMedia,
 } from '@/components/ui/attachment';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -30,10 +31,12 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 import { CategoryMultiSelect } from './category-multi-select';
 import type { CategoryOption } from './category-multi-select';
-import { ServiceConfigFields } from './ServiceConfigFields';
+import { getProductTypeTheme } from './product-form/product-type-theme';
+import { ProductTypeFields } from './product-form/ProductTypeFields';
 
 export type ProductGallery = {
     id: number;
@@ -256,18 +259,29 @@ export function ProductForm({
         post(submitUrl);
     };
 
+    // Drives the accent theming of the whole form from the selected type.
+    const theme = getProductTypeTheme(data.type);
+
     return (
         <div>
-            <Card>
+            <Card className={cn('transition-colors', theme.card)}>
                 <CardHeader>
-                    <CardTitle className="text-2xl">
-                        {isEditing ? 'Edit Product' : 'Create Product'}
-                    </CardTitle>
-                    <CardDescription>
-                        {isEditing
-                            ? 'Update product details in your store inventory.'
-                            : 'Add a new product to your store inventory.'}
-                    </CardDescription>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <CardTitle className="text-2xl">
+                            {isEditing ? 'Edit Product' : 'Create Product'}
+                        </CardTitle>
+                        <Badge
+                            variant="outline"
+                            className={cn('gap-1.5', theme.badge)}
+                        >
+                            <theme.Icon
+                                className="size-3.5"
+                                aria-hidden="true"
+                            />
+                            {theme.label}
+                        </Badge>
+                    </div>
+                    <CardDescription>{theme.tagline}</CardDescription>
                 </CardHeader>
                 <form onSubmit={submit}>
                     {Object.keys(errors).length > 0 && (
@@ -386,13 +400,12 @@ export function ProductForm({
                             )}
                         </div>
 
-                        {data.type === 'service' && (
-                            <ServiceConfigFields
-                                data={data}
-                                setData={setData}
-                                errors={errors}
-                            />
-                        )}
+                        <ProductTypeFields
+                            type={data.type}
+                            data={data}
+                            setData={setData}
+                            errors={errors}
+                        />
 
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             {/* Product Gallery */}

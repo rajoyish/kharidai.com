@@ -7,13 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $orders = Order::with(['items.productVariant.product', 'shipment'])
             ->where('user_id', $request->user()->id)
@@ -25,7 +27,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Request $request, Order $order)
+    public function show(Request $request, Order $order): Response
     {
         if ($order->user_id !== $request->user()->id) {
             abort(403);
@@ -38,7 +40,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function storeMessage(Request $request, Order $order)
+    public function storeMessage(Request $request, Order $order): RedirectResponse
     {
         if ($order->user_id !== $request->user()->id) {
             abort(403);
@@ -62,7 +64,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Message sent.');
     }
 
-    public function askForReceiptReupload(Request $request, Order $order)
+    public function askForReceiptReupload(Request $request, Order $order): RedirectResponse
     {
         if ($order->user_id !== $request->user()->id) {
             abort(403);

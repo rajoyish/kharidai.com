@@ -34,7 +34,7 @@ class ServiceEngagementController extends Controller
                 'status_label' => $engagement->status->label(),
                 'source' => $engagement->source->value,
                 'price_npr' => $engagement->price_npr,
-                'user' => $engagement->user?->only('id', 'name', 'email'),
+                'user' => $engagement->user->only('id', 'name', 'email'),
                 'product' => $engagement->product?->only('id', 'title'),
                 'variant' => $engagement->productVariant?->only('id', 'name'),
                 'assigned_by' => $engagement->assignedBy?->name,
@@ -82,16 +82,16 @@ class ServiceEngagementController extends Controller
             'delivery_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $product = Product::with('serviceDetail')->findOrFail($validated['product_id']);
+        $product = Product::with('serviceDetail')->where('id', $validated['product_id'])->firstOrFail();
         $detail = $product->serviceDetail;
 
         $variant = ! empty($validated['product_variant_id'])
-            ? ProductVariant::find($validated['product_variant_id'])
+            ? ProductVariant::query()->where('id', $validated['product_variant_id'])->first()
             : null;
 
         // The variant price, if any, is a reference estimate only; the real cost
         // is calculated after completion and negotiated.
-        $estimateNpr = $variant?->price_npr ?? 0.0;
+        $estimateNpr = $variant->price_npr ?? 0.0;
 
         ServiceEngagement::create([
             'user_id' => $validated['user_id'],
@@ -101,7 +101,7 @@ class ServiceEngagementController extends Controller
             'created_by' => $request->user()->id,
             'status' => $detail ? $this->stateMachine->initialStatusFor($detail) : EngagementStatus::InProgress,
             'price_npr' => $estimateNpr,
-            'purchase_price_npr' => $variant?->purchase_price_npr ?? 0.0,
+            'purchase_price_npr' => $variant->purchase_price_npr ?? 0.0,
             'pricing_strategy' => $detail?->pricing_strategy,
             'pricing_config' => $detail?->pricing_config,
             'advance_required_npr' => $detail?->advanceAmountNpr($estimateNpr) ?? 0.0,

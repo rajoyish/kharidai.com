@@ -47,6 +47,9 @@ class ShippingRate extends Model
         return $this->belongsTo(ShippingZone::class, 'shipping_zone_id');
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function baseFeeNpr(): Attribute
     {
         return Attribute::make(
@@ -55,6 +58,9 @@ class ShippingRate extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function perKgFeeNpr(): Attribute
     {
         return Attribute::make(
@@ -63,6 +69,9 @@ class ShippingRate extends Model
         );
     }
 
+    /**
+     * @return Attribute<float|null, int|null>
+     */
     protected function freeOverNpr(): Attribute
     {
         return Attribute::make(

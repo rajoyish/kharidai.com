@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress --no-interaction database/migrations/2026_06_30_095736_add_order_item_id_to_subscriptions_table.php)"
+    ]
+  }
+}

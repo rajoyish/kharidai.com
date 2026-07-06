@@ -23,11 +23,11 @@ class GoogleController extends Controller
             $googleUser = Socialite::driver('google')->user();
 
             $user = User::updateOrCreate([
-                'email' => $googleUser->email,
+                'email' => $googleUser->getEmail(),
             ], [
-                'name' => $googleUser->name,
-                'google_id' => $googleUser->id,
-                'avatar' => $googleUser->avatar,
+                'name' => $googleUser->getName(),
+                'google_id' => $googleUser->getId(),
+                'avatar' => $googleUser->getAvatar(),
             ]);
 
             if ($user->banned_at) {

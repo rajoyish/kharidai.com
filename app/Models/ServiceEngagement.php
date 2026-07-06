@@ -37,7 +37,7 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $measurement
  * @property float $calculated_cost_npr
  * @property float|null $agreed_price_npr
- * @property array|null $brief
+ * @property array<string, mixed>|null $brief
  * @property string|null $delivery_note
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -238,6 +238,9 @@ class ServiceEngagement extends Model
         return max(0.0, ($this->agreed_price_npr ?? 0.0) - $this->advance_paid_npr);
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function priceNpr(): Attribute
     {
         return Attribute::make(
@@ -246,6 +249,9 @@ class ServiceEngagement extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function purchasePriceNpr(): Attribute
     {
         return Attribute::make(
@@ -254,6 +260,9 @@ class ServiceEngagement extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function advanceRequiredNpr(): Attribute
     {
         return Attribute::make(
@@ -262,6 +271,9 @@ class ServiceEngagement extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function advancePaidNpr(): Attribute
     {
         return Attribute::make(
@@ -270,6 +282,9 @@ class ServiceEngagement extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function calculatedCostNpr(): Attribute
     {
         return Attribute::make(
@@ -278,6 +293,9 @@ class ServiceEngagement extends Model
         );
     }
 
+    /**
+     * @return Attribute<float|null, int|null>
+     */
     protected function agreedPriceNpr(): Attribute
     {
         return Attribute::make(

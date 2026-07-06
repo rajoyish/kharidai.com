@@ -16,11 +16,12 @@ use Illuminate\Support\Carbon;
  * @property int $quantity
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property array|null $brief
+ * @property array<string, mixed>|null $brief
+ * @property array<string, string>|null $selected_options
  * @property Cart $cart
  * @property ProductVariant $productVariant
  */
-#[Fillable(['cart_id', 'product_variant_id', 'quantity', 'brief'])]
+#[Fillable(['cart_id', 'product_variant_id', 'quantity', 'brief', 'selected_options'])]
 class CartItem extends Model
 {
     /** @use HasFactory<CartItemFactory> */
@@ -46,6 +47,7 @@ class CartItem extends Model
     {
         return [
             'brief' => 'array',
+            'selected_options' => 'array',
         ];
     }
 }

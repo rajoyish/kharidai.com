@@ -14,6 +14,7 @@ import { ServiceBriefForm } from '@/components/service-brief-form';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { VariantOptionSelector } from '@/components/variant-option-selector';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
 import { login } from '@/routes';
 import type { PageProps } from '@/types';
@@ -46,6 +47,8 @@ type Variant = {
     name: string;
     details: string | null;
     price_npr: string;
+    colors?: string[] | null;
+    sizes?: string[] | null;
 };
 
 type ProductGallery = {
@@ -93,6 +96,23 @@ export default function Show({
         variants.length > 0 ? variants[0] : null,
     );
 
+    // Pre-select an option only when there is exactly one, so a real choice
+    // (multiple colors/sizes) is always made deliberately by the shopper.
+    const soleOption = (options?: string[] | null): string | null =>
+        options && options.length === 1 ? options[0] : null;
+
+    const [selectedColor, setSelectedColor] = useState<string | null>(() =>
+        soleOption(variants[0]?.colors),
+    );
+    const [selectedSize, setSelectedSize] = useState<string | null>(() =>
+        soleOption(variants[0]?.sizes),
+    );
+
+    const variantColors = selectedVariant?.colors ?? [];
+    const variantSizes = selectedVariant?.sizes ?? [];
+    const needsColor = variantColors.length > 0 && !selectedColor;
+    const needsSize = variantSizes.length > 0 && !selectedSize;
+
     const galleryImages = useMemo(() => {
         return (product.galleries ?? []).map(
             (img) => `/storage/${img.image_path}`,
@@ -131,10 +151,24 @@ export default function Show({
     });
 
     // Only submit the brief for services that require it; otherwise send null.
-    transform((formData) => ({
-        ...formData,
-        brief: requiresBrief ? formData.brief : null,
-    }));
+    // Attach the chosen color/size so the server records the exact line item.
+    transform((formData) => {
+        const selectedOptions: Record<string, string> = {};
+
+        if (variantColors.length > 0 && selectedColor) {
+            selectedOptions.color = selectedColor;
+        }
+
+        if (variantSizes.length > 0 && selectedSize) {
+            selectedOptions.size = selectedSize;
+        }
+
+        return {
+            ...formData,
+            brief: requiresBrief ? formData.brief : null,
+            selected_options: selectedOptions,
+        };
+    });
 
     const handleAddToCart = () => {
         if (!selectedVariant) {
@@ -149,6 +183,18 @@ export default function Show({
             return;
         }
 
+        if (needsColor) {
+            toast.error('Please select a color.');
+
+            return;
+        }
+
+        if (needsSize) {
+            toast.error('Please select a size.');
+
+            return;
+        }
+
         post(addToCart.url(), {
             only: ['cartCount', 'errors'],
             preserveScroll: true,
@@ -159,10 +205,13 @@ export default function Show({
         });
     };
 
-    // Update form data when variant changes
+    // Update form data when variant changes, resetting option choices to the
+    // new variant's own options (auto-picking when only one is available).
     const handleVariantChange = (variant: Variant) => {
         setSelectedVariant(variant);
         setData('product_variant_id', variant.id);
+        setSelectedColor(soleOption(variant.colors));
+        setSelectedSize(soleOption(variant.sizes));
     };
 
     return (
@@ -316,6 +365,27 @@ export default function Show({
                             </div>
                         )}
 
+                        {/* Color / Size selection for the chosen variant */}
+                        {canViewVariants && variantColors.length > 0 && (
+                            <VariantOptionSelector
+                                id="color"
+                                label="Color"
+                                options={variantColors}
+                                value={selectedColor}
+                                onChange={setSelectedColor}
+                                withSwatch
+                            />
+                        )}
+                        {canViewVariants && variantSizes.length > 0 && (
+                            <VariantOptionSelector
+                                id="size"
+                                label="Size"
+                                options={variantSizes}
+                                value={selectedSize}
+                                onChange={setSelectedSize}
+                            />
+                        )}
+
                         {/* Guest fallback for digital products: no variant
                             selector, just the database-computed entry price,
                             shown in the same slot as the variant price above. */}
@@ -344,7 +414,11 @@ export default function Show({
                                 className="h-14 w-fit text-lg"
                                 onClick={handleAddToCart}
                                 disabled={
-                                    processing || !selectedVariant || !auth.user
+                                    processing ||
+                                    !selectedVariant ||
+                                    !auth.user ||
+                                    needsColor ||
+                                    needsSize
                                 }
                             >
                                 {auth.user

@@ -20,7 +20,7 @@ class SubscriptionFactory extends Factory
     {
         return [
             'order_id' => Order::factory(),
-            'user_id' => fn (array $attributes) => Order::query()->find($attributes['order_id'])?->user_id,
+            'user_id' => fn (array $attributes) => Order::query()->where('id', $attributes['order_id'])->first()?->user_id,
             'order_item_id' => null,
             'start_date' => now()->toDateString(),
             'end_date' => now()->addDays(30)->toDateString(),

@@ -13,26 +13,32 @@ class OrderPlacedNotification extends Notification
 
     public function __construct(public Order $order) {}
 
-    public function via($notifiable)
+    /**
+     * @return list<string>
+     */
+    public function via(object $notifiable): array
     {
         return ['broadcast', 'database'];
     }
 
-    public function toBroadcast($notifiable)
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
         return new BroadcastMessage([
             'message' => 'New Order #'.$this->order->order_number,
-            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 0),
+            'description' => 'A new order has been placed for Rs. '.number_format($this->order->total_amount, 0),
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ]);
     }
 
-    public function toArray($notifiable)
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
     {
         return [
             'message' => 'New Order #'.$this->order->order_number,
-            'description' => 'A new order has been placed for '.$this->order->currency.' '.number_format($this->order->total_amount, 0),
+            'description' => 'A new order has been placed for Rs. '.number_format($this->order->total_amount, 0),
             'url' => route('admin.orders.show', $this->order->id),
             'order_id' => $this->order->id,
         ];

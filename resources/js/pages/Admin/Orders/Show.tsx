@@ -20,6 +20,10 @@ import { SeoHead } from '@/components/seo-head';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    VariantOptionBadges,
+    type SelectedOptions,
+} from '@/components/variant-option-badges';
 
 type Order = {
     id: number;
@@ -56,9 +60,11 @@ type Order = {
         quantity: number;
         price: string;
         purchase_price: string;
+        selected_options: SelectedOptions;
         product_variant: {
             name: string;
             validity_days: number | null;
+            weight_grams: number | null;
             product: {
                 title: string;
                 image: string;
@@ -304,6 +310,16 @@ export default function AdminOrderShow({
                                             <p className="text-sm text-muted-foreground">
                                                 {item.product_variant.name}
                                             </p>
+                                            <VariantOptionBadges
+                                                selectedOptions={
+                                                    item.selected_options
+                                                }
+                                                weightGrams={
+                                                    item.product_variant
+                                                        .weight_grams
+                                                }
+                                                className="mt-1"
+                                            />
                                             <p className="mt-1 text-sm font-medium">
                                                 Qty: {item.quantity} | Selling
                                                 Price: Rs. {item.price}
@@ -357,138 +373,144 @@ export default function AdminOrderShow({
                         )}
 
                         {/* Digital Delivery Credentials */}
-                        {order.items.some(item => item.product_variant.product.type === 'digital') && (
-                        <div className="rounded-xl border bg-card p-6">
-                            <h2 className="mb-4 text-xl font-semibold">
-                                Digital Delivery
-                            </h2>
-                            <div className="mb-6 space-y-4">
-                                {order.credentials.map((cred) => (
-                                    <div
-                                        key={cred.id}
-                                        className="rounded-lg bg-muted p-4"
-                                    >
-                                        {editingCredentialId === cred.id ? (
-                                            <form
-                                                onSubmit={(e) =>
-                                                    handleEditCredentialSubmit(
-                                                        e,
-                                                        cred.id,
-                                                    )
-                                                }
-                                            >
-                                                <Textarea
-                                                    value={editCredContent}
-                                                    onChange={(e) =>
-                                                        setEditCredContent(
-                                                            e.target.value,
+                        {order.items.some(
+                            (item) =>
+                                item.product_variant.product.type === 'digital',
+                        ) && (
+                            <div className="rounded-xl border bg-card p-6">
+                                <h2 className="mb-4 text-xl font-semibold">
+                                    Digital Delivery
+                                </h2>
+                                <div className="mb-6 space-y-4">
+                                    {order.credentials.map((cred) => (
+                                        <div
+                                            key={cred.id}
+                                            className="rounded-lg bg-muted p-4"
+                                        >
+                                            {editingCredentialId === cred.id ? (
+                                                <form
+                                                    onSubmit={(e) =>
+                                                        handleEditCredentialSubmit(
+                                                            e,
+                                                            cred.id,
                                                         )
                                                     }
-                                                    className="mb-2 min-h-25 font-mono text-sm"
-                                                />
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            setEditingCredentialId(
-                                                                null,
+                                                >
+                                                    <Textarea
+                                                        value={editCredContent}
+                                                        onChange={(e) =>
+                                                            setEditCredContent(
+                                                                e.target.value,
                                                             )
                                                         }
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        size="sm"
-                                                    >
-                                                        Save
-                                                    </Button>
-                                                </div>
-                                            </form>
-                                        ) : (
-                                            <>
-                                                <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap">
-                                                    {cred.content}
-                                                </pre>
-                                                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                                                    <div className="flex items-center gap-2">
-                                                        <button
+                                                        className="mb-2 min-h-25 font-mono text-sm"
+                                                    />
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
                                                             type="button"
-                                                            onClick={() => {
-                                                                setEditingCredentialId(
-                                                                    cred.id,
-                                                                );
-                                                                setEditCredContent(
-                                                                    cred.content,
-                                                                );
-                                                            }}
-                                                            className="flex items-center gap-1 hover:text-foreground"
-                                                        >
-                                                            <Pencil className="h-3 w-3" />{' '}
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
                                                             onClick={() =>
-                                                                handleDeleteCredential(
-                                                                    cred.id,
+                                                                setEditingCredentialId(
+                                                                    null,
                                                                 )
                                                             }
-                                                            className="flex items-center gap-1 text-red-500 hover:text-red-600"
                                                         >
-                                                            <Trash2 className="h-3 w-3" />{' '}
-                                                            Delete
-                                                        </button>
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            type="submit"
+                                                            size="sm"
+                                                        >
+                                                            Save
+                                                        </Button>
                                                     </div>
-                                                    <div>
-                                                        Added on{' '}
-                                                        {new Date(
-                                                            cred.created_at,
-                                                        ).toLocaleString()}
+                                                </form>
+                                            ) : (
+                                                <>
+                                                    <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap">
+                                                        {cred.content}
+                                                    </pre>
+                                                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setEditingCredentialId(
+                                                                        cred.id,
+                                                                    );
+                                                                    setEditCredContent(
+                                                                        cred.content,
+                                                                    );
+                                                                }}
+                                                                className="flex items-center gap-1 hover:text-foreground"
+                                                            >
+                                                                <Pencil className="h-3 w-3" />{' '}
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleDeleteCredential(
+                                                                        cred.id,
+                                                                    )
+                                                                }
+                                                                className="flex items-center gap-1 text-red-500 hover:text-red-600"
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />{' '}
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                        <div>
+                                                            Added on{' '}
+                                                            {new Date(
+                                                                cred.created_at,
+                                                            ).toLocaleString()}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
-                                {order.credentials.length === 0 && (
-                                    <div className="text-sm text-muted-foreground italic">
-                                        No digital credentials have been
-                                        delivered yet.
-                                    </div>
-                                )}
-                            </div>
-
-                            <form
-                                onSubmit={handleAddCredential}
-                                className="border-t pt-4"
-                            >
-                                <h3 className="mb-2 text-sm font-medium">
-                                    Deliver New Credential
-                                </h3>
-                                <Textarea
-                                    value={credData.content}
-                                    onChange={(e) =>
-                                        setCredData('content', e.target.value)
-                                    }
-                                    placeholder="Enter login details, activation codes, or secure links here..."
-                                    className="mb-2 min-h-25 font-mono text-sm"
-                                />
-                                <div className="flex justify-end">
-                                    <Button
-                                        type="submit"
-                                        disabled={
-                                            processingCred ||
-                                            !credData.content.trim()
-                                        }
-                                    >
-                                        Deliver to Customer
-                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {order.credentials.length === 0 && (
+                                        <div className="text-sm text-muted-foreground italic">
+                                            No digital credentials have been
+                                            delivered yet.
+                                        </div>
+                                    )}
                                 </div>
-                            </form>
-                        </div>
+
+                                <form
+                                    onSubmit={handleAddCredential}
+                                    className="border-t pt-4"
+                                >
+                                    <h3 className="mb-2 text-sm font-medium">
+                                        Deliver New Credential
+                                    </h3>
+                                    <Textarea
+                                        value={credData.content}
+                                        onChange={(e) =>
+                                            setCredData(
+                                                'content',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Enter login details, activation codes, or secure links here..."
+                                        className="mb-2 min-h-25 font-mono text-sm"
+                                    />
+                                    <div className="flex justify-end">
+                                        <Button
+                                            type="submit"
+                                            disabled={
+                                                processingCred ||
+                                                !credData.content.trim()
+                                            }
+                                        >
+                                            Deliver to Customer
+                                        </Button>
+                                    </div>
+                                </form>
+                            </div>
                         )}
                     </div>
 
@@ -611,7 +633,9 @@ export default function AdminOrderShow({
                                                         markBalancePaid(order)
                                                             .url,
                                                         {},
-                                                        { preserveScroll: true },
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
                                                     )
                                                 }
                                             >
@@ -623,7 +647,8 @@ export default function AdminOrderShow({
                                 {order.payment_option && (
                                     <p className="pt-1 text-xs text-muted-foreground">
                                         Payment option:{' '}
-                                        {order.payment_option === 'shipping_only'
+                                        {order.payment_option ===
+                                        'shipping_only'
                                             ? 'Shipping only (rest on delivery)'
                                             : 'Full payment'}
                                     </p>
@@ -661,7 +686,8 @@ export default function AdminOrderShow({
                                             key={status}
                                             size="sm"
                                             variant={
-                                                order.shipment?.status === status
+                                                order.shipment?.status ===
+                                                status
                                                     ? 'default'
                                                     : 'outline'
                                             }

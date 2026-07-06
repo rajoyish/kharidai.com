@@ -9,23 +9,26 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $products = Product::with('categories:id,name')->latest()->get();
 
         return Inertia::render('Admin/Products/Index', ['products' => $products]);
     }
 
-    public function create()
+    public function create(): Response
     {
         return Inertia::render('Admin/Products/Create', [
             'categories' => $this->categoryOptions(),
@@ -33,7 +36,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate(
             array_merge($this->productValidationRules(), $this->serviceValidationRules($request)),
@@ -44,8 +47,14 @@ class ProductController extends Controller
 
         try {
             if ($request->hasFile('image')) {
-                $validated['image'] = $request->file('image')->store('products', 'public');
-                $uploadedFiles[] = $validated['image'];
+                $imagePath = $request->file('image')->store('products', 'public');
+
+                if ($imagePath === false) {
+                    abort(500, 'Failed to store the product image.');
+                }
+
+                $validated['image'] = $imagePath;
+                $uploadedFiles[] = $imagePath;
             }
 
             $galleryPaths = $this->storeNewGalleryFiles($request, $uploadedFiles);
@@ -66,7 +75,7 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
     }
 
-    public function edit(Product $product)
+    public function edit(Product $product): Response
     {
         $product->load('galleries', 'categories:id');
 
@@ -77,7 +86,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, Product $product)
+    public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $request->validate(
             array_merge($this->productValidationRules(), $this->serviceValidationRules($request)),
@@ -93,8 +102,14 @@ class ProductController extends Controller
                 if ($product->image) {
                     $oldImage = $product->image;
                 }
-                $validated['image'] = $request->file('image')->store('products', 'public');
-                $uploadedFiles[] = $validated['image'];
+                $imagePath = $request->file('image')->store('products', 'public');
+
+                if ($imagePath === false) {
+                    abort(500, 'Failed to store the product image.');
+                }
+
+                $validated['image'] = $imagePath;
+                $uploadedFiles[] = $imagePath;
             }
 
             $galleryPaths = $this->storeNewGalleryFiles($request, $uploadedFiles);
@@ -119,7 +134,7 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
     }
 
-    public function destroy(Product $product)
+    public function destroy(Product $product): RedirectResponse
     {
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
@@ -132,7 +147,7 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
     }
 
-    public function toggleStock(Product $product)
+    public function toggleStock(Product $product): RedirectResponse
     {
         $product->update([
             'in_stock' => ! $product->in_stock,
@@ -143,7 +158,7 @@ class ProductController extends Controller
         return redirect()->back()->with('success', "Product is now {$status}.");
     }
 
-    public function toggleVisibility(Product $product)
+    public function toggleVisibility(Product $product): RedirectResponse
     {
         $product->update([
             'is_visible' => ! $product->is_visible,
@@ -179,7 +194,7 @@ class ProductController extends Controller
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     protected function productValidationRules(): array
     {
@@ -299,12 +314,20 @@ class ProductController extends Controller
             }
 
             $index = (int) substr($orderItem, 4);
+            $file = $newFiles[$index] ?? null;
 
-            if (isset($newFiles[$index]) && ! isset($storedPaths[$index])) {
-                $path = $newFiles[$index]->store('products/gallery', 'public');
-                $uploadedFiles[] = $path;
-                $storedPaths[$index] = $path;
+            if (! $file instanceof UploadedFile || isset($storedPaths[$index])) {
+                continue;
             }
+
+            $path = $file->store('products/gallery', 'public');
+
+            if ($path === false) {
+                continue;
+            }
+
+            $uploadedFiles[] = $path;
+            $storedPaths[$index] = $path;
         }
 
         return $storedPaths;

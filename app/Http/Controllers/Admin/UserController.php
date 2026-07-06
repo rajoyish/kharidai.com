@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,7 +36,7 @@ class UserController extends Controller
         $user->mobile_number = $validated['mobile_number'] ?? null;
         $user->password = $validated['password']; // hashed by the model cast
         $user->is_admin = $validated['is_admin'] ?? false;
-        $user->email_verified_at = now();
+        $user->email_verified_at = Carbon::now();
         $user->save();
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
@@ -91,7 +92,7 @@ class UserController extends Controller
             return back();
         }
 
-        $user->banned_at = $user->banned_at ? null : now();
+        $user->banned_at = $user->banned_at ? null : Carbon::now();
         $user->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'User status updated.']);

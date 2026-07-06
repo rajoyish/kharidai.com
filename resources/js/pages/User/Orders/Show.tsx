@@ -8,6 +8,10 @@ import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
+import {
+    VariantOptionBadges,
+    type SelectedOptions,
+} from '@/components/variant-option-badges';
 
 type Order = {
     id: number;
@@ -21,8 +25,10 @@ type Order = {
     items: {
         id: number;
         quantity: number;
+        selected_options: SelectedOptions;
         product_variant: {
             name: string;
+            weight_grams: number | null;
             product: {
                 title: string;
                 image: string;
@@ -85,12 +91,12 @@ export default function OrderShow({ order }: { order: Order }) {
                         </span>
                         {order.shipment && (
                             <span
-                                className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize border ${
+                                className={`rounded-full border px-4 py-1.5 text-sm font-semibold capitalize ${
                                     order.shipment.status === 'delivered'
-                                        ? 'border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-950/30'
+                                        ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300'
                                         : order.shipment.status === 'shipped'
-                                          ? 'border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-950/30'
-                                          : 'border-yellow-200 text-yellow-700 bg-yellow-50 dark:border-yellow-800 dark:text-yellow-300 dark:bg-yellow-950/30'
+                                          ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300'
+                                          : 'border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-300'
                                 }`}
                             >
                                 Shipment: {order.shipment.status}
@@ -141,6 +147,16 @@ export default function OrderShow({ order }: { order: Order }) {
                                             <p className="text-sm text-muted-foreground">
                                                 {item.product_variant.name}
                                             </p>
+                                            <VariantOptionBadges
+                                                selectedOptions={
+                                                    item.selected_options
+                                                }
+                                                weightGrams={
+                                                    item.product_variant
+                                                        .weight_grams
+                                                }
+                                                className="mt-1"
+                                            />
                                             <p className="mt-1 text-sm font-medium">
                                                 Qty: {item.quantity}
                                             </p>
@@ -151,144 +167,157 @@ export default function OrderShow({ order }: { order: Order }) {
                         </div>
 
                         {/* Digital Delivery Credentials */}
-                        {order.items.some(item => item.product_variant.product.type === 'digital') && (
+                        {order.items.some(
+                            (item) =>
+                                item.product_variant.product.type === 'digital',
+                        ) && (
                             <div className="rounded-xl border bg-card p-6">
                                 <h2 className="mb-4 text-xl font-semibold">
                                     Digital Delivery
                                 </h2>
-                            {order.credentials.length > 0 ? (
-                                <div className="space-y-4">
-                                    {order.credentials.map((cred) => {
-                                        const parts = cred.content.split('```');
+                                {order.credentials.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {order.credentials.map((cred) => {
+                                            const parts =
+                                                cred.content.split('```');
 
-                                        return (
-                                            <div
-                                                key={cred.id}
-                                                className="rounded-lg border bg-card p-5 shadow-sm"
-                                            >
-                                                <div className="space-y-4">
-                                                    {parts.map((part, i) => {
-                                                        const isCodeBlock =
-                                                            i % 2 === 1;
+                                            return (
+                                                <div
+                                                    key={cred.id}
+                                                    className="rounded-lg border bg-card p-5 shadow-sm"
+                                                >
+                                                    <div className="space-y-4">
+                                                        {parts.map(
+                                                            (part, i) => {
+                                                                const isCodeBlock =
+                                                                    i % 2 === 1;
 
-                                                        if (!part.trim()) {
-                                                            return null;
-                                                        }
+                                                                if (
+                                                                    !part.trim()
+                                                                ) {
+                                                                    return null;
+                                                                }
 
-                                                        if (isCodeBlock) {
-                                                            let codeText =
-                                                                part.trim();
+                                                                if (
+                                                                    isCodeBlock
+                                                                ) {
+                                                                    let codeText =
+                                                                        part.trim();
 
-                                                            if (
-                                                                codeText.startsWith(
-                                                                    'link\n',
-                                                                )
-                                                            ) {
-                                                                codeText =
-                                                                    codeText
-                                                                        .substring(
-                                                                            5,
+                                                                    if (
+                                                                        codeText.startsWith(
+                                                                            'link\n',
                                                                         )
-                                                                        .trim();
-                                                            }
-
-                                                            return (
-                                                                <div
-                                                                    key={i}
-                                                                    className="relative rounded-md border bg-muted/80 p-4 font-mono text-sm"
-                                                                >
-                                                                    <pre className="overflow-x-auto pr-10 whitespace-pre-wrap">
-                                                                        {
+                                                                    ) {
+                                                                        codeText =
                                                                             codeText
-                                                                        }
-                                                                    </pre>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        onClick={() =>
-                                                                            copyToClipboard(
-                                                                                codeText,
-                                                                            )
-                                                                        }
-                                                                        className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                                        title="Copy to clipboard"
-                                                                    >
-                                                                        <Copy className="h-4 w-4" />
-                                                                    </Button>
-                                                                </div>
-                                                            );
-                                                        }
+                                                                                .substring(
+                                                                                    5,
+                                                                                )
+                                                                                .trim();
+                                                                    }
 
-                                                        const urlRegex =
-                                                            /(https?:\/\/[^\s]+)/g;
-                                                        const textParts =
-                                                            part.split(
-                                                                urlRegex,
-                                                            );
-
-                                                        return (
-                                                            <div
-                                                                key={i}
-                                                                className="text-sm leading-relaxed whitespace-pre-wrap text-foreground"
-                                                            >
-                                                                {textParts.map(
-                                                                    (
-                                                                        tPart,
-                                                                        j,
-                                                                    ) => {
-                                                                        if (
-                                                                            tPart.match(
-                                                                                urlRegex,
-                                                                            )
-                                                                        ) {
-                                                                            return (
-                                                                                <a
-                                                                                    key={
-                                                                                        j
-                                                                                    }
-                                                                                    href={
-                                                                                        tPart
-                                                                                    }
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    className="font-medium text-primary hover:underline"
-                                                                                >
-                                                                                    {
-                                                                                        tPart
-                                                                                    }
-                                                                                </a>
-                                                                            );
-                                                                        }
-
-                                                                        return (
-                                                                            <span
-                                                                                key={
-                                                                                    j
-                                                                                }
-                                                                            >
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                i
+                                                                            }
+                                                                            className="relative rounded-md border bg-muted/80 p-4 font-mono text-sm"
+                                                                        >
+                                                                            <pre className="overflow-x-auto pr-10 whitespace-pre-wrap">
                                                                                 {
-                                                                                    tPart
+                                                                                    codeText
                                                                                 }
-                                                                            </span>
-                                                                        );
-                                                                    },
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
+                                                                            </pre>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                onClick={() =>
+                                                                                    copyToClipboard(
+                                                                                        codeText,
+                                                                                    )
+                                                                                }
+                                                                                className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                                                title="Copy to clipboard"
+                                                                            >
+                                                                                <Copy className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                const urlRegex =
+                                                                    /(https?:\/\/[^\s]+)/g;
+                                                                const textParts =
+                                                                    part.split(
+                                                                        urlRegex,
+                                                                    );
+
+                                                                return (
+                                                                    <div
+                                                                        key={i}
+                                                                        className="text-sm leading-relaxed whitespace-pre-wrap text-foreground"
+                                                                    >
+                                                                        {textParts.map(
+                                                                            (
+                                                                                tPart,
+                                                                                j,
+                                                                            ) => {
+                                                                                if (
+                                                                                    tPart.match(
+                                                                                        urlRegex,
+                                                                                    )
+                                                                                ) {
+                                                                                    return (
+                                                                                        <a
+                                                                                            key={
+                                                                                                j
+                                                                                            }
+                                                                                            href={
+                                                                                                tPart
+                                                                                            }
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="font-medium text-primary hover:underline"
+                                                                                        >
+                                                                                            {
+                                                                                                tPart
+                                                                                            }
+                                                                                        </a>
+                                                                                    );
+                                                                                }
+
+                                                                                return (
+                                                                                    <span
+                                                                                        key={
+                                                                                            j
+                                                                                        }
+                                                                                    >
+                                                                                        {
+                                                                                            tPart
+                                                                                        }
+                                                                                    </span>
+                                                                                );
+                                                                            },
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="rounded-lg border border-dashed bg-muted/30 py-8 text-center text-muted-foreground">
-                                    {order.status === 'pending' || order.status === 'delivering'
-                                        ? 'Your digital items will appear here once delivered.'
-                                        : 'No digital items attached to this order.'}
-                                </div>
-                            )}
-                        </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-lg border border-dashed bg-muted/30 py-8 text-center text-muted-foreground">
+                                        {order.status === 'pending' ||
+                                        order.status === 'delivering'
+                                            ? 'Your digital items will appear here once delivered.'
+                                            : 'No digital items attached to this order.'}
+                                    </div>
+                                )}
+                            </div>
                         )}
 
                         {/* Order Messages */}

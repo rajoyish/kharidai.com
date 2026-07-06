@@ -169,7 +169,7 @@ class ServiceProductSeeder extends Seeder
         }
 
         $variant = $product->variants()->first();
-        $estimate = $variant?->price_npr ?? 0.0;
+        $estimate = $variant->price_npr ?? 0.0;
 
         $customer->serviceEngagements()->create([
             'product_id' => $product->id,
@@ -178,7 +178,7 @@ class ServiceProductSeeder extends Seeder
             'created_by' => $createdBy,
             'status' => $machine->initialStatusFor($detail),
             'price_npr' => $estimate,
-            'purchase_price_npr' => $variant?->purchase_price_npr ?? 0.0,
+            'purchase_price_npr' => $variant->purchase_price_npr ?? 0.0,
             'pricing_strategy' => $detail->pricing_strategy,
             'pricing_config' => $detail->pricing_config,
             'advance_required_npr' => $detail->advanceAmountNpr($estimate),

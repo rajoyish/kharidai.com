@@ -16,7 +16,7 @@ return new class extends Migration
             $table->dropUnique('subscriptions_order_id_unique');
             $table->index('order_id');
             $table->foreign('order_id')->references('id')->on('orders')->cascadeOnDelete();
-            $table->foreignId('order_item_id')->nullable()->after('order_id')->constrained()->cascadeOnDelete()->unique();
+            $table->foreignId('order_item_id')->nullable()->after('order_id')->constrained()->cascadeOnDelete();
         });
     }
 

@@ -8,7 +8,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('orders.{orderId}', function ($user, $orderId) {
-    $order = Order::find($orderId);
+    $order = Order::query()->where('id', $orderId)->first();
 
     return $order && ((int) $user->id === (int) $order->user_id || $user->is_admin) ? ['id' => $user->id, 'is_admin' => $user->is_admin] : false;
 });

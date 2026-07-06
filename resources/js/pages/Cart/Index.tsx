@@ -4,9 +4,11 @@ import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { home } from '@/routes';
-import { remove as removeCartItem, update as updateCartItem } from '@/routes/cart';
+import {
+    remove as removeCartItem,
+    update as updateCartItem,
+} from '@/routes/cart';
 import { index as checkoutIndex } from '@/routes/checkout';
-
 
 type Product = {
     id: number;
@@ -25,6 +27,7 @@ type CartItem = {
     id: number;
     product_variant_id: number;
     quantity: number;
+    selected_options: { color?: string; size?: string } | null;
     product_variant: ProductVariant;
 };
 
@@ -57,7 +60,6 @@ export default function CartIndex({ cart }: { cart: Cart }) {
             total + parseFloat(item.product_variant.price_npr) * item.quantity
         );
     }, 0);
-
 
     return (
         <>
@@ -122,6 +124,37 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                                                                 .name
                                                         }
                                                     </p>
+                                                    {(item.selected_options
+                                                        ?.color ||
+                                                        item.selected_options
+                                                            ?.size) && (
+                                                        <div className="mt-1 flex flex-wrap gap-1.5">
+                                                            {item
+                                                                .selected_options
+                                                                ?.color && (
+                                                                <span className="rounded-md border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                                                    Color:{' '}
+                                                                    {
+                                                                        item
+                                                                            .selected_options
+                                                                            .color
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                            {item
+                                                                .selected_options
+                                                                ?.size && (
+                                                                <span className="rounded-md border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                                                    Size:{' '}
+                                                                    {
+                                                                        item
+                                                                            .selected_options
+                                                                            .size
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="font-medium">
@@ -198,7 +231,6 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                                                 Rs. {totalNpr.toFixed(0)}
                                             </span>
                                         </div>
-
                                     </div>
 
                                     <div className="mb-6 border-t pt-4">
@@ -208,11 +240,7 @@ export default function CartIndex({ cart }: { cart: Cart }) {
                                         </p>
                                     </div>
 
-                                    <Button
-                                        size="lg"
-                                        className="w-fit"
-                                        asChild
-                                    >
+                                    <Button size="lg" className="w-fit" asChild>
                                         <Link href={checkoutIndex()}>
                                             Proceed to Checkout
                                         </Link>
