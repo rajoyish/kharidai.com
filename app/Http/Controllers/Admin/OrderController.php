@@ -10,14 +10,16 @@ use App\Models\PaymentReceipt;
 use App\Models\Shipment;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product'])->latest();
 
@@ -40,7 +42,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Order $order)
+    public function show(Order $order): Response
     {
         $order->load(['items.productVariant.product', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product', 'shipment', 'shippingAddress']);
 
@@ -50,7 +52,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function updateShipmentStatus(Request $request, Order $order)
+    public function updateShipmentStatus(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([
             'status' => ['required', Rule::in(Shipment::STATUSES)],
@@ -67,14 +69,14 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Shipment status updated.');
     }
 
-    public function markBalancePaid(Order $order)
+    public function markBalancePaid(Order $order): RedirectResponse
     {
         $order->update(['balance_due' => 0]);
 
         return redirect()->back()->with('success', 'Balance marked as paid.');
     }
 
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,delivering,completed',
@@ -93,7 +95,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Order status updated.');
     }
 
-    public function updateReceiptStatus(Request $request, PaymentReceipt $paymentReceipt)
+    public function updateReceiptStatus(Request $request, PaymentReceipt $paymentReceipt): RedirectResponse
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected',
@@ -109,7 +111,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Receipt status updated.');
     }
 
-    public function storeCredential(Request $request, Order $order)
+    public function storeCredential(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([
             'content' => 'required|string',
@@ -122,7 +124,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Digital credential added.');
     }
 
-    public function updateCredential(Request $request, Order $order, OrderCredential $credential)
+    public function updateCredential(Request $request, Order $order, OrderCredential $credential): RedirectResponse
     {
         $validated = $request->validate([
             'content' => 'required|string',
@@ -135,14 +137,14 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Digital credential updated.');
     }
 
-    public function destroyCredential(Order $order, OrderCredential $credential)
+    public function destroyCredential(Order $order, OrderCredential $credential): RedirectResponse
     {
         $credential->delete();
 
         return redirect()->back()->with('success', 'Digital credential deleted.');
     }
 
-    public function storeMessage(Request $request, Order $order)
+    public function storeMessage(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
@@ -160,7 +162,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Message sent.');
     }
 
-    public function destroy(Order $order)
+    public function destroy(Order $order): RedirectResponse
     {
         $receiptPath = $order->paymentReceipt?->file_path;
 
@@ -173,7 +175,7 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
     }
 
-    public function allowReceiptReupload(Request $request, Order $order)
+    public function allowReceiptReupload(Request $request, Order $order): RedirectResponse
     {
         $order->update([
             'can_reupload_receipt' => true,
@@ -188,7 +190,7 @@ class OrderController extends Controller
         $order->loadMissing(['items.productVariant', 'items.subscriptions']);
 
         foreach ($order->items as $item) {
-            $validityDays = $item->productVariant?->validity_days;
+            $validityDays = $item->productVariant->validity_days;
 
             if ($validityDays === null) {
                 continue;

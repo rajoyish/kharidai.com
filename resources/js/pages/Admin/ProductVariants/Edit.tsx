@@ -1,10 +1,13 @@
-import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import { useState } from 'react';
+
 import { update as updateVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
+import { PhysicalVariantFields } from '@/components/product-form/PhysicalVariantFields';
+import { getProductTypeTheme } from '@/components/product-form/product-type-theme';
 import { SeoHead } from '@/components/seo-head';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import {
     Card,
     CardContent,
@@ -14,12 +17,15 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 type Product = {
     id: number;
     title: string;
     slug: string;
+    type?: string;
 };
 
 type Variant = {
@@ -29,6 +35,9 @@ type Variant = {
     price_npr: string;
     purchase_price_npr: string;
     validity_days: number | null;
+    colors: string[] | null;
+    sizes: string[] | null;
+    weight_grams: number | null;
 };
 
 export default function EditVariant({
@@ -48,7 +57,13 @@ export default function EditVariant({
         price_npr: variant.price_npr,
         purchase_price_npr: variant.purchase_price_npr || '',
         validity_days: variant.validity_days?.toString() ?? '',
+        colors: variant.colors ?? [],
+        sizes: variant.sizes ?? [],
+        weight_grams: variant.weight_grams?.toString() ?? '',
     });
+
+    const isPhysical = product.type === 'physical';
+    const theme = getProductTypeTheme(product.type);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,9 +79,21 @@ export default function EditVariant({
                 title={product.title}
                 variant="transparent"
             >
-                <Card>
+                <Card className={cn('transition-colors', theme.card)}>
                     <CardHeader>
-                        <CardTitle>Variant Details</CardTitle>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <CardTitle>Variant Details</CardTitle>
+                            <Badge
+                                variant="outline"
+                                className={cn('gap-1.5', theme.badge)}
+                            >
+                                <theme.Icon
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                />
+                                {theme.label}
+                            </Badge>
+                        </div>
                         <CardDescription>
                             Update pricing and details for this variant.
                         </CardDescription>
@@ -82,7 +109,7 @@ export default function EditVariant({
                                         setData('name', e.target.value)
                                     }
                                     required
-                                    placeholder="e.g. 18 Months | Activation Link"
+                                    placeholder={theme.variantNamePlaceholder}
                                 />
                                 {errors.name && (
                                     <div className="text-sm text-destructive">
@@ -203,6 +230,15 @@ export default function EditVariant({
                                     </div>
                                 )}
                             </div>
+
+                            {isPhysical && (
+                                <PhysicalVariantFields
+                                    theme={theme}
+                                    data={data}
+                                    setData={setData}
+                                    errors={errors}
+                                />
+                            )}
 
                             <Button
                                 type="submit"

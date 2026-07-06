@@ -77,7 +77,7 @@ class CategoryController extends Controller
                         return;
                     }
 
-                    $parent = Category::find($value);
+                    $parent = Category::query()->where('id', $value)->first();
 
                     if ($parent !== null && $category->wouldCreateCycleWith($parent)) {
                         $fail('A category cannot be nested under itself or one of its own subcategories.');

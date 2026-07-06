@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\OrderMessage;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
@@ -13,12 +14,15 @@ class NewMessageNotification extends Notification
 
     public function __construct(public OrderMessage $message) {}
 
-    public function via($notifiable)
+    /**
+     * @return list<string>
+     */
+    public function via(object $notifiable): array
     {
         return ['broadcast', 'database'];
     }
 
-    public function toBroadcast($notifiable)
+    public function toBroadcast(User $notifiable): BroadcastMessage
     {
         $sender = $this->message->user->is_admin ? 'Support Admin' : $this->message->user->name;
         $url = $notifiable->is_admin
@@ -33,7 +37,10 @@ class NewMessageNotification extends Notification
         ]);
     }
 
-    public function toArray($notifiable)
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(User $notifiable): array
     {
         $sender = $this->message->user->is_admin ? 'Support Admin' : $this->message->user->name;
         $url = $notifiable->is_admin

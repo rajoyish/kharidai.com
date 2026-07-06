@@ -1,9 +1,12 @@
-import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import { useState } from 'react';
+
 import { store as storeVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
-import { Switch } from '@/components/ui/switch';
 import { PagePanel } from '@/components/page-panel';
+import { PhysicalVariantFields } from '@/components/product-form/PhysicalVariantFields';
+import { getProductTypeTheme } from '@/components/product-form/product-type-theme';
 import { SeoHead } from '@/components/seo-head';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -14,12 +17,15 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 type Product = {
     id: number;
     title: string;
     slug: string;
+    type?: string;
 };
 
 export default function CreateVariant({ product }: { product: Product }) {
@@ -31,7 +37,13 @@ export default function CreateVariant({ product }: { product: Product }) {
         price_npr: '',
         purchase_price_npr: '',
         validity_days: '',
+        colors: [] as string[],
+        sizes: [] as string[],
+        weight_grams: '',
     });
+
+    const isPhysical = product.type === 'physical';
+    const theme = getProductTypeTheme(product.type);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,9 +59,21 @@ export default function CreateVariant({ product }: { product: Product }) {
                 title={product.title}
                 variant="transparent"
             >
-                <Card>
+                <Card className={cn('transition-colors', theme.card)}>
                     <CardHeader>
-                        <CardTitle>Variant Details</CardTitle>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <CardTitle>Variant Details</CardTitle>
+                            <Badge
+                                variant="outline"
+                                className={cn('gap-1.5', theme.badge)}
+                            >
+                                <theme.Icon
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                />
+                                {theme.label}
+                            </Badge>
+                        </div>
                         <CardDescription>
                             Add a new pricing or options variant for this
                             product.
@@ -66,7 +90,7 @@ export default function CreateVariant({ product }: { product: Product }) {
                                         setData('name', e.target.value)
                                     }
                                     required
-                                    placeholder="e.g. 18 Months | Activation Link"
+                                    placeholder={theme.variantNamePlaceholder}
                                 />
                                 {errors.name && (
                                     <div className="text-sm text-destructive">
@@ -187,6 +211,15 @@ export default function CreateVariant({ product }: { product: Product }) {
                                     </div>
                                 )}
                             </div>
+
+                            {isPhysical && (
+                                <PhysicalVariantFields
+                                    theme={theme}
+                                    data={data}
+                                    setData={setData}
+                                    errors={errors}
+                                />
+                            )}
 
                             <Button
                                 type="submit"

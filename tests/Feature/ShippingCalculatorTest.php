@@ -53,6 +53,43 @@ it('charges base fee plus per-kg fee for weight-based items', function () {
     expect($fee)->toBe(200.0);
 });
 
+it('bills the exact variant weight, overriding the product weight', function () {
+    $zone = zoneWithRate();
+
+    $product = Product::factory()->physical()->create();
+    PhysicalProductDetail::factory()->create([
+        'product_id' => $product->id,
+        'weight_grams' => 100,
+        'free_shipping' => false,
+        'flat_shipping_npr' => null,
+    ]);
+    $variant = ProductVariant::factory()->create([
+        'product_id' => $product->id,
+        'price_npr' => 1000,
+        'weight_grams' => 1500,
+    ]);
+    $item = CartItem::factory()->create([
+        'product_variant_id' => $variant->id,
+        'quantity' => 1,
+    ])->load('productVariant.product.physicalDetail');
+
+    // Variant 1500g -> ceil(1.5) = 2kg -> 2*50 = 100, plus base 100 = 200.
+    $fee = app(ShippingCalculator::class)->forItems($zone, new Collection([$item]));
+
+    expect($fee)->toBe(200.0);
+});
+
+it('falls back to the product weight when the variant has no weight', function () {
+    $zone = zoneWithRate();
+    // Variant created without a weight -> uses physicalDetail weight_grams.
+    $item = physicalCartItem(1000, 3, ['weight_grams' => 500, 'free_shipping' => false, 'flat_shipping_npr' => null]);
+
+    // 3 x 500g = 1500g -> ceil(1.5) = 2kg -> 2*50 = 100, plus base 100 = 200.
+    $fee = app(ShippingCalculator::class)->forItems($zone, new Collection([$item]));
+
+    expect($fee)->toBe(200.0);
+});
+
 it('uses the flat shipping override and skips the base fee', function () {
     $zone = zoneWithRate();
     $item = physicalCartItem(6500, 2, ['weight_grams' => 300, 'free_shipping' => false, 'flat_shipping_npr' => 200]);

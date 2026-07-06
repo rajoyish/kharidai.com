@@ -18,6 +18,7 @@ use App\Notifications\PaymentReceiptUploadedNotification;
 use App\Services\Engagements\EngagementStateMachine;
 use App\Services\Shipping\ShippingCalculator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -25,10 +26,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CheckoutController extends Controller
 {
-    public function index(Request $request, ShippingCalculator $calculator)
+    public function index(Request $request, ShippingCalculator $calculator): Response|RedirectResponse
     {
         $cart = Cart::with(['items.productVariant.product.physicalDetail'])
             ->where('user_id', $request->user()->id)
@@ -68,7 +70,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function process(Request $request, ShippingCalculator $calculator)
+    public function process(Request $request, ShippingCalculator $calculator): RedirectResponse
     {
         $cart = Cart::with(['items.productVariant.product.physicalDetail'])
             ->where('user_id', $request->user()->id)
@@ -92,7 +94,7 @@ class CheckoutController extends Controller
         $zone = null;
 
         if ($hasPhysicalItems) {
-            $zone = ShippingZone::with('rate')->find($validated['shipping_zone_id']);
+            $zone = ShippingZone::with('rate')->where('id', $validated['shipping_zone_id'])->first();
             $shippingTotal = $calculator->forItems($zone, $physicalItems);
         }
 
@@ -128,6 +130,7 @@ class CheckoutController extends Controller
                     'price' => $item->productVariant->price_npr,
                     'purchase_price' => $item->productVariant->purchase_price_npr,
                     'quantity' => $item->quantity,
+                    'selected_options' => $item->selected_options,
                 ]);
 
                 $this->createServiceEngagements($orderItem, $item);
@@ -257,7 +260,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function nprPayment(Request $request, Order $order)
+    public function nprPayment(Request $request, Order $order): Response|RedirectResponse
     {
         if ($order->user_id !== $request->user()->id || $order->status !== 'pending') {
             abort(403);
@@ -272,7 +275,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function processNprPayment(Request $request, Order $order)
+    public function processNprPayment(Request $request, Order $order): RedirectResponse
     {
         if ($order->user_id !== $request->user()->id || $order->status !== 'pending') {
             abort(403);

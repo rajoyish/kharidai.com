@@ -22,10 +22,13 @@ class ShippingCalculator
      *  - flat_shipping_npr set  → flat fee × quantity (no weight, no base fee)
      *  - otherwise (weight)     → per_kg_fee × ceil(total kg) plus the zone base fee
      *
+     * Billable weight is the selected variant's own weight, falling back to the
+     * product's physical detail weight when the variant carries none.
+     *
      * A free-shipping threshold (`free_over_npr`) waives the entire fee once the
      * physical goods subtotal reaches it.
      *
-     * @param  Collection<int, CartItem|OrderItem>  $physicalItems
+     * @param  Collection<int, CartItem>|Collection<int, OrderItem>  $physicalItems
      */
     public function forItems(ShippingZone $zone, Collection $physicalItems): float
     {
@@ -61,7 +64,9 @@ class ShippingCalculator
             }
 
             $hasWeightBasedItem = true;
-            $grams = (int) ($detail->weight_grams ?? 0) * $quantity;
+            $perUnitGrams = (int) ($item->productVariant->weight_grams
+                ?? $detail->weight_grams ?? 0);
+            $grams = $perUnitGrams * $quantity;
             $billableKg = (int) ceil($grams / 1000);
             $variable += (float) $rate->per_kg_fee_npr * $billableKg;
         }
@@ -75,7 +80,7 @@ class ShippingCalculator
      * Compute the shipping fee for every provided zone, keyed by zone id.
      *
      * @param  Collection<int, ShippingZone>  $zones
-     * @param  Collection<int, CartItem|OrderItem>  $physicalItems
+     * @param  Collection<int, CartItem>|Collection<int, OrderItem>  $physicalItems
      * @return array<int, float>
      */
     public function feesForZones(Collection $zones, Collection $physicalItems): array

@@ -45,6 +45,9 @@ class PhysicalProductDetail extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * @return Attribute<float|null, int|null>
+     */
     protected function flatShippingNpr(): Attribute
     {
         return Attribute::make(

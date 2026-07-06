@@ -3,7 +3,6 @@
 namespace App\Actions\Tithes;
 
 use App\Models\MonthlyTithe;
-use App\Models\Order;
 use App\Models\OrderItem;
 use Carbon\CarbonInterface;
 
@@ -14,15 +13,12 @@ class SyncMonthlyTitheAction
         $month = (int) $date->month;
         $year = (int) $date->year;
 
-        $ordersTable = (new Order)->getTable();
-        $orderItemsTable = (new OrderItem)->getTable();
-
         $profitAmountInCents = (int) OrderItem::query()
-            ->selectRaw("COALESCE(SUM(({$orderItemsTable}.price - {$orderItemsTable}.purchase_price) * {$orderItemsTable}.quantity), 0) as total_profit_amount")
-            ->join($ordersTable, "{$ordersTable}.id", '=', "{$orderItemsTable}.order_id")
-            ->where("{$ordersTable}.status", 'completed')
-            ->whereYear("{$ordersTable}.created_at", $year)
-            ->whereMonth("{$ordersTable}.created_at", $month)
+            ->selectRaw('COALESCE(SUM((order_items.price - order_items.purchase_price) * order_items.quantity), 0) as total_profit_amount')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', 'completed')
+            ->whereYear('orders.created_at', $year)
+            ->whereMonth('orders.created_at', $month)
             ->value('total_profit_amount');
 
         if ($profitAmountInCents <= 0) {

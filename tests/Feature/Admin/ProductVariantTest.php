@@ -39,6 +39,77 @@ it('can create a product variant', function () {
     ]);
 });
 
+it('can create a physical variant with color and size option lists and a weight', function () {
+    $product = Product::factory()->physical()->create();
+
+    $response = $this->actingAs($this->admin)->post('/admin/products/'.$product->slug.'/variants', [
+        'name' => 'Regular',
+        'price_npr' => 2500,
+        'colors' => ['Red', 'Black', 'White'],
+        'sizes' => ['XL', '2XXL', '3XXL'],
+        'weight_grams' => 500,
+    ]);
+
+    $response->assertRedirect(route('admin.products.variants.index', $product));
+
+    $variant = $product->variants()->firstWhere('name', 'Regular');
+    expect($variant->colors)->toBe(['Red', 'Black', 'White']);
+    expect($variant->sizes)->toBe(['XL', '2XXL', '3XXL']);
+    expect($variant->weight_grams)->toBe(500);
+});
+
+it('trims blank options from the lists', function () {
+    $product = Product::factory()->physical()->create();
+
+    $this->actingAs($this->admin)->post('/admin/products/'.$product->slug.'/variants', [
+        'name' => 'Regular',
+        'price_npr' => 1000,
+        'colors' => ['Red', ' '],
+        'sizes' => ['M'],
+    ]);
+
+    $variant = $product->variants()->firstWhere('name', 'Regular');
+    expect($variant->colors)->toBe(['Red']);
+    expect($variant->sizes)->toBe(['M']);
+});
+
+it('rejects a negative weight for a physical variant', function () {
+    $product = Product::factory()->physical()->create();
+
+    $response = $this->actingAs($this->admin)->post('/admin/products/'.$product->slug.'/variants', [
+        'name' => 'Broken',
+        'price_npr' => 1000,
+        'weight_grams' => -5,
+    ]);
+
+    $response->assertSessionHasErrors('weight_grams');
+});
+
+it('can update the option lists and weight of a variant', function () {
+    $product = Product::factory()->physical()->create();
+    $variant = ProductVariant::factory()->create([
+        'product_id' => $product->id,
+        'colors' => ['Red'],
+        'sizes' => ['S'],
+        'weight_grams' => 100,
+    ]);
+
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug.'/variants/'.$variant->id, [
+        'name' => $variant->name,
+        'price_npr' => 1200,
+        'colors' => ['Blue', 'Green'],
+        'sizes' => ['L', 'XL'],
+        'weight_grams' => 750,
+    ]);
+
+    $response->assertRedirect(route('admin.products.variants.index', $product));
+
+    $variant->refresh();
+    expect($variant->colors)->toBe(['Blue', 'Green']);
+    expect($variant->sizes)->toBe(['L', 'XL']);
+    expect($variant->weight_grams)->toBe(750);
+});
+
 it('can update a product variant', function () {
     $product = Product::factory()->create();
     $variant = ProductVariant::factory()->create([

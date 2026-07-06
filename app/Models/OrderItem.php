@@ -17,16 +17,27 @@ use Illuminate\Support\Carbon;
  * @property int $product_variant_id
  * @property float $price
  * @property int $quantity
+ * @property array<string, string>|null $selected_options
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Order $order
  * @property ProductVariant $productVariant
  */
-#[Fillable(['order_id', 'product_variant_id', 'price', 'purchase_price', 'quantity'])]
+#[Fillable(['order_id', 'product_variant_id', 'price', 'purchase_price', 'quantity', 'selected_options'])]
 class OrderItem extends Model
 {
     /** @use HasFactory<OrderItemFactory> */
     use HasFactory;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'selected_options' => 'array',
+        ];
+    }
 
     /**
      * @return BelongsTo<Order, $this>
@@ -60,6 +71,9 @@ class OrderItem extends Model
         return $this->hasMany(ServiceEngagement::class);
     }
 
+    /**
+     * @return Attribute<float, float|int>
+     */
     protected function price(): Attribute
     {
         return Attribute::make(
@@ -68,6 +82,9 @@ class OrderItem extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, float|int>
+     */
     protected function purchasePrice(): Attribute
     {
         return Attribute::make(

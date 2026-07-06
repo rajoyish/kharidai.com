@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property float $balance_due
  * @property PaymentOption|null $payment_option
  * @property int|null $shipping_address_id
- * @property array|null $additional_data
+ * @property array<string, mixed>|null $additional_data
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property User $user
@@ -152,6 +152,9 @@ class Order extends Model
         return $query->where('status', 'completed');
     }
 
+    /**
+     * @return Attribute<float, float|int>
+     */
     protected function totalAmount(): Attribute
     {
         return Attribute::make(
@@ -160,6 +163,9 @@ class Order extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function itemsTotal(): Attribute
     {
         return Attribute::make(
@@ -168,6 +174,9 @@ class Order extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function shippingTotal(): Attribute
     {
         return Attribute::make(
@@ -176,6 +185,9 @@ class Order extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function amountDueNow(): Attribute
     {
         return Attribute::make(
@@ -184,6 +196,9 @@ class Order extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function balanceDue(): Attribute
     {
         return Attribute::make(

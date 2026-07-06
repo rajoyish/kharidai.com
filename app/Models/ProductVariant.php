@@ -18,11 +18,14 @@ use Illuminate\Support\Carbon;
  * @property float $price_npr
  * @property float $purchase_price_npr
  * @property int|null $validity_days
+ * @property list<string>|null $colors
+ * @property list<string>|null $sizes
+ * @property int|null $weight_grams
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Product $product
  */
-#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr', 'validity_days'])]
+#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr', 'validity_days', 'colors', 'sizes', 'weight_grams'])]
 class ProductVariant extends Model
 {
     /** @use HasFactory<ProductVariantFactory> */
@@ -35,6 +38,9 @@ class ProductVariant extends Model
     {
         return [
             'validity_days' => 'integer',
+            'colors' => 'array',
+            'sizes' => 'array',
+            'weight_grams' => 'integer',
         ];
     }
 
@@ -46,6 +52,9 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * @return Attribute<float, float|int>
+     */
     protected function priceNpr(): Attribute
     {
         return Attribute::make(
@@ -54,6 +63,9 @@ class ProductVariant extends Model
         );
     }
 
+    /**
+     * @return Attribute<float, float|int>
+     */
     protected function purchasePriceNpr(): Attribute
     {
         return Attribute::make(

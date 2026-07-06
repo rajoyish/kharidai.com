@@ -13,12 +13,15 @@ class OrderStatusUpdatedNotification extends Notification
 
     public function __construct(public Order $order, public string $status) {}
 
-    public function via($notifiable)
+    /**
+     * @return list<string>
+     */
+    public function via(object $notifiable): array
     {
         return ['broadcast', 'database'];
     }
 
-    public function toBroadcast($notifiable)
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
         return new BroadcastMessage([
             'message' => 'Order Status Updated',
@@ -28,7 +31,10 @@ class OrderStatusUpdatedNotification extends Notification
         ]);
     }
 
-    public function toArray($notifiable)
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
     {
         return [
             'message' => 'Order Status Updated',

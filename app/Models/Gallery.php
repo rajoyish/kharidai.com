@@ -9,6 +9,9 @@ class Gallery extends Model
 {
     protected $fillable = ['product_id', 'image_path', 'sort_order'];
 
+    /**
+     * @return BelongsTo<Product, $this>
+     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

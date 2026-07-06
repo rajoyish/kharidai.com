@@ -41,6 +41,9 @@ class MonthlyTithe extends Model
         ];
     }
 
+    /**
+     * @return Attribute<float, int>
+     */
     protected function totalAmount(): Attribute
     {
         return Attribute::make(

@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         return response()->json([
             'notifications' => $request->user()->notifications()->take(20)->get(),
@@ -14,7 +15,7 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markAsRead(Request $request, $id)
+    public function markAsRead(Request $request, string $id): JsonResponse
     {
         $notification = $request->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
@@ -22,7 +23,7 @@ class NotificationController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function markAllAsRead(Request $request)
+    public function markAllAsRead(Request $request): JsonResponse
     {
         $request->user()->notifications()->delete();
 
