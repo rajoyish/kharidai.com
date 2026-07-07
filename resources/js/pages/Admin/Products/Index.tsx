@@ -1,6 +1,13 @@
 import { Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { destroy as destroyProduct } from '@/actions/App/Http/Controllers/Admin/ProductController';
+import {
+    create,
+    destroy as destroyProduct,
+    edit,
+    index as productsIndex,
+    toggleStock,
+} from '@/actions/App/Http/Controllers/Admin/ProductController';
+import { index as productVariants } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -77,9 +84,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                             className="w-full sm:w-64"
                         />
                         <Button asChild className="w-fit">
-                            <Link href="/admin/products/create">
-                                Add Product
-                            </Link>
+                            <Link href={create()}>Add Product</Link>
                         </Button>
                     </div>
                 }
@@ -180,7 +185,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         className={`h-8 px-2 text-xs ${product.in_stock ? 'text-amber-600 hover:bg-amber-50 hover:text-amber-700' : 'text-green-600 hover:bg-green-50 hover:text-green-700'}`}
                                         onClick={() =>
                                             router.patch(
-                                                `/admin/products/${product.slug}/toggle-stock`,
+                                                toggleStock(product).url,
                                                 {},
                                                 { preserveScroll: true },
                                             )
@@ -196,9 +201,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         className="h-8 px-2 text-xs hover:bg-muted"
                                         asChild
                                     >
-                                        <Link
-                                            href={`/admin/products/${product.slug}/variants`}
-                                        >
+                                        <Link href={productVariants(product)}>
                                             Variants
                                         </Link>
                                     </Button>
@@ -208,11 +211,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         className="h-8 px-2 text-xs hover:bg-muted"
                                         asChild
                                     >
-                                        <Link
-                                            href={`/admin/products/${product.slug}/edit`}
-                                        >
-                                            Edit
-                                        </Link>
+                                        <Link href={edit(product)}>Edit</Link>
                                     </Button>
                                     <Button
                                         variant="ghost"
@@ -248,5 +247,5 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
 }
 
 ProductsIndex.layout = {
-    breadcrumbs: [{ title: 'Products', href: '/admin/products' }],
+    breadcrumbs: [{ title: 'Products', href: productsIndex().url }],
 };

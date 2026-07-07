@@ -11,7 +11,11 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { destroy as destroyCategory } from '@/actions/App/Http/Controllers/Admin/CategoryController';
+import {
+    destroy as destroyCategory,
+    store as storeCategory,
+    update as updateCategory,
+} from '@/actions/App/Http/Controllers/Admin/CategoryController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -162,9 +166,9 @@ export default function CategoriesIndex({
         e.preventDefault();
 
         if (isCreating) {
-            post('/admin/categories', { onSuccess: closeDialog });
+            post(storeCategory.url(), { onSuccess: closeDialog });
         } else if (editingCategory) {
-            patch(`/admin/categories/${editingCategory.slug}`, {
+            patch(updateCategory(editingCategory).url, {
                 onSuccess: closeDialog,
             });
         }

@@ -9,6 +9,7 @@ import {
     handleCommandNavigation,
     JSONContent,
 } from 'novel';
+import { store as storeMedia } from '@/actions/App/Http/Controllers/MediaController';
 import { defaultExtensions } from './extensions';
 import { slashCommand, suggestionItems } from './slash-command';
 
@@ -23,7 +24,7 @@ const uploadFileToMedia = async (file: File, view: any) => {
     const token = document.head.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
     try {
-        const response = await fetch('/admin/media', {
+        const response = await fetch(storeMedia.url(), {
             method: 'POST',
             body: formData,
             headers: {

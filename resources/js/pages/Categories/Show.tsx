@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 
@@ -95,32 +96,73 @@ export default function Show({
                                         storefrontCategory.slug ===
                                         category.slug;
 
+                                    const isParentOfCurrentCategory = 
+                                        storefrontCategory.children?.some(c => c.slug === category.slug);
+
+                                    const isExpanded = isCurrentCategory || isParentOfCurrentCategory;
+
                                     return (
-                                        <Link
-                                            key={storefrontCategory.id}
-                                            href={showCategory(
-                                                storefrontCategory,
-                                            )}
-                                            prefetch
-                                            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
-                                                isCurrentCategory
-                                                    ? 'border-primary bg-primary text-white shadow-sm'
-                                                    : 'border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary'
-                                            }`}
-                                        >
-                                            {storefrontCategory.name}
-                                            <span
-                                                className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                                        <Fragment key={storefrontCategory.id}>
+                                            <Link
+                                                href={showCategory(
+                                                    storefrontCategory,
+                                                )}
+                                                prefetch
+                                                className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
                                                     isCurrentCategory
-                                                        ? 'bg-white/15 text-white'
-                                                        : 'bg-slate-100 text-slate-500'
+                                                        ? 'border-primary bg-primary text-white shadow-sm'
+                                                        : isExpanded
+                                                        ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                                                        : 'border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary'
                                                 }`}
                                             >
-                                                {
-                                                    storefrontCategory.product_count
-                                                }
-                                            </span>
-                                        </Link>
+                                                {storefrontCategory.name}
+                                                <span
+                                                    className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                                                        isCurrentCategory
+                                                            ? 'bg-white/15 text-white'
+                                                            : isExpanded
+                                                            ? 'bg-primary/20 text-primary'
+                                                            : 'bg-slate-100 text-slate-500'
+                                                    }`}
+                                                >
+                                                    {
+                                                        storefrontCategory.product_count
+                                                    }
+                                                </span>
+                                            </Link>
+                                            
+                                            {isExpanded && storefrontCategory.children && storefrontCategory.children.length > 0 && (
+                                                <Fragment>
+                                                    {storefrontCategory.children.map(child => {
+                                                        const isCurrentChild = child.slug === category.slug;
+                                                        return (
+                                                            <Link
+                                                                key={child.id}
+                                                                href={showCategory(child)}
+                                                                prefetch
+                                                                className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
+                                                                    isCurrentChild
+                                                                        ? 'border-primary bg-primary text-white shadow-sm'
+                                                                        : 'border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary'
+                                                                }`}
+                                                            >
+                                                                {child.name}
+                                                                <span
+                                                                    className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                                                                        isCurrentChild
+                                                                            ? 'bg-white/15 text-white'
+                                                                            : 'bg-slate-100 text-slate-500'
+                                                                    }`}
+                                                                >
+                                                                    {child.product_count}
+                                                                </span>
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </Fragment>
+                                            )}
+                                        </Fragment>
                                     );
                                 })}
                             </div>
