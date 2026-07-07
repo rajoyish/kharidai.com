@@ -1,6 +1,6 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ArrowRight, Cpu, LayoutGrid, Menu, Package, ShoppingCart, Sparkles, User } from 'lucide-react';
-import type { ComponentType } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -61,6 +61,12 @@ export function StorefrontHeader({
             : ordersIndex()
         : login();
     const accountLabel = auth.user?.name ?? 'Account';
+
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        return router.on('navigate', () => setIsOpen(false));
+    }, []);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -124,7 +130,7 @@ export function StorefrontHeader({
 
                 {/* Mobile Menu (Right) */}
                 <div className="md:hidden">
-                    <Sheet>
+                    <Sheet open={isOpen} onOpenChange={setIsOpen}>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-10 w-10">
                                 <Menu className="h-6 w-6" />
@@ -218,23 +224,6 @@ function NavigationGroupPanel({ group }: { group: StorefrontNavigationGroup }) {
                                 {category.name}
                             </Link>
                         </NavigationMenuLink>
-                        {category.children && category.children.length > 0 && (
-                            <ul className="mt-0.5 mb-2 ml-3 flex flex-col gap-0.5 border-l border-border pl-2">
-                                {category.children.map((child) => (
-                                    <li key={child.id} className="min-w-0">
-                                        <NavigationMenuLink asChild>
-                                            <Link
-                                                href={showCategory(child)}
-                                                prefetch
-                                                className="block truncate rounded-md px-3 py-1.5 text-left text-sm text-muted-foreground no-underline outline-none transition-colors hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
-                                            >
-                                                {child.name}
-                                            </Link>
-                                        </NavigationMenuLink>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
                     </li>
                 ))}
             </ul>
@@ -275,20 +264,6 @@ function MobileNavigationGroup({ group }: { group: StorefrontNavigationGroup }) 
                         >
                             {category.name}
                         </Link>
-                        {category.children && category.children.length > 0 && (
-                            <div className="mb-1 ml-4 flex flex-col gap-0.5 border-l pl-3">
-                                {category.children.map((child) => (
-                                    <Link
-                                        key={child.id}
-                                        href={showCategory(child)}
-                                        prefetch
-                                        className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                                    >
-                                        {child.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 ))}
             </div>

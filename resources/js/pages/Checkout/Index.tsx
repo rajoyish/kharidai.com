@@ -1,5 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { useMemo } from 'react';
+import { process as processCheckout } from '@/actions/App/Http/Controllers/CheckoutController';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { PaymentOptionToggle } from '@/components/payment-option-toggle';
 import { SeoHead } from '@/components/seo-head';
@@ -104,7 +105,7 @@ export default function CheckoutIndex({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/checkout');
+        post(processCheckout.url());
     };
 
     return (

@@ -51,6 +51,7 @@ export type StorefrontCategorySummary = {
     name: string;
     slug: string;
     product_count: number;
+    children?: StorefrontCategorySummary[];
 };
 
 export type StorefrontNavigationCategory = {

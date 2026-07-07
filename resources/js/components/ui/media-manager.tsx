@@ -4,6 +4,11 @@ import type { ChangeEvent } from 'react';
 import { toast } from 'sonner';
 
 import {
+    destroy as destroyMedia,
+    index as mediaIndex,
+    store as storeMedia,
+} from '@/actions/App/Http/Controllers/MediaController';
+import {
     Attachment,
     AttachmentAction,
     AttachmentActions,
@@ -50,7 +55,7 @@ export function MediaManager() {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/admin/media');
+            const response = await fetch(mediaIndex.url());
             const data = await response.json();
             setMediaList(data);
         } catch {
@@ -83,7 +88,7 @@ export function MediaManager() {
                 .querySelector('meta[name="csrf-token"]')
                 ?.getAttribute('content');
 
-            const response = await fetch('/admin/media', {
+            const response = await fetch(storeMedia.url(), {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -123,7 +128,7 @@ export function MediaManager() {
                 .querySelector('meta[name="csrf-token"]')
                 ?.getAttribute('content');
 
-            const response = await fetch(`/admin/media/${id}`, {
+            const response = await fetch(destroyMedia.url(id), {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': token || '',

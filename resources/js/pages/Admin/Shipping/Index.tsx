@@ -1,5 +1,11 @@
 import { router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import {
+    destroy as destroyZone,
+    index as shippingIndex,
+    store as storeZone,
+    update as updateZone,
+} from '@/actions/App/Http/Controllers/Admin/ShippingController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -79,15 +85,15 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
         e.preventDefault();
 
         if (isCreating) {
-            post('/admin/shipping', { onSuccess: handleCancel });
+            post(storeZone.url(), { onSuccess: handleCancel });
         } else if (editingZone) {
-            put(`/admin/shipping/${editingZone.id}`, { onSuccess: handleCancel });
+            put(updateZone(editingZone).url, { onSuccess: handleCancel });
         }
     };
 
     const handleDelete = (zone: Zone) => {
         if (confirm(`Delete shipping zone "${zone.name}"?`)) {
-            router.delete(`/admin/shipping/${zone.id}`, {
+            router.delete(destroyZone(zone).url, {
                 preserveScroll: true,
             });
         }
@@ -291,7 +297,9 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                             <TableHead>Free over</TableHead>
                             <TableHead>Days</TableHead>
                             <TableHead>Active</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-right">
+                                Actions
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -300,11 +308,15 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                                 <TableCell className="font-semibold">
                                     {zone.name}
                                 </TableCell>
-                                <TableCell>{rupees(zone.base_fee_npr)}</TableCell>
+                                <TableCell>
+                                    {rupees(zone.base_fee_npr)}
+                                </TableCell>
                                 <TableCell>
                                     {rupees(zone.per_kg_fee_npr)}
                                 </TableCell>
-                                <TableCell>{rupees(zone.free_over_npr)}</TableCell>
+                                <TableCell>
+                                    {rupees(zone.free_over_npr)}
+                                </TableCell>
                                 <TableCell className="text-muted-foreground">
                                     {zone.min_days && zone.max_days
                                         ? `${zone.min_days}–${zone.max_days}`
@@ -350,5 +362,5 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
 }
 
 ShippingIndex.layout = {
-    breadcrumbs: [{ title: 'Shipping', href: '/admin/shipping' }],
+    breadcrumbs: [{ title: 'Shipping', href: shippingIndex().url }],
 };
