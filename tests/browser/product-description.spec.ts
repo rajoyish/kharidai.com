@@ -4,17 +4,9 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { normalizeProductDescriptionMarkdown } from '../../resources/js/lib/product-description-markdown';
+import { productDescriptionMarkdownOptions } from '../../resources/js/lib/product-description-markdown-options';
 
-const markdownOptions = {
-    forceBlock: true,
-    overrides: {
-        input: {
-            props: {
-                readOnly: true,
-            },
-        },
-    },
-};
+const markdownOptions = productDescriptionMarkdownOptions;
 const renderDescriptionMarkdown = (description: string) =>
     renderToStaticMarkup(
         React.createElement(
@@ -90,6 +82,31 @@ test.describe('product description markdown', () => {
         );
         expect(html).toContain('<table>');
         expect(html).toContain('<td style="text-align:right">$5.00</td>');
+    });
+
+    test('renders markdown authored inside a language-markdown code block as real markdown', () => {
+        const html = renderDescriptionMarkdown(
+            [
+                '<p>Specs below:</p>',
+                '<pre class="rounded-md bg-stone-100"><code class="language-markdown">| Feature | Specification |',
+                '| --- | --- |',
+                '| **Brand** | Alienware |',
+                '| **Screen Size** | 18 Inches |</code></pre>',
+            ].join('\n'),
+        );
+
+        expect(html).toContain('<table>');
+        expect(html).toContain('<th>Feature</th>');
+        expect(html).toContain('<td><strong>Brand</strong></td>');
+        expect(html).not.toContain('language-markdown');
+    });
+
+    test('wraps tables in a horizontally scrollable container', () => {
+        const html = renderDescriptionMarkdown(
+            ['| A | B |', '| - | - |', '| 1 | 2 |'].join('\n'),
+        );
+
+        expect(html).toContain('<div class="overflow-x-auto"><table>');
     });
 
     test('escapes dangerous raw HTML by default', () => {

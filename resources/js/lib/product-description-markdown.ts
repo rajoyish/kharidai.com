@@ -19,7 +19,7 @@ const htmlEntities: Record<string, string> = {
 export function normalizeProductDescriptionMarkdown(
     description: string,
 ): string {
-    const trimmedDescription = description.trim();
+    const trimmedDescription = unwrapMarkdownCodeBlocks(description.trim());
 
     if (!/<p\b/i.test(trimmedDescription)) {
         return trimmedDescription;
@@ -55,6 +55,21 @@ export function normalizeProductDescriptionMarkdown(
     }
 
     return joinMarkdownSegments(segments);
+}
+
+const markdownCodeBlockRegex =
+    /<pre\b[^>]*>\s*<code\b[^>]*class="[^"]*\blanguage-markdown\b[^"]*"[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi;
+
+/**
+ * Rich-text editors persist markdown authored inside a fenced code block as a
+ * `<pre><code class="language-markdown">` element, which would otherwise render
+ * as literal code. Unwrap those blocks so their contents (tables, etc.) render
+ * as real markdown.
+ */
+function unwrapMarkdownCodeBlocks(html: string): string {
+    return html.replace(markdownCodeBlockRegex, (_, content: string) =>
+        decodeHtmlEntities(stripHtmlTags(content)).trim(),
+    );
 }
 
 function joinMarkdownSegments(segments: string[]): string {
