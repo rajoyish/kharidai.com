@@ -4,6 +4,7 @@ namespace App\Services\Shipping;
 
 use App\Models\CartItem;
 use App\Models\OrderItem;
+use App\Models\ShippingRate;
 use App\Models\ShippingZone;
 use Illuminate\Support\Collection;
 
@@ -17,13 +18,18 @@ class ShippingCalculator
      * and its `productVariant.product.physicalDetail` relation (eager-load them
      * before calling to avoid N+1 queries).
      *
-     * Rules, applied per line item:
-     *  - free_shipping product  → contributes nothing
-     *  - flat_shipping_npr set  → flat fee × quantity (no weight, no base fee)
-     *  - otherwise (weight)     → per_kg_fee × ceil(total kg) plus the zone base fee
+     * Fees are built by parcel. Each parcel is charged the zone base fee plus
+     * `per_kg_fee × ceil(parcel kg)`:
+     *  - free_shipping product   → contributes nothing
+     *  - flat_shipping_npr set   → flat fee × quantity (unpacked)
+     *  - ships_individually unit → one parcel per unit
+     *  - otherwise (combinable)  → units are pooled and split into as few parcels
+     *                              as the zone's `parcel_capacity_kg` allows
      *
-     * Billable weight is the selected variant's own weight, falling back to the
-     * product's physical detail weight when the variant carries none.
+     * When the zone has no `parcel_capacity_kg`, nothing combines and every
+     * weight-based unit takes its own parcel. Billable weight is the selected
+     * variant's own weight in kilograms, falling back to the product's physical
+     * detail weight when the variant carries none.
      *
      * A free-shipping threshold (`free_over_npr`) waives the entire fee once the
      * physical goods subtotal reaches it.
@@ -46,8 +52,10 @@ class ShippingCalculator
             return 0.0;
         }
 
-        $hasWeightBasedItem = false;
-        $variable = 0.0;
+        $capacity = $rate->parcel_capacity_kg !== null ? (float) $rate->parcel_capacity_kg : 0.0;
+
+        $total = 0.0;
+        $combinableKg = 0.0;
 
         foreach ($physicalItems as $item) {
             $detail = $item->productVariant->product->physicalDetail;
@@ -58,22 +66,41 @@ class ShippingCalculator
             }
 
             if ($detail !== null && $detail->flat_shipping_npr !== null) {
-                $variable += (float) $detail->flat_shipping_npr * $quantity;
+                $total += (float) $detail->flat_shipping_npr * $quantity;
 
                 continue;
             }
 
-            $hasWeightBasedItem = true;
-            $perUnitGrams = (int) ($item->productVariant->weight_grams
-                ?? $detail->weight_grams ?? 0);
-            $grams = $perUnitGrams * $quantity;
-            $billableKg = (int) ceil($grams / 1000);
-            $variable += (float) $rate->per_kg_fee_npr * $billableKg;
+            $unitKg = (float) ($item->productVariant->weight_kg
+                ?? $detail?->weight_kg ?? 0);
+
+            $shipsAlone = $capacity <= 0 || $item->productVariant->ships_individually;
+
+            if ($shipsAlone) {
+                $total += $quantity * $this->parcelFee($rate, $unitKg);
+
+                continue;
+            }
+
+            $combinableKg += $unitKg * $quantity;
         }
 
-        $base = $hasWeightBasedItem ? (float) $rate->base_fee_npr : 0.0;
+        if ($combinableKg > 0) {
+            $parcels = (int) ceil($combinableKg / $capacity);
+            $total += $parcels * (float) $rate->base_fee_npr
+                + (float) $rate->per_kg_fee_npr * (int) ceil($combinableKg);
+        }
 
-        return round($base + $variable, 2);
+        return round($total, 2);
+    }
+
+    /**
+     * The fee (in NPR) for a single parcel of the given weight: the zone base
+     * fee plus the per-kg fee applied to the weight rounded up to whole kg.
+     */
+    private function parcelFee(ShippingRate $rate, float $kg): float
+    {
+        return (float) $rate->base_fee_npr + (float) $rate->per_kg_fee_npr * (int) ceil($kg);
     }
 
     /**

@@ -4,7 +4,11 @@
       "Bash(php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress --no-interaction database/migrations/2026_06_30_095736_add_order_item_id_to_subscriptions_table.php)",
       "Bash(rg -n \"router\\\\.\\(visit|get|post|put|patch|delete|reload\\)\\\\\\(['\\\\\"\\\\`]\" resources/js -g '*.tsx')",
       "Bash(rg -n \"'/admin|\\\\`/admin|\\\\\"/admin\" resources/js/pages/Admin/Products/Index.tsx resources/js/pages/Admin/Shipping/Index.tsx)",
-      "Bash(rtk playwright *)"
+      "Bash(rtk playwright *)",
+      "Bash(echo \"===EXIT $?===\")",
+      "Bash(npx eslint *)",
+      "Bash(echo \"EXIT $?\")",
+      "Bash(echo \"LINT EXIT $?\")"
     ]
   }
 }

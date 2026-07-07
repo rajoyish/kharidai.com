@@ -61,12 +61,23 @@ class CheckoutController extends Controller
             $addresses = $request->user()->shippingAddresses()->latest('is_default')->latest()->get();
         }
 
+        $itemsTotal = $cart->items->sum(
+            fn ($item): float => (float) $item->productVariant->price_npr * $item->quantity,
+        );
+
+        $advanceTotal = $hasPhysicalItems ? $physicalItems->sum(
+            fn ($item): float => $item->productVariant->advancePaymentNpr() * $item->quantity,
+        ) : 0.0;
+
         return Inertia::render('Checkout/Index', [
             'cart' => $cart,
             'hasPhysicalItems' => $hasPhysicalItems,
             'isPhysicalOnly' => $hasPhysicalItems && $physicalItems->count() === $cart->items->count(),
             'zones' => $zones,
             'addresses' => $addresses,
+            'primaryContact' => $request->user()->mobile_number,
+            'itemsTotal' => $itemsTotal,
+            'advanceTotal' => $advanceTotal,
         ]);
     }
 
@@ -84,31 +95,46 @@ class CheckoutController extends Controller
         $hasPhysicalItems = $physicalItems->isNotEmpty();
         $isPhysicalOnly = $hasPhysicalItems && $physicalItems->count() === $cart->items->count();
 
-        $validated = $request->validate($this->checkoutRules($hasPhysicalItems, $isPhysicalOnly));
+        $hasAdvanceItems = $this->hasAdvanceItems($physicalItems);
+
+        $validated = $request->validate($this->checkoutRules($hasPhysicalItems, $isPhysicalOnly, $hasAdvanceItems));
 
         $itemsTotal = $cart->items->sum(
             fn ($item): float => (float) $item->productVariant->price_npr * $item->quantity,
         );
 
         $shippingTotal = 0.0;
+        $advanceTotal = 0.0;
         $zone = null;
+        $mobileNumber = null;
 
         if ($hasPhysicalItems) {
             $zone = ShippingZone::with('rate')->where('id', $validated['shipping_zone_id'])->first();
             $shippingTotal = $calculator->forItems($zone, $physicalItems);
+            $advanceTotal = $physicalItems->sum(
+                fn ($item): float => $item->productVariant->advancePaymentNpr() * $item->quantity,
+            );
+            $mobileNumber = $this->resolveContactNumber(
+                $validated['primary_contact'],
+                $validated['alternate_contact'] ?? null,
+            );
         }
 
         $paymentOption = $hasPhysicalItems ? PaymentOption::from($validated['payment_option']) : null;
         $totalAmount = $itemsTotal + $shippingTotal;
 
-        $amountDueNow = $paymentOption === PaymentOption::ShippingOnly ? $shippingTotal : $totalAmount;
-        $balanceDue = $paymentOption === PaymentOption::ShippingOnly ? $itemsTotal : 0.0;
+        $amountDueNow = match ($paymentOption) {
+            PaymentOption::ShippingOnly => $shippingTotal,
+            PaymentOption::Advance => $shippingTotal + $advanceTotal,
+            default => $totalAmount,
+        };
+        $balanceDue = $totalAmount - $amountDueNow;
 
         $order = DB::transaction(function () use (
-            $request, $cart, $validated, $hasPhysicalItems, $zone,
+            $request, $cart, $validated, $hasPhysicalItems, $zone, $mobileNumber,
             $itemsTotal, $shippingTotal, $totalAmount, $amountDueNow, $balanceDue, $paymentOption
         ) {
-            $shippingAddress = $hasPhysicalItems ? $this->resolveShippingAddress($request, $validated) : null;
+            $shippingAddress = $hasPhysicalItems ? $this->resolveShippingAddress($request, $validated, $mobileNumber) : null;
 
             $order = Order::create([
                 'order_number' => 'ORD-'.strtoupper(Str::random(10)),
@@ -140,7 +166,7 @@ class CheckoutController extends Controller
                 $order->shipment()->create([
                     'status' => 'pending',
                     'recipient_name' => $validated['recipient_name'],
-                    'mobile_number' => $validated['mobile_number'],
+                    'mobile_number' => $mobileNumber,
                     'address_line' => $validated['address_line'],
                     'city' => $validated['city'],
                     'landmark' => $validated['landmark'] ?? null,
@@ -210,9 +236,23 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Whether any physical line item carries an advance-payment configuration.
+     * When it does, the "pay shipping only" option is withdrawn in favour of the
+     * advance option so the shopper always settles the required advance up front.
+     *
+     * @param  EloquentCollection<int, CartItem>  $physicalItems
+     */
+    private function hasAdvanceItems(EloquentCollection $physicalItems): bool
+    {
+        return $physicalItems->contains(
+            fn ($item): bool => (int) $item->productVariant->advance_payment_percent > 0,
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function checkoutRules(bool $hasPhysicalItems, bool $isPhysicalOnly): array
+    private function checkoutRules(bool $hasPhysicalItems, bool $isPhysicalOnly, bool $hasAdvanceItems): array
     {
         $rules = ['additional_data' => 'nullable|string'];
 
@@ -220,14 +260,19 @@ class CheckoutController extends Controller
             return $rules;
         }
 
-        $allowedPaymentOptions = $isPhysicalOnly
-            ? [PaymentOption::Full->value, PaymentOption::ShippingOnly->value]
-            : [PaymentOption::Full->value];
+        $allowedPaymentOptions = [PaymentOption::Full->value];
+
+        if ($isPhysicalOnly) {
+            $allowedPaymentOptions[] = $hasAdvanceItems
+                ? PaymentOption::Advance->value
+                : PaymentOption::ShippingOnly->value;
+        }
 
         return $rules + [
             'shipping_zone_id' => ['required', Rule::exists('shipping_zones', 'id')->where('is_active', true)],
             'recipient_name' => ['required', 'string', 'max:255'],
-            'mobile_number' => ['required', 'string', 'max:30'],
+            'primary_contact' => ['required', 'string', 'max:30'],
+            'alternate_contact' => ['nullable', 'string', 'max:30'],
             'address_line' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:120'],
             'landmark' => ['nullable', 'string', 'max:255'],
@@ -238,10 +283,12 @@ class CheckoutController extends Controller
 
     /**
      * Persist the shipping address for reuse when the customer opts to save it.
+     * The stored mobile number is the consolidated contact resolved for the
+     * shipment (alternate recipient when it differs from the primary contact).
      *
      * @param  array<string, mixed>  $validated
      */
-    private function resolveShippingAddress(Request $request, array $validated): ?ShippingAddress
+    private function resolveShippingAddress(Request $request, array $validated, string $mobileNumber): ?ShippingAddress
     {
         if (empty($validated['save_address'])) {
             return null;
@@ -252,12 +299,38 @@ class CheckoutController extends Controller
         return $request->user()->shippingAddresses()->create([
             'shipping_zone_id' => $validated['shipping_zone_id'],
             'recipient_name' => $validated['recipient_name'],
-            'mobile_number' => $validated['mobile_number'],
+            'mobile_number' => $mobileNumber,
             'address_line' => $validated['address_line'],
             'city' => $validated['city'],
             'landmark' => $validated['landmark'] ?? null,
             'is_default' => ! $hasDefault,
         ]);
+    }
+
+    /**
+     * Resolve the single contact number stored on the shipping address payload.
+     * When the shopper supplies an alternate recipient number that matches the
+     * primary contact once normalised, the numbers are consolidated to one.
+     * Mirrors the frontend Nepalese-number normalisation used at input time.
+     */
+    private function resolveContactNumber(string $primary, ?string $alternate): string
+    {
+        if (blank($alternate) || $this->normalizeContactNumber($alternate) === $this->normalizeContactNumber($primary)) {
+            return $primary;
+        }
+
+        return $alternate;
+    }
+
+    /**
+     * Strip formatting and an optional +977/977 country code so two numbers can
+     * be compared for equality regardless of how they were entered.
+     */
+    private function normalizeContactNumber(string $number): string
+    {
+        $clean = (string) preg_replace('/[\s\-()]/', '', $number);
+
+        return (string) preg_replace('/^(\+?977)/', '', $clean);
     }
 
     public function nprPayment(Request $request, Order $order): Response|RedirectResponse

@@ -18,7 +18,7 @@ class PhysicalProductDetailFactory extends Factory
     {
         return [
             'product_id' => Product::factory()->physical(),
-            'weight_grams' => $this->faker->numberBetween(200, 2000),
+            'weight_kg' => $this->faker->randomFloat(2, 0.2, 2),
             'flat_shipping_npr' => null,
             'free_shipping' => false,
         ];

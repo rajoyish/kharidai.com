@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 import { ChipListInput } from './ChipListInput';
 import { ProductTypeSection } from './product-type-theme';
@@ -8,7 +9,8 @@ import type { ProductTypeTheme } from './product-type-theme';
 type PhysicalVariantData = {
     colors: string[];
     sizes: string[];
-    weight_grams: string;
+    weight_kg: string;
+    ships_individually: boolean;
 };
 
 type PhysicalVariantFieldsProps = {
@@ -16,7 +18,8 @@ type PhysicalVariantFieldsProps = {
     data: PhysicalVariantData;
     setData: {
         (key: 'colors' | 'sizes', value: string[]): void;
-        (key: 'weight_grams', value: string): void;
+        (key: 'weight_kg', value: string): void;
+        (key: 'ships_individually', value: boolean): void;
     };
     errors: Record<string, string>;
 };
@@ -72,24 +75,47 @@ export function PhysicalVariantFields({
                     error={errorFor('sizes')}
                 />
                 <div className="grid gap-2">
-                    <Label htmlFor="weight_grams">Weight (grams)</Label>
+                    <Label htmlFor="weight_kg">Weight (kg)</Label>
                     <Input
-                        id="weight_grams"
+                        id="weight_kg"
                         type="number"
                         min="0"
-                        step="1"
-                        value={data.weight_grams}
-                        onChange={(e) =>
-                            setData('weight_grams', e.target.value)
-                        }
-                        placeholder="e.g. 500"
+                        step="0.01"
+                        value={data.weight_kg}
+                        onChange={(e) => setData('weight_kg', e.target.value)}
+                        placeholder="e.g. 0.5"
                     />
                     <p className="text-xs text-muted-foreground">
-                        In grams. Used directly for shipping.
+                        In kilograms. Used directly for shipping.
                     </p>
-                    {errors.weight_grams && (
+                    {errors.weight_kg && (
                         <div className="text-sm text-destructive">
-                            {errors.weight_grams}
+                            {errors.weight_kg}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-6 flex items-start gap-3 rounded-md border p-4">
+                <Switch
+                    id="ships_individually"
+                    checked={data.ships_individually}
+                    onCheckedChange={(checked) =>
+                        setData('ships_individually', checked)
+                    }
+                />
+                <div className="grid gap-1">
+                    <Label htmlFor="ships_individually">
+                        Ships in its own parcel
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                        Turn on for bulky items (e.g. a laptop). Each unit is
+                        charged its own parcel and never combined with others,
+                        even under a zone's parcel weight limit.
+                    </p>
+                    {errors.ships_individually && (
+                        <div className="text-sm text-destructive">
+                            {errors.ships_individually}
                         </div>
                     )}
                 </div>

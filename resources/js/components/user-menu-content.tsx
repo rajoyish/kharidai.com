@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, MapPin, Settings } from 'lucide-react';
+import { index as addresses } from '@/actions/App/Http/Controllers/User/AddressController';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -42,6 +43,17 @@ export function UserMenuContent({ user }: Props) {
                     >
                         <Settings className="mr-2" />
                         Settings
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href={addresses()}
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <MapPin className="mr-2" />
+                        My Addresses
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>

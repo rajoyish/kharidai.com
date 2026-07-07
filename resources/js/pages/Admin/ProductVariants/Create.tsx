@@ -39,7 +39,9 @@ export default function CreateVariant({ product }: { product: Product }) {
         validity_days: '',
         colors: [] as string[],
         sizes: [] as string[],
-        weight_grams: '',
+        weight_kg: '',
+        ships_individually: false,
+        advance_payment_percent: '',
     });
 
     const isPhysical = product.type === 'physical';
@@ -162,6 +164,36 @@ export default function CreateVariant({ product }: { product: Product }) {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="advance_payment_percent">
+                                    Advance Payment (%)
+                                </Label>
+                                <Input
+                                    id="advance_payment_percent"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={data.advance_payment_percent}
+                                    onChange={(e) =>
+                                        setData(
+                                            'advance_payment_percent',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. 30"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Portion of this variant's price collected up
+                                    front at checkout. Leave blank for none.
+                                </p>
+                                {errors.advance_payment_percent && (
+                                    <div className="text-sm text-destructive">
+                                        {errors.advance_payment_percent}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid gap-2">

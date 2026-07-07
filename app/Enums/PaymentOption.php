@@ -6,12 +6,14 @@ enum PaymentOption: string
 {
     case Full = 'full';
     case ShippingOnly = 'shipping_only';
+    case Advance = 'advance';
 
     public function label(): string
     {
         return match ($this) {
             self::Full => 'Pay full amount now',
             self::ShippingOnly => 'Pay shipping only (rest on delivery)',
+            self::Advance => 'Pay advance now (rest on delivery)',
         };
     }
 

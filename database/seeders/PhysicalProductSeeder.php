@@ -25,7 +25,7 @@ class PhysicalProductSeeder extends Seeder
                 'category' => 'Men',
                 'price_npr' => 1200,
                 'variants' => ['Small', 'Medium', 'Large', 'Extra Large'],
-                'detail' => ['weight_grams' => 250, 'flat_shipping_npr' => null, 'free_shipping' => false],
+                'detail' => ['weight_kg' => 0.25, 'flat_shipping_npr' => null, 'free_shipping' => false],
             ],
             [
                 'title' => 'Summer Floral Dress',
@@ -33,7 +33,7 @@ class PhysicalProductSeeder extends Seeder
                 'category' => 'Women',
                 'price_npr' => 2800,
                 'variants' => ['Small', 'Medium', 'Large'],
-                'detail' => ['weight_grams' => 400, 'flat_shipping_npr' => null, 'free_shipping' => true],
+                'detail' => ['weight_kg' => 0.4, 'flat_shipping_npr' => null, 'free_shipping' => true],
             ],
             [
                 'title' => 'Minimalist Analog Watch',
@@ -41,7 +41,7 @@ class PhysicalProductSeeder extends Seeder
                 'category' => 'Watches',
                 'price_npr' => 6500,
                 'variants' => ['Silver', 'Rose Gold', 'Black'],
-                'detail' => ['weight_grams' => 300, 'flat_shipping_npr' => 200, 'free_shipping' => false],
+                'detail' => ['weight_kg' => 0.3, 'flat_shipping_npr' => 200, 'free_shipping' => false],
             ],
             [
                 'title' => 'Hydrating Face Serum',
@@ -49,7 +49,7 @@ class PhysicalProductSeeder extends Seeder
                 'category' => 'Cosmetics',
                 'price_npr' => 1800,
                 'variants' => ['30ml', '50ml'],
-                'detail' => ['weight_grams' => 150, 'flat_shipping_npr' => null, 'free_shipping' => false],
+                'detail' => ['weight_kg' => 0.15, 'flat_shipping_npr' => null, 'free_shipping' => false],
             ],
         ];
 

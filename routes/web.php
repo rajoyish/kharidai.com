@@ -17,6 +17,7 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\User\AddressController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\ServiceController as UserServiceController;
 use App\Http\Controllers\User\SubscriptionController as UserSubscriptionController;
@@ -50,6 +51,11 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::get('subscriptions', [UserSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::put('subscriptions/{subscription}', [UserSubscriptionController::class, 'update'])->name('subscriptions.update');
     Route::get('account/services', [UserServiceController::class, 'index'])->name('account.services.index');
+
+    Route::get('account/addresses', [AddressController::class, 'index'])->name('account.addresses.index');
+    Route::put('account/addresses/{address}', [AddressController::class, 'update'])->name('account.addresses.update');
+    Route::patch('account/addresses/{address}/default', [AddressController::class, 'setDefault'])->name('account.addresses.default');
+    Route::delete('account/addresses/{address}', [AddressController::class, 'destroy'])->name('account.addresses.destroy');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');

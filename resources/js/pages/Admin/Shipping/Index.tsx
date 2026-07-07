@@ -28,6 +28,7 @@ type Zone = {
     sort_order: number;
     base_fee_npr: number;
     per_kg_fee_npr: number;
+    parcel_capacity_kg: string | null;
     free_over_npr: number | null;
     min_days: number | null;
     max_days: number | null;
@@ -39,6 +40,7 @@ const emptyForm = {
     sort_order: 0,
     base_fee_npr: 0,
     per_kg_fee_npr: 0,
+    parcel_capacity_kg: '',
     free_over_npr: '' as number | '',
     min_days: '' as number | '',
     max_days: '' as number | '',
@@ -69,6 +71,7 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
             sort_order: zone.sort_order,
             base_fee_npr: zone.base_fee_npr,
             per_kg_fee_npr: zone.per_kg_fee_npr,
+            parcel_capacity_kg: zone.parcel_capacity_kg ?? '',
             free_over_npr: zone.free_over_npr ?? '',
             min_days: zone.min_days ?? '',
             max_days: zone.max_days ?? '',
@@ -215,6 +218,36 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                             </div>
 
                             <div className="flex flex-col gap-1">
+                                <Label htmlFor="parcel_capacity_kg">
+                                    Parcel capacity (kg, optional)
+                                </Label>
+                                <Input
+                                    id="parcel_capacity_kg"
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={data.parcel_capacity_kg}
+                                    onChange={(e) =>
+                                        setData(
+                                            'parcel_capacity_kg',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. 5"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Max weight per parcel. Light items combine up
+                                    to this; leave blank to charge each item its
+                                    own parcel.
+                                </p>
+                                {errors.parcel_capacity_kg && (
+                                    <p className="text-sm text-red-500">
+                                        {errors.parcel_capacity_kg}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col gap-1">
                                 <Label htmlFor="free_over_npr">
                                     Free over (Rs., optional)
                                 </Label>
@@ -294,6 +327,7 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                             <TableHead>Zone</TableHead>
                             <TableHead>Base</TableHead>
                             <TableHead>Per kg</TableHead>
+                            <TableHead>Parcel cap</TableHead>
                             <TableHead>Free over</TableHead>
                             <TableHead>Days</TableHead>
                             <TableHead>Active</TableHead>
@@ -313,6 +347,11 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                                 </TableCell>
                                 <TableCell>
                                     {rupees(zone.per_kg_fee_npr)}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {zone.parcel_capacity_kg
+                                        ? `${zone.parcel_capacity_kg} kg`
+                                        : '—'}
                                 </TableCell>
                                 <TableCell>
                                     {rupees(zone.free_over_npr)}
@@ -347,7 +386,7 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                         {zones.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={7}
+                                    colSpan={8}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No shipping zones yet.
