@@ -4,6 +4,7 @@ import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 
 import { CountBadge } from '@/components/count-badge';
+import { TruncatedText } from '@/components/truncated-text';
 import { cn } from '@/lib/utils';
 
 const pillVariants = cva(
@@ -69,7 +70,7 @@ export function CategoryPill({
 
     const content = (
         <>
-            <span>{name}</span>
+            <TruncatedText className="max-w-[150px] sm:max-w-[200px] inline-block align-bottom">{name}</TruncatedText>
             {typeof count === 'number' && (
                 <CountBadge
                     count={count}
