@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { Eye, MessageCircle, Upload } from 'lucide-react';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { TruncatedText } from '@/components/truncated-text';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -78,14 +79,18 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
-                                            {order.items.map((item) => (
-                                                <span
-                                                    key={item.id}
-                                                    className="rounded bg-secondary px-1.5 py-0.5 text-xs text-secondary-foreground"
-                                                >
-                                                    {item.quantity}x {item.product_variant.product.title} ({item.product_variant.name})
-                                                </span>
-                                            ))}
+                                            {order.items.map((item) => {
+                                                const text = `${item.quantity}x ${item.product_variant.product.title} (${item.product_variant.name})`;
+                                                return (
+                                                    <TruncatedText
+                                                        key={item.id}
+                                                        title={text}
+                                                        className="max-w-[200px] sm:max-w-[300px] inline-block align-bottom rounded bg-secondary px-1.5 py-0.5 text-xs text-secondary-foreground"
+                                                    >
+                                                        {text}
+                                                    </TruncatedText>
+                                                );
+                                            })}
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-bold whitespace-nowrap">

@@ -3,6 +3,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
+import { CategoryPill } from '@/components/category-pill';
 import { JsonLd } from '@/components/json-ld';
 import {
     LightboxImageAnchor,
@@ -17,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { VariantOptionSelector } from '@/components/variant-option-selector';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
 import { login } from '@/routes';
+import { show as showCategory } from '@/routes/categories';
 import type { PageProps } from '@/types';
 
 const ImageLightbox = lazy(() => import('@/components/image-lightbox'));
@@ -70,6 +72,11 @@ type Product = {
      */
     variants?: Variant[];
     galleries?: ProductGallery[];
+    categories?: {
+        id: number;
+        name: string;
+        slug: string;
+    }[];
     physical_detail?: {
         weight_grams: number | null;
         free_shipping: boolean;
@@ -261,6 +268,17 @@ export default function Show({
                             <h1 className="mb-2 text-3xl font-bold tracking-tight">
                                 {product.title}
                             </h1>
+                            {product.categories && product.categories.length > 0 && (
+                                <div className="mb-4 flex flex-wrap gap-2">
+                                    {product.categories.map((category) => (
+                                        <CategoryPill
+                                            key={category.id}
+                                            name={category.name}
+                                            href={showCategory(category)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
 
                             {canViewVariants &&
                                 showPrice &&
@@ -443,9 +461,20 @@ export default function Show({
                     <div className="order-2 flex flex-col md:order-1">
                         {/* Desktop Title & Price (Hidden on Mobile) */}
                         <div className="hidden md:block">
-                            <h1 className="mb-8 text-3xl font-bold tracking-tight lg:mb-16">
+                            <h1 className="mb-4 text-3xl font-bold tracking-tight lg:mb-6">
                                 {product.title}
                             </h1>
+                            {product.categories && product.categories.length > 0 && (
+                                <div className="mb-8 lg:mb-12 flex flex-wrap gap-2">
+                                    {product.categories.map((category) => (
+                                        <CategoryPill
+                                            key={category.id}
+                                            name={category.name}
+                                            href={showCategory(category)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
 
                             {canViewVariants &&
                                 showPrice &&

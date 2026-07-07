@@ -12,6 +12,7 @@ import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { TruncatedText } from '@/components/truncated-text';
 import { Input } from '@/components/ui/input';
 import {
     Table,
@@ -127,8 +128,8 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         </div>
                                     )}
                                 </TableCell>
-                                <TableCell className="max-w-50 truncate font-medium sm:max-w-none">
-                                    {product.title}
+                                <TableCell className="max-w-50 font-medium sm:max-w-[200px] md:max-w-[300px] lg:max-w-[400px]">
+                                    <TruncatedText>{product.title}</TruncatedText>
                                 </TableCell>
                                 <TableCell>
                                     {product.categories &&

@@ -138,7 +138,7 @@ class StorefrontController extends Controller
         // the browser.
         $canViewVariants = $product->type !== ProductType::Digital || auth()->check();
 
-        $relations = ['galleries'];
+        $relations = ['galleries', 'categories'];
         if ($canViewVariants) {
             $relations[] = 'variants';
         }
