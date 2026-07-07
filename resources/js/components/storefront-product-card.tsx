@@ -30,7 +30,7 @@ export function StorefrontProductCard({
             prefetch
             className="group block rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-5 shadow-[0_18px_45px_-28px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_25px_60px_-30px_rgba(17,118,188,0.35)]"
         >
-            <div className="mb-5 aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-slate-100">
+            <div className="mb-5 aspect-[4/3] overflow-hidden rounded-[0.5rem] bg-slate-100">
                 {product.image ? (
                     <img
                         src={`/storage/${product.image}`}
