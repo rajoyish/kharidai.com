@@ -17,7 +17,7 @@ function orderWithChosenOptions(User $user): Order
     $product = Product::factory()->physical()->create();
     $variant = ProductVariant::factory()->create([
         'product_id' => $product->id,
-        'weight_grams' => 500,
+        'weight_kg' => 0.5,
     ]);
 
     $order = Order::factory()->create(['user_id' => $user->id]);
@@ -42,7 +42,7 @@ it('exposes the chosen color, size and weight on the customer order page', funct
             ->component('User/Orders/Show')
             ->where('order.items.0.selected_options.color', 'Red')
             ->where('order.items.0.selected_options.size', 'XL')
-            ->where('order.items.0.product_variant.weight_grams', 500)
+            ->where('order.items.0.product_variant.weight_kg', '0.50')
         );
 });
 
@@ -56,6 +56,6 @@ it('exposes the chosen color, size and weight on the admin order page', function
             ->component('Admin/Orders/Show')
             ->where('order.items.0.selected_options.color', 'Red')
             ->where('order.items.0.selected_options.size', 'XL')
-            ->where('order.items.0.product_variant.weight_grams', 500)
+            ->where('order.items.0.product_variant.weight_kg', '0.50')
         );
 });

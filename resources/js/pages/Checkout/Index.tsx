@@ -1,5 +1,4 @@
 import { useForm } from '@inertiajs/react';
-import { useMemo } from 'react';
 import { process as processCheckout } from '@/actions/App/Http/Controllers/CheckoutController';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { PaymentOptionToggle } from '@/components/payment-option-toggle';
@@ -19,6 +18,7 @@ type ProductVariant = {
     id: number;
     name: string;
     price_npr: string;
+    advance_payment_percent: number | null;
     product: Product;
 };
 
@@ -60,18 +60,25 @@ export default function CheckoutIndex({
     isPhysicalOnly,
     zones,
     addresses,
+    primaryContact,
+    itemsTotal,
+    advanceTotal,
 }: {
     cart: Cart;
     hasPhysicalItems: boolean;
     isPhysicalOnly: boolean;
     zones: Zone[];
     addresses: SavedAddress[];
+    primaryContact: string | null;
+    itemsTotal: number;
+    advanceTotal: number;
 }) {
     const { data, setData, post, processing, errors } = useForm({
         additional_data: '',
         shipping_zone_id: hasPhysicalItems ? (zones[0]?.id ?? '') : ('' as number | ''),
         recipient_name: '',
-        mobile_number: '',
+        primary_contact: primaryContact ?? '',
+        alternate_contact: '',
         address_line: '',
         city: '',
         landmark: '',
@@ -79,24 +86,16 @@ export default function CheckoutIndex({
         payment_option: 'full',
     });
 
-    const itemsTotal = useMemo(
-        () =>
-            cart.items.reduce(
-                (total, item) =>
-                    total +
-                    parseFloat(item.product_variant.price_npr) * item.quantity,
-                0,
-            ),
-        [cart.items],
-    );
-
     const selectedZone = zones.find((zone) => zone.id === data.shipping_zone_id);
     const shippingTotal = hasPhysicalItems ? (selectedZone?.fee ?? 0) : 0;
     const total = itemsTotal + shippingTotal;
     const amountDueNow =
-        data.payment_option === 'shipping_only' ? shippingTotal : total;
-    const balanceDue =
-        data.payment_option === 'shipping_only' ? itemsTotal : 0;
+        data.payment_option === 'shipping_only'
+            ? shippingTotal
+            : data.payment_option === 'advance'
+              ? shippingTotal + advanceTotal
+              : total;
+    const balanceDue = total - amountDueNow;
 
 
     const handleSetData = (field: string, value: any) => {
@@ -139,6 +138,7 @@ export default function CheckoutIndex({
                                 isPhysicalOnly={isPhysicalOnly}
                                 itemsTotal={itemsTotal}
                                 shippingTotal={shippingTotal}
+                                advanceTotal={advanceTotal}
                             />
 
                             <div className="rounded-lg border bg-card p-6">

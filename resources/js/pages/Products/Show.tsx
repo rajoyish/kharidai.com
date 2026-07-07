@@ -78,7 +78,7 @@ type Product = {
         slug: string;
     }[];
     physical_detail?: {
-        weight_grams: number | null;
+        weight_kg: string | null;
         free_shipping: boolean;
     } | null;
     service_detail?: {
@@ -491,14 +491,14 @@ export default function Show({
                                             <strong>Physical Item</strong>
                                         </p>
                                         {product.physical_detail
-                                            .weight_grams !== null && (
+                                            .weight_kg !== null && (
                                             <p>
                                                 Weight:{' '}
                                                 {
                                                     product.physical_detail
-                                                        .weight_grams
+                                                        .weight_kg
                                                 }{' '}
-                                                g
+                                                kg
                                             </p>
                                         )}
                                         {product.physical_detail

@@ -67,7 +67,9 @@ class ProductVariantController extends Controller
             'colors.*' => 'nullable|string|max:255',
             'sizes' => 'nullable|array',
             'sizes.*' => 'nullable|string|max:255',
-            'weight_grams' => 'nullable|integer|min:0',
+            'weight_kg' => 'nullable|numeric|min:0',
+            'ships_individually' => 'nullable|boolean',
+            'advance_payment_percent' => 'nullable|integer|min:0|max:100',
         ]);
 
         $validated['colors'] = array_values(array_filter(

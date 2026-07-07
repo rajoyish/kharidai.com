@@ -25,6 +25,7 @@ class ShippingController extends Controller
                 'sort_order' => $zone->sort_order,
                 'base_fee_npr' => $zone->rate->base_fee_npr ?? 0,
                 'per_kg_fee_npr' => $zone->rate->per_kg_fee_npr ?? 0,
+                'parcel_capacity_kg' => $zone->rate?->parcel_capacity_kg,
                 'free_over_npr' => $zone->rate?->free_over_npr,
                 'min_days' => $zone->rate?->min_days,
                 'max_days' => $zone->rate?->max_days,
@@ -83,6 +84,7 @@ class ShippingController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'base_fee_npr' => ['required', 'numeric', 'min:0'],
             'per_kg_fee_npr' => ['required', 'numeric', 'min:0'],
+            'parcel_capacity_kg' => ['nullable', 'numeric', 'min:0.01'],
             'free_over_npr' => ['nullable', 'numeric', 'min:0'],
             'min_days' => ['nullable', 'integer', 'min:0'],
             'max_days' => ['nullable', 'integer', 'min:0'],
@@ -98,6 +100,7 @@ class ShippingController extends Controller
         return [
             'base_fee_npr' => $validated['base_fee_npr'],
             'per_kg_fee_npr' => $validated['per_kg_fee_npr'],
+            'parcel_capacity_kg' => $validated['parcel_capacity_kg'] ?? null,
             'free_over_npr' => $validated['free_over_npr'] ?? null,
             'min_days' => $validated['min_days'] ?? null,
             'max_days' => $validated['max_days'] ?? null,

@@ -9,9 +9,10 @@ import { SeoHead } from '@/components/seo-head';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import {
-    VariantOptionBadges,
-    type SelectedOptions,
+    VariantOptionBadges
+    
 } from '@/components/variant-option-badges';
+import type {SelectedOptions} from '@/components/variant-option-badges';
 
 type Order = {
     id: number;
@@ -28,7 +29,7 @@ type Order = {
         selected_options: SelectedOptions;
         product_variant: {
             name: string;
-            weight_grams: number | null;
+            weight_kg: string | null;
             product: {
                 title: string;
                 image: string;
@@ -151,9 +152,9 @@ export default function OrderShow({ order }: { order: Order }) {
                                                 selectedOptions={
                                                     item.selected_options
                                                 }
-                                                weightGrams={
+                                                weightKg={
                                                     item.product_variant
-                                                        .weight_grams
+                                                        .weight_kg
                                                 }
                                                 className="mt-1"
                                             />

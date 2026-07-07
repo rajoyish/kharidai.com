@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $shipping_zone_id
  * @property float $base_fee_npr
  * @property float $per_kg_fee_npr
+ * @property float|null $parcel_capacity_kg
  * @property float|null $free_over_npr
  * @property int|null $min_days
  * @property int|null $max_days
@@ -22,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property ShippingZone $zone
  */
-#[Fillable(['shipping_zone_id', 'base_fee_npr', 'per_kg_fee_npr', 'free_over_npr', 'min_days', 'max_days'])]
+#[Fillable(['shipping_zone_id', 'base_fee_npr', 'per_kg_fee_npr', 'parcel_capacity_kg', 'free_over_npr', 'min_days', 'max_days'])]
 class ShippingRate extends Model
 {
     /** @use HasFactory<ShippingRateFactory> */
@@ -34,6 +35,7 @@ class ShippingRate extends Model
     protected function casts(): array
     {
         return [
+            'parcel_capacity_kg' => 'decimal:2',
             'min_days' => 'integer',
             'max_days' => 'integer',
         ];

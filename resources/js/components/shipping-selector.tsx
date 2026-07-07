@@ -1,3 +1,4 @@
+import { MobileNumberInput } from '@/components/mobile-number-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -23,7 +24,8 @@ type SavedAddress = {
 type ShippingData = {
     shipping_zone_id: number | '';
     recipient_name: string;
-    mobile_number: string;
+    primary_contact: string;
+    alternate_contact: string;
     address_line: string;
     city: string;
     landmark: string;
@@ -56,7 +58,7 @@ export function ShippingSelector({
         }
 
         setData('recipient_name', address.recipient_name);
-        setData('mobile_number', address.mobile_number);
+        setData('alternate_contact', address.mobile_number);
         setData('address_line', address.address_line);
         setData('city', address.city);
         setData('landmark', address.landmark ?? '');
@@ -104,14 +106,32 @@ export function ShippingSelector({
                 </div>
 
                 <div className="grid gap-1">
-                    <Label htmlFor="mobile_number">Mobile number</Label>
-                    <Input
-                        id="mobile_number"
-                        value={data.mobile_number}
-                        onChange={(e) => setData('mobile_number', e.target.value)}
+                    <Label htmlFor="primary_contact">Primary contact number</Label>
+                    <MobileNumberInput
+                        id="primary_contact"
+                        value={data.primary_contact}
+                        onChange={(e) => setData('primary_contact', e.target.value)}
                     />
-                    {errors.mobile_number && (
-                        <p className="text-sm text-destructive">{errors.mobile_number}</p>
+                    {errors.primary_contact && (
+                        <p className="text-sm text-destructive">{errors.primary_contact}</p>
+                    )}
+                </div>
+
+                <div className="grid gap-1 sm:col-span-2">
+                    <Label htmlFor="alternate_contact">
+                        Alternate contact number (optional)
+                    </Label>
+                    <MobileNumberInput
+                        id="alternate_contact"
+                        value={data.alternate_contact}
+                        onChange={(e) => setData('alternate_contact', e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Shipping to someone else? Add their number. If it matches
+                        your primary number we'll just use one.
+                    </p>
+                    {errors.alternate_contact && (
+                        <p className="text-sm text-destructive">{errors.alternate_contact}</p>
                     )}
                 </div>
 

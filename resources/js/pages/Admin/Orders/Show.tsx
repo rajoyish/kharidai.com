@@ -21,9 +21,10 @@ import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
-    VariantOptionBadges,
-    type SelectedOptions,
+    VariantOptionBadges
+    
 } from '@/components/variant-option-badges';
+import type {SelectedOptions} from '@/components/variant-option-badges';
 
 type Order = {
     id: number;
@@ -64,7 +65,7 @@ type Order = {
         product_variant: {
             name: string;
             validity_days: number | null;
-            weight_grams: number | null;
+            weight_kg: string | null;
             product: {
                 title: string;
                 image: string;
@@ -314,9 +315,9 @@ export default function AdminOrderShow({
                                                 selectedOptions={
                                                     item.selected_options
                                                 }
-                                                weightGrams={
+                                                weightKg={
                                                     item.product_variant
-                                                        .weight_grams
+                                                        .weight_kg
                                                 }
                                                 className="mt-1"
                                             />

@@ -37,7 +37,9 @@ type Variant = {
     validity_days: number | null;
     colors: string[] | null;
     sizes: string[] | null;
-    weight_grams: number | null;
+    weight_kg: string | null;
+    ships_individually: boolean;
+    advance_payment_percent: number | null;
 };
 
 export default function EditVariant({
@@ -59,7 +61,10 @@ export default function EditVariant({
         validity_days: variant.validity_days?.toString() ?? '',
         colors: variant.colors ?? [],
         sizes: variant.sizes ?? [],
-        weight_grams: variant.weight_grams?.toString() ?? '',
+        weight_kg: variant.weight_kg?.toString() ?? '',
+        ships_individually: variant.ships_individually ?? false,
+        advance_payment_percent:
+            variant.advance_payment_percent?.toString() ?? '',
     });
 
     const isPhysical = product.type === 'physical';
@@ -181,6 +186,36 @@ export default function EditVariant({
                                         </div>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="advance_payment_percent">
+                                    Advance Payment (%)
+                                </Label>
+                                <Input
+                                    id="advance_payment_percent"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={data.advance_payment_percent}
+                                    onChange={(e) =>
+                                        setData(
+                                            'advance_payment_percent',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. 30"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Portion of this variant's price collected up
+                                    front at checkout. Leave blank for none.
+                                </p>
+                                {errors.advance_payment_percent && (
+                                    <div className="text-sm text-destructive">
+                                        {errors.advance_payment_percent}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid gap-2">

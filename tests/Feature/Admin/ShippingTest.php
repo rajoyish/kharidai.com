@@ -23,6 +23,7 @@ it('creates a zone with its rate', function () {
         'sort_order' => 0,
         'base_fee_npr' => 100,
         'per_kg_fee_npr' => 40,
+        'parcel_capacity_kg' => 5,
         'free_over_npr' => 5000,
         'min_days' => 1,
         'max_days' => 2,
@@ -33,6 +34,7 @@ it('creates a zone with its rate', function () {
     expect($zone->rate)->not->toBeNull()
         ->and($zone->rate->base_fee_npr)->toBe(100.0)
         ->and($zone->rate->per_kg_fee_npr)->toBe(40.0)
+        ->and((float) $zone->rate->parcel_capacity_kg)->toBe(5.0)
         ->and($zone->rate->free_over_npr)->toBe(5000.0);
 });
 

@@ -9,8 +9,8 @@ export type SelectedOptions = {
 type VariantOptionBadgesProps = {
     /** The color/size the shopper chose for this line item, captured at checkout. */
     selectedOptions?: SelectedOptions;
-    /** The variant's shipping weight in grams; only physical variants carry one. */
-    weightGrams?: number | null;
+    /** The variant's shipping weight in kilograms; only physical variants carry one. */
+    weightKg?: number | string | null;
     className?: string;
 };
 
@@ -25,12 +25,12 @@ const badgeClassName =
  */
 export function VariantOptionBadges({
     selectedOptions,
-    weightGrams,
+    weightKg,
     className,
 }: VariantOptionBadgesProps) {
     const color = selectedOptions?.color;
     const size = selectedOptions?.size;
-    const hasWeight = typeof weightGrams === 'number' && weightGrams > 0;
+    const hasWeight = weightKg != null && Number(weightKg) > 0;
 
     if (!color && !size && !hasWeight) {
         return null;
@@ -52,7 +52,7 @@ export function VariantOptionBadges({
             )}
             {size && <span className={badgeClassName}>Size: {size}</span>}
             {hasWeight && (
-                <span className={badgeClassName}>Weight: {weightGrams}g</span>
+                <span className={badgeClassName}>Weight: {weightKg}kg</span>
             )}
         </div>
     );
