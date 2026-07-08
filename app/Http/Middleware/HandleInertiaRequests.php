@@ -57,7 +57,7 @@ class HandleInertiaRequests extends Middleware
             'seo' => [
                 'name' => $siteName,
                 'title' => $siteName,
-                'description' => 'Shop digital goods, subscriptions, services, and physical products from Kharidai.',
+                'description' => 'Shop digital goods, premium subscriptions, professional services, and physical products from Kharidai, Nepal\'s premier digital and physical marketplace.',
                 'image' => asset('kharidai_og.png'),
                 'imageAlt' => $siteName.' marketplace preview',
                 'url' => $request->url(),

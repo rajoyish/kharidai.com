@@ -115,14 +115,12 @@ export default function Welcome({
                     <div data-panel-inner>
                         <div className="relative z-10 container mx-auto mt-20 max-w-4xl px-4 text-center">
                             <MaskedLinesHeading className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-[#1A1A1A] md:text-7xl">
-                                Your all-in-one
+                                Premium tools &
                                 <br />
-                                marketplace!
+                                goods in one place<span className='text-accent'>.</span>
                             </MaskedLinesHeading>
                             <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl">
-                                Discover digital goods, premium subscriptions,
-                                trusted services, and physical products all at
-                                unbeatable prices. Shop smart. Shop reliable.
+                                From cutting-edge AI subscriptions and productivity software to curated fashion and expert freelance services in Nepal. Experience seamless local shopping tailored for your needs.
                             </p>
 
                             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -154,11 +152,10 @@ export default function Welcome({
                     >
                         <div className="mb-20 text-center">
                             <h2 className="mb-4 text-4xl text-white">
-                                A path to better shopping
+                                Everything you need to create, live, and work.
                             </h2>
                             <p className="text-lg text-gray-400">
-                                Kharidai helps you discover the best products
-                                without the hassle.
+                                <span className='text-accent font-bold'>Kharidai.com</span> brings the world's best digital tools and everyday essentials straight to you in Nepal.
                             </p>
                         </div>
 
@@ -167,46 +164,40 @@ export default function Welcome({
                                 <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <CloudDownload className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
-                                    Digital Goods
+                                    Software & Digital Goods
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Instant access to software, game keys, and
-                                    digital content. Delivered directly to your
-                                    email within seconds.
+                                    Instant access to essential productivity software, cloud storage, and creative tools. Delivered directly to your user panel in seconds.
                                 </p>
                             </div>
                             <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Star className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
-                                    Premium Subscriptions
+                                    AI & Premium Subscriptions
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Unlock premium features on your favorite
-                                    platforms at unbeatable discounted rates.
+                                    Unlock premium AI models like ChatGPT and Claude, alongside top-tier VPNs and SaaS platforms at unbeatable local rates.
                                 </p>
                             </div>
                             <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -right-12 -bottom-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <Briefcase className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
-                                    Trusted Services
+                                    Professional Services
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Hire top-rated professionals for freelance
-                                    work, consulting, and specialized services.
+                                    Hire top-rated professionals for digital marketing, design tasks, and specialized freelance work with secure payments.
                                 </p>
                             </div>
                             <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Truck className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
-                                    Physical Products
+                                    Physical Lifestyle Goods
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Shop for electronics, gadgets, and everyday
-                                    essentials with fast, reliable shipping to
-                                    your door.
+                                    Shop for curated fashion, cosmetics, and lifestyle essentials with fast, reliable shipping right to your doorstep.
                                 </p>
                             </div>
                         </div>
@@ -221,11 +212,10 @@ export default function Welcome({
                 >
                     <div className="mb-12 text-center">
                         <h2 className="mb-4 text-3xl text-[#1A1A1A]">
-                            Explore the marketplace
+                            Explore Nepal's diverse catalog
                         </h2>
                         <p className="text-gray-500">
-                            Digital products, physical products, and services —
-                            each in its own space.
+                            Find exactly what you're looking for across software, services, and physical goods.
                         </p>
                     </div>
 
