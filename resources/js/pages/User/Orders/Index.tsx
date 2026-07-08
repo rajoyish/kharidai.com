@@ -4,6 +4,8 @@ import { Eye, MessageCircle, Upload } from 'lucide-react';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
+import { home } from '@/routes';
+import { index as ordersIndex, show as showOrder } from '@/routes/orders';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -39,8 +41,8 @@ type Order = {
 };
 
 const breadcrumbs = [
-    { title: 'Home', href: '/' },
-    { title: 'My Orders', href: '/orders' },
+    { title: 'Home', href: home() },
+    { title: 'My Orders', href: ordersIndex() },
 ];
 
 export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
@@ -49,17 +51,12 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
             <SeoHead title="My Orders" />
 
             <PagePanel title="My Orders" variant="transparent">
-                {orders.data.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground">
-                        You have no orders yet.
-                    </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
+                <Table>
+                    <TableHeader>
                             <TableRow>
                                 <TableHead>Order #</TableHead>
                                 <TableHead>Date</TableHead>
-                                <TableHead className="min-w-[250px] w-1/3">Items</TableHead>
+                                <TableHead>Items</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Shipment</TableHead>
@@ -70,7 +67,7 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                             {orders.data.map((order) => (
                                 <TableRow key={order.id}>
                                     <TableCell className="font-medium text-primary">
-                                        <Link href={`/orders/${order.id}`}>
+                                        <Link href={showOrder(order.id)}>
                                             {order.order_number}
                                         </Link>
                                     </TableCell>
@@ -129,19 +126,19 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     <TableCell className="flex justify-end gap-2">
                                         {(order.can_reupload_receipt || order.status === 'pending') && (
                                             <Button variant="outline" size="sm" asChild className="border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-900 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300 focus-visible:ring-amber-500">
-                                                <Link href={`/orders/${order.id}`}>
+                                                <Link href={showOrder(order.id)}>
                                                     <Upload className="h-4 w-4 mr-1" /> Reupload Receipt
                                                 </Link>
                                             </Button>
                                         )}
                                         <Button variant="ghost" size="sm" asChild>
-                                            <Link href={`/orders/${order.id}`}>
+                                            <Link href={showOrder(order.id)}>
                                                 <Eye className="h-4 w-4" />
                                                 View
                                             </Link>
                                         </Button>
                                         <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/orders/${order.id}#chat`}>
+                                            <Link href={`${showOrder(order.id)}#chat`}>
                                                 <MessageCircle className="h-4 w-4" />
                                                 Support
                                             </Link>
@@ -149,9 +146,18 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     </TableCell>
                                 </TableRow>
                             ))}
+                            {orders.data.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={7}
+                                        className="h-24 text-center text-muted-foreground"
+                                    >
+                                        You have no orders yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
-                )}
             </PagePanel>
         </>
     );

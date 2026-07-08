@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { dashboard } from '@/routes/admin';
+import { index as adminOrdersIndex, show as showAdminOrder } from '@/routes/admin/orders';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -32,8 +34,8 @@ type Order = {
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Admin Dashboard', href: '/admin' },
-    { title: 'Orders', href: '/admin/orders' },
+    { title: 'Admin Dashboard', href: dashboard() },
+    { title: 'Orders', href: adminOrdersIndex() },
 ];
 
 export default function AdminOrderIndex({
@@ -111,7 +113,7 @@ function OrderTable({
                 {orders.map((order) => (
                     <TableRow key={order.id}>
                         <TableCell className="font-medium text-primary">
-                            <Link href={`/admin/orders/${order.id}`}>
+                            <Link href={showAdminOrder(order.id)}>
                                 {order.order_number}
                             </Link>
                         </TableCell>
@@ -164,7 +166,7 @@ function OrderTable({
                         </TableCell>
                         <TableCell className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/admin/orders/${order.id}`}>
+                                <Link href={showAdminOrder(order.id)}>
                                     <Eye className="h-4 w-4" />
                                     View
                                 </Link>

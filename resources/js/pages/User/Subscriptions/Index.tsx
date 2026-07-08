@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { TruncatedText } from '@/components/truncated-text';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -117,13 +118,8 @@ export default function SubscriptionIndex({
             <SeoHead title="My Subscriptions" />
 
             <PagePanel title="My Subscriptions" variant="transparent">
-                {subscriptions.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground">
-                        You have no subscriptions yet.
-                    </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
+                <Table>
+                    <TableHeader>
                             <TableRow>
                                 <TableHead>Item</TableHead>
                                 <TableHead>Order #</TableHead>
@@ -138,7 +134,10 @@ export default function SubscriptionIndex({
                                 <TableRow key={sub.id}>
                                     <TableCell className="font-medium">
                                         {sub.order_item ? (
-                                            <span>
+                                            <TruncatedText
+                                                title={`${sub.order_item.product_variant.product.title} (${sub.order_item.product_variant.name})`}
+                                                className="max-w-[200px] sm:max-w-[300px]"
+                                            >
                                                 {
                                                     sub.order_item
                                                         .product_variant.product
@@ -150,7 +149,7 @@ export default function SubscriptionIndex({
                                                         .product_variant.name
                                                 }
                                                 )
-                                            </span>
+                                            </TruncatedText>
                                         ) : (
                                             <span className="text-muted-foreground">
                                                 N/A
@@ -184,9 +183,18 @@ export default function SubscriptionIndex({
                                     </TableCell>
                                 </TableRow>
                             ))}
+                            {subscriptions.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={6}
+                                        className="h-24 text-center text-muted-foreground"
+                                    >
+                                        You have no subscriptions yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
-                )}
             </PagePanel>
         </>
     );

@@ -61,8 +61,9 @@ class PhysicalProductSeeder extends Seeder
                 'image' => null,
                 'in_stock' => true,
                 'is_visible' => true,
-                'category_id' => $categories->get($data['category'])?->id,
             ]);
+
+            $product->categories()->sync(array_filter([$categories->get($data['category'])?->id]));
 
             foreach ($data['variants'] as $variantName) {
                 $product->variants()->create([
