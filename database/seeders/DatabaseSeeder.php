@@ -15,10 +15,12 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             ShippingZoneSeeder::class,
+            TestShippingSeeder::class,
             ProductSeeder::class,
             PhysicalProductSeeder::class,
             ServiceProductSeeder::class,
             OrderSeeder::class,
+            MiscSeeder::class,
         ]);
     }
 }

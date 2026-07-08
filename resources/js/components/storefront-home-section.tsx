@@ -3,7 +3,7 @@ import type { InertiaLinkProps } from '@inertiajs/react';
 import { ArrowRight, Cpu, Package, Wrench } from 'lucide-react';
 import type { ComponentType } from 'react';
 
-import { StorefrontProductCard } from '@/components/storefront-product-card';
+
 import {
     collectAllProducts,
     collectCategoryProducts,
@@ -139,16 +139,7 @@ export function StorefrontHomeSection({
                 </div>
             )}
 
-            {section.uncategorizedProducts.length > 0 && (
-                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {section.uncategorizedProducts.map((product) => (
-                        <StorefrontProductCard
-                            key={product.id}
-                            product={product}
-                        />
-                    ))}
-                </div>
-            )}
+
         </section>
     );
 }

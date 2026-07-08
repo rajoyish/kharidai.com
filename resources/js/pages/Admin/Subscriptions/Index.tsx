@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { TruncatedText } from '@/components/truncated-text';
 import {
     Table,
     TableBody,
@@ -57,13 +58,8 @@ export default function AdminSubscriptionIndex({
             <SeoHead title="Subscriptions - Admin" />
 
             <PagePanel title="Subscriptions" variant="transparent">
-                {subscriptions.data.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground">
-                        No subscriptions found.
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        <Table>
+                <div className="space-y-4">
+                    <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>User</TableHead>
@@ -87,7 +83,10 @@ export default function AdminSubscriptionIndex({
                                         </TableCell>
                                         <TableCell className="font-medium">
                                             {sub.order_item ? (
-                                                <span>
+                                                <TruncatedText
+                                                    title={`${sub.order_item.product_variant.product.title} (${sub.order_item.product_variant.name})`}
+                                                    className="max-w-[200px] sm:max-w-[300px]"
+                                                >
                                                     {
                                                         sub.order_item
                                                             .product_variant
@@ -100,7 +99,7 @@ export default function AdminSubscriptionIndex({
                                                             .name
                                                     }
                                                     )
-                                                </span>
+                                                </TruncatedText>
                                             ) : (
                                                 <span className="text-muted-foreground">
                                                     N/A
@@ -130,13 +129,22 @@ export default function AdminSubscriptionIndex({
                                                 initialDaysLeft={sub.days_left}
                                                 isExpired={sub.is_expired}
                                             />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {subscriptions.data.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={6}
+                                        className="h-24 text-center text-muted-foreground"
+                                    >
+                                        No subscriptions found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </PagePanel>
         </>
     );
