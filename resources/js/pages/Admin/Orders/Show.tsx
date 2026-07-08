@@ -17,14 +17,12 @@ import {
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { ServiceInvoiceCard } from '@/components/service-invoice-card';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    VariantOptionBadges
-    
-} from '@/components/variant-option-badges';
-import type {SelectedOptions} from '@/components/variant-option-badges';
+import { VariantOptionBadges } from '@/components/variant-option-badges';
+import type { SelectedOptions } from '@/components/variant-option-badges';
 
 type Order = {
     id: number;
@@ -62,6 +60,7 @@ type Order = {
         price: string;
         purchase_price: string;
         selected_options: SelectedOptions;
+        brief: { note?: string } | null;
         product_variant: {
             name: string;
             validity_days: number | null;
@@ -72,6 +71,24 @@ type Order = {
                 type: 'physical' | 'digital' | 'service';
             };
         };
+        service_invoices: {
+            id: number;
+            status_label: string;
+            project_name: string | null;
+            line_items: {
+                label: string;
+                quantity: number;
+                unit_price_npr: number;
+            }[];
+            subtotal_npr: number;
+            tax_rate: number;
+            tax_npr: number;
+            grand_total_npr: number;
+            advance_paid_npr: number;
+            due_npr: number;
+            payment_status: string;
+            project_completion_date: string | null;
+        }[];
     }[];
     credentials: {
         id: number;
@@ -207,9 +224,6 @@ export default function AdminOrderShow({
     };
 
     const [deletingOrder, setDeletingOrder] = useState(false);
-    const hasSubscriptionEligibleItems = order.items.some(
-        (item) => item.product_variant.validity_days !== null,
-    );
 
     // handleSendMessage moved to SupportChat
 
@@ -355,6 +369,22 @@ export default function AdminOrderShow({
                                                     </div>
                                                 </div>
                                             )}
+                                            {item.brief?.note && (
+                                                <div className="mt-2 rounded-md border border-dashed bg-muted/40 p-3">
+                                                    <p className="text-xs font-semibold text-muted-foreground uppercase">
+                                                        Service Requirements
+                                                    </p>
+                                                    <p className="mt-1 text-sm whitespace-pre-line">
+                                                        {item.brief.note}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {item.service_invoices && item.service_invoices.map((invoice) => (
+                                                <ServiceInvoiceCard
+                                                    key={invoice.id}
+                                                    invoice={invoice as any}
+                                                />
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
@@ -516,86 +546,10 @@ export default function AdminOrderShow({
                     </div>
 
                     <div className="space-y-6">
-                        <div className="rounded-xl border bg-card p-6">
-                            <h2 className="mb-4 text-xl font-semibold">
-                                Subscription
-                            </h2>
-                            {order.subscriptions.length > 0 ? (
-                                <div className="space-y-4">
-                                    {order.subscriptions.map((subscription) => (
-                                        <div
-                                            key={subscription.id}
-                                            className="space-y-2 rounded-lg bg-muted/40 p-4 text-sm"
-                                        >
-                                            <div className="font-medium">
-                                                {subscription.order_item
-                                                    ? `${subscription.order_item.product_variant.product.title} | ${subscription.order_item.product_variant.name}`
-                                                    : 'Legacy subscription record'}
-                                            </div>
-                                            {subscription.order_item && (
-                                                <div className="text-muted-foreground">
-                                                    Quantity:{' '}
-                                                    {
-                                                        subscription.order_item
-                                                            .quantity
-                                                    }
-                                                </div>
-                                            )}
-                                            <div className="flex items-center justify-between gap-4">
-                                                <span className="text-muted-foreground">
-                                                    Start date
-                                                </span>
-                                                <span className="font-medium">
-                                                    {subscription.start_date}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between gap-4">
-                                                <span className="text-muted-foreground">
-                                                    End date
-                                                </span>
-                                                <span className="font-medium">
-                                                    {subscription.end_date ??
-                                                        'Not assigned'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between gap-4">
-                                                <span className="text-muted-foreground">
-                                                    Duration
-                                                </span>
-                                                <span className="font-medium">
-                                                    {subscription.days_left ===
-                                                    null
-                                                        ? 'Not calculated'
-                                                        : `${subscription.days_left} days`}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : hasSubscriptionEligibleItems &&
-                              order.status === 'completed' ? (
-                                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
-                                    No subscription record was generated for
-                                    this completed order.
-                                </div>
-                            ) : hasSubscriptionEligibleItems ? (
-                                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
-                                    Subscription records will be created
-                                    automatically when the admin marks this
-                                    order as completed.
-                                </div>
-                            ) : (
-                                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
-                                    This order only contains lifetime or
-                                    one-time purchase items, so no subscription
-                                    record is needed.
-                                </div>
-                            )}
-                        </div>
-
                         {/* Payment breakdown */}
-                        <div className="rounded-xl border bg-card p-6">
-                            <h2 className="mb-4 text-xl font-semibold">
+                        {parseFloat(order.total_amount) > 0 && (
+                            <div className="rounded-xl border bg-card p-6">
+                                <h2 className="mb-4 text-xl font-semibold">
                                 Payment Breakdown
                             </h2>
                             <div className="space-y-1 text-sm">
@@ -656,6 +610,7 @@ export default function AdminOrderShow({
                                 )}
                             </div>
                         </div>
+                        )}
 
                         {/* Shipment */}
                         {order.shipment && (

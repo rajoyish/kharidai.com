@@ -120,81 +120,80 @@ export default function SubscriptionIndex({
             <PagePanel title="My Subscriptions" variant="transparent">
                 <Table>
                     <TableHeader>
-                            <TableRow>
-                                <TableHead>Item</TableHead>
-                                <TableHead>Order #</TableHead>
-                                <TableHead>Start Date</TableHead>
-                                <TableHead>End Date</TableHead>
-                                <TableHead>Days Left</TableHead>
-                                <TableHead>Label (Private)</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {subscriptions.map((sub) => (
-                                <TableRow key={sub.id}>
-                                    <TableCell className="font-medium">
-                                        {sub.order_item ? (
-                                            <TruncatedText
-                                                title={`${sub.order_item.product_variant.product.title} (${sub.order_item.product_variant.name})`}
-                                                className="max-w-[200px] sm:max-w-[300px]"
-                                            >
-                                                {
-                                                    sub.order_item
-                                                        .product_variant.product
-                                                        .title
-                                                }{' '}
-                                                (
-                                                {
-                                                    sub.order_item
-                                                        .product_variant.name
-                                                }
-                                                )
-                                            </TruncatedText>
-                                        ) : (
-                                            <span className="text-muted-foreground">
-                                                N/A
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Link
-                                            href={showOrder(sub.order.id)}
-                                            className="text-primary hover:underline"
+                        <TableRow>
+                            <TableHead>Item</TableHead>
+                            <TableHead>Order #</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead>End Date</TableHead>
+                            <TableHead>Days Left</TableHead>
+                            <TableHead>Label (Private)</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {subscriptions.map((sub) => (
+                            <TableRow key={sub.id}>
+                                <TableCell className="font-medium">
+                                    {sub.order_item ? (
+                                        <TruncatedText
+                                            title={`${sub.order_item.product_variant.product.title} (${sub.order_item.product_variant.name})`}
+                                            className="max-w-[200px] sm:max-w-[300px]"
                                         >
-                                            {sub.order.order_number}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap">
-                                        {sub.start_date}
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap">
-                                        {sub.end_date || 'Lifetime'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <DaysLeft
-                                            startDate={sub.start_date}
-                                            endDate={sub.end_date}
-                                            initialDaysLeft={sub.days_left}
-                                            isExpired={sub.is_expired}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <EditableLabel subscription={sub} />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {subscriptions.length === 0 && (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={6}
-                                        className="h-24 text-center text-muted-foreground"
+                                            {
+                                                sub.order_item.product_variant
+                                                    .product.title
+                                            }{' '}
+                                            (
+                                            {
+                                                sub.order_item.product_variant
+                                                    .name
+                                            }
+                                            )
+                                        </TruncatedText>
+                                    ) : (
+                                        <span className="text-muted-foreground">
+                                            N/A
+                                        </span>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    <Link
+                                        href={showOrder(sub.order.id)}
+                                        className="text-primary hover:underline"
                                     >
-                                        You have no subscriptions yet.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                                        {sub.order.order_number}
+                                    </Link>
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap">
+                                    {sub.start_date}
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap">
+                                    {sub.end_date || 'Lifetime'}
+                                </TableCell>
+                                <TableCell>
+                                    <DaysLeft
+                                        startDate={sub.start_date}
+                                        endDate={sub.end_date}
+                                        initialDaysLeft={sub.days_left}
+                                        isExpired={sub.is_expired}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <EditableLabel subscription={sub} />
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {subscriptions.length === 0 && (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={6}
+                                    className="h-24 text-center text-muted-foreground"
+                                >
+                                    You have no subscriptions yet.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </PagePanel>
         </>
     );

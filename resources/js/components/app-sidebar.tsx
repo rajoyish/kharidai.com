@@ -127,7 +127,7 @@ export function AppSidebar() {
                                     {state === 'collapsed' ? (
                                         <AppLogoIcon className="size-6 text-primary" />
                                     ) : (
-                                        <AppLogo className="h-8 w-auto ml-1" />
+                                        <AppLogo className="ml-1 h-8 w-auto" />
                                     )}
                                 </div>
                             </Link>
@@ -138,7 +138,9 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} label="Personal" />
-                {auth.user.is_admin && <NavMain items={adminNavItems} label="Store Management" />}
+                {auth.user.is_admin && (
+                    <NavMain items={adminNavItems} label="Store Management" />
+                )}
             </SidebarContent>
 
             <SidebarFooter>

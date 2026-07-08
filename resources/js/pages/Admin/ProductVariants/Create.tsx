@@ -36,6 +36,7 @@ export default function CreateVariant({ product }: { product: Product }) {
         details: '',
         price_npr: '',
         purchase_price_npr: '',
+        show_pricing: product.type !== 'service',
         validity_days: '',
         colors: [] as string[],
         sizes: [] as string[],
@@ -164,6 +165,26 @@ export default function CreateVariant({ product }: { product: Product }) {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="show_pricing"
+                                        checked={data.show_pricing}
+                                        onCheckedChange={(checked) =>
+                                            setData('show_pricing', checked)
+                                        }
+                                    />
+                                    <Label htmlFor="show_pricing">
+                                        Show pricing on storefront
+                                    </Label>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Services are negotiated after completion, so
+                                    their price is hidden by default. Turn this
+                                    on to display this variant's price publicly.
+                                </p>
                             </div>
 
                             <div className="grid gap-2">

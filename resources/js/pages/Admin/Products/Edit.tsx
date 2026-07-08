@@ -1,12 +1,20 @@
 import { update } from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { PagePanel } from '@/components/page-panel';
-import { ProductForm  } from '@/components/ProductForm';
-import type {Product} from '@/components/ProductForm';
+import { ProductForm } from '@/components/ProductForm';
+import type { Product } from '@/components/ProductForm';
 import { SeoHead } from '@/components/seo-head';
 
 type ProductTypeOption = { value: string; label: string };
 
-export default function EditProduct({ product, categories, productTypes }: { product: Product, categories: any[], productTypes: ProductTypeOption[] }) {
+export default function EditProduct({
+    product,
+    categories,
+    productTypes,
+}: {
+    product: Product;
+    categories: any[];
+    productTypes: ProductTypeOption[];
+}) {
     return (
         <>
             <SeoHead title="Edit Product" />

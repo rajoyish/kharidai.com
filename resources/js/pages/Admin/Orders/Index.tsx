@@ -4,8 +4,6 @@ import { useState } from 'react';
 import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
-import { dashboard } from '@/routes/admin';
-import { index as adminOrdersIndex, show as showAdminOrder } from '@/routes/admin/orders';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -15,6 +13,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { dashboard } from '@/routes/admin';
+import {
+    index as adminOrdersIndex,
+    show as showAdminOrder,
+} from '@/routes/admin/orders';
 import type { BreadcrumbItem } from '@/types';
 
 type Order = {
@@ -119,7 +122,9 @@ function OrderTable({
                         </TableCell>
                         <TableCell>
                             <div className="font-medium">{order.user.name}</div>
-                            <div className="text-xs text-muted-foreground">{order.user.email}</div>
+                            <div className="text-xs text-muted-foreground">
+                                {order.user.email}
+                            </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                             {new Date(order.created_at).toLocaleDateString()}
@@ -136,12 +141,13 @@ function OrderTable({
                         </TableCell>
                         <TableCell>
                             <span
-                                className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${order.status === 'completed'
+                                className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
+                                    order.status === 'completed'
                                         ? 'bg-green-100 text-green-800'
                                         : order.status === 'delivering'
-                                            ? 'bg-blue-100 text-blue-800'
-                                            : 'bg-yellow-100 text-yellow-800'
-                                    }`}
+                                          ? 'bg-blue-100 text-blue-800'
+                                          : 'bg-yellow-100 text-yellow-800'
+                                }`}
                             >
                                 {order.status}
                             </span>
@@ -149,12 +155,15 @@ function OrderTable({
                         <TableCell>
                             {order.payment_receipt ? (
                                 <span
-                                    className={`rounded-md px-2 py-1 text-xs ${order.payment_receipt.status === 'approved'
+                                    className={`rounded-md px-2 py-1 text-xs ${
+                                        order.payment_receipt.status ===
+                                        'approved'
                                             ? 'border border-green-200 bg-green-100/50 text-green-700'
-                                            : order.payment_receipt.status === 'rejected'
-                                                ? 'border border-red-200 bg-red-100/50 text-red-700'
-                                                : 'border border-amber-200 bg-amber-100/50 text-amber-700'
-                                        }`}
+                                            : order.payment_receipt.status ===
+                                                'rejected'
+                                              ? 'border border-red-200 bg-red-100/50 text-red-700'
+                                              : 'border border-amber-200 bg-amber-100/50 text-amber-700'
+                                    }`}
                                 >
                                     {order.payment_receipt.status}
                                 </span>
@@ -174,10 +183,14 @@ function OrderTable({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                className="text-red-500 hover:bg-red-50 hover:text-red-600"
                                 disabled={deletingOrderId === order.id}
                                 onClick={() => {
-                                    if (confirm('Are you sure you want to delete this order?')) {
+                                    if (
+                                        confirm(
+                                            'Are you sure you want to delete this order?',
+                                        )
+                                    ) {
                                         setDeletingOrderId(order.id);
 
                                         router.delete(destroyOrder(order), {

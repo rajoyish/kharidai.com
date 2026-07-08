@@ -77,7 +77,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): Response
     {
-        $product->load('galleries', 'categories:id');
+        $product->load('galleries', 'categories:id', 'serviceDetail');
 
         return Inertia::render('Admin/Products/Edit', [
             'product' => $product,

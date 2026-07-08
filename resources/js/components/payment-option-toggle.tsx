@@ -115,9 +115,10 @@ export function PaymentOptionToggle({
                             <span>
                                 Pay advance now
                                 <span className="mt-1 block text-sm font-normal text-muted-foreground">
-                                    Pay {rupees(shippingTotal + advanceTotal)} now
-                                    (shipping + {rupees(advanceTotal)} advance), the
-                                    rest ({rupees(itemsTotal - advanceTotal)}) on
+                                    Pay {rupees(shippingTotal + advanceTotal)}{' '}
+                                    now (shipping + {rupees(advanceTotal)}{' '}
+                                    advance), the rest (
+                                    {rupees(itemsTotal - advanceTotal)}) on
                                     delivery.
                                 </span>
                             </span>
@@ -126,7 +127,9 @@ export function PaymentOptionToggle({
                 </RadioGroup>
             )}
             {errors.payment_option && (
-                <p className="mt-2 text-sm text-destructive">{errors.payment_option}</p>
+                <p className="mt-2 text-sm text-destructive">
+                    {errors.payment_option}
+                </p>
             )}
         </div>
     );

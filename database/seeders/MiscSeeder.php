@@ -35,7 +35,7 @@ class MiscSeeder extends Seeder
         // 1. Carts and CartItems
         foreach ($users->take(5) as $user) {
             $cart = Cart::firstOrCreate(['user_id' => $user->id]);
-            
+
             $variant = $products->random()->variants->first();
             if ($variant) {
                 CartItem::firstOrCreate([
@@ -51,14 +51,14 @@ class MiscSeeder extends Seeder
         foreach ($products->take(10) as $product) {
             Gallery::create([
                 'product_id' => $product->id,
-                'image_path' => 'products/' . Str::random(10) . '.jpg',
+                'image_path' => 'products/'.Str::random(10).'.jpg',
                 'sort_order' => 1,
             ]);
-            
+
             Media::create([
-                'file_name' => 'sample_' . $product->id . '.jpg',
-                'file_path' => 'media/sample_' . $product->id . '.jpg',
-                'url' => 'https://example.com/media/sample_' . $product->id . '.jpg',
+                'file_name' => 'sample_'.$product->id.'.jpg',
+                'file_path' => 'media/sample_'.$product->id.'.jpg',
+                'url' => 'https://example.com/media/sample_'.$product->id.'.jpg',
                 'disk' => 'public',
             ]);
         }
@@ -77,12 +77,12 @@ class MiscSeeder extends Seeder
 
         // 4. OrderCredential, OrderMessage, PaymentReceipt, Subscription
         $admin = User::where('is_admin', true)->first();
-        
+
         foreach ($orders->take(10) as $order) {
             // Credential (simulating digital product delivery)
             OrderCredential::create([
                 'order_id' => $order->id,
-                'content' => "Username: user_{$order->id}\nPassword: " . Str::random(8),
+                'content' => "Username: user_{$order->id}\nPassword: ".Str::random(8),
             ]);
 
             // Message
@@ -91,7 +91,7 @@ class MiscSeeder extends Seeder
                 'user_id' => $order->user_id,
                 'message' => 'Please deliver this as soon as possible. Thank you!',
             ]);
-            
+
             if ($admin) {
                 OrderMessage::create([
                     'order_id' => $order->id,
@@ -103,7 +103,7 @@ class MiscSeeder extends Seeder
             // Receipt
             PaymentReceipt::create([
                 'order_id' => $order->id,
-                'file_path' => 'receipts/receipt_' . $order->id . '.pdf',
+                'file_path' => 'receipts/receipt_'.$order->id.'.pdf',
                 'status' => 'verified',
             ]);
 

@@ -66,7 +66,7 @@ type ProductTypeOption = {
 
 type ProductFormProps = {
     product?: Product & {
-        serviceDetail?: {
+        service_detail?: {
             pricing_strategy?: string;
             pricing_config?: any;
             requires_brief?: boolean;
@@ -110,15 +110,15 @@ export function ProductForm({
         category_ids: (product?.categories ?? []).map(
             (category) => category.id,
         ) as number[],
-        pricing_strategy: product?.serviceDetail?.pricing_strategy || '',
-        pricing_config: product?.serviceDetail?.pricing_config || {},
-        requires_brief: product?.serviceDetail?.requires_brief ?? true,
-        delivery_days: product?.serviceDetail?.delivery_days || '',
-        revisions: product?.serviceDetail?.revisions || '',
-        requires_contract: product?.serviceDetail?.requires_contract ?? false,
-        requires_advance: product?.serviceDetail?.requires_advance ?? false,
-        advance_type: product?.serviceDetail?.advance_type || 'percent',
-        advance_value: product?.serviceDetail?.advance_value || '',
+        pricing_strategy: product?.service_detail?.pricing_strategy || '',
+        pricing_config: product?.service_detail?.pricing_config || {},
+        requires_brief: product?.service_detail?.requires_brief ?? true,
+        delivery_days: product?.service_detail?.delivery_days || '',
+        revisions: product?.service_detail?.revisions || '',
+        requires_contract: product?.service_detail?.requires_contract ?? false,
+        requires_advance: product?.service_detail?.requires_advance ?? false,
+        advance_type: product?.service_detail?.advance_type || 'percent',
+        advance_value: product?.service_detail?.advance_value || '',
     });
 
     const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => {

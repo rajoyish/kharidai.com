@@ -1,3 +1,6 @@
+import { Link } from '@inertiajs/react';
+import { ArrowRight } from 'lucide-react';
+
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -11,29 +14,26 @@ import {
 } from '@/components/ui/table';
 import { home } from '@/routes';
 import { index as servicesIndex } from '@/routes/account/services';
+import { show as showOrder } from '@/routes/orders';
 
 type Engagement = {
     id: number;
     status: string;
-    price_npr: number;
+    payment_status: string;
+    project_name: string | null;
+    total_npr: number;
+    due_npr: number;
+    project_completion_date: string | null;
     product: { id: number; title: string } | null;
     variant: { id: number; name: string } | null;
+    order_id: number | null;
     order_number: string | null;
     delivery_note: string | null;
     created_at: string | null;
 };
 
-const statusVariant = (status: string) => {
-    if (status === 'completed' || status === 'delivered') {
-        return 'default' as const;
-    }
-
-    if (status === 'cancelled') {
-        return 'destructive' as const;
-    }
-
-    return 'secondary' as const;
-};
+const rs = (value: number): string =>
+    `Rs ${Math.round(value).toLocaleString('en-IN')}`;
 
 export default function UserServicesIndex({
     engagements,
@@ -51,16 +51,25 @@ export default function UserServicesIndex({
                             <TableHead>Service</TableHead>
                             <TableHead>Package</TableHead>
                             <TableHead>Order</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Requested</TableHead>
+                            <TableHead>Payment Status</TableHead>
+                            <TableHead>Completion Date</TableHead>
+                            <TableHead className="text-right">
+                                Total Amount
+                            </TableHead>
+                            <TableHead className="text-right">
+                                Due Amount
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {engagements.map((engagement) => (
                             <TableRow key={engagement.id}>
-                                <TableCell className="font-medium">
-                                    {engagement.product?.title ?? '—'}
+                                <TableCell>
+                                    <div className="font-medium">
+                                        {engagement.project_name ??
+                                            engagement.product?.title ??
+                                            '—'}
+                                    </div>
                                     {engagement.delivery_note && (
                                         <div className="text-xs text-muted-foreground">
                                             {engagement.delivery_note}
@@ -70,31 +79,66 @@ export default function UserServicesIndex({
                                 <TableCell className="text-muted-foreground">
                                     {engagement.variant?.name ?? '—'}
                                 </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                    {engagement.order_number ?? 'Admin assigned'}
-                                </TableCell>
                                 <TableCell>
-                                    Rs. {engagement.price_npr.toFixed(0)}
+                                    {engagement.order_id &&
+                                    engagement.order_number ? (
+                                        <div className="flex flex-col items-start gap-1">
+                                            <Link
+                                                href={showOrder(
+                                                    engagement.order_id,
+                                                )}
+                                                className="font-medium text-primary underline-offset-4 hover:underline"
+                                            >
+                                                {engagement.order_number}
+                                            </Link>
+                                            {engagement.payment_status ===
+                                                'due' &&
+                                                engagement.due_npr > 0 && (
+                                                    <Link
+                                                        href={showOrder(
+                                                            engagement.order_id,
+                                                        )}
+                                                        className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                                                    >
+                                                        Pay now
+                                                        <ArrowRight className="h-3 w-3" />
+                                                    </Link>
+                                                )}
+                                        </div>
+                                    ) : (
+                                        <span className="text-muted-foreground">
+                                            Admin assigned
+                                        </span>
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     <Badge
-                                        variant={statusVariant(
-                                            engagement.status,
-                                        )}
-                                        className="capitalize"
+                                        variant={
+                                            engagement.payment_status === 'paid'
+                                                ? 'default'
+                                                : 'secondary'
+                                        }
                                     >
-                                        {engagement.status.replace('_', ' ')}
+                                        {engagement.payment_status === 'paid'
+                                            ? 'Paid'
+                                            : 'Due'}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
-                                    {engagement.created_at}
+                                    {engagement.project_completion_date ?? '—'}
+                                </TableCell>
+                                <TableCell className="text-right tabular-nums">
+                                    {rs(engagement.total_npr)}
+                                </TableCell>
+                                <TableCell className="text-right tabular-nums">
+                                    {rs(engagement.due_npr)}
                                 </TableCell>
                             </TableRow>
                         ))}
                         {engagements.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={6}
+                                    colSpan={7}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     You have no services yet.

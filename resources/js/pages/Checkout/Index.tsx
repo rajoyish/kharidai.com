@@ -75,7 +75,9 @@ export default function CheckoutIndex({
 }) {
     const { data, setData, post, processing, errors } = useForm({
         additional_data: '',
-        shipping_zone_id: hasPhysicalItems ? (zones[0]?.id ?? '') : ('' as number | ''),
+        shipping_zone_id: hasPhysicalItems
+            ? (zones[0]?.id ?? '')
+            : ('' as number | ''),
         recipient_name: '',
         primary_contact: primaryContact ?? '',
         alternate_contact: '',
@@ -86,7 +88,9 @@ export default function CheckoutIndex({
         payment_option: 'full',
     });
 
-    const selectedZone = zones.find((zone) => zone.id === data.shipping_zone_id);
+    const selectedZone = zones.find(
+        (zone) => zone.id === data.shipping_zone_id,
+    );
     const shippingTotal = hasPhysicalItems ? (selectedZone?.fee ?? 0) : 0;
     const total = itemsTotal + shippingTotal;
     const amountDueNow =
@@ -96,7 +100,6 @@ export default function CheckoutIndex({
               ? shippingTotal + advanceTotal
               : total;
     const balanceDue = total - amountDueNow;
-
 
     const handleSetData = (field: string, value: any) => {
         setData(field as any, value);

@@ -39,4 +39,15 @@ class PerHourStrategy implements PricingStrategy
 
         return round($rate * $hours, 2);
     }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<array{label: string, quantity: float, unit_price_npr: float}>
+     */
+    public function lineItemSuggestions(array $config): array
+    {
+        return [
+            ['label' => 'Hours', 'quantity' => 0.0, 'unit_price_npr' => (float) ($config['hourly_rate_npr'] ?? 0)],
+        ];
+    }
 }

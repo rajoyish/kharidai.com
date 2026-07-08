@@ -60,75 +60,72 @@ export default function AdminSubscriptionIndex({
             <PagePanel title="Subscriptions" variant="transparent">
                 <div className="space-y-4">
                     <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Item</TableHead>
-                                    <TableHead>Order #</TableHead>
-                                    <TableHead>Start Date</TableHead>
-                                    <TableHead>End Date</TableHead>
-                                    <TableHead>Days Left</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {subscriptions.data.map((sub) => (
-                                    <TableRow key={sub.id}>
-                                        <TableCell>
-                                            <div className="font-medium">
-                                                {sub.user.name}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {sub.user.email}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium">
-                                            {sub.order_item ? (
-                                                <TruncatedText
-                                                    title={`${sub.order_item.product_variant.product.title} (${sub.order_item.product_variant.name})`}
-                                                    className="max-w-[200px] sm:max-w-[300px]"
-                                                >
-                                                    {
-                                                        sub.order_item
-                                                            .product_variant
-                                                            .product.title
-                                                    }{' '}
-                                                    (
-                                                    {
-                                                        sub.order_item
-                                                            .product_variant
-                                                            .name
-                                                    }
-                                                    )
-                                                </TruncatedText>
-                                            ) : (
-                                                <span className="text-muted-foreground">
-                                                    N/A
-                                                </span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Link
-                                                href={showAdminOrder(
-                                                    sub.order.id,
-                                                )}
-                                                className="text-primary hover:underline"
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Item</TableHead>
+                                <TableHead>Order #</TableHead>
+                                <TableHead>Start Date</TableHead>
+                                <TableHead>End Date</TableHead>
+                                <TableHead>Days Left</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {subscriptions.data.map((sub) => (
+                                <TableRow key={sub.id}>
+                                    <TableCell>
+                                        <div className="font-medium">
+                                            {sub.user.name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {sub.user.email}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                        {sub.order_item ? (
+                                            <TruncatedText
+                                                title={`${sub.order_item.product_variant.product.title} (${sub.order_item.product_variant.name})`}
+                                                className="max-w-[200px] sm:max-w-[300px]"
                                             >
-                                                {sub.order.order_number}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell className="whitespace-nowrap">
-                                            {sub.start_date}
-                                        </TableCell>
-                                        <TableCell className="whitespace-nowrap">
-                                            {sub.end_date || 'Lifetime'}
-                                        </TableCell>
-                                        <TableCell>
-                                            <DaysLeft
-                                                startDate={sub.start_date}
-                                                endDate={sub.end_date}
-                                                initialDaysLeft={sub.days_left}
-                                                isExpired={sub.is_expired}
-                                            />
+                                                {
+                                                    sub.order_item
+                                                        .product_variant.product
+                                                        .title
+                                                }{' '}
+                                                (
+                                                {
+                                                    sub.order_item
+                                                        .product_variant.name
+                                                }
+                                                )
+                                            </TruncatedText>
+                                        ) : (
+                                            <span className="text-muted-foreground">
+                                                N/A
+                                            </span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Link
+                                            href={showAdminOrder(sub.order.id)}
+                                            className="text-primary hover:underline"
+                                        >
+                                            {sub.order.order_number}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                        {sub.start_date}
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                        {sub.end_date || 'Lifetime'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <DaysLeft
+                                            startDate={sub.start_date}
+                                            endDate={sub.end_date}
+                                            initialDaysLeft={sub.days_left}
+                                            isExpired={sub.is_expired}
+                                        />
                                     </TableCell>
                                 </TableRow>
                             ))}

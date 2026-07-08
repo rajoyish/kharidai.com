@@ -29,6 +29,7 @@ export default function AssignService({
         user_id: '' as number | '',
         product_id: '' as number | '',
         product_variant_id: '' as number | '',
+        project_name: '',
         price_npr: 0 as number,
         status: 'pending',
         brief_note: '',
@@ -106,7 +107,9 @@ export default function AssignService({
                             id="product_id"
                             className={selectClassName}
                             value={data.product_id}
-                            onChange={(e) => handleServiceChange(e.target.value)}
+                            onChange={(e) =>
+                                handleServiceChange(e.target.value)
+                            }
                         >
                             <option value="">Select a service</option>
                             {services.map((service) => (
@@ -120,9 +123,7 @@ export default function AssignService({
 
                     {selectedService && (
                         <div className="grid gap-1">
-                            <Label htmlFor="product_variant_id">
-                                Package (optional)
-                            </Label>
+                            <Label htmlFor="product_variant_id">Package</Label>
                             <select
                                 id="product_variant_id"
                                 className={selectClassName}
@@ -131,7 +132,7 @@ export default function AssignService({
                                     handleVariantChange(e.target.value)
                                 }
                             >
-                                <option value="">No specific package</option>
+                                <option value="">Select a package</option>
                                 {selectedService.variants.map((variant) => (
                                     <option key={variant.id} value={variant.id}>
                                         {variant.name} — Rs.{' '}
@@ -139,8 +140,30 @@ export default function AssignService({
                                     </option>
                                 ))}
                             </select>
+                            {selectedService.variants.length === 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    This service has no packages yet. Add one to
+                                    the product before assigning it.
+                                </p>
+                            )}
+                            <InputError message={errors.product_variant_id} />
                         </div>
                     )}
+
+                    <div className="grid gap-1">
+                        <Label htmlFor="project_name">
+                            Project Name (optional)
+                        </Label>
+                        <Input
+                            id="project_name"
+                            value={data.project_name}
+                            onChange={(e) =>
+                                setData('project_name', e.target.value)
+                            }
+                            placeholder="e.g. Good Management"
+                        />
+                        <InputError message={errors.project_name} />
+                    </div>
 
                     <div className="grid gap-1">
                         <Label htmlFor="price_npr">Price (Rs.)</Label>

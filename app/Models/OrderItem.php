@@ -18,12 +18,13 @@ use Illuminate\Support\Carbon;
  * @property float $price
  * @property int $quantity
  * @property array<string, string>|null $selected_options
+ * @property array<string, mixed>|null $brief
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Order $order
  * @property ProductVariant $productVariant
  */
-#[Fillable(['order_id', 'product_variant_id', 'price', 'purchase_price', 'quantity', 'selected_options'])]
+#[Fillable(['order_id', 'product_variant_id', 'price', 'purchase_price', 'quantity', 'selected_options', 'brief'])]
 class OrderItem extends Model
 {
     /** @use HasFactory<OrderItemFactory> */
@@ -36,6 +37,7 @@ class OrderItem extends Model
     {
         return [
             'selected_options' => 'array',
+            'brief' => 'array',
         ];
     }
 

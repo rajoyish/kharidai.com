@@ -70,7 +70,9 @@ export function CategoryPill({
 
     const content = (
         <>
-            <TruncatedText className="max-w-[150px] sm:max-w-[200px] inline-block align-bottom">{name}</TruncatedText>
+            <TruncatedText className="inline-block max-w-[150px] align-bottom sm:max-w-[200px]">
+                {name}
+            </TruncatedText>
             {typeof count === 'number' && (
                 <CountBadge
                     count={count}

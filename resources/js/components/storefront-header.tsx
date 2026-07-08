@@ -1,6 +1,16 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { ArrowRight, Cpu, LayoutGrid, Menu, Package, ShoppingCart, Sparkles, User } from 'lucide-react';
-import { useEffect, useState, type ComponentType } from 'react';
+import {
+    ArrowRight,
+    Cpu,
+    LayoutGrid,
+    Menu,
+    Package,
+    ShoppingCart,
+    Sparkles,
+    User,
+} from 'lucide-react';
+import { useEffect, useState  } from 'react';
+import type {ComponentType} from 'react';
 import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,11 +37,20 @@ import { index as ordersIndex } from '@/routes/orders';
 import { index as physicalProducts } from '@/routes/physical-products';
 import { index as services } from '@/routes/services';
 import type { SharedData } from '@/types';
-import type { StorefrontNavigationGroup, StorefrontNavigationGroupType } from '@/types/storefront';
+import type {
+    StorefrontNavigationGroup,
+    StorefrontNavigationGroupType,
+} from '@/types/storefront';
 
-const GROUP_META: Record<StorefrontNavigationGroupType, { icon: ComponentType<{ className?: string }>; description: string }> = {
+const GROUP_META: Record<
+    StorefrontNavigationGroupType,
+    { icon: ComponentType<{ className?: string }>; description: string }
+> = {
     digital: { icon: Cpu, description: 'Software, subscriptions & downloads' },
-    physical: { icon: Package, description: 'Real products, shipped to your door' },
+    physical: {
+        icon: Package,
+        description: 'Real products, shipped to your door',
+    },
     service: { icon: Sparkles, description: 'Work with our expert team' },
     more: { icon: LayoutGrid, description: 'Browse everything else' },
 };
@@ -72,7 +91,11 @@ export function StorefrontHeader({
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
                 <div className="flex items-center gap-8 lg:gap-12">
-                    <Link href={home()} prefetch className="flex shrink-0 items-center gap-2">
+                    <Link
+                        href={home()}
+                        prefetch
+                        className="flex shrink-0 items-center gap-2"
+                    >
                         <AppLogo className="h-8 w-auto md:h-10" />
                     </Link>
 
@@ -89,16 +112,22 @@ export function StorefrontHeader({
                             <NavigationMenu viewport={false}>
                                 <NavigationMenuList className="gap-0">
                                     {groups.map((group) => {
-                                        const Icon = GROUP_META[group.type]?.icon ?? LayoutGrid;
+                                        const Icon =
+                                            GROUP_META[group.type]?.icon ??
+                                            LayoutGrid;
 
                                         return (
-                                            <NavigationMenuItem key={group.type}>
+                                            <NavigationMenuItem
+                                                key={group.type}
+                                            >
                                                 <NavigationMenuTrigger className="h-auto gap-1.5 bg-transparent px-3 py-2 text-sm font-semibold hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary">
                                                     <Icon className="h-4 w-4 text-muted-foreground" />
                                                     {group.label}
                                                 </NavigationMenuTrigger>
                                                 <NavigationMenuContent>
-                                                    <NavigationGroupPanel group={group} />
+                                                    <NavigationGroupPanel
+                                                        group={group}
+                                                    />
                                                 </NavigationMenuContent>
                                             </NavigationMenuItem>
                                         );
@@ -111,11 +140,21 @@ export function StorefrontHeader({
 
                 {/* User Actions (Right) Desktop */}
                 <div className="hidden items-center gap-6 md:flex">
-                    <Link href={accountHref} prefetch className="flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary">
+                    <Link
+                        href={accountHref}
+                        prefetch
+                        className="flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary"
+                    >
                         <User className="h-5 w-5 shrink-0" />
-                        <span className="max-w-40 truncate">{accountLabel}</span>
+                        <span className="max-w-40 truncate">
+                            {accountLabel}
+                        </span>
                     </Link>
-                    <Link href={cartIndex()} prefetch className="relative flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary">
+                    <Link
+                        href={cartIndex()}
+                        prefetch
+                        className="relative flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary"
+                    >
                         <div className="relative">
                             <ShoppingCart className="h-5 w-5" />
                             {cartCount > 0 && (
@@ -132,14 +171,23 @@ export function StorefrontHeader({
                 <div className="md:hidden">
                     <Sheet open={isOpen} onOpenChange={setIsOpen}>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-10 w-10">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10"
+                            >
                                 <Menu className="h-6 w-6" />
                                 <span className="sr-only">Toggle Menu</span>
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="right" className="w-80 overflow-y-auto sm:w-96">
+                        <SheetContent
+                            side="right"
+                            className="w-80 overflow-y-auto sm:w-96"
+                        >
                             <SheetHeader>
-                                <SheetTitle className="text-left">Menu</SheetTitle>
+                                <SheetTitle className="text-left">
+                                    Menu
+                                </SheetTitle>
                             </SheetHeader>
                             <div className="mt-4 flex flex-col gap-6 px-4 pb-8">
                                 {!hideNavigation && (
@@ -152,16 +200,29 @@ export function StorefrontHeader({
                                             Home
                                         </Link>
                                         {groups.map((group) => (
-                                            <MobileNavigationGroup key={group.type} group={group} />
+                                            <MobileNavigationGroup
+                                                key={group.type}
+                                                group={group}
+                                            />
                                         ))}
                                     </>
                                 )}
                                 <div className="flex flex-col gap-1 border-t pt-6">
-                                    <Link href={accountHref} prefetch className="flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary">
+                                    <Link
+                                        href={accountHref}
+                                        prefetch
+                                        className="flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary"
+                                    >
                                         <User className="h-5 w-5 shrink-0" />
-                                        <span className="truncate">{accountLabel}</span>
+                                        <span className="truncate">
+                                            {accountLabel}
+                                        </span>
                                     </Link>
-                                    <Link href={cartIndex()} prefetch className="relative flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary">
+                                    <Link
+                                        href={cartIndex()}
+                                        prefetch
+                                        className="relative flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary"
+                                    >
                                         <div className="relative">
                                             <ShoppingCart className="h-5 w-5" />
                                             {cartCount > 0 && (
@@ -194,8 +255,12 @@ function NavigationGroupPanel({ group }: { group: StorefrontNavigationGroup }) {
                     <Icon className="size-5" />
                 </span>
                 <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-tight">{group.label}</p>
-                    <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
+                    <p className="text-sm leading-tight font-semibold">
+                        {group.label}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                        {meta.description}
+                    </p>
                 </div>
             </div>
 
@@ -204,7 +269,7 @@ function NavigationGroupPanel({ group }: { group: StorefrontNavigationGroup }) {
                     <Link
                         href={groupHref}
                         prefetch
-                        className="mb-1 flex flex-row! items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary no-underline outline-none transition-colors hover:bg-primary/10 focus:bg-primary/10"
+                        className="mb-1 flex flex-row! items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary no-underline transition-colors outline-none hover:bg-primary/10 focus:bg-primary/10"
                     >
                         View all {group.label}
                         <ArrowRight className="size-4 shrink-0" />
@@ -219,7 +284,7 @@ function NavigationGroupPanel({ group }: { group: StorefrontNavigationGroup }) {
                             <Link
                                 href={showCategory(category)}
                                 prefetch
-                                className="block truncate rounded-md px-3 py-2 text-left text-sm font-semibold text-foreground no-underline outline-none transition-colors hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
+                                className="block truncate rounded-md px-3 py-2 text-left text-sm font-semibold text-foreground no-underline transition-colors outline-none hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
                             >
                                 {category.name}
                             </Link>
@@ -231,7 +296,11 @@ function NavigationGroupPanel({ group }: { group: StorefrontNavigationGroup }) {
     );
 }
 
-function MobileNavigationGroup({ group }: { group: StorefrontNavigationGroup }) {
+function MobileNavigationGroup({
+    group,
+}: {
+    group: StorefrontNavigationGroup;
+}) {
     const meta = GROUP_META[group.type] ?? GROUP_META.more;
     const Icon = meta.icon;
     const groupHref = GROUP_HREF[group.type];
@@ -242,7 +311,9 @@ function MobileNavigationGroup({ group }: { group: StorefrontNavigationGroup }) 
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Icon className="h-4 w-4" />
                 </span>
-                <h4 className="text-sm font-bold tracking-wide">{group.label}</h4>
+                <h4 className="text-sm font-bold tracking-wide">
+                    {group.label}
+                </h4>
             </div>
             {groupHref && (
                 <Link

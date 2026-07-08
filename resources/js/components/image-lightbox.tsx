@@ -16,6 +16,12 @@ export default function ImageLightbox({
     index = 0,
 }: ImageLightboxProps) {
     return (
-        <Lightbox open={open} close={close} slides={slides} index={index} plugins={[Zoom]} />
+        <Lightbox
+            open={open}
+            close={close}
+            slides={slides}
+            index={index}
+            plugins={[Zoom]}
+        />
     );
 }

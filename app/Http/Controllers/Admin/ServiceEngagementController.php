@@ -7,6 +7,8 @@ use App\Enums\EngagementStatus;
 use App\Enums\ProductType;
 use App\Exceptions\InvalidEngagementTransitionException;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ServiceEngagement;
@@ -14,6 +16,9 @@ use App\Models\User;
 use App\Services\Engagements\EngagementStateMachine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,7 +30,7 @@ class ServiceEngagementController extends Controller
     public function index(): Response
     {
         $engagements = ServiceEngagement::query()
-            ->with(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'assignedBy:id,name'])
+            ->with(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'assignedBy:id,name', 'orderItem.order:id,order_number'])
             ->latest()
             ->get()
             ->map(fn (ServiceEngagement $engagement): array => [
@@ -33,11 +38,16 @@ class ServiceEngagementController extends Controller
                 'status' => $engagement->status->value,
                 'status_label' => $engagement->status->label(),
                 'source' => $engagement->source->value,
-                'price_npr' => $engagement->price_npr,
+                'project_name' => $engagement->project_name,
+                'payment_status' => $engagement->paymentStatus(),
+                'project_completion_date' => $engagement->project_completion_date?->format('n/j/Y'),
+                'total_npr' => (float) ($engagement->agreed_price_npr ?? 0),
+                'due_npr' => $engagement->outstandingNpr(),
                 'user' => $engagement->user->only('id', 'name', 'email'),
                 'product' => $engagement->product?->only('id', 'title'),
                 'variant' => $engagement->productVariant?->only('id', 'name'),
                 'assigned_by' => $engagement->assignedBy?->name,
+                'order' => $engagement->orderItem?->order?->only('id', 'order_number'),
                 'created_at' => $engagement->created_at?->format('n/j/Y'),
             ]);
 
@@ -77,7 +87,10 @@ class ServiceEngagementController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
             'product_id' => ['required', Rule::exists('products', 'id')->where('type', ProductType::Service->value)],
-            'product_variant_id' => ['nullable', 'exists:product_variants,id'],
+            // A package is required so every engagement is billable when an order
+            // is later generated from its invoice.
+            'product_variant_id' => ['required', Rule::exists('product_variants', 'id')->where('product_id', $request->input('product_id'))],
+            'project_name' => ['nullable', 'string', 'max:255'],
             'brief_note' => ['nullable', 'string', 'max:2000'],
             'delivery_note' => ['nullable', 'string', 'max:2000'],
         ]);
@@ -85,23 +98,22 @@ class ServiceEngagementController extends Controller
         $product = Product::with('serviceDetail')->where('id', $validated['product_id'])->firstOrFail();
         $detail = $product->serviceDetail;
 
-        $variant = ! empty($validated['product_variant_id'])
-            ? ProductVariant::query()->where('id', $validated['product_variant_id'])->first()
-            : null;
+        $variant = ProductVariant::query()->findOrFail($validated['product_variant_id']);
 
-        // The variant price, if any, is a reference estimate only; the real cost
-        // is calculated after completion and negotiated.
-        $estimateNpr = $variant->price_npr ?? 0.0;
+        // The variant price is a reference estimate only; the real cost is
+        // calculated after completion and negotiated.
+        $estimateNpr = $variant->price_npr;
 
-        ServiceEngagement::create([
+        $engagement = ServiceEngagement::create([
             'user_id' => $validated['user_id'],
             'product_id' => $product->id,
-            'product_variant_id' => $validated['product_variant_id'] ?? null,
+            'product_variant_id' => $variant->id,
+            'project_name' => $validated['project_name'] ?? null,
             'source' => EngagementSource::Admin,
             'created_by' => $request->user()->id,
             'status' => $detail ? $this->stateMachine->initialStatusFor($detail) : EngagementStatus::InProgress,
             'price_npr' => $estimateNpr,
-            'purchase_price_npr' => $variant->purchase_price_npr ?? 0.0,
+            'purchase_price_npr' => $variant->purchase_price_npr,
             'pricing_strategy' => $detail?->pricing_strategy,
             'pricing_config' => $detail?->pricing_config,
             'advance_required_npr' => $detail?->advanceAmountNpr($estimateNpr) ?? 0.0,
@@ -109,7 +121,188 @@ class ServiceEngagementController extends Controller
             'delivery_note' => $validated['delivery_note'] ?? null,
         ]);
 
-        return redirect()->route('admin.services.index')->with('success', 'Service assigned to user.');
+        return redirect()->route('admin.services.show', $engagement)->with('success', 'Service assigned. Build the invoice brief below.');
+    }
+
+    /**
+     * The invoice brief generator for a single engagement: current invoice
+     * values plus line-item suggestions derived from the snapshotted pricing.
+     */
+    public function show(ServiceEngagement $serviceEngagement): Response
+    {
+        $serviceEngagement->load(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'orderItem.order:id,order_number']);
+
+        $linkedOrder = $serviceEngagement->orderItem?->order;
+
+        return Inertia::render('Admin/Services/Show', [
+            'engagement' => [
+                'id' => $serviceEngagement->id,
+                'status' => $serviceEngagement->status->value,
+                'status_label' => $serviceEngagement->status->label(),
+                'project_name' => $serviceEngagement->project_name,
+                'line_items' => $serviceEngagement->line_items ?? [],
+                'tax_rate' => (float) $serviceEngagement->tax_rate,
+                'advance_paid_npr' => $serviceEngagement->advance_paid_npr,
+                'project_completion_date' => $serviceEngagement->project_completion_date?->format('Y-m-d'),
+                'subtotal_npr' => $serviceEngagement->subtotalNpr(),
+                'tax_npr' => $serviceEngagement->taxNpr(),
+                'grand_total_npr' => $serviceEngagement->grandTotalNpr(),
+                'due_npr' => $serviceEngagement->outstandingNpr(),
+                'payment_status' => $serviceEngagement->paymentStatus(),
+                'is_paid' => $serviceEngagement->paymentStatus() === 'paid',
+                'invoice_ready' => filled($serviceEngagement->line_items),
+                'user' => $serviceEngagement->user->only('id', 'name', 'email'),
+                'product' => $serviceEngagement->product?->only('id', 'title'),
+                'variant' => $serviceEngagement->productVariant?->only('id', 'name'),
+                'brief' => $serviceEngagement->brief,
+                'order' => $linkedOrder ? $linkedOrder->only('id', 'order_number') : null,
+            ],
+            'lineItemSuggestions' => $serviceEngagement->calculator()->lineItemSuggestions($serviceEngagement->pricing_config ?? []),
+            'linkableOrderItems' => $this->linkableOrderItems($serviceEngagement),
+        ]);
+    }
+
+    /**
+     * The customer's existing order items an admin can link to this engagement,
+     * newest first, labelled for a select control.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function linkableOrderItems(ServiceEngagement $serviceEngagement): Collection
+    {
+        return OrderItem::query()
+            ->whereHas('order', fn ($query) => $query->where('user_id', $serviceEngagement->user_id))
+            ->with(['order:id,order_number,created_at', 'productVariant:id,name,product_id', 'productVariant.product:id,title'])
+            ->latest()
+            ->get()
+            ->map(fn (OrderItem $item): array => [
+                'id' => $item->id,
+                'order_number' => $item->order->order_number,
+                'label' => sprintf(
+                    '%s — %s%s',
+                    $item->order->order_number,
+                    $item->productVariant?->product?->title ?? 'Item',
+                    $item->productVariant?->name ? " ({$item->productVariant->name})" : '',
+                ),
+            ]);
+    }
+
+    /**
+     * Generate a payable order from the saved invoice and link this engagement to
+     * it, so the customer can view the invoice and settle it from their panel.
+     */
+    public function assignOrder(ServiceEngagement $serviceEngagement): RedirectResponse
+    {
+        if ($serviceEngagement->order_item_id !== null) {
+            return redirect()->back()->with('error', 'This engagement is already linked to an order.');
+        }
+
+        if (blank($serviceEngagement->line_items)) {
+            return redirect()->back()->with('error', 'Save the invoice brief before assigning an order.');
+        }
+
+        $variantId = $serviceEngagement->product_variant_id
+            ?? $serviceEngagement->product?->variants()->value('id');
+
+        if ($variantId === null) {
+            return redirect()->back()->with('error', 'This service has no package to bill against. Assign a package to the engagement first.');
+        }
+
+        DB::transaction(function () use ($serviceEngagement, $variantId): void {
+            $grandTotal = $serviceEngagement->grandTotalNpr();
+
+            $order = Order::create([
+                'order_number' => 'ORD-'.strtoupper(Str::random(10)),
+                'user_id' => $serviceEngagement->user_id,
+                'status' => 'pending',
+                'total_amount' => $grandTotal,
+                'items_total' => $grandTotal,
+                'shipping_total' => 0,
+                'amount_due_now' => $serviceEngagement->outstandingNpr(),
+                'balance_due' => 0,
+            ]);
+
+            $orderItem = $order->items()->create([
+                'product_variant_id' => $variantId,
+                'price' => $grandTotal,
+                'purchase_price' => $serviceEngagement->purchase_price_npr,
+                'quantity' => 1,
+                'brief' => $serviceEngagement->brief,
+            ]);
+
+            $serviceEngagement->update(['order_item_id' => $orderItem->id]);
+        });
+
+        return redirect()->back()->with('success', 'Order created and linked. The customer can now pay from their panel.');
+    }
+
+    /**
+     * Link this engagement to one of the customer's existing order items, so a
+     * storefront order the customer already placed surfaces this invoice.
+     */
+    public function linkOrder(Request $request, ServiceEngagement $serviceEngagement): RedirectResponse
+    {
+        $validated = $request->validate([
+            'order_item_id' => [
+                'required',
+                Rule::exists('order_items', 'id')->where(
+                    fn ($query) => $query->whereIn(
+                        'order_id',
+                        Order::where('user_id', $serviceEngagement->user_id)->select('id'),
+                    ),
+                ),
+            ],
+        ]);
+
+        $serviceEngagement->update(['order_item_id' => $validated['order_item_id']]);
+
+        return redirect()->back()->with('success', 'Order linked to this engagement.');
+    }
+
+    /**
+     * Persist the invoice brief: its line items, tax rate and advance drive the
+     * subtotal (calculated cost), grand total (agreed price) and due balance.
+     */
+    public function saveInvoice(Request $request, ServiceEngagement $serviceEngagement): RedirectResponse
+    {
+        // Rows are validated leniently so a half-finished blank row the admin
+        // added but left empty is dropped below rather than rejected outright.
+        $validated = $request->validate([
+            'project_name' => ['nullable', 'string', 'max:255'],
+            'line_items' => ['nullable', 'array'],
+            'line_items.*.label' => ['nullable', 'string', 'max:255'],
+            'line_items.*.quantity' => ['nullable', 'numeric', 'min:0'],
+            'line_items.*.unit_price_npr' => ['nullable', 'numeric', 'min:0'],
+            'tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'advance_paid_npr' => ['nullable', 'numeric', 'min:0'],
+            'project_completion_date' => ['nullable', 'date'],
+        ]);
+
+        // Normalise to the stored shape and drop rows without a label.
+        $lineItems = collect($validated['line_items'] ?? [])
+            ->map(fn (array $item): array => [
+                'label' => trim((string) ($item['label'] ?? '')),
+                'quantity' => (float) ($item['quantity'] ?? 0),
+                'unit_price_npr' => (float) ($item['unit_price_npr'] ?? 0),
+            ])
+            ->filter(fn (array $item): bool => $item['label'] !== '')
+            ->values()
+            ->all();
+
+        $serviceEngagement->fill([
+            'project_name' => $validated['project_name'] ?? null,
+            'line_items' => $lineItems,
+            'tax_rate' => $validated['tax_rate'],
+            'advance_paid_npr' => $validated['advance_paid_npr'] ?? 0,
+            'project_completion_date' => $validated['project_completion_date'] ?? null,
+        ]);
+
+        // Subtotal and grand total derive from the freshly filled line items/tax.
+        $serviceEngagement->calculated_cost_npr = $serviceEngagement->subtotalNpr();
+        $serviceEngagement->agreed_price_npr = $serviceEngagement->grandTotalNpr();
+        $serviceEngagement->save();
+
+        return redirect()->route('admin.services.show', $serviceEngagement)->with('success', 'Invoice brief saved.');
     }
 
     public function signContract(ServiceEngagement $serviceEngagement): RedirectResponse
@@ -172,6 +365,20 @@ class ServiceEngagementController extends Controller
             fn () => $this->stateMachine->transition($serviceEngagement, EngagementStatus::from($validated['status'])),
             'Engagement status updated.',
         );
+    }
+
+    /**
+     * Manually mark the invoice paid or due, overriding the derived status.
+     */
+    public function updatePaymentStatus(Request $request, ServiceEngagement $serviceEngagement): RedirectResponse
+    {
+        $validated = $request->validate([
+            'is_paid' => ['required', 'boolean'],
+        ]);
+
+        $serviceEngagement->update(['is_paid' => $validated['is_paid']]);
+
+        return redirect()->back()->with('success', $validated['is_paid'] ? 'Marked as paid.' : 'Marked as due.');
     }
 
     public function destroy(ServiceEngagement $serviceEngagement): RedirectResponse

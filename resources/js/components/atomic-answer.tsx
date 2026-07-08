@@ -6,18 +6,20 @@ interface AtomicAnswerProps {
     headingLevel?: 'h2' | 'h3';
 }
 
-export function AtomicAnswer({ question, answer, headingLevel = 'h2' }: AtomicAnswerProps) {
+export function AtomicAnswer({
+    question,
+    answer,
+    headingLevel = 'h2',
+}: AtomicAnswerProps) {
     const Heading = headingLevel;
 
     return (
         <div className="my-8">
-            <Heading className="text-xl font-semibold text-foreground mb-2">
+            <Heading className="mb-2 text-xl font-semibold text-foreground">
                 {question}
             </Heading>
             {/* The answer is strictly a single <p> tag with 40-60 words to optimize for Generative AI Answers */}
-            <p className="text-muted-foreground leading-relaxed">
-                {answer}
-            </p>
+            <p className="leading-relaxed text-muted-foreground">{answer}</p>
         </div>
     );
 }

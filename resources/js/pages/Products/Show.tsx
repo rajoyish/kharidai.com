@@ -49,6 +49,7 @@ type Variant = {
     name: string;
     details: string | null;
     price_npr: string;
+    show_pricing?: boolean;
     colors?: string[] | null;
     sizes?: string[] | null;
 };
@@ -143,8 +144,12 @@ export default function Show({
     // variant picker. Multi-package services still let the customer choose.
     const showVariantSelector =
         product.type === 'service' ? variants.length > 1 : variants.length > 0;
+    // Services hide their price by default; an admin opts a variant in via its
+    // "Show pricing" toggle. Any variant still needs a real (non-zero) price.
     const showPrice =
-        !!selectedVariant && Number(selectedVariant.price_npr) > 0;
+        !!selectedVariant &&
+        selectedVariant.show_pricing !== false &&
+        Number(selectedVariant.price_npr) > 0;
 
     // Guests never see digital variant details; instead they get a database-
     // computed "Starting at" price so they still know the entry point cost.
@@ -268,17 +273,18 @@ export default function Show({
                             <h1 className="mb-2 text-3xl font-bold tracking-tight">
                                 {product.title}
                             </h1>
-                            {product.categories && product.categories.length > 0 && (
-                                <div className="mb-4 flex flex-wrap gap-2">
-                                    {product.categories.map((category) => (
-                                        <CategoryPill
-                                            key={category.id}
-                                            name={category.name}
-                                            href={showCategory(category)}
-                                        />
-                                    ))}
-                                </div>
-                            )}
+                            {product.categories &&
+                                product.categories.length > 0 && (
+                                    <div className="mb-4 flex flex-wrap gap-2">
+                                        {product.categories.map((category) => (
+                                            <CategoryPill
+                                                key={category.id}
+                                                name={category.name}
+                                                href={showCategory(category)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
 
                             {canViewVariants &&
                                 showPrice &&
@@ -464,17 +470,18 @@ export default function Show({
                             <h1 className="mb-4 text-3xl font-bold tracking-tight lg:mb-6">
                                 {product.title}
                             </h1>
-                            {product.categories && product.categories.length > 0 && (
-                                <div className="mb-8 lg:mb-12 flex flex-wrap gap-2">
-                                    {product.categories.map((category) => (
-                                        <CategoryPill
-                                            key={category.id}
-                                            name={category.name}
-                                            href={showCategory(category)}
-                                        />
-                                    ))}
-                                </div>
-                            )}
+                            {product.categories &&
+                                product.categories.length > 0 && (
+                                    <div className="mb-8 flex flex-wrap gap-2 lg:mb-12">
+                                        {product.categories.map((category) => (
+                                            <CategoryPill
+                                                key={category.id}
+                                                name={category.name}
+                                                href={showCategory(category)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
 
                             {canViewVariants &&
                                 showPrice &&
@@ -490,8 +497,8 @@ export default function Show({
                                         <p>
                                             <strong>Physical Item</strong>
                                         </p>
-                                        {product.physical_detail
-                                            .weight_kg !== null && (
+                                        {product.physical_detail.weight_kg !==
+                                            null && (
                                             <p>
                                                 Weight:{' '}
                                                 {

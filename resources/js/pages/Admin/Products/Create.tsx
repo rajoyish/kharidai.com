@@ -29,7 +29,7 @@ export default function CreateProduct({
 
 CreateProduct.layout = {
     breadcrumbs: [
-                { title: 'Products', href: '/admin/products' },
-                { title: 'Create', href: '/admin/products/create' },
-            ],
+        { title: 'Products', href: '/admin/products' },
+        { title: 'Create', href: '/admin/products/create' },
+    ],
 };

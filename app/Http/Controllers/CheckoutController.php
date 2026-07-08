@@ -83,7 +83,7 @@ class CheckoutController extends Controller
 
     public function process(Request $request, ShippingCalculator $calculator): RedirectResponse
     {
-        $cart = Cart::with(['items.productVariant.product.physicalDetail'])
+        $cart = Cart::with(['items.productVariant.product.physicalDetail', 'items.productVariant.product.serviceDetail'])
             ->where('user_id', $request->user()->id)
             ->first();
 
@@ -123,12 +123,21 @@ class CheckoutController extends Controller
         $paymentOption = $hasPhysicalItems ? PaymentOption::from($validated['payment_option']) : null;
         $totalAmount = $itemsTotal + $shippingTotal;
 
-        $amountDueNow = match ($paymentOption) {
-            PaymentOption::ShippingOnly => $shippingTotal,
-            PaymentOption::Advance => $shippingTotal + $advanceTotal,
-            default => $totalAmount,
-        };
-        $balanceDue = $totalAmount - $amountDueNow;
+        // A cart of only free services carries no up-front bill except a service
+        // advance, when one is configured; otherwise there is nothing to collect.
+        $isFreeServiceOrder = $cart->isFreeServiceOrder();
+
+        if ($isFreeServiceOrder) {
+            $amountDueNow = $this->serviceAdvanceTotal($cart->items);
+            $balanceDue = 0.0;
+        } else {
+            $amountDueNow = match ($paymentOption) {
+                PaymentOption::ShippingOnly => $shippingTotal,
+                PaymentOption::Advance => $shippingTotal + $advanceTotal,
+                default => $totalAmount,
+            };
+            $balanceDue = $totalAmount - $amountDueNow;
+        }
 
         $order = DB::transaction(function () use (
             $request, $cart, $validated, $hasPhysicalItems, $zone, $mobileNumber,
@@ -157,6 +166,7 @@ class CheckoutController extends Controller
                     'purchase_price' => $item->productVariant->purchase_price_npr,
                     'quantity' => $item->quantity,
                     'selected_options' => $item->selected_options,
+                    'brief' => $item->brief,
                 ]);
 
                 $this->createServiceEngagements($orderItem, $item);
@@ -183,7 +193,33 @@ class CheckoutController extends Controller
         $cart->items()->delete();
         $cart->delete();
 
+        // With nothing to pay up front there is no QR step to show, so go
+        // straight to the order confirmation.
+        if ($amountDueNow <= 0) {
+            return redirect()->route('orders.show', $order)->with('success', 'Order placed successfully.');
+        }
+
         return redirect()->route('checkout.npr', $order);
+    }
+
+    /**
+     * The total service advance owed up front across the cart, in NPR. Each
+     * service item contributes its configured advance (a fixed amount, or a
+     * percentage of the snapshot price) for every unit ordered.
+     *
+     * @param  EloquentCollection<int, CartItem>  $items
+     */
+    private function serviceAdvanceTotal(EloquentCollection $items): float
+    {
+        return (float) $items->sum(function (CartItem $item): float {
+            $product = $item->productVariant->product;
+
+            if ($product->type !== ProductType::Service) {
+                return 0.0;
+            }
+
+            return ($product->serviceDetail?->advanceAmountNpr($item->productVariant->price_npr) ?? 0.0) * $item->quantity;
+        });
     }
 
     /**
@@ -333,14 +369,30 @@ class CheckoutController extends Controller
         return (string) preg_replace('/^(\+?977)/', '', $clean);
     }
 
+    private function getUnpaidInvoicesTotal(Order $order): float
+    {
+        $order->loadMissing('items.serviceEngagements');
+
+        return (float) $order->items->flatMap->serviceEngagements->sum(
+            fn ($se) => $se->outstandingNpr()
+        );
+    }
+
     public function nprPayment(Request $request, Order $order): Response|RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id || $order->status !== 'pending') {
+        $unpaidInvoicesTotal = $this->getUnpaidInvoicesTotal($order);
+
+        if ($order->user_id !== $request->user()->id || ($order->status !== 'pending' && $unpaidInvoicesTotal <= 0 && ! $order->can_reupload_receipt)) {
             abort(403);
         }
 
-        if ($order->paymentReceipt && ! $order->can_reupload_receipt) {
+        if ($unpaidInvoicesTotal <= 0 && $order->paymentReceipt && ! $order->can_reupload_receipt) {
             return redirect()->route('orders.show', $order)->with('error', 'Receipt already uploaded.');
+        }
+
+        if ($unpaidInvoicesTotal > 0) {
+            $order->amount_due_now = $unpaidInvoicesTotal;
+            $order->balance_due = 0;
         }
 
         return Inertia::render('Checkout/NprPayment', [
@@ -350,11 +402,13 @@ class CheckoutController extends Controller
 
     public function processNprPayment(Request $request, Order $order): RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id || $order->status !== 'pending') {
+        $unpaidInvoicesTotal = $this->getUnpaidInvoicesTotal($order);
+
+        if ($order->user_id !== $request->user()->id || ($order->status !== 'pending' && $unpaidInvoicesTotal <= 0 && ! $order->can_reupload_receipt)) {
             abort(403);
         }
 
-        if ($order->paymentReceipt && ! $order->can_reupload_receipt) {
+        if ($unpaidInvoicesTotal <= 0 && $order->paymentReceipt && ! $order->can_reupload_receipt) {
             return redirect()->route('orders.show', $order)->with('error', 'Receipt already uploaded.');
         }
 

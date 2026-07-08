@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $product_id
  * @property int|null $product_variant_id
  * @property int|null $order_item_id
+ * @property string|null $project_name
  * @property EngagementSource $source
  * @property int|null $created_by
  * @property EngagementStatus $status
@@ -34,7 +35,11 @@ use Illuminate\Support\Carbon;
  * @property float $advance_required_npr
  * @property float $advance_paid_npr
  * @property Carbon|null $advance_paid_at
+ * @property Carbon|null $project_completion_date
  * @property array<string, mixed>|null $measurement
+ * @property list<array{label: string, quantity: float, unit_price_npr: float}>|null $line_items
+ * @property float $tax_rate
+ * @property bool|null $is_paid
  * @property float $calculated_cost_npr
  * @property float|null $agreed_price_npr
  * @property array<string, mixed>|null $brief
@@ -52,6 +57,7 @@ use Illuminate\Support\Carbon;
     'product_id',
     'product_variant_id',
     'order_item_id',
+    'project_name',
     'source',
     'created_by',
     'status',
@@ -63,7 +69,11 @@ use Illuminate\Support\Carbon;
     'advance_required_npr',
     'advance_paid_npr',
     'advance_paid_at',
+    'project_completion_date',
     'measurement',
+    'line_items',
+    'tax_rate',
+    'is_paid',
     'calculated_cost_npr',
     'agreed_price_npr',
     'brief',
@@ -85,9 +95,13 @@ class ServiceEngagement extends Model
             'pricing_strategy' => PricingStrategy::class,
             'pricing_config' => 'array',
             'measurement' => 'array',
+            'line_items' => 'array',
+            'tax_rate' => 'decimal:2',
+            'is_paid' => 'boolean',
             'brief' => 'array',
             'contract_signed_at' => 'datetime',
             'advance_paid_at' => 'datetime',
+            'project_completion_date' => 'date',
         ];
     }
 
@@ -235,7 +249,52 @@ class ServiceEngagement extends Model
      */
     public function outstandingNpr(): float
     {
+        if ($this->is_paid) {
+            return 0.0;
+        }
+
         return max(0.0, ($this->agreed_price_npr ?? 0.0) - $this->advance_paid_npr);
+    }
+
+    /**
+     * The invoice subtotal in NPR: the sum of every line item's quantity times
+     * its unit price, before tax.
+     */
+    public function subtotalNpr(): float
+    {
+        return round(collect($this->line_items ?? [])->sum(
+            fn (array $item): float => (float) ($item['quantity'] ?? 0) * (float) ($item['unit_price_npr'] ?? 0),
+        ), 2);
+    }
+
+    /**
+     * The tax owed in NPR: the configured rate applied to the subtotal.
+     */
+    public function taxNpr(): float
+    {
+        return round($this->subtotalNpr() * (float) $this->tax_rate / 100, 2);
+    }
+
+    /**
+     * The invoice grand total in NPR: subtotal plus tax.
+     */
+    public function grandTotalNpr(): float
+    {
+        return round($this->subtotalNpr() + $this->taxNpr(), 2);
+    }
+
+    /**
+     * Whether the invoice is settled. A manual override, when set, wins; else it
+     * is derived: an invoice with no billable total is not yet "paid"; once a
+     * grand total exists it is paid when nothing is due.
+     */
+    public function paymentStatus(): string
+    {
+        if ($this->is_paid !== null) {
+            return $this->is_paid ? 'paid' : 'due';
+        }
+
+        return $this->grandTotalNpr() > 0 && $this->outstandingNpr() <= 0 ? 'paid' : 'due';
     }
 
     /**

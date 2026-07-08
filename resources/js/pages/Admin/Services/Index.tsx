@@ -1,7 +1,11 @@
 import { Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+
+import { show as showOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import {
     create as createEngagement,
-    updateStatus,
+    destroy as destroyEngagement,
+    show as showEngagement,
 } from '@/actions/App/Http/Controllers/Admin/ServiceEngagementController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
@@ -19,31 +23,45 @@ import {
 type Engagement = {
     id: number;
     status: string;
+    status_label: string;
     source: string;
-    price_npr: number;
+    project_name: string | null;
+    payment_status: string;
+    project_completion_date: string | null;
+    total_npr: number;
+    due_npr: number;
     user: { id: number; name: string; email: string } | null;
     product: { id: number; title: string } | null;
     variant: { id: number; name: string } | null;
     assigned_by: string | null;
+    order: { id: number; order_number: string } | null;
     created_at: string | null;
 };
 
-const selectClassName =
-    'h-8 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:ring-1 focus:ring-ring focus:outline-none';
+const rs = (value: number): string =>
+    `Rs ${Math.round(value).toLocaleString('en-IN')}`;
 
 export default function ServicesIndex({
     engagements,
-    statuses,
 }: {
     engagements: Engagement[];
-    statuses: string[];
 }) {
-    const changeStatus = (engagement: Engagement, status: string) => {
-        router.patch(
-            updateStatus.url({ serviceEngagement: engagement.id }),
-            { status },
-            { preserveScroll: true },
-        );
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+
+    const handleDelete = (engagement: Engagement) => {
+        const label = engagement.project_name ?? 'this engagement';
+
+        if (confirm(`Are you sure you want to delete ${label}?`)) {
+            setDeletingId(engagement.id);
+
+            router.delete(
+                destroyEngagement.url({ serviceEngagement: engagement.id }),
+                {
+                    preserveScroll: true,
+                    onFinish: () => setDeletingId(null),
+                },
+            );
+        }
     };
 
     return (
@@ -55,24 +73,57 @@ export default function ServicesIndex({
                 variant="transparent"
                 actions={
                     <Button asChild className="w-fit">
-                        <Link href={createEngagement.url()}>Assign Service</Link>
+                        <Link href={createEngagement.url()}>
+                            Assign Service
+                        </Link>
                     </Button>
                 }
             >
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Project Name</TableHead>
+                            <TableHead>Order</TableHead>
                             <TableHead>Client</TableHead>
-                            <TableHead>Service</TableHead>
-                            <TableHead>Source</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Created</TableHead>
+                            <TableHead>Payment Status</TableHead>
+                            <TableHead>Completion Date</TableHead>
+                            <TableHead className="text-right">
+                                Total Amount
+                            </TableHead>
+                            <TableHead className="text-right">
+                                Due Amount
+                            </TableHead>
+                            <TableHead className="text-right">
+                                Actions
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {engagements.map((engagement) => (
                             <TableRow key={engagement.id}>
+                                <TableCell>
+                                    <div className="font-medium">
+                                        {engagement.project_name ?? '—'}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {engagement.product?.title ?? 'Service'}
+                                        {engagement.variant
+                                            ? ` · ${engagement.variant.name}`
+                                            : ''}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    {engagement.order ? (
+                                        <Link 
+                                            href={showOrder(engagement.order.id).url}
+                                            className="font-medium text-primary hover:underline"
+                                        >
+                                            {engagement.order.order_number}
+                                        </Link>
+                                    ) : (
+                                        <span className="text-muted-foreground">—</span>
+                                    )}
+                                </TableCell>
                                 <TableCell>
                                     <div className="font-medium">
                                         {engagement.user?.name ?? '—'}
@@ -82,52 +133,64 @@ export default function ServicesIndex({
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="font-medium">
-                                        {engagement.product?.title ?? '—'}
-                                    </div>
-                                    {engagement.variant && (
-                                        <div className="text-xs text-muted-foreground">
-                                            {engagement.variant.name}
-                                        </div>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary">
-                                        {engagement.source === 'admin'
-                                            ? `Admin${engagement.assigned_by ? ` (${engagement.assigned_by})` : ''}`
-                                            : 'Storefront'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    Rs. {engagement.price_npr.toFixed(0)}
-                                </TableCell>
-                                <TableCell>
-                                    <select
-                                        className={selectClassName}
-                                        value={engagement.status}
-                                        onChange={(e) =>
-                                            changeStatus(
-                                                engagement,
-                                                e.target.value,
-                                            )
+                                    <Badge
+                                        variant={
+                                            engagement.payment_status === 'paid'
+                                                ? 'default'
+                                                : 'secondary'
                                         }
                                     >
-                                        {statuses.map((status) => (
-                                            <option key={status} value={status}>
-                                                {status.replace('_', ' ')}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        {engagement.payment_status === 'paid'
+                                            ? 'Paid'
+                                            : 'Due'}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
-                                    {engagement.created_at}
+                                    {engagement.project_completion_date ?? '—'}
+                                </TableCell>
+                                <TableCell className="text-right tabular-nums">
+                                    {rs(engagement.total_npr)}
+                                </TableCell>
+                                <TableCell className="text-right tabular-nums">
+                                    {rs(engagement.due_npr)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            asChild
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Link
+                                                href={showEngagement.url({
+                                                    serviceEngagement:
+                                                        engagement.id,
+                                                })}
+                                            >
+                                                Open
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                            disabled={
+                                                deletingId === engagement.id
+                                            }
+                                            onClick={() =>
+                                                handleDelete(engagement)
+                                            }
+                                        >
+                                            Delete
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
                         {engagements.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={6}
+                                    colSpan={7}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No service engagements yet.

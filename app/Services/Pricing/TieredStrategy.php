@@ -39,4 +39,13 @@ class TieredStrategy implements PricingStrategy
             2,
         );
     }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<array{label: string, quantity: float, unit_price_npr: float}>
+     */
+    public function lineItemSuggestions(array $config): array
+    {
+        return $this->tierLineItems($config['tiers'] ?? []);
+    }
 }

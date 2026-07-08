@@ -44,7 +44,8 @@ export function SeoHead({
     const pageUrl = url ?? seo?.url;
     const pageType = type ?? seo?.type ?? 'website';
     const pageRobots = robots ?? seo?.robots;
-    const pageTwitterCard = twitterCard ?? seo?.twitterCard ?? 'summary_large_image';
+    const pageTwitterCard =
+        twitterCard ?? seo?.twitterCard ?? 'summary_large_image';
     const pageUpdatedTime = updatedTime ?? seo?.updatedTime;
 
     return (
@@ -68,7 +69,11 @@ export function SeoHead({
             )}
 
             {/* Open Graph */}
-            <meta head-key="og:site_name" property="og:site_name" content={seo.name} />
+            <meta
+                head-key="og:site_name"
+                property="og:site_name"
+                content={seo.name}
+            />
             <meta head-key="og:title" property="og:title" content={pageTitle} />
             {pageDescription && (
                 <meta

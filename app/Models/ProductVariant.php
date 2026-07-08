@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $details
  * @property float $price_npr
  * @property float $purchase_price_npr
+ * @property bool $show_pricing
  * @property int|null $validity_days
  * @property list<string>|null $colors
  * @property list<string>|null $sizes
@@ -27,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Product $product
  */
-#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr', 'validity_days', 'colors', 'sizes', 'weight_kg', 'ships_individually', 'advance_payment_percent'])]
+#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr', 'show_pricing', 'validity_days', 'colors', 'sizes', 'weight_kg', 'ships_individually', 'advance_payment_percent'])]
 class ProductVariant extends Model
 {
     /** @use HasFactory<ProductVariantFactory> */
@@ -40,6 +41,7 @@ class ProductVariant extends Model
     {
         return [
             'validity_days' => 'integer',
+            'show_pricing' => 'boolean',
             'colors' => 'array',
             'sizes' => 'array',
             'weight_kg' => 'decimal:2',

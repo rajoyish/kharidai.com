@@ -44,7 +44,27 @@ class OrderController extends Controller
 
     public function show(Order $order): Response
     {
-        $order->load(['items.productVariant.product', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product', 'shipment', 'shippingAddress']);
+        $order->load(['items.productVariant.product', 'items.serviceEngagements', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product', 'shipment', 'shippingAddress']);
+
+        $order->items->each(function ($item): void {
+            $item->setAttribute('service_invoices', $item->serviceEngagements
+                ->filter(fn ($engagement): bool => filled($engagement->line_items))
+                ->map(fn ($engagement): array => [
+                    'id' => $engagement->id,
+                    'status_label' => $engagement->status->label(),
+                    'project_name' => $engagement->project_name,
+                    'line_items' => $engagement->line_items ?? [],
+                    'subtotal_npr' => $engagement->subtotalNpr(),
+                    'tax_rate' => (float) $engagement->tax_rate,
+                    'tax_npr' => $engagement->taxNpr(),
+                    'grand_total_npr' => $engagement->grandTotalNpr(),
+                    'advance_paid_npr' => $engagement->advance_paid_npr,
+                    'due_npr' => $engagement->outstandingNpr(),
+                    'payment_status' => $engagement->paymentStatus(),
+                    'project_completion_date' => $engagement->project_completion_date?->format('n/j/Y'),
+                ])
+                ->values()->all());
+        });
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,

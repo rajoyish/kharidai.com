@@ -34,6 +34,7 @@ type Variant = {
     details: string | null;
     price_npr: string;
     purchase_price_npr: string;
+    show_pricing: boolean;
     validity_days: number | null;
     colors: string[] | null;
     sizes: string[] | null;
@@ -58,6 +59,7 @@ export default function EditVariant({
         details: variant.details || '',
         price_npr: variant.price_npr,
         purchase_price_npr: variant.purchase_price_npr || '',
+        show_pricing: variant.show_pricing ?? true,
         validity_days: variant.validity_days?.toString() ?? '',
         colors: variant.colors ?? [],
         sizes: variant.sizes ?? [],
@@ -186,6 +188,26 @@ export default function EditVariant({
                                         </div>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="show_pricing"
+                                        checked={data.show_pricing}
+                                        onCheckedChange={(checked) =>
+                                            setData('show_pricing', checked)
+                                        }
+                                    />
+                                    <Label htmlFor="show_pricing">
+                                        Show pricing on storefront
+                                    </Label>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Services are negotiated after completion, so
+                                    their price is hidden by default. Turn this
+                                    on to display this variant's price publicly.
+                                </p>
                             </div>
 
                             <div className="grid gap-2">
