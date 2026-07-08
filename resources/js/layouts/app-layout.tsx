@@ -26,12 +26,17 @@ export default function AppLayout({
 
             // Global user notification listener
             try {
-                const privateChannel = window.Echo.private(`App.Models.User.${auth.user.id}`);
+                const privateChannel = window.Echo.private(
+                    `App.Models.User.${auth.user.id}`,
+                );
                 privateChannel.notification((notification: any) => {
                     // Prevent redundant message notifications if we are already on the order chat page
                     if (
-                        notification.type === 'App\\Notifications\\NewMessageNotification' &&
-                        window.location.pathname.includes(`/orders/${notification.order_id}`)
+                        notification.type ===
+                            'App\\Notifications\\NewMessageNotification' &&
+                        window.location.pathname.includes(
+                            `/orders/${notification.order_id}`,
+                        )
                     ) {
                         return;
                     }
@@ -46,7 +51,11 @@ export default function AppLayout({
                     });
 
                     // Dispatch custom event for NotificationsPanel
-                    window.dispatchEvent(new CustomEvent('new-notification', { detail: notification }));
+                    window.dispatchEvent(
+                        new CustomEvent('new-notification', {
+                            detail: notification,
+                        }),
+                    );
                 });
             } catch (e) {
                 console.warn('Global notification listener unavailable:', e);
@@ -55,8 +64,8 @@ export default function AppLayout({
             return () => {
                 if (window.Echo) {
                     if (auth.user.is_admin) {
-window.Echo.leave('support');
-}
+                        window.Echo.leave('support');
+                    }
 
                     window.Echo.leave(`App.Models.User.${auth.user.id}`);
                 }

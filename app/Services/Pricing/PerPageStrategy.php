@@ -43,4 +43,16 @@ class PerPageStrategy implements PricingStrategy
 
         return round($coverRate * $coverPages + $innerRate * $innerPages, 2);
     }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<array{label: string, quantity: float, unit_price_npr: float}>
+     */
+    public function lineItemSuggestions(array $config): array
+    {
+        return [
+            ['label' => 'Cover Pages', 'quantity' => 0.0, 'unit_price_npr' => (float) ($config['cover_rate_npr'] ?? 0)],
+            ['label' => 'Inner Pages', 'quantity' => 0.0, 'unit_price_npr' => (float) ($config['inner_rate_npr'] ?? 0)],
+        ];
+    }
 }

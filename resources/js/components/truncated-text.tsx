@@ -16,7 +16,9 @@ export function TruncatedText({
 }: TruncatedTextProps) {
     const Comp = asChild ? Slot : 'span';
     // If not asChild, we can try to extract title from string children
-    const text = title ?? (!asChild && typeof children === 'string' ? children : undefined);
+    const text =
+        title ??
+        (!asChild && typeof children === 'string' ? children : undefined);
 
     return (
         <Comp

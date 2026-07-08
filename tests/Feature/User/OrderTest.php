@@ -2,6 +2,8 @@
 
 use App\Events\OrderMessageCreated;
 use App\Models\Order;
+use App\Models\ProductVariant;
+use App\Models\ServiceEngagement;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,6 +33,37 @@ it('can view specific order details', function () {
     $response = $this->actingAs($this->user)->get('/orders/'.$order->id);
 
     $response->assertSuccessful();
+});
+
+it('shows the service invoice on the order details page', function () {
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+    $variant = ProductVariant::factory()->create();
+    $orderItem = $order->items()->create([
+        'product_variant_id' => $variant->id,
+        'price' => 5000,
+        'quantity' => 1,
+    ]);
+
+    ServiceEngagement::factory()->create([
+        'user_id' => $this->user->id,
+        'order_item_id' => $orderItem->id,
+        'project_name' => 'Brand Refresh',
+        'line_items' => [['label' => 'Design', 'quantity' => 2, 'unit_price_npr' => 5000]],
+        'tax_rate' => 13,
+        'advance_paid_npr' => 4000,
+        'agreed_price_npr' => 11300,
+        'is_paid' => false,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('/orders/'.$order->id)
+        ->assertInertia(fn ($page) => $page
+            ->component('User/Orders/Show')
+            ->where('order.items.0.service_invoices.0.project_name', 'Brand Refresh')
+            ->where('order.items.0.service_invoices.0.grand_total_npr', 11300)
+            ->where('order.items.0.service_invoices.0.due_npr', 7300)
+            ->where('order.items.0.service_invoices.0.payment_status', 'due')
+        );
 });
 
 it('cannot view other user order details', function () {

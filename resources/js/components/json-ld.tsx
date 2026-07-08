@@ -17,7 +17,7 @@ export function JsonLd({ data }: JsonLdProps) {
 // Helper to generate Organization Schema
 export function useOrganizationSchema() {
     const { seo } = usePage().props as any;
-    
+
     return {
         '@context': 'https://schema.org',
         '@type': 'Organization',
@@ -31,7 +31,9 @@ export function useOrganizationSchema() {
 }
 
 // Helper to generate BreadcrumbList Schema
-export function generateBreadcrumbSchema(items: { name: string; url: string }[]) {
+export function generateBreadcrumbSchema(
+    items: { name: string; url: string }[],
+) {
     return {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
@@ -76,7 +78,9 @@ export function generateArticleSchema({
 }
 
 // Helper to generate FAQ Schema
-export function generateFAQSchema(faqs: { question: string; answer: string }[]) {
+export function generateFAQSchema(
+    faqs: { question: string; answer: string }[],
+) {
     return {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',

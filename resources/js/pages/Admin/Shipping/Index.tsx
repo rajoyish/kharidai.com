@@ -236,9 +236,9 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                                     placeholder="e.g. 5"
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    Max weight per parcel. Light items combine up
-                                    to this; leave blank to charge each item its
-                                    own parcel.
+                                    Max weight per parcel. Light items combine
+                                    up to this; leave blank to charge each item
+                                    its own parcel.
                                 </p>
                                 {errors.parcel_capacity_kg && (
                                     <p className="text-sm text-red-500">

@@ -62,6 +62,7 @@ class ProductVariantController extends Controller
             'details' => 'nullable|string',
             'price_npr' => 'required|numeric|min:0',
             'purchase_price_npr' => 'nullable|numeric|min:0',
+            'show_pricing' => 'nullable|boolean',
             'validity_days' => 'nullable|integer|min:1',
             'colors' => 'nullable|array',
             'colors.*' => 'nullable|string|max:255',

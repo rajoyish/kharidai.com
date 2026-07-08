@@ -57,11 +57,12 @@ it('assigns a service to a user', function () {
 it('can assign a hidden service (visibility does not block assignment)', function () {
     $client = User::factory()->create();
     $hiddenService = Product::factory()->service()->hidden()->create();
+    $variant = ProductVariant::factory()->create(['product_id' => $hiddenService->id]);
 
     $this->actingAs($this->admin)->post('/admin/services', [
         'user_id' => $client->id,
         'product_id' => $hiddenService->id,
-        'price_npr' => 45000,
+        'product_variant_id' => $variant->id,
         'status' => 'in_progress',
     ])->assertRedirect();
 
@@ -71,6 +72,30 @@ it('can assign a hidden service (visibility does not block assignment)', functio
         'source' => 'admin',
         'status' => 'in_progress',
     ]);
+});
+
+it('requires a package so the engagement is billable', function () {
+    $client = User::factory()->create();
+    $service = Product::factory()->service()->create();
+
+    $this->actingAs($this->admin)->post('/admin/services', [
+        'user_id' => $client->id,
+        'product_id' => $service->id,
+    ])->assertSessionHasErrors('product_variant_id');
+
+    expect(ServiceEngagement::count())->toBe(0);
+});
+
+it('rejects a package that belongs to a different service', function () {
+    $client = User::factory()->create();
+    $service = Product::factory()->service()->create();
+    $otherVariant = ProductVariant::factory()->create(); // belongs to another product
+
+    $this->actingAs($this->admin)->post('/admin/services', [
+        'user_id' => $client->id,
+        'product_id' => $service->id,
+        'product_variant_id' => $otherVariant->id,
+    ])->assertSessionHasErrors('product_variant_id');
 });
 
 it('rejects assigning a non-service product', function () {

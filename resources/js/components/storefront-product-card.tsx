@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
 import { TruncatedText } from '@/components/truncated-text';
+import { Badge } from '@/components/ui/badge';
 import { show as showProduct } from '@/routes/products';
 import type { StorefrontProduct } from '@/types';
 
@@ -47,14 +47,28 @@ export function StorefrontProductCard({
 
             <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="mb-1 flex items-center gap-2">
                         <TruncatedText asChild title={product.title}>
                             <h3 className="min-w-0 text-lg leading-tight font-semibold text-slate-950">
                                 {product.title}
                             </h3>
                         </TruncatedText>
-                        {product.type === 'physical' && <Badge variant="secondary" className="text-xs py-0 h-5">Physical</Badge>}
-                        {product.type === 'service' && <Badge variant="secondary" className="text-xs py-0 h-5 bg-blue-100 text-blue-700 hover:bg-blue-200">Service</Badge>}
+                        {product.type === 'physical' && (
+                            <Badge
+                                variant="secondary"
+                                className="h-5 py-0 text-xs"
+                            >
+                                Physical
+                            </Badge>
+                        )}
+                        {product.type === 'service' && (
+                            <Badge
+                                variant="secondary"
+                                className="h-5 bg-blue-100 py-0 text-xs text-blue-700 hover:bg-blue-200"
+                            >
+                                Service
+                            </Badge>
+                        )}
                     </div>
                     {startingPrice && (
                         <p className="mt-1 text-sm font-medium text-slate-600">

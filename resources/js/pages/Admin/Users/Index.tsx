@@ -95,7 +95,9 @@ export default function UsersIndex({ users }: { users: User[] }) {
                                     {user.name} {user.is_admin ? '(Admin)' : ''}
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
-                                <TableCell>{user.mobile_number || '-'}</TableCell>
+                                <TableCell>
+                                    {user.mobile_number || '-'}
+                                </TableCell>
                                 <TableCell>
                                     <UserDateCell
                                         absolute={user.created_at_absolute}

@@ -7,6 +7,7 @@ import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { process as processNpr } from '@/routes/checkout/npr';
 
 type Order = {
     id: number;
@@ -19,7 +20,9 @@ type Order = {
 };
 
 export default function NprPayment({ order }: { order: Order }) {
-    const [paymentMethod, setPaymentMethod] = useState<'default' | 'esewa' | 'khalti'>('default');
+    const [paymentMethod, setPaymentMethod] = useState<
+        'default' | 'esewa' | 'khalti'
+    >('default');
 
     const { data, setData, post, processing, errors, progress } = useForm({
         receipt: null as File | null,
@@ -34,7 +37,7 @@ export default function NprPayment({ order }: { order: Order }) {
             return;
         }
 
-        post(`/checkout/${order.id}/npr`, {
+        post(processNpr.url(order.id), {
             preserveScroll: true,
         });
     };
@@ -54,14 +57,14 @@ export default function NprPayment({ order }: { order: Order }) {
                     </div>
 
                     <div className="flex flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary/5 p-6">
-                        <div className="mb-4 rounded-xl bg-white p-4 shadow-sm text-center">
+                        <div className="mb-4 rounded-xl bg-white p-4 text-center shadow-sm">
                             <img
                                 src={
                                     paymentMethod === 'esewa'
                                         ? '/images/QR-eSewa.jpeg'
                                         : paymentMethod === 'khalti'
-                                            ? '/images/QR-Khalti.jpeg'
-                                            : '/images/QR-pay.png'
+                                          ? '/images/QR-Khalti.jpeg'
+                                          : '/images/QR-pay.png'
                                 }
                                 alt={`${paymentMethod} QR Code`}
                                 className="mx-auto h-48 w-48 object-contain"
@@ -72,7 +75,9 @@ export default function NprPayment({ order }: { order: Order }) {
                                         ? 'HUES AND ARRAYS PVT LTD'
                                         : 'RAJESH BUDHATHOKI'}
                                 </div>
-                                <div className="font-medium text-muted-foreground">Store: Kharidai.com</div>
+                                <div className="font-medium text-muted-foreground">
+                                    Store: Kharidai.com
+                                </div>
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold">Scan to Pay</h3>
@@ -82,36 +87,52 @@ export default function NprPayment({ order }: { order: Order }) {
                         {Number(order.balance_due) > 0 && (
                             <p className="mt-1 text-center text-sm text-muted-foreground">
                                 Pay Rs. {order.amount_due_now} now (shipping).
-                                Remaining Rs. {order.balance_due} is collected on
-                                delivery.
+                                Remaining Rs. {order.balance_due} is collected
+                                on delivery.
                             </p>
                         )}
                         <p className="mt-2 text-center text-sm text-muted-foreground">
-                            Scan the QR code using your mobile banking app. Please note that payments made via eSewa or Khalti may incur a transaction fee.
+                            Scan the QR code using your mobile banking app.
+                            Please note that payments made via eSewa or Khalti
+                            may incur a transaction fee.
                         </p>
                         {paymentMethod !== 'default' && (
                             <p className="mt-2 text-center text-sm text-destructive">
-                                Escrow is not supported. Payments will be <span className='font-bold'>refunded</span> if any subscription errors occur.
+                                Escrow is not supported. Payments will be{' '}
+                                <span className="font-bold">refunded</span> if
+                                any subscription errors occur.
                             </p>
                         )}
                         <div className="mt-6 flex flex-wrap justify-center gap-3">
                             <Button
                                 type="button"
-                                variant={paymentMethod === 'default' ? 'default' : 'outline'}
+                                variant={
+                                    paymentMethod === 'default'
+                                        ? 'default'
+                                        : 'outline'
+                                }
                                 onClick={() => setPaymentMethod('default')}
                             >
                                 Mobile Banking
                             </Button>
                             <Button
                                 type="button"
-                                variant={paymentMethod === 'esewa' ? 'default' : 'outline'}
+                                variant={
+                                    paymentMethod === 'esewa'
+                                        ? 'default'
+                                        : 'outline'
+                                }
                                 onClick={() => setPaymentMethod('esewa')}
                             >
                                 eSewa
                             </Button>
                             <Button
                                 type="button"
-                                variant={paymentMethod === 'khalti' ? 'default' : 'outline'}
+                                variant={
+                                    paymentMethod === 'khalti'
+                                        ? 'default'
+                                        : 'outline'
+                                }
                                 onClick={() => setPaymentMethod('khalti')}
                             >
                                 Khalti

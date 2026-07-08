@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProductType;
 use Database\Factories\CartFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,5 +38,29 @@ class Cart extends Model
     public function items(): HasMany
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    /**
+     * Check if the cart contains only service items and the total price is 0 or less.
+     */
+    public function isFreeServiceOrder(): bool
+    {
+        if ($this->items->isEmpty()) {
+            return false;
+        }
+
+        $hasPhysicalItems = $this->items->contains(
+            fn (CartItem $item) => $item->productVariant->product->type !== ProductType::Service
+        );
+
+        if ($hasPhysicalItems) {
+            return false;
+        }
+
+        $itemsTotal = (float) $this->items->sum(
+            fn (CartItem $item): float => (float) $item->productVariant->price_npr * $item->quantity,
+        );
+
+        return $itemsTotal <= 0.0;
     }
 }

@@ -152,7 +152,7 @@ class StorefrontController extends Controller
 
         $startingPriceInCents = $canViewVariants
             ? null
-            : $product->variants()->min('price_npr');
+            : $product->variants()->where('show_pricing', true)->min('price_npr');
 
         $productSeoImage = $this->productSeoImage($product);
 
@@ -372,7 +372,7 @@ class StorefrontController extends Controller
             ->visible()
             ->where('in_stock', true)
             ->withCount('variants')
-            ->withMin('variants as starting_price_cents', 'price_npr')
+            ->withMin(['variants as starting_price_cents' => fn (Builder $query): Builder => $query->where('show_pricing', true)], 'price_npr')
             ->when($search, fn ($query) => $query->where(function (Builder $inner) use ($search) {
                 $inner->where('title', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
@@ -433,7 +433,7 @@ class StorefrontController extends Controller
             ->where('in_stock', true)
             ->where('is_visible', true)
             ->withCount('variants')
-            ->withMin('variants as starting_price_cents', 'price_npr')
+            ->withMin(['variants as starting_price_cents' => fn (Builder $query): Builder => $query->where('show_pricing', true)], 'price_npr')
             ->latest();
 
         return $query;

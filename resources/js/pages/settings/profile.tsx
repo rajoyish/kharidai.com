@@ -55,13 +55,17 @@ export default function Profile() {
                                     autoComplete="name"
                                     placeholder="Full name"
                                 />
-                                <p className={`text-[0.8rem] ${errors.name ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted-foreground'}`}>
+                                <p
+                                    className={`text-[0.8rem] ${errors.name ? 'font-medium text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
+                                >
                                     This can only be changed once every 90 days.
                                 </p>
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="mobile_number">Mobile Number</Label>
+                                <Label htmlFor="mobile_number">
+                                    Mobile Number
+                                </Label>
 
                                 <MobileNumberInput
                                     id="mobile_number"
@@ -72,7 +76,8 @@ export default function Profile() {
                                     placeholder="Mobile number"
                                 />
                                 <p className="text-[0.8rem] text-muted-foreground">
-                                    To get support, please share your WhatsApp number.
+                                    To get support, please share your WhatsApp
+                                    number.
                                 </p>
 
                                 <InputError
@@ -94,7 +99,11 @@ export default function Profile() {
                                     autoComplete="username"
                                     placeholder="Email address"
                                 />
-                                <input type="hidden" name="email" value={profile.email} />
+                                <input
+                                    type="hidden"
+                                    name="email"
+                                    value={profile.email}
+                                />
 
                                 <InputError
                                     className="mt-2"

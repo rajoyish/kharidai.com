@@ -34,7 +34,7 @@ createInertiaApp({
             <TooltipProvider delayDuration={0}>
                 <App {...props} />
                 <Toaster />
-            </TooltipProvider>
+            </TooltipProvider>,
         );
     },
     progress: {

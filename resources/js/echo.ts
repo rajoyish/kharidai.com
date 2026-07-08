@@ -68,5 +68,8 @@ try {
         );
     }
 } catch (e) {
-    console.error('Pusher connection failed. Falling back to refresh-based updates.', e);
+    console.error(
+        'Pusher connection failed. Falling back to refresh-based updates.',
+        e,
+    );
 }

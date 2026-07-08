@@ -13,10 +13,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { dashboard } from '@/routes/admin';
-import {
-    index as adminTithesIndex,
-    toggleStatus,
-} from '@/routes/admin/tithes';
+import { index as adminTithesIndex, toggleStatus } from '@/routes/admin/tithes';
 
 type Tithe = {
     id: number;
@@ -82,7 +79,9 @@ export default function AdminTithesIndex({ tithes }: { tithes: Tithe[] }) {
                                     <TableCell className="font-medium">
                                         {tithe.label}
                                     </TableCell>
-                                    <TableCell>{formatMoney(tithe.total_profit)}</TableCell>
+                                    <TableCell>
+                                        {formatMoney(tithe.total_profit)}
+                                    </TableCell>
                                     <TableCell className="font-semibold text-green-600 dark:text-green-400">
                                         {formatMoney(tithe.total_amount)}
                                     </TableCell>
@@ -95,22 +94,32 @@ export default function AdminTithesIndex({ tithes }: { tithes: Tithe[] }) {
                                                         : 'bg-amber-100 text-amber-800'
                                                 }`}
                                             >
-                                                {tithe.is_paid ? 'Paid' : 'Unpaid'}
+                                                {tithe.is_paid
+                                                    ? 'Paid'
+                                                    : 'Unpaid'}
                                             </span>
                                             {tithe.paid_at && (
                                                 <span className="text-xs text-muted-foreground">
                                                     Paid on{' '}
-                                                    {new Date(tithe.paid_at).toLocaleDateString()}
+                                                    {new Date(
+                                                        tithe.paid_at,
+                                                    ).toLocaleDateString()}
                                                 </span>
                                             )}
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button
-                                            variant={tithe.is_paid ? 'outline' : 'default'}
+                                            variant={
+                                                tithe.is_paid
+                                                    ? 'outline'
+                                                    : 'default'
+                                            }
                                             size="sm"
                                             disabled={processingId !== null}
-                                            onClick={() => handleToggleStatus(tithe)}
+                                            onClick={() =>
+                                                handleToggleStatus(tithe)
+                                            }
                                         >
                                             {isUpdating
                                                 ? 'Updating...'

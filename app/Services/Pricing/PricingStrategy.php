@@ -34,4 +34,14 @@ interface PricingStrategy
      * @param  array<string, mixed>  $measurement
      */
     public function calculate(array $config, array $measurement): float;
+
+    /**
+     * Suggested invoice line items derived from the stored `pricing_config`, used
+     * to seed the admin's editable invoice brief. Each row carries a label and a
+     * unit price (in whole NPR); quantities start at zero for the admin to fill.
+     *
+     * @param  array<string, mixed>  $config
+     * @return list<array{label: string, quantity: float, unit_price_npr: float}>
+     */
+    public function lineItemSuggestions(array $config): array;
 }

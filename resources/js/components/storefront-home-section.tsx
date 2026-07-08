@@ -3,7 +3,6 @@ import type { InertiaLinkProps } from '@inertiajs/react';
 import { ArrowRight, Cpu, Package, Wrench } from 'lucide-react';
 import type { ComponentType } from 'react';
 
-
 import {
     collectAllProducts,
     collectCategoryProducts,
@@ -29,10 +28,8 @@ function categoryItemCount(category: StorefrontCategory): number {
 }
 
 function sectionItemCount(section: StorefrontSection): number {
-    return collectAllProducts(
-        section.categories,
-        section.uncategorizedProducts,
-    ).length;
+    return collectAllProducts(section.categories, section.uncategorizedProducts)
+        .length;
 }
 
 /**
@@ -138,8 +135,6 @@ export function StorefrontHomeSection({
                     })}
                 </div>
             )}
-
-
         </section>
     );
 }

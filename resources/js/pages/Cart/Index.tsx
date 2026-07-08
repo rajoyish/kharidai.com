@@ -1,5 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { process as processCheckout } from '@/actions/App/Http/Controllers/CheckoutController';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -36,7 +38,26 @@ type Cart = {
     items: CartItem[];
 };
 
-export default function CartIndex({ cart }: { cart: Cart }) {
+export default function CartIndex({
+    cart,
+    canCheckoutDirectly,
+}: {
+    cart: Cart;
+    canCheckoutDirectly: boolean;
+}) {
+    const [placing, setPlacing] = useState(false);
+
+    const handlePlaceOrder = () => {
+        router.post(
+            processCheckout.url(),
+            {},
+            {
+                onStart: () => setPlacing(true),
+                onFinish: () => setPlacing(false),
+            },
+        );
+    };
+
     const handleUpdateQuantity = (item: CartItem, newQuantity: number) => {
         if (newQuantity < 1) {
             return;
@@ -235,16 +256,34 @@ export default function CartIndex({ cart }: { cart: Cart }) {
 
                                     <div className="mb-6 border-t pt-4">
                                         <p className="mb-4 text-sm text-muted-foreground">
-                                            Taxes and shipping calculated at
-                                            checkout.
+                                            {canCheckoutDirectly
+                                                ? 'No payment required. Your order will be placed right away.'
+                                                : 'Taxes and shipping calculated at checkout.'}
                                         </p>
                                     </div>
 
-                                    <Button size="lg" className="w-fit" asChild>
-                                        <Link href={checkoutIndex()}>
-                                            Proceed to Checkout
-                                        </Link>
-                                    </Button>
+                                    {canCheckoutDirectly ? (
+                                        <Button
+                                            size="lg"
+                                            className="w-fit"
+                                            disabled={placing}
+                                            onClick={handlePlaceOrder}
+                                        >
+                                            {placing
+                                                ? 'Placing Order…'
+                                                : 'Place Order'}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            size="lg"
+                                            className="w-fit"
+                                            asChild
+                                        >
+                                            <Link href={checkoutIndex()}>
+                                                Proceed to Checkout
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                         </div>

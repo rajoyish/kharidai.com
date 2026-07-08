@@ -5,6 +5,8 @@ namespace App\Http\Controllers\User;
 use App\Events\OrderMessageCreated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\ServiceEngagement;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use Illuminate\Http\RedirectResponse;
@@ -33,7 +35,32 @@ class OrderController extends Controller
             abort(403);
         }
 
-        $order->load(['items.productVariant.product', 'paymentReceipt', 'credentials', 'messages.user', 'shipment']);
+        $order->load(['items.productVariant.product', 'items.serviceEngagements', 'paymentReceipt', 'credentials', 'messages.user', 'shipment']);
+
+        // Surface the invoice the admin generated for each service engagement so
+        // the customer sees the same line items, totals and payment status shown
+        // on the admin's invoice brief page.
+        $order->items->each(function (OrderItem $item): void {
+            $item->setAttribute('service_invoices', $item->serviceEngagements
+                ->filter(fn (ServiceEngagement $engagement): bool => filled($engagement->line_items))
+                ->map(fn (ServiceEngagement $engagement): array => [
+                    'id' => $engagement->id,
+                    'status_label' => $engagement->status->label(),
+                    'project_name' => $engagement->project_name,
+                    'line_items' => $engagement->line_items ?? [],
+                    'subtotal_npr' => $engagement->subtotalNpr(),
+                    'tax_rate' => (float) $engagement->tax_rate,
+                    'tax_npr' => $engagement->taxNpr(),
+                    'grand_total_npr' => $engagement->grandTotalNpr(),
+                    'advance_paid_npr' => $engagement->advance_paid_npr,
+                    'due_npr' => $engagement->outstandingNpr(),
+                    'payment_status' => $engagement->paymentStatus(),
+                    'project_completion_date' => $engagement->project_completion_date?->format('n/j/Y'),
+                ])
+                ->values());
+
+            $item->makeHidden('serviceEngagements');
+        });
 
         return Inertia::render('User/Orders/Show', [
             'order' => $order,

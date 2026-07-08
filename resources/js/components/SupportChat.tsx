@@ -19,7 +19,8 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
     const [isLocalOnline, setIsLocalOnline] = useState(false);
     const [isGlobalAdminOnline, setIsGlobalAdminOnline] = useState(false);
 
-    const isOnline = isLocalOnline || (!auth.user.is_admin && isGlobalAdminOnline);
+    const isOnline =
+        isLocalOnline || (!auth.user.is_admin && isGlobalAdminOnline);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,18 +32,20 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
                 const channel = window.Echo.join(`orders.${order.id}`)
                     .here((users: any[]) => {
                         setIsLocalOnline(
-                            users.some((u) => u.is_admin !== auth.user.is_admin),
+                            users.some(
+                                (u) => u.is_admin !== auth.user.is_admin,
+                            ),
                         );
                     })
                     .joining((user: any) => {
                         if (user.is_admin !== auth.user.is_admin) {
-setIsLocalOnline(true);
-}
+                            setIsLocalOnline(true);
+                        }
                     })
                     .leaving((user: any) => {
                         if (user.is_admin !== auth.user.is_admin) {
-setIsLocalOnline(false);
-}
+                            setIsLocalOnline(false);
+                        }
                     })
                     .listen('OrderMessageCreated', () => {
                         router.reload({ only: ['order'] });
@@ -53,17 +56,19 @@ setIsLocalOnline(false);
                 if (!auth.user.is_admin) {
                     supportChannel = window.Echo.join('support')
                         .here((users: any[]) => {
-                            setIsGlobalAdminOnline(users.some((u) => u.is_admin));
+                            setIsGlobalAdminOnline(
+                                users.some((u) => u.is_admin),
+                            );
                         })
                         .joining((user: any) => {
                             if (user.is_admin) {
-setIsGlobalAdminOnline(true);
-}
+                                setIsGlobalAdminOnline(true);
+                            }
                         })
                         .leaving((user: any) => {
                             if (user.is_admin) {
-setIsGlobalAdminOnline(false);
-}
+                                setIsGlobalAdminOnline(false);
+                            }
                         });
                 }
 
@@ -85,8 +90,8 @@ setIsGlobalAdminOnline(false);
 
     const handleSendMessage = (e?: React.FormEvent) => {
         if (e) {
-e.preventDefault();
-}
+            e.preventDefault();
+        }
 
         post(postUrl, {
             preserveScroll: true,
@@ -118,7 +123,7 @@ e.preventDefault();
                         WhatsApp Support
                     </a>
                 </div>
-                <div className="flex items-center gap-2 text-sm mt-1">
+                <div className="mt-1 flex items-center gap-2 text-sm">
                     <div
                         className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}
                     ></div>
@@ -144,7 +149,9 @@ e.preventDefault();
                         >
                             <span className="mx-1 mb-1 text-xs text-muted-foreground">
                                 {!isMine
-                                    ? (msg.user.is_admin ? 'Support Admin' : 'Customer')
+                                    ? msg.user.is_admin
+                                        ? 'Support Admin'
+                                        : 'Customer'
                                     : 'You'}{' '}
                                 -{' '}
                                 {new Date(msg.created_at).toLocaleTimeString(

@@ -84,8 +84,8 @@ export function ShippingSelector({
                         <option value="">Enter a new address</option>
                         {addresses.map((address) => (
                             <option key={address.id} value={address.id}>
-                                {address.recipient_name} — {address.address_line},{' '}
-                                {address.city}
+                                {address.recipient_name} —{' '}
+                                {address.address_line}, {address.city}
                             </option>
                         ))}
                     </select>
@@ -98,22 +98,32 @@ export function ShippingSelector({
                     <Input
                         id="recipient_name"
                         value={data.recipient_name}
-                        onChange={(e) => setData('recipient_name', e.target.value)}
+                        onChange={(e) =>
+                            setData('recipient_name', e.target.value)
+                        }
                     />
                     {errors.recipient_name && (
-                        <p className="text-sm text-destructive">{errors.recipient_name}</p>
+                        <p className="text-sm text-destructive">
+                            {errors.recipient_name}
+                        </p>
                     )}
                 </div>
 
                 <div className="grid gap-1">
-                    <Label htmlFor="primary_contact">Primary contact number</Label>
+                    <Label htmlFor="primary_contact">
+                        Primary contact number
+                    </Label>
                     <MobileNumberInput
                         id="primary_contact"
                         value={data.primary_contact}
-                        onChange={(e) => setData('primary_contact', e.target.value)}
+                        onChange={(e) =>
+                            setData('primary_contact', e.target.value)
+                        }
                     />
                     {errors.primary_contact && (
-                        <p className="text-sm text-destructive">{errors.primary_contact}</p>
+                        <p className="text-sm text-destructive">
+                            {errors.primary_contact}
+                        </p>
                     )}
                 </div>
 
@@ -124,14 +134,18 @@ export function ShippingSelector({
                     <MobileNumberInput
                         id="alternate_contact"
                         value={data.alternate_contact}
-                        onChange={(e) => setData('alternate_contact', e.target.value)}
+                        onChange={(e) =>
+                            setData('alternate_contact', e.target.value)
+                        }
                     />
                     <p className="text-xs text-muted-foreground">
-                        Shipping to someone else? Add their number. If it matches
-                        your primary number we'll just use one.
+                        Shipping to someone else? Add their number. If it
+                        matches your primary number we'll just use one.
                     </p>
                     {errors.alternate_contact && (
-                        <p className="text-sm text-destructive">{errors.alternate_contact}</p>
+                        <p className="text-sm text-destructive">
+                            {errors.alternate_contact}
+                        </p>
                     )}
                 </div>
 
@@ -140,10 +154,14 @@ export function ShippingSelector({
                     <Input
                         id="address_line"
                         value={data.address_line}
-                        onChange={(e) => setData('address_line', e.target.value)}
+                        onChange={(e) =>
+                            setData('address_line', e.target.value)
+                        }
                     />
                     {errors.address_line && (
-                        <p className="text-sm text-destructive">{errors.address_line}</p>
+                        <p className="text-sm text-destructive">
+                            {errors.address_line}
+                        </p>
                     )}
                 </div>
 
@@ -155,7 +173,9 @@ export function ShippingSelector({
                         onChange={(e) => setData('city', e.target.value)}
                     />
                     {errors.city && (
-                        <p className="text-sm text-destructive">{errors.city}</p>
+                        <p className="text-sm text-destructive">
+                            {errors.city}
+                        </p>
                     )}
                 </div>
 
@@ -174,7 +194,9 @@ export function ShippingSelector({
                         id="shipping_zone_id"
                         className={selectClassName}
                         value={data.shipping_zone_id}
-                        onChange={(e) => setData('shipping_zone_id', Number(e.target.value))}
+                        onChange={(e) =>
+                            setData('shipping_zone_id', Number(e.target.value))
+                        }
                     >
                         {zones.map((zone) => (
                             <option key={zone.id} value={zone.id}>
@@ -186,7 +208,9 @@ export function ShippingSelector({
                         ))}
                     </select>
                     {errors.shipping_zone_id && (
-                        <p className="text-sm text-destructive">{errors.shipping_zone_id}</p>
+                        <p className="text-sm text-destructive">
+                            {errors.shipping_zone_id}
+                        </p>
                     )}
                 </div>
 
@@ -194,9 +218,13 @@ export function ShippingSelector({
                     <Switch
                         id="save_address"
                         checked={data.save_address}
-                        onCheckedChange={(checked) => setData('save_address', checked)}
+                        onCheckedChange={(checked) =>
+                            setData('save_address', checked)
+                        }
                     />
-                    <Label htmlFor="save_address">Save this address for next time</Label>
+                    <Label htmlFor="save_address">
+                        Save this address for next time
+                    </Label>
                 </div>
             </div>
         </div>

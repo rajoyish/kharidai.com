@@ -20,6 +20,22 @@ trait ResolvesTiers
     }
 
     /**
+     * Invoice line-item rows, one per configured tier, each priced at the tier's
+     * flat price with a starting quantity of one.
+     *
+     * @param  array<int, array<string, mixed>>  $tiers
+     * @return list<array{label: string, quantity: float, unit_price_npr: float}>
+     */
+    protected function tierLineItems(array $tiers): array
+    {
+        return array_map(fn (array $tier): array => [
+            'label' => (string) ($tier['label'] ?? $tier['key'] ?? 'Package'),
+            'quantity' => 1.0,
+            'unit_price_npr' => (float) ($tier['price_npr'] ?? 0),
+        ], array_values($tiers));
+    }
+
+    /**
      * The NPR price of the tier matching $key, or 0 when it cannot be found.
      *
      * @param  array<int, array<string, mixed>>  $tiers

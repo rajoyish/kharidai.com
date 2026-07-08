@@ -43,8 +43,6 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-
-
 const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
@@ -57,7 +55,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
     return (
         <>
             <div className="border-b border-sidebar-border/80">
-                <div className="flex w-full h-16 items-center px-4">
+                <div className="flex h-16 w-full items-center px-4">
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
@@ -96,8 +94,6 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                 </Link>
                                             ))}
                                         </div>
-
-
                                     </div>
                                 </div>
                             </SheetContent>
@@ -155,7 +151,6 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             >
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
                             </Button>
-
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

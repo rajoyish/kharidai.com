@@ -75,12 +75,17 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::get('services', [ServiceEngagementController::class, 'index'])->name('services.index');
     Route::get('services/create', [ServiceEngagementController::class, 'create'])->name('services.create');
     Route::post('services', [ServiceEngagementController::class, 'store'])->name('services.store');
+    Route::get('services/{serviceEngagement}', [ServiceEngagementController::class, 'show'])->name('services.show');
+    Route::patch('services/{serviceEngagement}/invoice', [ServiceEngagementController::class, 'saveInvoice'])->name('services.invoice.save');
     Route::post('services/{serviceEngagement}/contract', [ServiceEngagementController::class, 'signContract'])->name('services.contract.sign');
     Route::post('services/{serviceEngagement}/advance', [ServiceEngagementController::class, 'recordAdvance'])->name('services.advance.record');
     Route::post('services/{serviceEngagement}/measurement', [ServiceEngagementController::class, 'recordMeasurement'])->name('services.measurement.record');
     Route::post('services/{serviceEngagement}/negotiate', [ServiceEngagementController::class, 'negotiate'])->name('services.negotiate');
     Route::post('services/{serviceEngagement}/complete', [ServiceEngagementController::class, 'complete'])->name('services.complete');
     Route::patch('services/{serviceEngagement}/status', [ServiceEngagementController::class, 'updateStatus'])->name('services.status.update');
+    Route::patch('services/{serviceEngagement}/payment-status', [ServiceEngagementController::class, 'updatePaymentStatus'])->name('services.payment-status.update');
+    Route::post('services/{serviceEngagement}/assign-order', [ServiceEngagementController::class, 'assignOrder'])->name('services.assign-order');
+    Route::post('services/{serviceEngagement}/link-order', [ServiceEngagementController::class, 'linkOrder'])->name('services.link-order');
     Route::delete('services/{serviceEngagement}', [ServiceEngagementController::class, 'destroy'])->name('services.destroy');
 
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);

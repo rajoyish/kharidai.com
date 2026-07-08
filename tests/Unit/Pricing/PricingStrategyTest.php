@@ -75,3 +75,49 @@ it('resolves each strategy from the enum', function () {
         ->and(PricingStrategy::Tiered->calculator())->toBeInstanceOf(TieredStrategy::class)
         ->and(PricingStrategy::Hybrid->calculator())->toBeInstanceOf(HybridStrategy::class);
 });
+
+it('suggests cover and inner page invoice rows for book layout', function () {
+    $rows = (new PerPageStrategy)->lineItemSuggestions([
+        'cover_rate_npr' => 500,
+        'inner_rate_npr' => 200,
+    ]);
+
+    expect($rows)->toBe([
+        ['label' => 'Cover Pages', 'quantity' => 0.0, 'unit_price_npr' => 500.0],
+        ['label' => 'Inner Pages', 'quantity' => 0.0, 'unit_price_npr' => 200.0],
+    ]);
+});
+
+it('suggests an hourly invoice row for per-hour work', function () {
+    $rows = (new PerHourStrategy)->lineItemSuggestions(['hourly_rate_npr' => 1500]);
+
+    expect($rows)->toBe([
+        ['label' => 'Hours', 'quantity' => 0.0, 'unit_price_npr' => 1500.0],
+    ]);
+});
+
+it('suggests one invoice row per configured tier', function () {
+    $rows = (new TieredStrategy)->lineItemSuggestions([
+        'tiers' => [
+            ['key' => 'basic', 'label' => 'Basic Package', 'price_npr' => 15000],
+            ['key' => 'pro', 'label' => 'Pro Package', 'price_npr' => 30000],
+        ],
+    ]);
+
+    expect($rows)->toBe([
+        ['label' => 'Basic Package', 'quantity' => 1.0, 'unit_price_npr' => 15000.0],
+        ['label' => 'Pro Package', 'quantity' => 1.0, 'unit_price_npr' => 30000.0],
+    ]);
+});
+
+it('suggests tier rows plus an extra-hours row for hybrid work', function () {
+    $rows = (new HybridStrategy)->lineItemSuggestions([
+        'hourly_rate_npr' => 3000,
+        'tiers' => [['key' => 'basic', 'label' => 'Basic', 'price_npr' => 40000]],
+    ]);
+
+    expect($rows)->toBe([
+        ['label' => 'Basic', 'quantity' => 1.0, 'unit_price_npr' => 40000.0],
+        ['label' => 'Extra Hours', 'quantity' => 0.0, 'unit_price_npr' => 3000.0],
+    ]);
+});

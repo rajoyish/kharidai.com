@@ -18,8 +18,13 @@ class CartController extends Controller
         $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
         $cart->load('items.productVariant.product');
 
+        // A cart of only free services (zero price) needs neither shipping
+        // details nor a payment step, so it can be placed straight from the cart
+        // without the checkout page.
+
         return Inertia::render('Cart/Index', [
             'cart' => $cart,
+            'canCheckoutDirectly' => $cart->isFreeServiceOrder(),
         ]);
     }
 

@@ -56,4 +56,16 @@ class HybridStrategy implements PricingStrategy
 
         return round($tierPrice + $rate * $extraHours, 2);
     }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<array{label: string, quantity: float, unit_price_npr: float}>
+     */
+    public function lineItemSuggestions(array $config): array
+    {
+        return [
+            ...$this->tierLineItems($config['tiers'] ?? []),
+            ['label' => 'Extra Hours', 'quantity' => 0.0, 'unit_price_npr' => (float) ($config['hourly_rate_npr'] ?? 0)],
+        ];
+    }
 }

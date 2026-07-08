@@ -10,9 +10,9 @@ import {
 import { index as productVariants } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { TruncatedText } from '@/components/truncated-text';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TruncatedText } from '@/components/truncated-text';
 import { Input } from '@/components/ui/input';
 import {
     Table,
@@ -129,7 +129,9 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                     )}
                                 </TableCell>
                                 <TableCell className="max-w-50 font-medium sm:max-w-[200px] md:max-w-[300px] lg:max-w-[400px]">
-                                    <TruncatedText>{product.title}</TruncatedText>
+                                    <TruncatedText>
+                                        {product.title}
+                                    </TruncatedText>
                                 </TableCell>
                                 <TableCell>
                                     {product.categories &&

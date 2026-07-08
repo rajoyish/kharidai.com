@@ -2,7 +2,6 @@ import { router, useForm } from '@inertiajs/react';
 import { MapPin, Pencil, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { home } from '@/routes';
 import {
     destroy,
     index as addressesIndex,
@@ -22,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { home } from '@/routes';
 
 type Address = {
     id: number;
@@ -164,9 +164,12 @@ export default function AddressIndex({
                                         size="sm"
                                         className="text-destructive hover:text-destructive"
                                         onClick={() =>
-                                            router.delete(destroy.url(address), {
-                                                preserveScroll: true,
-                                            })
+                                            router.delete(
+                                                destroy.url(address),
+                                                {
+                                                    preserveScroll: true,
+                                                },
+                                            )
                                         }
                                     >
                                         <Trash2 className="size-4" /> Delete
@@ -189,7 +192,9 @@ export default function AddressIndex({
 
                     <form onSubmit={submit} className="grid gap-4">
                         <div className="grid gap-1">
-                            <Label htmlFor="recipient_name">Recipient name</Label>
+                            <Label htmlFor="recipient_name">
+                                Recipient name
+                            </Label>
                             <Input
                                 id="recipient_name"
                                 value={data.recipient_name}
@@ -267,7 +272,9 @@ export default function AddressIndex({
                         </div>
 
                         <div className="grid gap-1">
-                            <Label htmlFor="shipping_zone_id">Delivery zone</Label>
+                            <Label htmlFor="shipping_zone_id">
+                                Delivery zone
+                            </Label>
                             <select
                                 id="shipping_zone_id"
                                 className={selectClassName}

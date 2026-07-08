@@ -75,7 +75,9 @@ export default function CreateUser() {
                             id="password"
                             type="password"
                             value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
+                            onChange={(e) =>
+                                setData('password', e.target.value)
+                            }
                             required
                         />
                         <InputError message={errors.password} />
@@ -90,10 +92,7 @@ export default function CreateUser() {
                             type="password"
                             value={data.password_confirmation}
                             onChange={(e) =>
-                                setData(
-                                    'password_confirmation',
-                                    e.target.value,
-                                )
+                                setData('password_confirmation', e.target.value)
                             }
                             required
                         />
