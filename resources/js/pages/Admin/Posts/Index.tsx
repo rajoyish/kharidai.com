@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
     create,
@@ -35,19 +35,38 @@ type PostRow = {
 const POST_IMAGE_COLUMN_CLASSES = 'w-22 min-w-22 max-w-22 px-4';
 const POST_STATUS_COLUMN_CLASSES = 'w-33 min-w-33';
 
-export default function PostsIndex({ posts }: { posts: PostRow[] }) {
-    const [searchQuery, setSearchQuery] = useState('');
+type Paginator<T> = {
+    data: T[];
+    links: { url: string | null; label: string; active: boolean }[];
+};
+
+export default function PostsIndex({
+    posts,
+    filters,
+}: {
+    posts: Paginator<PostRow>;
+    filters: { search?: string };
+}) {
+    const [searchQuery, setSearchQuery] = useState(filters?.search ?? '');
     const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
 
-    const filteredPosts = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return posts;
+    useEffect(() => {
+        // Skip when the input already matches the server-side filter, so the
+        // initial mount (and search-driven reloads) don't refetch page one.
+        if (searchQuery === (filters?.search ?? '')) {
+            return;
         }
 
-        const query = searchQuery.toLowerCase();
+        const timeout = setTimeout(() => {
+            router.get(
+                postsIndex().url,
+                searchQuery ? { search: searchQuery } : {},
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 300);
 
-        return posts.filter((post) => post.title.toLowerCase().includes(query));
-    }, [posts, searchQuery]);
+        return () => clearTimeout(timeout);
+    }, [searchQuery, filters?.search]);
 
     const handleDelete = (post: PostRow) => {
         if (confirm('Are you sure you want to delete this post?')) {
@@ -100,7 +119,7 @@ export default function PostsIndex({ posts }: { posts: PostRow[] }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredPosts.map((post) => (
+                        {posts.data.map((post) => (
                             <TableRow key={post.id}>
                                 <TableCell
                                     className={POST_IMAGE_COLUMN_CLASSES}
@@ -175,20 +194,43 @@ export default function PostsIndex({ posts }: { posts: PostRow[] }) {
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {filteredPosts.length === 0 && (
+                        {posts.data.length === 0 && (
                             <TableRow>
                                 <TableCell
                                     colSpan={5}
                                     className="h-24 text-center text-muted-foreground"
                                 >
-                                    {posts.length === 0
-                                        ? 'No posts found.'
-                                        : 'No posts match your search.'}
+                                    {searchQuery.trim()
+                                        ? 'No posts match your search.'
+                                        : 'No posts found.'}
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
+
+                {posts.links && posts.links.length > 3 && (
+                    <div className="flex items-center justify-center p-4">
+                        <nav className="flex items-center gap-1">
+                            {posts.links.map((link, i) =>
+                                link.url ? (
+                                    <Link
+                                        key={i}
+                                        href={link.url}
+                                        className={`rounded-md px-3 py-1 text-sm ${link.active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                    />
+                                ) : (
+                                    <span
+                                        key={i}
+                                        className="px-3 py-1 text-sm text-muted-foreground opacity-50"
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                    />
+                                )
+                            )}
+                        </nav>
+                    </div>
+                )}
             </PagePanel>
         </>
     );

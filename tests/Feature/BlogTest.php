@@ -60,6 +60,47 @@ it('marks blog routes as indexable', function () {
         ->assertInertia(fn (AssertableInertia $page) => $page->where('seo.robots', 'index,follow'));
 });
 
+it('renders post-specific SEO metadata for social crawlers', function () {
+    $post = Post::factory()->create([
+        'title' => 'How to shop smart',
+        'seo_title' => 'Smart Shopping Guide',
+        'seo_description' => 'A guide to shopping smart on Kharidai.',
+    ]);
+
+    $this->get("/blog/{$post->slug}")
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('seo.title', 'Smart Shopping Guide - '.config('app.name'))
+            ->where('seo.description', 'A guide to shopping smart on Kharidai.')
+            ->where('seo.type', 'article')
+            ->where('seo.url', route('blog.show', $post))
+            ->has('seo.image')
+        );
+});
+
+it('falls back to the excerpt and title for post SEO metadata', function () {
+    $post = Post::factory()->create([
+        'title' => 'Untuned Post',
+        'excerpt' => 'A short excerpt.',
+        'seo_title' => null,
+        'seo_description' => null,
+    ]);
+
+    $this->get("/blog/{$post->slug}")
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('seo.title', 'Untuned Post - '.config('app.name'))
+            ->where('seo.description', 'A short excerpt.')
+        );
+});
+
+it('renders blog index SEO metadata', function () {
+    $this->get('/blog')
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('seo.title', 'Blog - '.config('app.name'))
+            ->where('seo.url', route('blog.index'))
+            ->where('seo.type', 'website')
+        );
+});
+
 it('derives a unique slug from the title', function () {
     $first = Post::factory()->create(['title' => 'Hello World', 'slug' => null]);
     $second = Post::factory()->create(['title' => 'Hello World', 'slug' => null]);

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\BuildsSeoMetadata;
 use App\Models\Post;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BlogController extends Controller
 {
+    use BuildsSeoMetadata;
+
     public function index(): Response
     {
         $posts = Post::query()
@@ -27,7 +30,25 @@ class BlogController extends Controller
                 'read_time' => $post->read_time,
             ]);
 
-        return Inertia::render('Blog/Index', ['posts' => $posts]);
+        $seoImage = $this->defaultSeoImage();
+
+        return Inertia::render('Blog/Index', [
+            'posts' => $posts,
+            'seo' => [
+                'name' => config('app.name'),
+                'title' => $this->pageTitle('Blog'),
+                'description' => 'News, guides, and updates from the Kharidai team.',
+                'image' => $seoImage['url'],
+                'imageAlt' => config('app.name').' blog preview',
+                'imageType' => $seoImage['type'],
+                'imageWidth' => $seoImage['width'],
+                'imageHeight' => $seoImage['height'],
+                'url' => route('blog.index'),
+                'type' => 'website',
+                'robots' => 'index,follow',
+                'twitterCard' => 'summary_large_image',
+            ],
+        ]);
     }
 
     public function show(Post $post): Response
@@ -35,6 +56,8 @@ class BlogController extends Controller
         abort_unless($post->isPublished(), 404);
 
         $post->load('author:id,name');
+
+        $seoImage = $this->storageSeoImage($post->image);
 
         return Inertia::render('Blog/Show', [
             'post' => [
@@ -50,6 +73,21 @@ class BlogController extends Controller
                 'read_time' => $post->read_time,
                 'seo_title' => $post->seo_title,
                 'seo_description' => $post->seo_description,
+            ],
+            'seo' => [
+                'name' => config('app.name'),
+                'title' => $this->pageTitle($post->seo_title ?? $post->title),
+                'description' => $post->seo_description ?? $post->excerpt ?? $this->seoDescription($post->content, $post->title),
+                'image' => $seoImage['url'],
+                'imageAlt' => $post->image_alt ?? $post->title,
+                'imageType' => $seoImage['type'],
+                'imageWidth' => $seoImage['width'],
+                'imageHeight' => $seoImage['height'],
+                'url' => route('blog.show', $post),
+                'type' => 'article',
+                'robots' => 'index,follow',
+                'twitterCard' => 'summary_large_image',
+                'updatedTime' => $post->updated_at?->toAtomString(),
             ],
         ]);
     }

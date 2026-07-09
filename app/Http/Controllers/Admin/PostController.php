@@ -18,13 +18,17 @@ class PostController extends Controller
     use HandlesHeroImage;
     use NormalizesPublishDate;
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = $request->string('search')->trim()->value();
+
         $posts = Post::query()
             ->with('author:id,name')
+            ->when($search, fn ($query) => $query->where('title', 'like', "%{$search}%"))
             ->latest()
-            ->get()
-            ->map(fn (Post $post): array => [
+            ->paginate(15)
+            ->withQueryString()
+            ->through(fn (Post $post): array => [
                 'id' => $post->id,
                 'title' => $post->title,
                 'slug' => $post->slug,
@@ -34,7 +38,10 @@ class PostController extends Controller
                 'published_at' => $post->published_at?->toDateString(),
             ]);
 
-        return Inertia::render('Admin/Posts/Index', ['posts' => $posts]);
+        return Inertia::render('Admin/Posts/Index', [
+            'posts' => $posts,
+            'filters' => ['search' => $search],
+        ]);
     }
 
     public function create(): Response
