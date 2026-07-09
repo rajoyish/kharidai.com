@@ -41,6 +41,40 @@ it('marks page routes as indexable', function () {
         ->assertInertia(fn (AssertableInertia $inertia) => $inertia->where('seo.robots', 'index,follow'));
 });
 
+it('renders page-specific SEO metadata for social crawlers', function () {
+    $page = Page::factory()->create([
+        'title' => 'Privacy Policy',
+        'slug' => 'privacy-policy',
+        'seo_title' => 'Our Privacy Policy',
+        'seo_description' => 'How Kharidai handles your data.',
+    ]);
+
+    $this->get('/privacy-policy')
+        ->assertInertia(fn (AssertableInertia $inertia) => $inertia
+            ->where('seo.title', 'Our Privacy Policy - '.config('app.name'))
+            ->where('seo.description', 'How Kharidai handles your data.')
+            ->where('seo.type', 'article')
+            ->where('seo.url', route('pages.show', $page))
+            ->has('seo.image')
+        );
+});
+
+it('derives page SEO metadata from the title and content when not set', function () {
+    Page::factory()->create([
+        'title' => 'Delivery',
+        'slug' => 'delivery',
+        'content' => '<p>We deliver across Nepal within three days.</p>',
+        'seo_title' => null,
+        'seo_description' => null,
+    ]);
+
+    $this->get('/delivery')
+        ->assertInertia(fn (AssertableInertia $inertia) => $inertia
+            ->where('seo.title', 'Delivery - '.config('app.name'))
+            ->where('seo.description', 'We deliver across Nepal within three days.')
+        );
+});
+
 it('never lets the root catch-all shadow first-party routes', function () {
     // Even if these rows exist, the earlier-registered routes must win.
     Page::factory()->create(['title' => 'Fake Blog', 'slug' => 'blog']);

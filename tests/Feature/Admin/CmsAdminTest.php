@@ -19,6 +19,33 @@ it('renders the page create screen', function () {
         ->assertInertia(fn (Assert $page) => $page->component('Admin/Pages/Create'));
 });
 
+it('paginates the post index and shares the active search filter', function () {
+    Post::factory()->count(16)->create();
+
+    $this->actingAs($this->admin)
+        ->get('/admin/posts')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Posts/Index')
+            ->has('posts.data', 15)
+            ->has('posts.links')
+            ->where('filters.search', '')
+        );
+});
+
+it('filters the post index by title on the server', function () {
+    Post::factory()->create(['title' => 'Shipping update']);
+    Post::factory()->create(['title' => 'Holiday sale']);
+
+    $this->actingAs($this->admin)
+        ->get('/admin/posts?search=shipping')
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('posts.data', 1)
+            ->where('posts.data.0.title', 'Shipping update')
+            ->where('filters.search', 'shipping')
+        );
+});
+
 it('renders the post create screen', function () {
     $this->actingAs($this->admin)
         ->get('/admin/posts/create')
