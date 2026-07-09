@@ -98,8 +98,10 @@ export default function Welcome({
             ) || section.uncategorizedProducts.length > 0,
     );
 
+    const shopRef = useRef<HTMLElement>(null);
+
     const scrollToShop = () => {
-        document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+        shopRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     return (
@@ -207,6 +209,7 @@ export default function Welcome({
 
             <div className="relative z-20 bg-white">
                 <main
+                    ref={shopRef}
                     id="shop"
                     className="container mx-auto max-w-7xl flex-1 px-4 py-24"
                 >

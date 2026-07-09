@@ -9,8 +9,8 @@ import {
     Sparkles,
     User,
 } from 'lucide-react';
-import { useEffect, useState  } from 'react';
-import type {ComponentType} from 'react';
+import { useEffect, useState } from 'react';
+import type { ComponentType } from 'react';
 import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,10 +30,12 @@ import {
 } from '@/components/ui/sheet';
 import { home, login } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as blogIndex } from '@/routes/blog';
 import { index as cartIndex } from '@/routes/cart';
 import { show as showCategory } from '@/routes/categories';
 import { index as digitalProducts } from '@/routes/digital-products';
 import { index as ordersIndex } from '@/routes/orders';
+import { show as showPage } from '@/routes/pages';
 import { index as physicalProducts } from '@/routes/physical-products';
 import { index as services } from '@/routes/services';
 import type { SharedData } from '@/types';
@@ -74,6 +76,8 @@ export function StorefrontHeader({
 }) {
     const { auth, cartCount, storefront } = usePage<SharedData>().props;
     const groups = storefront?.groups ?? [];
+    const pages = storefront?.navPages ?? [];
+    const hasBlogPosts = storefront?.hasBlogPosts ?? false;
     const accountHref = auth.user
         ? auth.user.is_admin
             ? adminDashboard()
@@ -134,6 +138,25 @@ export function StorefrontHeader({
                                     })}
                                 </NavigationMenuList>
                             </NavigationMenu>
+                            {hasBlogPosts && (
+                                <Link
+                                    href={blogIndex()}
+                                    prefetch
+                                    className="rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:text-primary"
+                                >
+                                    Blog
+                                </Link>
+                            )}
+                            {pages.map((page) => (
+                                <Link
+                                    key={page.slug}
+                                    href={showPage(page.slug)}
+                                    prefetch
+                                    className="rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:text-primary"
+                                >
+                                    {page.title}
+                                </Link>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -205,6 +228,31 @@ export function StorefrontHeader({
                                                 group={group}
                                             />
                                         ))}
+                                        {hasBlogPosts && (
+                                            <Link
+                                                href={blogIndex()}
+                                                prefetch
+                                                className="rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                                            >
+                                                Blog
+                                            </Link>
+                                        )}
+                                        {pages.length > 0 && (
+                                            <div className="flex flex-col gap-0.5 border-t pt-6">
+                                                {pages.map((page) => (
+                                                    <Link
+                                                        key={page.slug}
+                                                        href={showPage(
+                                                            page.slug,
+                                                        )}
+                                                        prefetch
+                                                        className="rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                                                    >
+                                                        {page.title}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
                                     </>
                                 )}
                                 <div className="flex flex-col gap-1 border-t pt-6">

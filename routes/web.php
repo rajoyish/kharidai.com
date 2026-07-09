@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PageController as AdminPageController;
+use App\Http\Controllers\Admin\PostController as AdminPostController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ServiceEngagementController;
@@ -11,10 +13,12 @@ use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionContro
 use App\Http\Controllers\Admin\TitheController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\User\AddressController;
@@ -32,6 +36,9 @@ Route::get('/physical-products', [StorefrontController::class, 'physicalProducts
 Route::get('/services', [StorefrontController::class, 'services'])->name('services.index');
 Route::get('/categories/{category}', [StorefrontController::class, 'category'])->name('categories.show');
 Route::get('/products/{product}', [StorefrontController::class, 'show'])->name('products.show');
+
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{post}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 
@@ -90,6 +97,14 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
 
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
 
+    // Registered before the resource so `pages/reorder` is not captured by `pages/{page}`.
+    Route::patch('pages/reorder', [AdminPageController::class, 'reorder'])->name('pages.reorder');
+    Route::resource('pages', AdminPageController::class)->except(['show']);
+    Route::patch('pages/{page}/toggle-nav', [AdminPageController::class, 'toggleNav'])->name('pages.toggle-nav');
+    Route::patch('pages/{page}/toggle-footer', [AdminPageController::class, 'toggleFooter'])->name('pages.toggle-footer');
+
+    Route::resource('posts', AdminPostController::class)->except(['show']);
+
     Route::resource('products', ProductController::class)->except(['show']);
     Route::post('products/{product}/media', [ProductController::class, 'uploadMedia'])->name('products.media.store');
     Route::delete('products/{product}/media/{media}', [ProductController::class, 'deleteMedia'])->name('products.media.destroy');
@@ -125,3 +140,13 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
 });
 
 require __DIR__.'/settings.php';
+
+/*
+ * CMS static pages live at the root (`/privacy`, `/delivery`, ...), so this
+ * catch-all is registered last and only matches slug-shaped single segments.
+ * Slugs that would shadow a first-party route are rejected at write time via
+ * Page::RESERVED_SLUGS.
+ */
+Route::get('/{page}', [PageController::class, 'show'])
+    ->where('page', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('pages.show');
