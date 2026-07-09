@@ -3,9 +3,11 @@ import {
     Briefcase,
     CalendarDays,
     ClipboardList,
+    FileText,
     HandCoins,
     LayoutDashboard,
     LayoutGrid,
+    Newspaper,
     Package,
     ShoppingCart,
     Tags,
@@ -31,6 +33,8 @@ import { index as servicesIndex } from '@/routes/account/services';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCategoriesIndex } from '@/routes/admin/categories';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
+import { index as adminPagesIndex } from '@/routes/admin/pages';
+import { index as adminPostsIndex } from '@/routes/admin/posts';
 import { index as adminProductsIndex } from '@/routes/admin/products';
 import { index as adminServicesIndex } from '@/routes/admin/services';
 import { index as adminShippingIndex } from '@/routes/admin/shipping';
@@ -99,6 +103,16 @@ const adminNavItems: NavItem[] = [
         title: 'Categories',
         href: adminCategoriesIndex(),
         icon: Tags,
+    },
+    {
+        title: 'Blog Posts',
+        href: adminPostsIndex(),
+        icon: Newspaper,
+    },
+    {
+        title: 'Pages',
+        href: adminPagesIndex(),
+        icon: FileText,
     },
     {
         title: 'Shipping',

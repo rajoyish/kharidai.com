@@ -73,6 +73,18 @@ export type StorefrontNavigationGroup = {
     categories: StorefrontNavigationCategory[];
 };
 
+/** A published CMS page, linked from the storefront header and footer. */
+export type StorefrontNavigationPage = {
+    title: string;
+    slug: string;
+};
+
 export type StorefrontNavigationData = {
     groups: StorefrontNavigationGroup[];
+    /** Published pages toggled visible in the main navigation, in menu order. */
+    navPages: StorefrontNavigationPage[];
+    /** Published pages toggled visible in the footer, in menu order. */
+    footerPages: StorefrontNavigationPage[];
+    /** Whether at least one published post exists, gating the blog links. */
+    hasBlogPosts: boolean;
 };

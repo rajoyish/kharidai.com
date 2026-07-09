@@ -5,6 +5,8 @@ namespace App\Http\Middleware;
 use App\Enums\ProductType;
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Page;
+use App\Models\Post;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -62,20 +64,58 @@ class HandleInertiaRequests extends Middleware
                 'imageAlt' => $siteName.' marketplace preview',
                 'url' => $request->url(),
                 'type' => 'website',
-                'robots' => $request->routeIs('home', 'products.show') ? 'index,follow' : 'noindex,nofollow',
+                'robots' => $request->routeIs('home', 'products.show', 'blog.index', 'blog.show', 'pages.show') ? 'index,follow' : 'noindex,nofollow',
                 'twitterCard' => 'summary_large_image',
             ],
         ];
 
         // Storefront navigation is only consumed by the public storefront layout,
         // so it is shared exclusively on those routes.
-        if ($request->routeIs('home', 'categories.show', 'products.show', 'digital-products.index', 'physical-products.index', 'services.index')) {
-            $shared['storefront'] = fn (): array => [
-                'groups' => $this->storefrontNavigation(),
-            ];
+        if ($request->routeIs('home', 'categories.show', 'products.show', 'digital-products.index', 'physical-products.index', 'services.index', 'blog.index', 'blog.show', 'pages.show')) {
+            $shared['storefront'] = function (): array {
+                $pages = $this->storefrontPages();
+
+                /** @param  list<array{title: string, slug: string, show_in_nav: bool, show_in_footer: bool}>  $pages */
+                $visibleOn = fn (array $pages, string $surface): array => array_values(array_map(
+                    fn (array $page): array => ['title' => $page['title'], 'slug' => $page['slug']],
+                    array_filter($pages, fn (array $page): bool => $page[$surface]),
+                ));
+
+                return [
+                    'groups' => $this->storefrontNavigation(),
+                    'navPages' => $visibleOn($pages, 'show_in_nav'),
+                    'footerPages' => $visibleOn($pages, 'show_in_footer'),
+                    // The blog is only linked once there is something to read.
+                    'hasBlogPosts' => Post::query()->published()->exists(),
+                ];
+            };
         }
 
         return $shared;
+    }
+
+    /**
+     * Published CMS pages in menu order, with their per-surface visibility.
+     *
+     * @return list<array{title: string, slug: string, show_in_nav: bool, show_in_footer: bool}>
+     */
+    private function storefrontPages(): array
+    {
+        return Cache::rememberForever('storefront_pages', function (): array {
+            return array_values(
+                Page::query()
+                    ->published()
+                    ->ordered()
+                    ->get(['title', 'slug', 'show_in_nav', 'show_in_footer'])
+                    ->map(fn (Page $page): array => [
+                        'title' => $page->title,
+                        'slug' => $page->slug,
+                        'show_in_nav' => $page->show_in_nav,
+                        'show_in_footer' => $page->show_in_footer,
+                    ])
+                    ->all()
+            );
+        });
     }
 
     /**

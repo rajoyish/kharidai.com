@@ -1,11 +1,13 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { home } from '@/routes';
-import { index as cartIndex } from '@/routes/cart';
+import { index as blogIndex } from '@/routes/blog';
 import { index as digitalProducts } from '@/routes/digital-products';
+import { show as showPage } from '@/routes/pages';
 import { index as physicalProducts } from '@/routes/physical-products';
 import { index as services } from '@/routes/services';
+import type { SharedData } from '@/types';
 
 const shopLinks = [
     { label: 'Digital Products', href: digitalProducts() },
@@ -14,6 +16,11 @@ const shopLinks = [
 ];
 
 export function Footer() {
+    const { storefront } = usePage<SharedData>().props;
+    const pages = storefront?.footerPages ?? [];
+    const links = storefront?.hasBlogPosts
+        ? [...shopLinks, { label: 'Blog', href: blogIndex() }]
+        : shopLinks;
     const logoRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -67,7 +74,7 @@ export function Footer() {
                             Shop
                         </h3>
                         <ul className="space-y-3">
-                            {shopLinks.map((link) => (
+                            {links.map((link) => (
                                 <li key={link.label}>
                                     <Link
                                         href={link.href}
@@ -130,21 +137,17 @@ export function Footer() {
                         <AppLogo className="h-5 w-auto opacity-60 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0" />
                     </div>
 
-                    <div className="flex flex-1 justify-center space-x-6 md:justify-end">
-                        <Link
-                            href={home()}
-                            prefetch
-                            className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
-                        >
-                            Home
-                        </Link>
-                        <Link
-                            href={cartIndex()}
-                            prefetch
-                            className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
-                        >
-                            Cart
-                        </Link>
+                    <div className="flex flex-1 flex-wrap justify-center gap-x-6 gap-y-2 md:justify-end">
+                        {pages.map((page) => (
+                            <Link
+                                key={page.slug}
+                                href={showPage(page.slug)}
+                                prefetch
+                                className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+                            >
+                                {page.title}
+                            </Link>
+                        ))}
                     </div>
                 </div>
 

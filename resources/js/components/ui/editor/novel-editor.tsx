@@ -10,12 +10,14 @@ import {
     JSONContent,
 } from 'novel';
 import { store as storeMedia } from '@/actions/App/Http/Controllers/MediaController';
+import { cn } from '@/lib/utils';
 import { defaultExtensions } from './extensions';
 import { slashCommand, suggestionItems } from './slash-command';
 
 interface NovelEditorProps {
     initialValue?: string | JSONContent;
     onChange: (html: string) => void;
+    className?: string;
 }
 
 const uploadFileToMedia = async (file: File, view: any) => {
@@ -47,13 +49,17 @@ const uploadFileToMedia = async (file: File, view: any) => {
 export default function NovelEditor({
     initialValue,
     onChange,
+    className,
 }: NovelEditorProps) {
     const extensions = [...defaultExtensions, slashCommand];
 
     return (
         <EditorRoot>
             <EditorContent
-                className="w-full min-h-[400px] border border-input rounded-md bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+                className={cn(
+                    'w-full min-h-100 resize-y overflow-y-auto border border-input rounded-md bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+                    className,
+                )}
                 initialContent={typeof initialValue === 'string' ? undefined : initialValue}
                 onCreate={({ editor }) => {
                     if (typeof initialValue === 'string' && initialValue) {
@@ -66,7 +72,7 @@ export default function NovelEditor({
                 }}
                 editorProps={{
                     attributes: {
-                        class: `prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[200px]`,
+                        class: `prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-50`,
                     },
                     handlePaste: (view, event) => {
                         const items = Array.from(event.clipboardData?.items || []);
