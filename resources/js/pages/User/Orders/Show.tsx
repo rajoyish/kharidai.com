@@ -1,15 +1,21 @@
 import { router } from '@inertiajs/react';
-import { Copy, Upload, AlertCircle } from 'lucide-react';
-import { useRef } from 'react';
-
+import { Copy, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 import { toast } from 'sonner';
 
 import { processNprPayment } from '@/actions/App/Http/Controllers/CheckoutController';
+import {
+    askForReceiptReupload,
+    storeMessage,
+} from '@/actions/App/Http/Controllers/User/OrderController';
+import { agreeInvoice } from '@/actions/App/Http/Controllers/User/ServiceController';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
+import { PaymentQrPanel } from '@/components/payment-qr-panel';
 import { SeoHead } from '@/components/seo-head';
 import { ServiceInvoiceCard } from '@/components/service-invoice-card';
+import type { ServiceInvoice } from '@/components/service-invoice-card';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { VariantOptionBadges } from '@/components/variant-option-badges';
@@ -18,7 +24,8 @@ import type { SelectedOptions } from '@/components/variant-option-badges';
 type Order = {
     id: number;
     order_number: string;
-    total_amount: string;
+    /** Invoice-aware total: service invoices supersede checkout estimates. */
+    display_total_npr: number;
     currency: string;
     status: string;
     created_at: string;
@@ -29,24 +36,7 @@ type Order = {
         quantity: number;
         selected_options: SelectedOptions;
         brief: { note?: string } | null;
-        service_invoices: {
-            id: number;
-            status_label: string;
-            project_name: string | null;
-            line_items: {
-                label: string;
-                quantity: number;
-                unit_price_npr: number;
-            }[];
-            subtotal_npr: number;
-            tax_rate: number;
-            tax_npr: number;
-            grand_total_npr: number;
-            advance_paid_npr: number;
-            due_npr: number;
-            payment_status: string;
-            project_completion_date: string | null;
-        }[];
+        service_invoices: ServiceInvoice[];
         product_variant: {
             name: string;
             weight_kg: string | null;
@@ -93,12 +83,51 @@ export default function OrderShow({ order }: { order: Order }) {
         toast.success('Copied to clipboard');
     };
 
+    // Engagements are listed before they are billed, so only the ones with a
+    // saved invoice count towards the "outstanding invoices" banner.
     const unpaidInvoicesTotal = order.items.reduce(
         (total, item) =>
             total +
-            item.service_invoices.reduce((sum, inv) => sum + inv.due_npr, 0),
-        0
+            item.service_invoices
+                .filter((invoice) => invoice.line_items.length > 0)
+                .reduce((sum, invoice) => sum + invoice.due_npr, 0),
+        0,
     );
+
+    // Invoices the customer has agreed to and now owes payment on. These are
+    // what the QR payment panel collects for.
+    const awaitingPaymentDue = order.items.reduce(
+        (total, item) =>
+            total +
+            item.service_invoices
+                .filter((invoice) => invoice.status === 'awaiting_payment')
+                .reduce((sum, invoice) => sum + invoice.due_npr, 0),
+        0,
+    );
+
+    const [agreeingInvoiceId, setAgreeingInvoiceId] = useState<number | null>(
+        null,
+    );
+
+    // Accepting the invoice moves the engagement to "Awaiting payment", which
+    // opens the QR payment and receipt upload step below.
+    const agreeToInvoice = (invoiceId: number) => {
+        setAgreeingInvoiceId(invoiceId);
+        router.post(
+            agreeInvoice.url({ serviceEngagement: invoiceId }),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setAgreeingInvoiceId(null),
+            },
+        );
+    };
+
+    const canAgreeToInvoice = (invoice: ServiceInvoice) =>
+        (invoice.status === 'negotiation' ||
+            invoice.status === 'final_billing') &&
+        invoice.line_items.length > 0 &&
+        invoice.due_npr > 0;
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -116,8 +145,8 @@ export default function OrderShow({ order }: { order: Order }) {
                         if (fileInputRef.current) {
                             fileInputRef.current.value = '';
                         }
-                    }
-                }
+                    },
+                },
             );
         }
     };
@@ -125,13 +154,13 @@ export default function OrderShow({ order }: { order: Order }) {
     return (
         <>
             <SeoHead title={`Order ${order.order_number}`} />
-            
-            <input 
-                type="file" 
+
+            <input
+                type="file"
                 accept="image/*"
-                className="hidden" 
-                ref={fileInputRef} 
-                onChange={handleReceiptUpload} 
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleReceiptUpload}
             />
 
             <PagePanel
@@ -175,9 +204,11 @@ export default function OrderShow({ order }: { order: Order }) {
                         </div>
                     )}
                 {unpaidInvoicesTotal > 0 && (
-                    <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200 flex items-center justify-between">
+                    <div className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
                         <div>
-                            <strong>Action Required:</strong> You have outstanding invoices totaling {rs(unpaidInvoicesTotal)}.
+                            <strong>Action Required:</strong> You have
+                            outstanding invoices totaling{' '}
+                            {rs(unpaidInvoicesTotal)}.
                         </div>
                     </div>
                 )}
@@ -190,67 +221,120 @@ export default function OrderShow({ order }: { order: Order }) {
                                 Items
                             </h2>
                             <div className="divide-y">
-                                    {order.items.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="flex gap-4 py-4"
-                                        >
-                                            <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-muted">
-                                                {item.product_variant.product
-                                                    .image && (
-                                                    <img
-                                                        src={`/storage/${item.product_variant.product.image}`}
-                                                        alt=""
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold">
-                                                    {
-                                                        item.product_variant.product
-                                                            .title
-                                                    }
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {item.product_variant.name}
-                                                </p>
-                                                <VariantOptionBadges
-                                                    selectedOptions={
-                                                        item.selected_options
-                                                    }
-                                                    weightKg={
-                                                        item.product_variant
-                                                            .weight_kg
-                                                    }
-                                                    className="mt-1"
+                                {order.items.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="flex gap-4 py-4"
+                                    >
+                                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-muted">
+                                            {item.product_variant.product
+                                                .image && (
+                                                <img
+                                                    src={`/storage/${item.product_variant.product.image}`}
+                                                    alt=""
+                                                    className="h-full w-full object-cover"
                                                 />
-                                                <p className="mt-1 text-sm font-medium">
-                                                    Qty: {item.quantity}
-                                                </p>
-                                                {item.brief?.note && (
-                                                    <div className="mt-2 rounded-md border border-dashed bg-muted/40 p-3">
-                                                        <p className="text-xs font-semibold text-muted-foreground uppercase">
-                                                            Service Requirements
-                                                        </p>
-                                                        <p className="mt-1 text-sm whitespace-pre-line">
-                                                            {item.brief.note}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                                {item.service_invoices.map(
-                                                    (invoice) => (
-                                                        <ServiceInvoiceCard 
-                                                            key={invoice.id} 
-                                                            invoice={invoice} 
-                                                        />
-                                                    )
-                                                )}
-                                            </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
+                                        <div>
+                                            <h3 className="font-semibold">
+                                                {
+                                                    item.product_variant.product
+                                                        .title
+                                                }
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                {item.product_variant.name}
+                                            </p>
+                                            <VariantOptionBadges
+                                                selectedOptions={
+                                                    item.selected_options
+                                                }
+                                                weightKg={
+                                                    item.product_variant
+                                                        .weight_kg
+                                                }
+                                                className="mt-1"
+                                            />
+                                            <p className="mt-1 text-sm font-medium">
+                                                Qty: {item.quantity}
+                                            </p>
+                                            {item.brief?.note && (
+                                                <div className="mt-2 rounded-md border border-dashed bg-muted/40 p-3">
+                                                    <p className="text-xs font-semibold text-muted-foreground uppercase">
+                                                        Service Requirements
+                                                    </p>
+                                                    <p className="mt-1 text-sm whitespace-pre-line">
+                                                        {item.brief.note}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {item.service_invoices.map(
+                                                (invoice) => (
+                                                    <div key={invoice.id}>
+                                                        <ServiceInvoiceCard
+                                                            invoice={invoice}
+                                                        />
+                                                        {canAgreeToInvoice(
+                                                            invoice,
+                                                        ) && (
+                                                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    Happy with
+                                                                    this
+                                                                    invoice?
+                                                                    Agree to it
+                                                                    to proceed
+                                                                    with
+                                                                    payment.
+                                                                </p>
+                                                                <Button
+                                                                    size="sm"
+                                                                    disabled={
+                                                                        agreeingInvoiceId ===
+                                                                        invoice.id
+                                                                    }
+                                                                    onClick={() =>
+                                                                        agreeToInvoice(
+                                                                            invoice.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                                                    Agree &
+                                                                    Proceed to
+                                                                    Payment
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                        {invoice.status ===
+                                                            'awaiting_payment' &&
+                                                            invoice.due_npr >
+                                                                0 && (
+                                                                <p className="mt-2 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800 dark:border-teal-900 dark:bg-teal-950/50 dark:text-teal-200">
+                                                                    Invoice
+                                                                    agreed. Scan
+                                                                    the QR code
+                                                                    in the
+                                                                    payment
+                                                                    panel and
+                                                                    upload your
+                                                                    receipt to
+                                                                    settle{' '}
+                                                                    {rs(
+                                                                        invoice.due_npr,
+                                                                    )}
+                                                                    .
+                                                                </p>
+                                                            )}
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+                        </div>
 
                         {/* Digital Delivery Credentials */}
                         {order.items.some(
@@ -409,12 +493,40 @@ export default function OrderShow({ order }: { order: Order }) {
                         {/* Order Messages */}
                         <SupportChat
                             order={order}
-                            postUrl={`/orders/${order.id}/messages`}
+                            postUrl={storeMessage.url(order.id)}
                         />
                     </div>
 
                     <div className="space-y-6 lg:sticky lg:top-6">
-                        {parseFloat(order.total_amount) > 0 && (
+                        {awaitingPaymentDue > 0 &&
+                            order.payment_receipt?.status !== 'pending' && (
+                                <div className="rounded-xl border bg-card p-6">
+                                    <h3 className="mb-4 text-lg font-semibold">
+                                        Pay for Services
+                                    </h3>
+                                    <PaymentQrPanel
+                                        amountLabel={rs(awaitingPaymentDue)}
+                                    />
+                                    <div className="mt-4 border-t pt-4">
+                                        <p className="mb-3 text-sm text-muted-foreground">
+                                            After paying, upload a screenshot of
+                                            your payment receipt so we can
+                                            verify it.
+                                        </p>
+                                        <Button
+                                            className="w-fit"
+                                            onClick={() =>
+                                                fileInputRef.current?.click()
+                                            }
+                                        >
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Upload Payment Receipt
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                        {order.display_total_npr > 0 && (
                             <div className="rounded-xl border bg-card p-6">
                                 <h3 className="mb-4 text-lg font-semibold">
                                     Summary
@@ -425,7 +537,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                         Total
                                     </span>
                                     <span className="text-lg font-bold">
-                                        Rs. {order.total_amount}
+                                        {rs(order.display_total_npr)}
                                     </span>
                                 </div>
                             </div>
@@ -466,17 +578,21 @@ export default function OrderShow({ order }: { order: Order }) {
                                 {unpaidInvoicesTotal > 0 ? (
                                     <div className="mt-4 border-t pt-4">
                                         <div className="mb-3 text-sm font-medium text-amber-700 dark:text-amber-400">
-                                            You have outstanding invoices totaling Rs. {rs(unpaidInvoicesTotal)}.
+                                            You have outstanding invoices
+                                            totaling {rs(unpaidInvoicesTotal)}.
                                         </div>
-                                        {order.payment_receipt.status === 'pending' ? (
+                                        {order.payment_receipt.status ===
+                                        'pending' ? (
                                             <Button className="w-fit" disabled>
                                                 <Upload className="mr-2 h-4 w-4" />{' '}
                                                 Pay Due Amount (Upload Receipt)
                                             </Button>
                                         ) : (
-                                            <Button 
-                                                className="w-fit" 
-                                                onClick={() => fileInputRef.current?.click()}
+                                            <Button
+                                                className="w-fit"
+                                                onClick={() =>
+                                                    fileInputRef.current?.click()
+                                                }
                                             >
                                                 <Upload className="mr-2 h-4 w-4" />{' '}
                                                 Pay Due Amount (Upload Receipt)
@@ -485,9 +601,11 @@ export default function OrderShow({ order }: { order: Order }) {
                                     </div>
                                 ) : order.can_reupload_receipt ? (
                                     <div className="mt-4 border-t pt-4">
-                                        <Button 
-                                            className="w-fit" 
-                                            onClick={() => fileInputRef.current?.click()}
+                                        <Button
+                                            className="w-fit"
+                                            onClick={() =>
+                                                fileInputRef.current?.click()
+                                            }
                                         >
                                             <Upload className="mr-2 h-4 w-4" />{' '}
                                             Re-upload Receipt
@@ -503,7 +621,9 @@ export default function OrderShow({ order }: { order: Order }) {
                                             }
                                             onClick={() => {
                                                 router.post(
-                                                    `/orders/${order.id}/ask-reupload-receipt`,
+                                                    askForReceiptReupload.url(
+                                                        order.id,
+                                                    ),
                                                     {},
                                                     { preserveScroll: true },
                                                 );
@@ -520,28 +640,34 @@ export default function OrderShow({ order }: { order: Order }) {
                         )}
 
                         {!order.payment_receipt &&
-                            (order.status === 'pending' || unpaidInvoicesTotal > 0) ? (
-                                <div className="mt-6 rounded-xl border bg-card p-6">
-                                    <h3 className="mb-4 text-lg font-semibold">
-                                        {unpaidInvoicesTotal > 0 ? 'Pay Invoice Due' : 'Payment Receipt'}
-                                    </h3>
-                                    <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-                                        {unpaidInvoicesTotal > 0 
-                                            ? `You have an outstanding invoice amount of ${rs(unpaidInvoicesTotal)}. Please upload your payment receipt to settle the balance.`
-                                            : `No receipt uploaded yet. Please upload your payment receipt to process the order.`
-                                        }
-                                    </div>
-                                    <div className="mt-4 border-t pt-4">
-                                        <Button 
-                                            className="w-fit" 
-                                            onClick={() => fileInputRef.current?.click()}
-                                        >
-                                            <Upload className="mr-2 h-4 w-4" />{' '}
-                                            {unpaidInvoicesTotal > 0 ? 'Pay Due Amount' : 'Upload Receipt'}
-                                        </Button>
-                                    </div>
+                        (order.status === 'pending' ||
+                            unpaidInvoicesTotal > 0) ? (
+                            <div className="mt-6 rounded-xl border bg-card p-6">
+                                <h3 className="mb-4 text-lg font-semibold">
+                                    {unpaidInvoicesTotal > 0
+                                        ? 'Pay Invoice Due'
+                                        : 'Payment Receipt'}
+                                </h3>
+                                <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                                    {unpaidInvoicesTotal > 0
+                                        ? `You have an outstanding invoice amount of ${rs(unpaidInvoicesTotal)}. Please upload your payment receipt to settle the balance.`
+                                        : `No receipt uploaded yet. Please upload your payment receipt to process the order.`}
                                 </div>
-                            ) : null}
+                                <div className="mt-4 border-t pt-4">
+                                    <Button
+                                        className="w-fit"
+                                        onClick={() =>
+                                            fileInputRef.current?.click()
+                                        }
+                                    >
+                                        <Upload className="mr-2 h-4 w-4" />{' '}
+                                        {unpaidInvoicesTotal > 0
+                                            ? 'Pay Due Amount'
+                                            : 'Upload Receipt'}
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </PagePanel>

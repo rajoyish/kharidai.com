@@ -58,6 +58,7 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::get('subscriptions', [UserSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::put('subscriptions/{subscription}', [UserSubscriptionController::class, 'update'])->name('subscriptions.update');
     Route::get('account/services', [UserServiceController::class, 'index'])->name('account.services.index');
+    Route::post('account/services/{serviceEngagement}/agree', [UserServiceController::class, 'agreeInvoice'])->name('account.services.agree');
 
     Route::get('account/addresses', [AddressController::class, 'index'])->name('account.addresses.index');
     Route::put('account/addresses/{address}', [AddressController::class, 'update'])->name('account.addresses.update');
@@ -92,7 +93,6 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::patch('services/{serviceEngagement}/status', [ServiceEngagementController::class, 'updateStatus'])->name('services.status.update');
     Route::patch('services/{serviceEngagement}/payment-status', [ServiceEngagementController::class, 'updatePaymentStatus'])->name('services.payment-status.update');
     Route::post('services/{serviceEngagement}/assign-order', [ServiceEngagementController::class, 'assignOrder'])->name('services.assign-order');
-    Route::post('services/{serviceEngagement}/link-order', [ServiceEngagementController::class, 'linkOrder'])->name('services.link-order');
     Route::delete('services/{serviceEngagement}', [ServiceEngagementController::class, 'destroy'])->name('services.destroy');
 
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);

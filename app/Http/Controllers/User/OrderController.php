@@ -19,10 +19,20 @@ class OrderController extends Controller
 {
     public function index(Request $request): Response
     {
-        $orders = Order::with(['items.productVariant.product', 'shipment'])
+        $orders = Order::with(['items.productVariant.product', 'items.serviceEngagements', 'shipment'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->paginate(10);
+
+        // Service invoices supersede the checkout-time estimates, so the total
+        // shown in the Amount column is derived rather than the stored figure.
+        // The engagements themselves are only loaded to compute it, so they are
+        // hidden rather than shipped to the browser.
+        $orders->getCollection()->each(function (Order $order): void {
+            $order->setAttribute('display_total_npr', $order->displayTotalNpr());
+
+            $order->items->each(fn (OrderItem $item) => $item->makeHidden('serviceEngagements'));
+        });
 
         return Inertia::render('User/Orders/Index', [
             'orders' => $orders,
@@ -39,12 +49,14 @@ class OrderController extends Controller
 
         // Surface the invoice the admin generated for each service engagement so
         // the customer sees the same line items, totals and payment status shown
-        // on the admin's invoice brief page.
+        // on the admin's invoice brief page. Engagements without a saved invoice
+        // are listed too, so the customer can follow the lifecycle status
+        // ("In progress", "Final billing", ...) before any billing exists.
         $order->items->each(function (OrderItem $item): void {
             $item->setAttribute('service_invoices', $item->serviceEngagements
-                ->filter(fn (ServiceEngagement $engagement): bool => filled($engagement->line_items))
                 ->map(fn (ServiceEngagement $engagement): array => [
                     'id' => $engagement->id,
+                    'status' => $engagement->status->value,
                     'status_label' => $engagement->status->label(),
                     'project_name' => $engagement->project_name,
                     'line_items' => $engagement->line_items ?? [],
@@ -61,6 +73,10 @@ class OrderController extends Controller
 
             $item->makeHidden('serviceEngagements');
         });
+
+        // The Summary panel shows the invoice-aware total, not the stored
+        // checkout-time figure, so service orders don't read as Rs. 0.
+        $order->setAttribute('display_total_npr', $order->displayTotalNpr());
 
         return Inertia::render('User/Orders/Show', [
             'order' => $order,

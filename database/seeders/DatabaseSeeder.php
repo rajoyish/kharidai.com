@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             PhysicalProductSeeder::class,
             ServiceProductSeeder::class,
             OrderSeeder::class,
+            PageSeeder::class,
+            PostSeeder::class,
             MiscSeeder::class,
         ]);
     }

@@ -7,6 +7,7 @@ import {
     destroy as destroyEngagement,
     show as showEngagement,
 } from '@/actions/App/Http/Controllers/Admin/ServiceEngagementController';
+import { EngagementStatusBadge } from '@/components/engagement-status-badge';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +86,7 @@ export default function ServicesIndex({
                             <TableHead>Project Name</TableHead>
                             <TableHead>Order</TableHead>
                             <TableHead>Client</TableHead>
+                            <TableHead>Service Status</TableHead>
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Completion Date</TableHead>
                             <TableHead className="text-right">
@@ -114,14 +116,19 @@ export default function ServicesIndex({
                                 </TableCell>
                                 <TableCell>
                                     {engagement.order ? (
-                                        <Link 
-                                            href={showOrder(engagement.order.id).url}
+                                        <Link
+                                            href={
+                                                showOrder(engagement.order.id)
+                                                    .url
+                                            }
                                             className="font-medium text-primary hover:underline"
                                         >
                                             {engagement.order.order_number}
                                         </Link>
                                     ) : (
-                                        <span className="text-muted-foreground">—</span>
+                                        <span className="text-muted-foreground">
+                                            —
+                                        </span>
                                     )}
                                 </TableCell>
                                 <TableCell>
@@ -131,6 +138,12 @@ export default function ServicesIndex({
                                     <div className="text-xs text-muted-foreground">
                                         {engagement.user?.email}
                                     </div>
+                                </TableCell>
+                                <TableCell>
+                                    <EngagementStatusBadge
+                                        status={engagement.status}
+                                        label={engagement.status_label}
+                                    />
                                 </TableCell>
                                 <TableCell>
                                     <Badge
@@ -190,7 +203,7 @@ export default function ServicesIndex({
                         {engagements.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={7}
+                                    colSpan={9}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No service engagements yet.

@@ -270,7 +270,7 @@ export default function Show({
                     <div className="order-1 flex flex-col gap-8 md:order-2">
                         {/* Mobile Title & Price (Hidden on Desktop) */}
                         <div className="flex flex-col md:hidden">
-                            <h1 className="mb-2 text-3xl font-bold tracking-tight">
+                            <h1 className="mb-4 text-4xl leading-[1.2] font-extrabold tracking-tight text-balance sm:text-5xl lg:mb-6 lg:text-6xl">
                                 {product.title}
                             </h1>
                             {product.categories &&
@@ -467,7 +467,7 @@ export default function Show({
                     <div className="order-2 flex flex-col md:order-1">
                         {/* Desktop Title & Price (Hidden on Mobile) */}
                         <div className="hidden md:block">
-                            <h1 className="mb-4 text-3xl font-bold tracking-tight lg:mb-6">
+                            <h1 className="mb-4 text-4xl leading-[1.2] font-extrabold tracking-tight text-balance sm:text-5xl lg:mb-6 lg:text-6xl">
                                 {product.title}
                             </h1>
                             {product.categories &&

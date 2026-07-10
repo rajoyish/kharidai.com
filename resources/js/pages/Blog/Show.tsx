@@ -103,7 +103,7 @@ export default function BlogShow({ post }: { post: Post }) {
                         </BreadcrumbList>
                     </Breadcrumb>
 
-                    <h1 className="text-4xl leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                    <h1 className="text-4xl leading-[1.2] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
                         {post.title}
                     </h1>
 

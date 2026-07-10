@@ -59,7 +59,7 @@ export default function PageShow({ page }: { page: CmsPage }) {
                         </BreadcrumbList>
                     </Breadcrumb>
 
-                    <h1 className="text-4xl leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl">
+                    <h1 className="text-4xl leading-[1.2] font-extrabold tracking-tight text-balance sm:text-5xl">
                         {page.title}
                     </h1>
 

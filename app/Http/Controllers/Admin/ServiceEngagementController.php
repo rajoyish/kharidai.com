@@ -8,7 +8,6 @@ use App\Enums\ProductType;
 use App\Exceptions\InvalidEngagementTransitionException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ServiceEngagement;
@@ -16,7 +15,6 @@ use App\Models\User;
 use App\Services\Engagements\EngagementStateMachine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -78,7 +76,6 @@ class ServiceEngagementController extends Controller
         return Inertia::render('Admin/Services/Create', [
             'users' => User::orderBy('name')->get(['id', 'name', 'email']),
             'services' => $services,
-            'statuses' => EngagementStatus::values(),
         ]);
     }
 
@@ -131,7 +128,7 @@ class ServiceEngagementController extends Controller
      */
     public function show(ServiceEngagement $serviceEngagement): Response
     {
-        $serviceEngagement->load(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'orderItem.order:id,order_number']);
+        $serviceEngagement->load(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'orderItem.order.paymentReceipt']);
 
         $linkedOrder = $serviceEngagement->orderItem?->order;
 
@@ -156,36 +153,37 @@ class ServiceEngagementController extends Controller
                 'product' => $serviceEngagement->product?->only('id', 'title'),
                 'variant' => $serviceEngagement->productVariant?->only('id', 'name'),
                 'brief' => $serviceEngagement->brief,
-                'order' => $linkedOrder ? $linkedOrder->only('id', 'order_number') : null,
+                'order' => $linkedOrder ? [
+                    'id' => $linkedOrder->id,
+                    'order_number' => $linkedOrder->order_number,
+                    // The customer's uploaded receipt, so payment can be
+                    // verified here before toggling the invoice to Paid.
+                    'payment_receipt' => $linkedOrder->paymentReceipt?->only('id', 'file_path', 'status'),
+                ] : null,
+                'advance_required_npr' => (float) $serviceEngagement->advance_required_npr,
             ],
             'lineItemSuggestions' => $serviceEngagement->calculator()->lineItemSuggestions($serviceEngagement->pricing_config ?? []),
-            'linkableOrderItems' => $this->linkableOrderItems($serviceEngagement),
+            'statusOptions' => $this->statusOptions($serviceEngagement),
         ]);
     }
 
     /**
-     * The customer's existing order items an admin can link to this engagement,
-     * newest first, labelled for a select control.
+     * Every status this engagement may legally move to next, each carrying the
+     * business reason it is currently unavailable (or null when it can be taken).
+     * The admin UI renders blocked options as disabled with the reason shown.
      *
-     * @return Collection<int, array{id: int, order_number: string, label: non-falsy-string}>
+     * @return list<array{value: string, label: string, blocked_reason: string|null}>
      */
-    private function linkableOrderItems(ServiceEngagement $serviceEngagement): Collection
+    private function statusOptions(ServiceEngagement $serviceEngagement): array
     {
-        return OrderItem::query()
-            ->whereHas('order', fn ($query) => $query->where('user_id', $serviceEngagement->user_id))
-            ->with(['order:id,order_number,created_at', 'productVariant:id,name,product_id', 'productVariant.product:id,title'])
-            ->latest()
-            ->get()
-            ->map(fn (OrderItem $item): array => [
-                'id' => $item->id,
-                'order_number' => $item->order->order_number,
-                'label' => sprintf(
-                    '%s — %s%s',
-                    $item->order->order_number,
-                    $item->productVariant->product->title,
-                    $item->productVariant->name ? " ({$item->productVariant->name})" : '',
-                ),
-            ]);
+        return array_map(
+            fn (EngagementStatus $status): array => [
+                'value' => $status->value,
+                'label' => $status->label(),
+                'blocked_reason' => $this->stateMachine->blockedReason($serviceEngagement, $status),
+            ],
+            $serviceEngagement->status->allowedTransitions(),
+        );
     }
 
     /**
@@ -235,29 +233,6 @@ class ServiceEngagementController extends Controller
         });
 
         return redirect()->back()->with('success', 'Order created and linked. The customer can now pay from their panel.');
-    }
-
-    /**
-     * Link this engagement to one of the customer's existing order items, so a
-     * storefront order the customer already placed surfaces this invoice.
-     */
-    public function linkOrder(Request $request, ServiceEngagement $serviceEngagement): RedirectResponse
-    {
-        $validated = $request->validate([
-            'order_item_id' => [
-                'required',
-                Rule::exists('order_items', 'id')->where(
-                    fn ($query) => $query->whereIn(
-                        'order_id',
-                        Order::where('user_id', $serviceEngagement->user_id)->select('id'),
-                    ),
-                ),
-            ],
-        ]);
-
-        $serviceEngagement->update(['order_item_id' => $validated['order_item_id']]);
-
-        return redirect()->back()->with('success', 'Order linked to this engagement.');
     }
 
     /**

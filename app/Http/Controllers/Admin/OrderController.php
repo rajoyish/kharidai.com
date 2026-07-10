@@ -46,11 +46,13 @@ class OrderController extends Controller
     {
         $order->load(['items.productVariant.product', 'items.serviceEngagements', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product', 'shipment', 'shippingAddress']);
 
+        // Engagements without a saved invoice are still listed so the lifecycle
+        // status stays visible while the brief is being prepared.
         $order->items->each(function ($item): void {
             $item->setAttribute('service_invoices', $item->serviceEngagements
-                ->filter(fn ($engagement): bool => filled($engagement->line_items))
                 ->map(fn ($engagement): array => [
                     'id' => $engagement->id,
+                    'status' => $engagement->status->value,
                     'status_label' => $engagement->status->label(),
                     'project_name' => $engagement->project_name,
                     'line_items' => $engagement->line_items ?? [],
@@ -64,6 +66,8 @@ class OrderController extends Controller
                     'project_completion_date' => $engagement->project_completion_date?->format('n/j/Y'),
                 ])
                 ->values()->all());
+
+            $item->makeHidden('serviceEngagements');
         });
 
         return Inertia::render('Admin/Orders/Show', [

@@ -11,6 +11,7 @@ enum EngagementStatus: string
     case InProgress = 'in_progress';
     case Negotiation = 'negotiation';
     case FinalBilling = 'final_billing';
+    case AwaitingPayment = 'awaiting_payment';
     case Completed = 'completed';
     case Cancelled = 'cancelled';
 
@@ -22,6 +23,7 @@ enum EngagementStatus: string
             self::InProgress => 'In progress',
             self::Negotiation => 'Negotiation',
             self::FinalBilling => 'Final billing',
+            self::AwaitingPayment => 'Awaiting payment',
             self::Completed => 'Completed',
             self::Cancelled => 'Cancelled',
         };
@@ -40,8 +42,9 @@ enum EngagementStatus: string
             self::PendingContract => [self::AwaitingAdvance, self::InProgress, self::Cancelled],
             self::AwaitingAdvance => [self::InProgress, self::Cancelled],
             self::InProgress => [self::Negotiation, self::Cancelled],
-            self::Negotiation => [self::FinalBilling, self::Cancelled],
-            self::FinalBilling => [self::Completed, self::Cancelled],
+            self::Negotiation => [self::FinalBilling, self::AwaitingPayment, self::Completed, self::Cancelled],
+            self::FinalBilling => [self::AwaitingPayment, self::Completed, self::Cancelled],
+            self::AwaitingPayment => [self::Completed, self::Cancelled],
             self::Completed, self::Cancelled => [],
         };
     }

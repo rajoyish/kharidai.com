@@ -76,46 +76,16 @@ it('will not assign a second order once linked', function () {
     expect(Order::count())->toBe(1);
 });
 
-it('links an existing order the customer placed', function () {
-    $order = Order::factory()->create(['user_id' => $this->customer->id]);
-    $orderItem = $order->items()->create([
-        'product_variant_id' => ProductVariant::factory()->create()->id,
-        'price' => 5000,
-        'quantity' => 1,
-    ]);
-
+// Linking an engagement to an order the customer already placed was removed:
+// storefront service purchases already create their engagement attached to the
+// order item, so the only orders on offer were unrelated products.
+it('no longer exposes a link-order route', function () {
     $engagement = ServiceEngagement::factory()->create([
         'user_id' => $this->customer->id,
         'order_item_id' => null,
     ]);
 
     $this->actingAs($this->admin)
-        ->post("/admin/services/{$engagement->id}/link-order", [
-            'order_item_id' => $orderItem->id,
-        ])
-        ->assertRedirect();
-
-    expect($engagement->refresh()->order_item_id)->toBe($orderItem->id);
-});
-
-it('rejects linking an order belonging to another customer', function () {
-    $otherOrder = Order::factory()->create();
-    $otherItem = $otherOrder->items()->create([
-        'product_variant_id' => ProductVariant::factory()->create()->id,
-        'price' => 5000,
-        'quantity' => 1,
-    ]);
-
-    $engagement = ServiceEngagement::factory()->create([
-        'user_id' => $this->customer->id,
-        'order_item_id' => null,
-    ]);
-
-    $this->actingAs($this->admin)
-        ->post("/admin/services/{$engagement->id}/link-order", [
-            'order_item_id' => $otherItem->id,
-        ])
-        ->assertSessionHasErrors('order_item_id');
-
-    expect($engagement->refresh()->order_item_id)->toBeNull();
+        ->post("/admin/services/{$engagement->id}/link-order", ['order_item_id' => 1])
+        ->assertNotFound();
 });

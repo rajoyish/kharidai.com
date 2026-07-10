@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\EngagementStatus;
 use App\Events\OrderMessageCreated;
 use App\Models\Order;
 use App\Models\ProductVariant;
@@ -63,6 +64,115 @@ it('shows the service invoice on the order details page', function () {
             ->where('order.items.0.service_invoices.0.grand_total_npr', 11300)
             ->where('order.items.0.service_invoices.0.due_npr', 7300)
             ->where('order.items.0.service_invoices.0.payment_status', 'due')
+            // The lifecycle status tells the customer we are working on the
+            // service; it is shown alongside the payment status, not instead.
+            ->where('order.items.0.service_invoices.0.status', 'in_progress')
+            ->where('order.items.0.service_invoices.0.status_label', 'In progress')
+        );
+});
+
+it('rolls the service invoice total up to the order total on the show page', function () {
+    // A service order's stored total is the checkout-time estimate (often 0);
+    // once an invoice exists, its grand total is what the customer owes.
+    $order = Order::factory()->create([
+        'user_id' => $this->user->id,
+        'total_amount' => 0,
+        'shipping_total' => 0,
+    ]);
+    $variant = ProductVariant::factory()->create();
+    $orderItem = $order->items()->create([
+        'product_variant_id' => $variant->id,
+        'price' => 0,
+        'quantity' => 1,
+    ]);
+
+    ServiceEngagement::factory()->create([
+        'user_id' => $this->user->id,
+        'order_item_id' => $orderItem->id,
+        'line_items' => [['label' => 'Design', 'quantity' => 2, 'unit_price_npr' => 5000]],
+        'tax_rate' => 13,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('/orders/'.$order->id)
+        ->assertInertia(fn ($page) => $page
+            ->component('User/Orders/Show')
+            ->where('order.display_total_npr', 11300)
+        );
+});
+
+it('rolls the service invoice total up to the orders list', function () {
+    $order = Order::factory()->create([
+        'user_id' => $this->user->id,
+        'total_amount' => 0,
+        'shipping_total' => 0,
+    ]);
+    $variant = ProductVariant::factory()->create();
+    $orderItem = $order->items()->create([
+        'product_variant_id' => $variant->id,
+        'price' => 0,
+        'quantity' => 1,
+    ]);
+
+    ServiceEngagement::factory()->create([
+        'user_id' => $this->user->id,
+        'order_item_id' => $orderItem->id,
+        'line_items' => [['label' => 'Design', 'quantity' => 2, 'unit_price_npr' => 5000]],
+        'tax_rate' => 13,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('/orders')
+        ->assertInertia(fn ($page) => $page
+            ->component('User/Orders/Index')
+            ->where('orders.data.0.display_total_npr', 11300)
+            // Engagements are loaded only to derive the total; their internal
+            // pricing terms must not reach the customer's browser.
+            ->missing('orders.data.0.items.0.service_engagements')
+        );
+});
+
+it('keeps the stored item totals for orders without service invoices', function () {
+    $order = Order::factory()->create([
+        'user_id' => $this->user->id,
+        'shipping_total' => 100,
+    ]);
+    $variant = ProductVariant::factory()->create();
+    $order->items()->create([
+        'product_variant_id' => $variant->id,
+        'price' => 5000,
+        'quantity' => 2,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('/orders/'.$order->id)
+        ->assertInertia(fn ($page) => $page
+            ->where('order.display_total_npr', 10100)
+        );
+});
+
+it('shows the engagement status on the order page before an invoice exists', function () {
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+    $variant = ProductVariant::factory()->create();
+    $orderItem = $order->items()->create([
+        'product_variant_id' => $variant->id,
+        'price' => 5000,
+        'quantity' => 1,
+    ]);
+
+    ServiceEngagement::factory()->create([
+        'user_id' => $this->user->id,
+        'order_item_id' => $orderItem->id,
+        'status' => EngagementStatus::FinalBilling,
+        'line_items' => null,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('/orders/'.$order->id)
+        ->assertInertia(fn ($page) => $page
+            ->component('User/Orders/Show')
+            ->where('order.items.0.service_invoices.0.status_label', 'Final billing')
+            ->where('order.items.0.service_invoices.0.line_items', [])
         );
 });
 
