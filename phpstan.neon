@@ -11,3 +11,8 @@ parameters:
         - routes/
 
     level: 7
+
+    # Larastan derives Eloquent attribute types from casts() rather than real
+    # declarations. Treating them as certain makes PHPStan report reachable
+    # branches guarding those attributes as "always false".
+    treatPhpDocTypesAsCertain: false

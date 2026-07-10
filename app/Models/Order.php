@@ -27,6 +27,8 @@ use Illuminate\Support\Carbon;
  * @property PaymentOption|null $payment_option
  * @property int|null $shipping_address_id
  * @property array<string, mixed>|null $additional_data
+ * @property bool $can_reupload_receipt
+ * @property bool $request_receipt_upload
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property User $user
@@ -164,7 +166,7 @@ class Order extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function itemsTotal(): Attribute
     {
@@ -175,7 +177,7 @@ class Order extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function shippingTotal(): Attribute
     {
@@ -186,7 +188,7 @@ class Order extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function amountDueNow(): Attribute
     {
@@ -197,7 +199,7 @@ class Order extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function balanceDue(): Attribute
     {

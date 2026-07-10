@@ -298,7 +298,7 @@ class ServiceEngagement extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function priceNpr(): Attribute
     {
@@ -309,7 +309,7 @@ class ServiceEngagement extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function purchasePriceNpr(): Attribute
     {
@@ -320,7 +320,7 @@ class ServiceEngagement extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function advanceRequiredNpr(): Attribute
     {
@@ -331,7 +331,7 @@ class ServiceEngagement extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function advancePaidNpr(): Attribute
     {
@@ -342,7 +342,7 @@ class ServiceEngagement extends Model
     }
 
     /**
-     * @return Attribute<float, int>
+     * @return Attribute<float, float|int>
      */
     protected function calculatedCostNpr(): Attribute
     {
@@ -353,7 +353,7 @@ class ServiceEngagement extends Model
     }
 
     /**
-     * @return Attribute<float|null, int|null>
+     * @return Attribute<float|null, float|int|null>
      */
     protected function agreedPriceNpr(): Attribute
     {

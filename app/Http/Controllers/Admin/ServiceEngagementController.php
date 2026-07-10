@@ -98,6 +98,7 @@ class ServiceEngagementController extends Controller
         $product = Product::with('serviceDetail')->where('id', $validated['product_id'])->firstOrFail();
         $detail = $product->serviceDetail;
 
+        /** @var ProductVariant $variant */
         $variant = ProductVariant::query()->findOrFail($validated['product_variant_id']);
 
         // The variant price is a reference estimate only; the real cost is
@@ -166,7 +167,7 @@ class ServiceEngagementController extends Controller
      * The customer's existing order items an admin can link to this engagement,
      * newest first, labelled for a select control.
      *
-     * @return Collection<int, array<string, mixed>>
+     * @return Collection<int, array{id: int, order_number: string, label: non-falsy-string}>
      */
     private function linkableOrderItems(ServiceEngagement $serviceEngagement): Collection
     {
@@ -181,8 +182,8 @@ class ServiceEngagementController extends Controller
                 'label' => sprintf(
                     '%s — %s%s',
                     $item->order->order_number,
-                    $item->productVariant?->product?->title ?? 'Item',
-                    $item->productVariant?->name ? " ({$item->productVariant->name})" : '',
+                    $item->productVariant->product->title,
+                    $item->productVariant->name ? " ({$item->productVariant->name})" : '',
                 ),
             ]);
     }
@@ -278,8 +279,11 @@ class ServiceEngagementController extends Controller
             'project_completion_date' => ['nullable', 'date'],
         ]);
 
+        /** @var array<int, array<string, mixed>> $rawItems */
+        $rawItems = $validated['line_items'] ?? [];
+
         // Normalise to the stored shape and drop rows without a label.
-        $lineItems = collect($validated['line_items'] ?? [])
+        $lineItems = collect($rawItems)
             ->map(fn (array $item): array => [
                 'label' => trim((string) ($item['label'] ?? '')),
                 'quantity' => (float) ($item['quantity'] ?? 0),

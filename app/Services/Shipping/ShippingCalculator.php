@@ -72,7 +72,7 @@ class ShippingCalculator
             }
 
             $unitKg = (float) ($item->productVariant->weight_kg
-                ?? $detail?->weight_kg ?? 0);
+                ?? $detail->weight_kg ?? 0);
 
             $shipsAlone = $capacity <= 0 || $item->productVariant->ships_individually;
 
