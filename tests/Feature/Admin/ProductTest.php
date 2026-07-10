@@ -269,3 +269,53 @@ it('can update a product with galleries and delete removed ones safely', functio
     // Check kept file exists
     Storage::disk('public')->assertExists('products/gallery/1.jpg');
 });
+
+it('stores the manually entered seo fields when creating a product', function () {
+    $response = $this->actingAs($this->admin)->post('/admin/products', [
+        'title' => 'SEO Product',
+        'description' => 'Test description',
+        'in_stock' => true,
+        'image_alt' => 'A product photographed on a white background',
+        'seo_title' => 'Buy SEO Product Online',
+        'seo_description' => 'Hand-written snippet for search engines.',
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('products', [
+        'title' => 'SEO Product',
+        'image_alt' => 'A product photographed on a white background',
+        'seo_title' => 'Buy SEO Product Online',
+        'seo_description' => 'Hand-written snippet for search engines.',
+    ]);
+});
+
+it('updates the manually entered seo fields', function () {
+    $product = Product::factory()->create(['seo_title' => 'Old title']);
+
+    $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug, [
+        'title' => $product->title,
+        'description' => 'Updated description',
+        'in_stock' => true,
+        'image_alt' => 'Updated alt text',
+        'seo_title' => 'New title',
+        'seo_description' => 'New description',
+    ]);
+
+    $response->assertRedirect();
+
+    $product->refresh();
+    expect($product->image_alt)->toBe('Updated alt text')
+        ->and($product->seo_title)->toBe('New title')
+        ->and($product->seo_description)->toBe('New description');
+});
+
+it('rejects an seo description longer than 500 characters', function () {
+    $response = $this->actingAs($this->admin)->post('/admin/products', [
+        'title' => 'Too Wordy',
+        'description' => 'Test description',
+        'in_stock' => true,
+        'seo_description' => str_repeat('a', 501),
+    ]);
+
+    $response->assertSessionHasErrors('seo_description');
+});

@@ -1,16 +1,9 @@
 import { Link, useForm } from '@inertiajs/react';
-import {
-    FileText,
-    ImageUp,
-    Maximize2,
-    Minimize2,
-    Newspaper,
-    Trash2,
-} from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent, ReactNode } from 'react';
-import { toast } from 'sonner';
+import { FileText, Maximize2, Minimize2, Newspaper } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 
+import { ImageUpload } from '@/components/image-upload';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -94,30 +87,6 @@ type FieldProps = {
     trailing?: ReactNode;
 };
 
-/**
- * Rejects hero images that are not exactly 1200x630 before they reach the
- * server, so editors get feedback without a round trip. The server enforces
- * the same rule.
- */
-function readImageDimensions(
-    file: File,
-): Promise<{ width: number; height: number }> {
-    return new Promise((resolve, reject) => {
-        const objectUrl = URL.createObjectURL(file);
-        const image = new Image();
-
-        image.onload = () => {
-            URL.revokeObjectURL(objectUrl);
-            resolve({ width: image.naturalWidth, height: image.naturalHeight });
-        };
-        image.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            reject(new Error('Could not read the selected image.'));
-        };
-        image.src = objectUrl;
-    });
-}
-
 function Field({
     htmlFor,
     label,
@@ -167,10 +136,6 @@ export function CmsForm({
     withExcerpt = false,
 }: CmsFormProps) {
     const isEditing = Boolean(record);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(
-        record?.image ?? null,
-    );
     const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
     // An existing slug is already a live URL, so only mirror the title into the
@@ -196,35 +161,6 @@ export function CmsForm({
         ...data,
         published_at: dateTimeLocalToIso(data.published_at),
     }));
-
-    const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-
-        if (!file) {
-            return;
-        }
-
-        try {
-            const { width, height } = await readImageDimensions(file);
-
-            if (width !== HERO_IMAGE_WIDTH || height !== HERO_IMAGE_HEIGHT) {
-                toast.error(
-                    `Image must be exactly ${HERO_IMAGE_WIDTH}x${HERO_IMAGE_HEIGHT}px. Selected image is ${width}x${height}px.`,
-                );
-
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
-
-                return;
-            }
-
-            setData('image', file);
-            setImagePreview(URL.createObjectURL(file));
-        } catch {
-            toast.error('Could not read the selected image.');
-        }
-    };
 
     useEffect(() => {
         if (!isEditorExpanded) {
@@ -253,15 +189,6 @@ export function CmsForm({
     const handleSlugChange = (slug: string) => {
         setIsSlugLocked(slug.length > 0);
         setData('slug', slug);
-    };
-
-    const clearSelectedImage = () => {
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-
-        setData('image', null);
-        setImagePreview(record?.image ?? null);
     };
 
     const handleSubmit = (event: FormEvent) => {
@@ -555,75 +482,18 @@ export function CmsForm({
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-6">
-                                <div className="grid gap-2.5">
-                                    <input
-                                        id="hero-image"
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                        accept="image/*"
-                                    />
-
-                                    {imagePreview ? (
-                                        <div className="group relative overflow-hidden rounded-lg border">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Hero preview"
-                                                className="aspect-1200/630 w-full object-cover"
-                                            />
-                                            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        fileInputRef.current?.click()
-                                                    }
-                                                >
-                                                    <ImageUp className="size-4" />
-                                                    Replace
-                                                </Button>
-                                                {data.image && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        size="sm"
-                                                        onClick={
-                                                            clearSelectedImage
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                        Remove
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                fileInputRef.current?.click()
-                                            }
-                                            className="flex aspect-1200/630 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/30 text-center transition-colors hover:border-ring hover:bg-muted/60 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                                        >
-                                            <ImageUp className="size-7 text-muted-foreground" />
-                                            <span className="text-sm font-medium">
-                                                Choose image
-                                            </span>
-                                            <span className="text-xs text-muted-foreground">
-                                                PNG or JPG, {HERO_IMAGE_WIDTH}
-                                                &times;{HERO_IMAGE_HEIGHT}px
-                                            </span>
-                                        </button>
-                                    )}
-
-                                    {errors.image && (
-                                        <p className="text-xs font-medium text-destructive">
-                                            {errors.image}
-                                        </p>
-                                    )}
-                                </div>
+                                <ImageUpload
+                                    id="hero-image"
+                                    value={data.image}
+                                    onChange={(file) => setData('image', file)}
+                                    initialPreviewUrl={record?.image ?? null}
+                                    error={errors.image}
+                                    requiredDimensions={{
+                                        width: HERO_IMAGE_WIDTH,
+                                        height: HERO_IMAGE_HEIGHT,
+                                    }}
+                                    hint={`PNG or JPG, ${HERO_IMAGE_WIDTH}×${HERO_IMAGE_HEIGHT}px, under 1 MB`}
+                                />
 
                                 <Field
                                     htmlFor="image_alt"

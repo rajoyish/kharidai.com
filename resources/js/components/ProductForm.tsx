@@ -1,5 +1,11 @@
 import { useForm } from '@inertiajs/react';
-import { GripVertical, Trash2, UploadCloud } from 'lucide-react';
+import {
+    GripVertical,
+    Search,
+    SlidersHorizontal,
+    Trash2,
+    UploadCloud,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -24,7 +30,9 @@ import NovelEditor from '@/components/ui/editor/novel-editor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MediaManager } from '@/components/ui/media-manager';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Tooltip,
     TooltipContent,
@@ -35,8 +43,14 @@ import { cn } from '@/lib/utils';
 
 import { CategoryMultiSelect } from './category-multi-select';
 import type { CategoryOption } from './category-multi-select';
+import { ImageUpload } from './image-upload';
 import { getProductTypeTheme } from './product-form/product-type-theme';
+import type { ProductTypeTheme } from './product-form/product-type-theme';
 import { ProductTypeFields } from './product-form/ProductTypeFields';
+
+/** Recommended lengths before search engines truncate the snippet. */
+const SEO_TITLE_LIMIT = 60;
+const SEO_DESCRIPTION_LIMIT = 160;
 
 export type ProductGallery = {
     id: number;
@@ -51,6 +65,9 @@ export type Product = {
     slug?: string;
     description: string;
     image?: string;
+    image_alt?: string | null;
+    seo_title?: string | null;
+    seo_description?: string | null;
     in_stock?: boolean;
     is_visible?: boolean;
     categories?: { id: number }[];
@@ -92,6 +109,61 @@ type GalleryImage = {
     previewUrl?: string;
 };
 
+/**
+ * Heading for one of the stacked panels inside the form's two columns. The icon
+ * chip picks up the accent of the currently selected product type.
+ */
+function PanelHeading({
+    theme,
+    icon: Icon,
+    title,
+    description,
+}: {
+    theme: ProductTypeTheme;
+    icon: typeof Search;
+    title: string;
+    description: string;
+}) {
+    return (
+        <div className="flex items-start gap-3">
+            <div
+                className={cn(
+                    'flex size-9 shrink-0 items-center justify-center rounded-lg',
+                    theme.iconWrap,
+                )}
+            >
+                <Icon className="size-4.5" aria-hidden="true" />
+            </div>
+            <div className="grid gap-0.5">
+                <h3 className={cn('font-semibold', theme.accentText)}>
+                    {title}
+                </h3>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+        </div>
+    );
+}
+
+/** Turns amber past the recommended length, red once the field is over budget. */
+function CharacterCount({ value, limit }: { value: string; limit: number }) {
+    const length = value.length;
+
+    return (
+        <span
+            className={cn(
+                'text-xs tabular-nums',
+                length > limit
+                    ? 'text-destructive'
+                    : length > limit * 0.9
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-muted-foreground',
+            )}
+        >
+            {length}/{limit}
+        </span>
+    );
+}
+
 export function ProductForm({
     product,
     submitUrl,
@@ -105,6 +177,9 @@ export function ProductForm({
         title: product?.title || '',
         description: product?.description || '',
         image: null as File | null,
+        image_alt: product?.image_alt || '',
+        seo_title: product?.seo_title || '',
+        seo_description: product?.seo_description || '',
         in_stock: product?.in_stock ?? true,
         is_visible: product?.is_visible ?? true,
         category_ids: (product?.categories ?? []).map(
@@ -262,6 +337,10 @@ export function ProductForm({
     // Drives the accent theming of the whole form from the selected type.
     const theme = getProductTypeTheme(data.type);
 
+    const galleryErrorKeys = Object.keys(errors).filter(
+        (key) => key === 'new_galleries' || key.startsWith('new_galleries.'),
+    );
+
     return (
         <div>
             <Card className={cn('transition-colors', theme.card)}>
@@ -296,264 +375,435 @@ export function ProductForm({
                             </ul>
                         </div>
                     )}
-                    <CardContent className="grid gap-6 pt-6 pb-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="title">Title</Label>
-                            <Input
-                                id="title"
-                                placeholder="e.g. Premium Wireless Headphones"
-                                value={data.title}
-                                onChange={(e) =>
-                                    setData('title', e.target.value)
-                                }
-                                required
-                            />
-                            {errors.title && (
-                                <div className="text-sm font-medium text-destructive">
-                                    {errors.title}
-                                </div>
-                            )}
-                        </div>
-
-                        {productTypes.length > 0 && (
-                            <div className="grid gap-2">
-                                <Label htmlFor="type">Product Type</Label>
-                                <select
-                                    id="type"
-                                    className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-sm ring-offset-background placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
-                                    value={data.type}
-                                    onChange={(e) =>
-                                        setData('type', e.target.value)
-                                    }
+                    <CardContent className="pt-6 pb-6">
+                        {/* Settings rail on the left, content on the right —
+                            the mirror of the CMS page/post forms, which put
+                            their narrow column last. */}
+                        <div className="grid items-start gap-8 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-10">
+                            <div className="grid gap-6">
+                                <section
+                                    className={cn(
+                                        'grid gap-6 rounded-xl border p-5',
+                                        theme.fieldset,
+                                    )}
                                 >
-                                    {productTypes.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.type && (
-                                    <div className="text-sm font-medium text-destructive">
-                                        {errors.type}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="category_ids">Categories</Label>
-                            <CategoryMultiSelect
-                                inputId="category_ids"
-                                categories={categories}
-                                productType={data.type}
-                                value={data.category_ids}
-                                onChange={(ids) => setData('category_ids', ids)}
-                                invalid={Boolean(errors.category_ids)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Only categories matching the selected product
-                                type are shown.
-                            </p>
-                            {errors.category_ids && (
-                                <div className="text-sm font-medium text-destructive">
-                                    {errors.category_ids}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                id="in_stock"
-                                checked={data.in_stock}
-                                onCheckedChange={(checked) =>
-                                    setData('in_stock', checked)
-                                }
-                            />
-                            <Label htmlFor="in_stock">
-                                Product is listed and in stock
-                            </Label>
-                            {errors.in_stock && (
-                                <div className="ml-2 text-sm font-medium text-destructive">
-                                    {errors.in_stock}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                id="is_visible"
-                                checked={data.is_visible}
-                                onCheckedChange={(checked) =>
-                                    setData('is_visible', checked)
-                                }
-                            />
-                            <Label htmlFor="is_visible">
-                                Visible on the storefront
-                            </Label>
-                            {errors.is_visible && (
-                                <div className="ml-2 text-sm font-medium text-destructive">
-                                    {errors.is_visible}
-                                </div>
-                            )}
-                        </div>
-
-                        <ProductTypeFields
-                            type={data.type}
-                            data={data}
-                            setData={setData}
-                            errors={errors}
-                        />
-
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            {/* Product Gallery */}
-                            <div className="flex h-full flex-col gap-2">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <Label>
-                                            Product Gallery (Max 6, 1MB each)
-                                        </Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Upload and reorder extra images for
-                                            the product page.
-                                        </p>
-                                    </div>
-                                    <input
-                                        type="file"
-                                        ref={galleryInputRef}
-                                        onChange={handleGalleryChange}
-                                        className="hidden"
-                                        accept="image/*"
-                                        multiple
+                                    <PanelHeading
+                                        theme={theme}
+                                        icon={SlidersHorizontal}
+                                        title="Setup"
+                                        description="How this product behaves and where it appears."
                                     />
-                                    <Button
-                                        type="button"
-                                        onClick={() =>
-                                            galleryInputRef.current?.click()
+
+                                    {productTypes.length > 0 && (
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="type">
+                                                Product Type
+                                            </Label>
+                                            <select
+                                                id="type"
+                                                className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-sm ring-offset-background placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                                                value={data.type}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'type',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {productTypes.map((option) => (
+                                                    <option
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {errors.type && (
+                                                <div className="text-sm font-medium text-destructive">
+                                                    {errors.type}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="category_ids">
+                                            Categories
+                                        </Label>
+                                        <CategoryMultiSelect
+                                            inputId="category_ids"
+                                            categories={categories}
+                                            productType={data.type}
+                                            value={data.category_ids}
+                                            onChange={(ids) =>
+                                                setData('category_ids', ids)
+                                            }
+                                            invalid={Boolean(
+                                                errors.category_ids,
+                                            )}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Only categories matching the
+                                            selected product type are shown.
+                                        </p>
+                                        {errors.category_ids && (
+                                            <div className="text-sm font-medium text-destructive">
+                                                {errors.category_ids}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Separator />
+
+                                    <div className="grid gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <Switch
+                                                id="in_stock"
+                                                checked={data.in_stock}
+                                                onCheckedChange={(checked) =>
+                                                    setData('in_stock', checked)
+                                                }
+                                            />
+                                            <Label htmlFor="in_stock">
+                                                Product is listed and in stock
+                                            </Label>
+                                            {errors.in_stock && (
+                                                <div className="ml-2 text-sm font-medium text-destructive">
+                                                    {errors.in_stock}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <Switch
+                                                id="is_visible"
+                                                checked={data.is_visible}
+                                                onCheckedChange={(checked) =>
+                                                    setData(
+                                                        'is_visible',
+                                                        checked,
+                                                    )
+                                                }
+                                            />
+                                            <Label htmlFor="is_visible">
+                                                Visible on the storefront
+                                            </Label>
+                                            {errors.is_visible && (
+                                                <div className="ml-2 text-sm font-medium text-destructive">
+                                                    {errors.is_visible}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Main Product Image */}
+                                <section className="grid gap-4 rounded-xl border p-5">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="image">
+                                            Main Product Image
+                                        </Label>
+                                        <ImageUpload
+                                            id="image"
+                                            value={data.image}
+                                            onChange={(file) =>
+                                                setData('image', file)
+                                            }
+                                            initialPreviewUrl={
+                                                product?.image
+                                                    ? `/storage/${product.image}`
+                                                    : null
+                                            }
+                                            error={errors.image}
+                                            aspectClassName="aspect-4/3"
+                                            hint="PNG, JPG or WEBP under 1 MB"
+                                        />
+                                        {isEditing && product?.image && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Leave blank to keep the current
+                                                image.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="image_alt">
+                                            Hero image alt text
+                                        </Label>
+                                        <Input
+                                            id="image_alt"
+                                            value={data.image_alt}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'image_alt',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Defaults to the product title"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Describes the image for screen
+                                            readers and social previews.
+                                        </p>
+                                        {errors.image_alt && (
+                                            <div className="text-sm font-medium text-destructive">
+                                                {errors.image_alt}
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+
+                                {/* SEO overrides */}
+                                <section className="grid gap-6 rounded-xl border p-5">
+                                    <PanelHeading
+                                        theme={theme}
+                                        icon={Search}
+                                        title="SEO"
+                                        description="Overrides the metadata generated from the product details."
+                                    />
+
+                                    <div className="grid gap-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <Label htmlFor="seo_title">
+                                                SEO title
+                                            </Label>
+                                            <CharacterCount
+                                                value={data.seo_title}
+                                                limit={SEO_TITLE_LIMIT}
+                                            />
+                                        </div>
+                                        <Input
+                                            id="seo_title"
+                                            value={data.seo_title}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'seo_title',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Defaults to the product title"
+                                        />
+                                        {errors.seo_title && (
+                                            <div className="text-sm font-medium text-destructive">
+                                                {errors.seo_title}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <Label htmlFor="seo_description">
+                                                Meta description
+                                            </Label>
+                                            <CharacterCount
+                                                value={data.seo_description}
+                                                limit={SEO_DESCRIPTION_LIMIT}
+                                            />
+                                        </div>
+                                        <Textarea
+                                            id="seo_description"
+                                            value={data.seo_description}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'seo_description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            rows={4}
+                                            className="resize-none"
+                                            placeholder="Defaults to a summary of the description."
+                                        />
+                                        {errors.seo_description && (
+                                            <div className="text-sm font-medium text-destructive">
+                                                {errors.seo_description}
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+                            </div>
+
+                            <div className="grid gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="title">Title</Label>
+                                    <Input
+                                        id="title"
+                                        placeholder="e.g. Premium Wireless Headphones"
+                                        value={data.title}
+                                        onChange={(e) =>
+                                            setData('title', e.target.value)
                                         }
-                                        variant="secondary"
-                                        size="sm"
-                                        disabled={galleryImages.length >= 6}
-                                        className="w-full sm:w-auto"
-                                    >
-                                        <UploadCloud className="mr-2 size-4" />
-                                        Upload Images
-                                    </Button>
+                                        required
+                                    />
+                                    {errors.title && (
+                                        <div className="text-sm font-medium text-destructive">
+                                            {errors.title}
+                                        </div>
+                                    )}
                                 </div>
 
-                                {galleryImages.length > 0 ? (
-                                    <TooltipProvider>
-                                        <AttachmentGroup className="grid w-full grid-cols-2 content-start gap-4 pt-2 md:grid-cols-3">
-                                            {galleryImages.map(
-                                                (media, index) => (
-                                                    <div
-                                                        key={
-                                                            media.type ===
-                                                            'existing'
-                                                                ? `existing-${media.id}`
-                                                                : `new-${index}`
-                                                        }
-                                                        draggable
-                                                        onDragStart={() =>
-                                                            handleDragStart(
-                                                                index,
-                                                            )
-                                                        }
-                                                        onDragOver={
-                                                            handleDragOver
-                                                        }
-                                                        onDrop={(e) =>
-                                                            handleDrop(e, index)
-                                                        }
-                                                        className={`relative cursor-grab active:cursor-grabbing ${
-                                                            draggedIndex ===
-                                                            index
-                                                                ? 'opacity-50'
-                                                                : 'opacity-100'
-                                                        }`}
-                                                    >
-                                                        <Attachment
-                                                            size="xs"
-                                                            orientation="vertical"
-                                                            className="pointer-events-none w-full! min-w-0 has-data-[slot=attachment-content]:w-full!"
-                                                        >
-                                                            <AttachmentMedia
-                                                                variant="image"
-                                                                className="w-full! rounded-md"
-                                                            >
-                                                                <img
-                                                                    src={
-                                                                        media.type ===
-                                                                        'existing'
-                                                                            ? media.image_path
-                                                                            : media.previewUrl
-                                                                    }
-                                                                    alt="Gallery preview"
-                                                                    loading="lazy"
-                                                                />
-                                                            </AttachmentMedia>
-                                                        </Attachment>
-                                                        <div className="absolute top-1 left-1 rounded-md bg-background/90 p-1 opacity-80 shadow-sm backdrop-blur-sm hover:opacity-100">
-                                                            <GripVertical className="size-4" />
-                                                        </div>
-                                                        <AttachmentActions className="pointer-events-auto absolute top-1 right-1 gap-1 opacity-100">
-                                                            <Tooltip>
-                                                                <TooltipTrigger
-                                                                    asChild
-                                                                >
-                                                                    <AttachmentAction
-                                                                        type="button"
-                                                                        size="icon"
-                                                                        variant="destructive"
-                                                                        className="size-7 shadow-sm"
-                                                                        onClick={(
-                                                                            e,
-                                                                        ) => {
-                                                                            e.stopPropagation();
-                                                                            removeImage(
-                                                                                index,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="size-3.5" />
-                                                                        <span className="sr-only">
-                                                                            Delete
-                                                                        </span>
-                                                                    </AttachmentAction>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    Delete
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </AttachmentActions>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </AttachmentGroup>
-                                    </TooltipProvider>
-                                ) : (
-                                    <div className="mt-2 flex min-h-36 flex-1 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
-                                        No gallery images uploaded yet.
-                                    </div>
-                                )}
+                                <ProductTypeFields
+                                    type={data.type}
+                                    data={data}
+                                    setData={setData}
+                                    errors={errors}
+                                />
 
-                                {Object.keys(errors).filter(
-                                    (key) =>
-                                        key === 'new_galleries' ||
-                                        key.startsWith('new_galleries.'),
-                                ).length > 0 && (
-                                    <div className="text-sm font-medium text-destructive">
-                                        {Object.keys(errors)
-                                            .filter(
-                                                (key) =>
-                                                    key === 'new_galleries' ||
-                                                    key.startsWith(
-                                                        'new_galleries.',
+                                <div className="grid gap-2">
+                                    <Label htmlFor="description">
+                                        Description
+                                    </Label>
+                                    <NovelEditor
+                                        initialValue={data.description}
+                                        onChange={(html) =>
+                                            setData('description', html)
+                                        }
+                                    />
+                                    {errors.description && (
+                                        <div className="text-sm font-medium text-destructive">
+                                            {errors.description}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Product Gallery */}
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <Label>
+                                                Product Gallery (Max 6, 1MB
+                                                each)
+                                            </Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                Upload and reorder extra images
+                                                for the product page.
+                                            </p>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            ref={galleryInputRef}
+                                            onChange={handleGalleryChange}
+                                            className="hidden"
+                                            accept="image/*"
+                                            multiple
+                                        />
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                galleryInputRef.current?.click()
+                                            }
+                                            variant="secondary"
+                                            size="sm"
+                                            disabled={galleryImages.length >= 6}
+                                            className="w-full sm:w-auto"
+                                        >
+                                            <UploadCloud className="mr-2 size-4" />
+                                            Upload Images
+                                        </Button>
+                                    </div>
+
+                                    {galleryImages.length > 0 ? (
+                                        <TooltipProvider>
+                                            <AttachmentGroup className="grid w-full grid-cols-2 content-start gap-4 pt-2 sm:grid-cols-3 xl:grid-cols-4">
+                                                {galleryImages.map(
+                                                    (media, index) => (
+                                                        <div
+                                                            key={
+                                                                media.type ===
+                                                                'existing'
+                                                                    ? `existing-${media.id}`
+                                                                    : `new-${index}`
+                                                            }
+                                                            draggable
+                                                            onDragStart={() =>
+                                                                handleDragStart(
+                                                                    index,
+                                                                )
+                                                            }
+                                                            onDragOver={
+                                                                handleDragOver
+                                                            }
+                                                            onDrop={(e) =>
+                                                                handleDrop(
+                                                                    e,
+                                                                    index,
+                                                                )
+                                                            }
+                                                            className={`relative cursor-grab active:cursor-grabbing ${
+                                                                draggedIndex ===
+                                                                index
+                                                                    ? 'opacity-50'
+                                                                    : 'opacity-100'
+                                                            }`}
+                                                        >
+                                                            <Attachment
+                                                                size="xs"
+                                                                orientation="vertical"
+                                                                className="pointer-events-none w-full! min-w-0 has-data-[slot=attachment-content]:w-full!"
+                                                            >
+                                                                <AttachmentMedia
+                                                                    variant="image"
+                                                                    className="w-full! rounded-md"
+                                                                >
+                                                                    <img
+                                                                        src={
+                                                                            media.type ===
+                                                                            'existing'
+                                                                                ? media.image_path
+                                                                                : media.previewUrl
+                                                                        }
+                                                                        alt="Gallery preview"
+                                                                        loading="lazy"
+                                                                    />
+                                                                </AttachmentMedia>
+                                                            </Attachment>
+                                                            <div className="absolute top-1 left-1 rounded-md bg-background/90 p-1 opacity-80 shadow-sm backdrop-blur-sm hover:opacity-100">
+                                                                <GripVertical className="size-4" />
+                                                            </div>
+                                                            <AttachmentActions className="pointer-events-auto absolute top-1 right-1 gap-1 opacity-100">
+                                                                <Tooltip>
+                                                                    <TooltipTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <AttachmentAction
+                                                                            type="button"
+                                                                            size="icon"
+                                                                            variant="destructive"
+                                                                            className="size-7 shadow-sm"
+                                                                            onClick={(
+                                                                                e,
+                                                                            ) => {
+                                                                                e.stopPropagation();
+                                                                                removeImage(
+                                                                                    index,
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <Trash2 className="size-3.5" />
+                                                                            <span className="sr-only">
+                                                                                Delete
+                                                                            </span>
+                                                                        </AttachmentAction>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        Delete
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            </AttachmentActions>
+                                                        </div>
                                                     ),
-                                            )
-                                            .map((key) => (
+                                                )}
+                                            </AttachmentGroup>
+                                        </TooltipProvider>
+                                    ) : (
+                                        <div className="mt-2 flex min-h-36 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+                                            No gallery images uploaded yet.
+                                        </div>
+                                    )}
+
+                                    {galleryErrorKeys.length > 0 && (
+                                        <div className="text-sm font-medium text-destructive">
+                                            {galleryErrorKeys.map((key) => (
                                                 <div key={key}>
                                                     {
                                                         errors[
@@ -562,92 +812,14 @@ export function ProductForm({
                                                     }
                                                 </div>
                                             ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Main Product Image */}
-                            <div className="flex h-full flex-col gap-2">
-                                <Label>Main Product Image</Label>
-                                <div className="mt-2 flex min-h-36 flex-1 items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 px-6 py-10">
-                                    <div className="text-center">
-                                        <UploadCloud
-                                            className="mx-auto h-12 w-12 text-muted-foreground/50"
-                                            aria-hidden="true"
-                                        />
-                                        <div className="mt-4 flex flex-col items-center text-sm leading-6 text-muted-foreground">
-                                            <div className="flex">
-                                                <label
-                                                    htmlFor="image"
-                                                    className="relative cursor-pointer rounded-md bg-background font-semibold text-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:outline-none hover:text-primary/80"
-                                                >
-                                                    <span>Upload a file</span>
-                                                    <Input
-                                                        id="image"
-                                                        type="file"
-                                                        className="sr-only"
-                                                        onChange={(e) =>
-                                                            setData(
-                                                                'image',
-                                                                e.target.files
-                                                                    ? e.target
-                                                                          .files[0]
-                                                                    : null,
-                                                            )
-                                                        }
-                                                        accept="image/*"
-                                                    />
-                                                </label>
-                                                <p className="pl-1">
-                                                    or drag and drop
-                                                </p>
-                                            </div>
                                         </div>
-                                        <p className="text-xs leading-5 text-muted-foreground">
-                                            {data.image
-                                                ? data.image.name
-                                                : isEditing && product?.image
-                                                  ? 'Leave blank to keep current image'
-                                                  : 'PNG, JPG, WEBP up to 10MB'}
-                                        </p>
-                                        {isEditing &&
-                                            product?.image &&
-                                            !data.image && (
-                                                <div className="mt-4 flex justify-center">
-                                                    <img
-                                                        src={`/storage/${product.image}`}
-                                                        className="h-24 w-24 rounded border object-cover"
-                                                        alt="Current product image"
-                                                    />
-                                                </div>
-                                            )}
-                                    </div>
+                                    )}
                                 </div>
-                                {errors.image && (
-                                    <div className="text-sm font-medium text-destructive">
-                                        {errors.image}
-                                    </div>
-                                )}
+
+                                <div className="grid gap-2">
+                                    <MediaManager />
+                                </div>
                             </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="description">Description</Label>
-                            <NovelEditor
-                                initialValue={data.description}
-                                onChange={(html) =>
-                                    setData('description', html)
-                                }
-                            />
-                            {errors.description && (
-                                <div className="text-sm font-medium text-destructive">
-                                    {errors.description}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="grid gap-2">
-                            <MediaManager />
                         </div>
                     </CardContent>
                     <CardFooter className="justify-end border-t pt-6">

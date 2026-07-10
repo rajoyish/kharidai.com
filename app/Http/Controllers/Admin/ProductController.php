@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AdvanceType;
 use App\Enums\PricingStrategy;
 use App\Enums\ProductType;
+use App\Http\Controllers\Concerns\StoresSeoFriendlyImages;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
@@ -21,6 +22,8 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
+    use StoresSeoFriendlyImages;
+
     public function index(): Response
     {
         $products = Product::with('categories:id,name')->latest()->get();
@@ -47,7 +50,7 @@ class ProductController extends Controller
 
         try {
             if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('products', 'public');
+                $imagePath = $this->storeImageWithSeoName($request->file('image'), 'products', $validated['title']);
 
                 if ($imagePath === false) {
                     abort(500, 'Failed to store the product image.');
@@ -57,7 +60,7 @@ class ProductController extends Controller
                 $uploadedFiles[] = $imagePath;
             }
 
-            $galleryPaths = $this->storeNewGalleryFiles($request, $uploadedFiles);
+            $galleryPaths = $this->storeNewGalleryFiles($request, $uploadedFiles, $validated['title']);
 
             DB::transaction(function () use ($validated, $request, $galleryPaths) {
                 $product = Product::create($validated);
@@ -102,7 +105,7 @@ class ProductController extends Controller
                 if ($product->image) {
                     $oldImage = $product->image;
                 }
-                $imagePath = $request->file('image')->store('products', 'public');
+                $imagePath = $this->storeImageWithSeoName($request->file('image'), 'products', $validated['title'] ?? $product->title);
 
                 if ($imagePath === false) {
                     abort(500, 'Failed to store the product image.');
@@ -112,7 +115,7 @@ class ProductController extends Controller
                 $uploadedFiles[] = $imagePath;
             }
 
-            $galleryPaths = $this->storeNewGalleryFiles($request, $uploadedFiles);
+            $galleryPaths = $this->storeNewGalleryFiles($request, $uploadedFiles, $validated['title'] ?? $product->title);
 
             DB::transaction(function () use ($validated, $request, $product, $galleryPaths) {
                 $product->update($validated);
@@ -203,6 +206,9 @@ class ProductController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
+            'image_alt' => 'nullable|string|max:255',
+            'seo_title' => 'nullable|string|max:255',
+            'seo_description' => 'nullable|string|max:500',
             'in_stock' => 'boolean',
             'is_visible' => 'boolean',
             'category_ids' => 'nullable|array',
@@ -296,9 +302,10 @@ class ProductController extends Controller
      * transaction so no I/O is performed while a transaction is open.
      *
      * @param  list<string>  $uploadedFiles  tracked for rollback cleanup on failure
+     * @param  string|null  $titlePrefix  the product title, to lead each filename with
      * @return array<int, string> map of the new_galleries request index to its stored path
      */
-    protected function storeNewGalleryFiles(Request $request, array &$uploadedFiles): array
+    protected function storeNewGalleryFiles(Request $request, array &$uploadedFiles, ?string $titlePrefix = null): array
     {
         if (! $request->boolean('update_galleries')) {
             return [];
@@ -320,7 +327,7 @@ class ProductController extends Controller
                 continue;
             }
 
-            $path = $file->store('products/gallery', 'public');
+            $path = $this->storeImageWithSeoName($file, 'products/gallery', $titlePrefix);
 
             if ($path === false) {
                 continue;

@@ -15,6 +15,8 @@ use Illuminate\Validation\Rules\Dimensions;
  */
 trait HandlesHeroImage
 {
+    use StoresSeoFriendlyImages;
+
     public const HERO_IMAGE_WIDTH = 1200;
 
     public const HERO_IMAGE_HEIGHT = 630;
@@ -45,14 +47,16 @@ trait HandlesHeroImage
 
     /**
      * Stores a newly uploaded hero image and removes the one it replaces.
+     *
+     * @param  string|null  $titlePrefix  the content title, to lead the filename with
      */
-    protected function storeHeroImage(Request $request, string $directory, ?string $currentPath = null): ?string
+    protected function storeHeroImage(Request $request, string $directory, ?string $currentPath = null, ?string $titlePrefix = null): ?string
     {
         if (! $request->hasFile('image')) {
             return $currentPath;
         }
 
-        $path = $request->file('image')->store($directory, 'public');
+        $path = $this->storeImageWithSeoName($request->file('image'), $directory, $titlePrefix);
 
         if ($path === false) {
             abort(500, 'Failed to store the uploaded image.');

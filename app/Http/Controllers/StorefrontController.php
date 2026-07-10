@@ -164,10 +164,10 @@ class StorefrontController extends Controller
             'startingPrice' => $startingPriceInCents !== null ? $startingPriceInCents / 100 : null,
             'seo' => [
                 'name' => config('app.name'),
-                'title' => $this->pageTitle($product->title),
-                'description' => $this->seoDescription($product->description, $product->title),
+                'title' => $this->pageTitle($product->seo_title ?? $product->title),
+                'description' => $product->seo_description ?? $this->seoDescription($product->description, $product->title),
                 'image' => $productSeoImage['url'],
-                'imageAlt' => $product->title,
+                'imageAlt' => $product->image_alt ?? $product->title,
                 'imageType' => $productSeoImage['type'],
                 'imageWidth' => $productSeoImage['width'],
                 'imageHeight' => $productSeoImage['height'],

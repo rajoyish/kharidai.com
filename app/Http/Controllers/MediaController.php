@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\StoresSeoFriendlyImages;
 use App\Models\Media;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Storage;
 
 class MediaController extends Controller
 {
+    use StoresSeoFriendlyImages;
+
     public function index(): JsonResponse
     {
         return response()->json(Media::latest()->get());
@@ -21,7 +24,7 @@ class MediaController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->store('media', 'public');
+        $path = $this->storeImageWithSeoName($file, 'media');
 
         if ($path === false) {
             abort(500, 'Failed to store the uploaded file.');
