@@ -1,5 +1,10 @@
 import { Link, useForm } from '@inertiajs/react';
-import { create as createUser } from '@/actions/App/Http/Controllers/Admin/UserController';
+import {
+    ban as banUser,
+    create as createUser,
+    destroy as destroyUser,
+    index as usersIndex,
+} from '@/actions/App/Http/Controllers/Admin/UserController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -11,6 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { WhatsappContactAction } from '@/components/whatsapp-contact-action';
 
 type User = {
     id: number;
@@ -52,12 +58,12 @@ export default function UsersIndex({ users }: { users: User[] }) {
     const { post, delete: destroy } = useForm();
 
     const handleBan = (user: User) => {
-        post(`/admin/users/${user.id}/ban`);
+        post(banUser.url(user.id));
     };
 
     const handleDelete = (user: User) => {
         if (confirm('Are you sure you want to delete this user?')) {
-            destroy(`/admin/users/${user.id}`);
+            destroy(destroyUser.url(user.id));
         }
     };
 
@@ -96,7 +102,13 @@ export default function UsersIndex({ users }: { users: User[] }) {
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                    {user.mobile_number || '-'}
+                                    <div className="flex items-center gap-1 whitespace-nowrap">
+                                        <span>{user.mobile_number || '-'}</span>
+                                        <WhatsappContactAction
+                                            name={user.name}
+                                            mobileNumber={user.mobile_number}
+                                        />
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <UserDateCell
@@ -166,5 +178,5 @@ export default function UsersIndex({ users }: { users: User[] }) {
 }
 
 UsersIndex.layout = {
-    breadcrumbs: [{ title: 'User Management', href: '/admin/users' }],
+    breadcrumbs: [{ title: 'User Management', href: usersIndex() }],
 };

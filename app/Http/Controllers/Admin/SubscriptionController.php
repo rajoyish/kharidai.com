@@ -16,7 +16,7 @@ class SubscriptionController extends Controller
     public function index(Request $request): Response
     {
         $subscriptions = Subscription::with([
-            'user',
+            'user:id,name,email,mobile_number',
             'orderItem.productVariant.product',
             'order',
         ])->latest('id')->paginate(10);

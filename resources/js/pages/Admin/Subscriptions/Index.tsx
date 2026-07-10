@@ -12,6 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { WhatsappContactAction } from '@/components/whatsapp-contact-action';
 import { dashboard } from '@/routes/admin';
 import { show as showAdminOrder } from '@/routes/admin/orders';
 import { index as adminSubscriptionsIndex } from '@/routes/admin/subscriptions';
@@ -26,6 +27,7 @@ type Subscription = {
         id: number;
         name: string;
         email: string;
+        mobile_number: string | null;
     };
     order: {
         id: number;
@@ -68,6 +70,9 @@ export default function AdminSubscriptionIndex({
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
                                 <TableHead>Days Left</TableHead>
+                                <TableHead className="text-center">
+                                    Contact
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -127,12 +132,20 @@ export default function AdminSubscriptionIndex({
                                             isExpired={sub.is_expired}
                                         />
                                     </TableCell>
+                                    <TableCell className="text-center">
+                                        <WhatsappContactAction
+                                            name={sub.user.name}
+                                            mobileNumber={
+                                                sub.user.mobile_number
+                                            }
+                                        />
+                                    </TableCell>
                                 </TableRow>
                             ))}
                             {subscriptions.data.length === 0 && (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="h-24 text-center text-muted-foreground"
                                     >
                                         No subscriptions found.

@@ -21,6 +21,7 @@ export type SharedData = {
     name: string;
     auth: Auth;
     cartCount: number;
+    requiresMobileNumber: boolean;
     sidebarOpen: boolean;
     seo: SeoData;
     storefront: StorefrontNavigationData;

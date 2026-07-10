@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Concerns\PasswordValidationRules;
+use App\Concerns\ProfileValidationRules;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -13,7 +14,7 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
-    use PasswordValidationRules;
+    use PasswordValidationRules, ProfileValidationRules;
 
     public function create(): Response
     {
@@ -25,7 +26,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'mobile_number' => ['nullable', 'string', 'max:30'],
+            'mobile_number' => $this->mobileNumberRules(),
             'password' => $this->passwordRules(),
         ]);
 

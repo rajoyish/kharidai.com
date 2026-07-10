@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Rules\MobileNumber;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -38,6 +39,16 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Store mobile numbers in the digits-only, country-code-prefixed form that
+     * `https://wa.me/` links require (e.g. `9779740820005`), regardless of how
+     * they were typed. Bare 10-digit numbers are assumed to be Nepali.
+     */
+    protected function setMobileNumberAttribute(?string $value): void
+    {
+        $this->attributes['mobile_number'] = MobileNumber::normalize($value);
+    }
 
     /**
      * Get the attributes that should be cast.
