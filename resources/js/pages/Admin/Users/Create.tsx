@@ -1,12 +1,11 @@
 import { useForm } from '@inertiajs/react';
-import { store } from '@/actions/App/Http/Controllers/Admin/UserController';
+import { store, index, create } from '@/actions/App/Http/Controllers/Admin/UserController';
 import InputError from '@/components/input-error';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 
 export default function CreateUser() {
     const { data, setData, post, processing, errors } = useForm({
@@ -15,7 +14,6 @@ export default function CreateUser() {
         mobile_number: '',
         password: '',
         password_confirmation: '',
-        is_admin: false as boolean,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -98,17 +96,6 @@ export default function CreateUser() {
                         />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Switch
-                            id="is_admin"
-                            checked={data.is_admin}
-                            onCheckedChange={(checked) =>
-                                setData('is_admin', checked)
-                            }
-                        />
-                        <Label htmlFor="is_admin">Grant admin access</Label>
-                    </div>
-
                     <Button type="submit" disabled={processing}>
                         Create User
                     </Button>
@@ -120,7 +107,7 @@ export default function CreateUser() {
 
 CreateUser.layout = {
     breadcrumbs: [
-        { title: 'User Management', href: '/admin/users' },
-        { title: 'Create', href: '/admin/users/create' },
+        { title: 'User Management', href: index.url() },
+        { title: 'Create', href: create.url() },
     ],
 };

@@ -28,18 +28,6 @@ it('creates a regular user', function () {
         ->and(Hash::check('password123', $user->password))->toBeTrue();
 });
 
-it('can create an admin user', function () {
-    $this->actingAs($this->admin)->post('/admin/users', [
-        'name' => 'New Admin',
-        'email' => 'admin2@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
-        'is_admin' => true,
-    ])->assertRedirect();
-
-    expect(User::where('email', 'admin2@example.com')->firstOrFail()->is_admin)->toBeTrue();
-});
-
 it('validates required fields and unique email', function () {
     $existing = User::factory()->create();
 

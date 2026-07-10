@@ -27,7 +27,6 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'mobile_number' => ['nullable', 'string', 'max:30'],
             'password' => $this->passwordRules(),
-            'is_admin' => ['nullable', 'boolean'],
         ]);
 
         $user = new User;
@@ -35,7 +34,6 @@ class UserController extends Controller
         $user->email = $validated['email'];
         $user->mobile_number = $validated['mobile_number'] ?? null;
         $user->password = $validated['password']; // hashed by the model cast
-        $user->is_admin = $validated['is_admin'] ?? false;
         $user->email_verified_at = Carbon::now();
         $user->save();
 

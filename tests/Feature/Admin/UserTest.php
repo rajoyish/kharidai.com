@@ -36,6 +36,36 @@ test('an admin can list users', function () {
     }
 });
 
+test('a user created by an admin is never an admin', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'New User',
+            'email' => 'new@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
+            'is_admin' => true,
+        ])
+        ->assertRedirect(route('admin.users.index'));
+
+    expect(User::where('email', 'new@example.com')->firstOrFail()->is_admin)->toBeFalse();
+});
+
+test('a user cannot promote themselves through the profile endpoint', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'is_admin' => true,
+        ])
+        ->assertRedirect();
+
+    expect($user->fresh()->is_admin)->toBeFalse();
+});
+
 test('an admin can ban and unban another user', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $user = User::factory()->create();
