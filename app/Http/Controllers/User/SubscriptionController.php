@@ -20,7 +20,7 @@ class SubscriptionController extends Controller
             ->subscriptions()
             ->with([
                 'orderItem.productVariant.product',
-                'order',
+                'order.items.serviceEngagements',
             ])
             ->latest('id')
             ->get();

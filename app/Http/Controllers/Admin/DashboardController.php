@@ -13,27 +13,31 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
-        $recentOrders = Order::with(['user', 'paymentReceipt', 'items'])
+        $recentOrders = Order::with(['user', 'paymentReceipt', 'items.serviceEngagements'])
             ->latest()
             ->take(5)
             ->get();
 
-        $completedOrdersNpr = Order::query()
-            ->completed()
-            ->with('items')
-            ->get();
+        // Sales and profit both hinge on per-item invoice data that SQL cannot sum
+        // for us, so the orders are walked in chunks rather than hydrated all at
+        // once — memory stays flat as the order history grows.
+        $totalProfitNpr = 0.0;
+        $totalSalesNpr = 0.0;
 
-        $totalProfitNpr = $completedOrdersNpr->sum(function ($order) {
-            return $order->items->sum(function ($item) {
-                return ($item->price - $item->purchase_price) * $item->quantity;
+        Order::query()
+            ->completed()
+            ->with('items.serviceEngagements')
+            ->lazy()
+            ->each(function (Order $order) use (&$totalProfitNpr, &$totalSalesNpr): void {
+                $totalProfitNpr += $order->profit;
+                $totalSalesNpr += $order->displayTotalNpr();
             });
-        });
 
         $monthlyTithes = MonthlyTithe::query()->get();
 
         $stats = [
-            'total_sales_npr' => $completedOrdersNpr->sum('total_amount'),
-            'total_profit_npr' => $totalProfitNpr,
+            'total_sales_npr' => round($totalSalesNpr, 2),
+            'total_profit_npr' => round($totalProfitNpr, 2),
             'total_orders' => Order::count(),
             'todays_orders' => Order::whereDate('created_at', today())->count(),
             'pending_orders' => Order::where('status', 'pending')->count(),

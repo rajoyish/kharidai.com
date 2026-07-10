@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -29,6 +30,48 @@ it('can list orders', function () {
     $response = $this->actingAs($this->admin)->get('/admin/orders');
 
     $response->assertSuccessful();
+});
+
+it('lists orders without a query per order', function () {
+    $variant = ProductVariant::factory()->create();
+
+    $seedCompletedOrders = function (int $count) use ($variant): void {
+        foreach (range(1, $count) as $ignored) {
+            $order = Order::factory()->create([
+                'user_id' => $this->user->id,
+                'status' => 'completed',
+            ]);
+
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_variant_id' => $variant->id,
+                'price' => 1000,
+                'purchase_price' => 400,
+                'quantity' => 1,
+            ]);
+        }
+    };
+
+    $countQueries = function (): int {
+        $queries = 0;
+        DB::listen(function () use (&$queries): void {
+            $queries++;
+        });
+
+        $this->actingAs($this->admin)->get('/admin/orders')->assertSuccessful();
+
+        return $queries;
+    };
+
+    $seedCompletedOrders(2);
+    $twoOrders = $countQueries();
+
+    $seedCompletedOrders(4);
+    $sixOrders = $countQueries();
+
+    // The appended `profit` attribute reaches for items.serviceEngagements, so a
+    // missing eager load shows up here as one extra query per completed order.
+    expect($sixOrders)->toBe($twoOrders);
 });
 
 it('can view order details', function () {

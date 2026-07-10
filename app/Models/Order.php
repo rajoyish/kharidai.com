@@ -140,9 +140,9 @@ class Order extends Model
             return 0.0;
         }
 
-        return $this->items->sum(function ($item) {
-            return ($item->price - $item->purchase_price) * $item->quantity;
-        });
+        return round($this->items->sum(
+            fn (OrderItem $item): float => $item->profitNpr(),
+        ), 2);
     }
 
     /**
@@ -164,21 +164,9 @@ class Order extends Model
      */
     public function displayTotalNpr(): float
     {
-        $this->loadMissing('items.serviceEngagements');
-
-        $itemsTotal = $this->items->sum(function (OrderItem $item): float {
-            $invoiced = $item->serviceEngagements->filter(
-                fn (ServiceEngagement $engagement): bool => filled($engagement->line_items),
-            );
-
-            if ($invoiced->isEmpty()) {
-                return $item->price * $item->quantity;
-            }
-
-            return $invoiced->sum(
-                fn (ServiceEngagement $engagement): float => $engagement->grandTotalNpr(),
-            );
-        });
+        $itemsTotal = $this->items->sum(
+            fn (OrderItem $item): float => $item->revenueNpr(),
+        );
 
         return round($itemsTotal + $this->shipping_total, 2);
     }

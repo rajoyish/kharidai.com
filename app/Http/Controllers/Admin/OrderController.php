@@ -21,7 +21,9 @@ class OrderController extends Controller
 {
     public function index(Request $request): Response
     {
-        $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product'])->latest();
+        // items.serviceEngagements feeds the appended `profit` attribute, which is
+        // serialized for every order below; without it each order lazy-loads.
+        $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product', 'items.serviceEngagements'])->latest();
 
         $digitalOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
             $q->where('type', 'digital');
