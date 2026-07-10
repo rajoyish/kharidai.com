@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\ProductType;
+use App\Http\Controllers\Settings\MobileNumberController;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Page;
@@ -44,17 +45,25 @@ class HandleInertiaRequests extends Middleware
     {
         $siteName = config('app.name');
 
-        $cart = $request->user()
-            ? Cart::where('user_id', $request->user()->id)->withSum('items', 'quantity')->first()
+        $user = $request->user();
+
+        $cart = $user
+            ? Cart::where('user_id', $user->id)->withSum('items', 'quantity')->first()
             : null;
 
         $shared = [
             ...parent::share($request),
             'name' => $siteName,
             'auth' => [
-                'user' => $request->user() ? $request->user()->only('id', 'name', 'email', 'avatar', 'is_admin') : null,
+                'user' => $user ? $user->only('id', 'name', 'email', 'avatar', 'is_admin') : null,
             ],
             'cartCount' => (int) ($cart?->getAttribute('items_sum_quantity') ?? 0),
+            // Drives the banner prompting users for a WhatsApp-reachable
+            // number. Guests are never prompted, and dismissal is remembered
+            // for the current login only.
+            'requiresMobileNumber' => $user !== null
+                && blank($user->mobile_number)
+                && ! $request->session()->get(MobileNumberController::DISMISSED_SESSION_KEY, false),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'seo' => [
                 'name' => $siteName,

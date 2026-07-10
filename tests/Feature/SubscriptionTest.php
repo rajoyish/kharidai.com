@@ -63,6 +63,24 @@ it('allows admins to view all subscriptions', function () {
     );
 });
 
+it('exposes the subscriber mobile number to the admin subscription listing', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $withMobile = User::factory()->create(['mobile_number' => '9740820005']);
+    $withoutMobile = User::factory()->create(['mobile_number' => null]);
+
+    $reachable = Subscription::factory()->create(['user_id' => $withMobile->id]);
+    $unreachable = Subscription::factory()->create(['user_id' => $withoutMobile->id]);
+
+    $response = $this->actingAs($admin)->get(route('admin.subscriptions.index'));
+
+    $response->assertSuccessful();
+
+    $subscriptions = collect($response->inertiaProps('subscriptions.data'))->keyBy('id');
+
+    expect($subscriptions[$reachable->id]['user']['mobile_number'])->toBe('9779740820005')
+        ->and($subscriptions[$unreachable->id]['user']['mobile_number'])->toBeNull();
+});
+
 it('serializes expired status for user and admin subscription listings', function () {
     $this->travelTo(Carbon::parse('2026-07-02 12:00:00'));
 

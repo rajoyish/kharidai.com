@@ -3,6 +3,7 @@
 namespace App\Concerns;
 
 use App\Models\User;
+use App\Rules\MobileNumber;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -57,6 +58,17 @@ trait ProfileValidationRules
      */
     protected function mobileNumberRules(): array
     {
-        return ['nullable', 'string', 'max:20'];
+        return ['nullable', 'string', 'max:20', new MobileNumber];
+    }
+
+    /**
+     * The mobile number rules for contexts where the number is mandatory, such
+     * as the prompt shown to users who have not supplied one yet.
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function requiredMobileNumberRules(): array
+    {
+        return ['required', 'string', 'max:20', new MobileNumber];
     }
 }

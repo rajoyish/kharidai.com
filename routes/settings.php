@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\MobileNumberController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -10,6 +11,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::patch('settings/mobile-number', [MobileNumberController::class, 'update'])->name('mobile-number.update');
+    Route::post('settings/mobile-number/dismiss', [MobileNumberController::class, 'dismiss'])->name('mobile-number.dismiss');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
