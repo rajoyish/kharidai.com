@@ -17,7 +17,11 @@ import {
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
-import { ServiceInvoiceCard } from '@/components/service-invoice-card';
+import {
+    ServiceInvoiceCard
+    
+} from '@/components/service-invoice-card';
+import type {ServiceInvoice} from '@/components/service-invoice-card';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -71,24 +75,7 @@ type Order = {
                 type: 'physical' | 'digital' | 'service';
             };
         };
-        service_invoices: {
-            id: number;
-            status_label: string;
-            project_name: string | null;
-            line_items: {
-                label: string;
-                quantity: number;
-                unit_price_npr: number;
-            }[];
-            subtotal_npr: number;
-            tax_rate: number;
-            tax_npr: number;
-            grand_total_npr: number;
-            advance_paid_npr: number;
-            due_npr: number;
-            payment_status: string;
-            project_completion_date: string | null;
-        }[];
+        service_invoices: ServiceInvoice[];
     }[];
     credentials: {
         id: number;
@@ -379,12 +366,17 @@ export default function AdminOrderShow({
                                                     </p>
                                                 </div>
                                             )}
-                                            {item.service_invoices && item.service_invoices.map((invoice) => (
-                                                <ServiceInvoiceCard
-                                                    key={invoice.id}
-                                                    invoice={invoice as any}
-                                                />
-                                            ))}
+                                            {item.service_invoices &&
+                                                item.service_invoices.map(
+                                                    (invoice) => (
+                                                        <ServiceInvoiceCard
+                                                            key={invoice.id}
+                                                            invoice={
+                                                                invoice as any
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
                                         </div>
                                     </div>
                                 ))}
@@ -550,66 +542,67 @@ export default function AdminOrderShow({
                         {parseFloat(order.total_amount) > 0 && (
                             <div className="rounded-xl border bg-card p-6">
                                 <h2 className="mb-4 text-xl font-semibold">
-                                Payment Breakdown
-                            </h2>
-                            <div className="space-y-1 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        Items
-                                    </span>
-                                    <span>Rs. {order.items_total}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        Shipping
-                                    </span>
-                                    <span>Rs. {order.shipping_total}</span>
-                                </div>
-                                <div className="flex justify-between border-t pt-1 font-semibold">
-                                    <span>Total</span>
-                                    <span>Rs. {order.total_amount}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        Paid / due now
-                                    </span>
-                                    <span>Rs. {order.amount_due_now}</span>
-                                </div>
-                                {Number(order.balance_due) > 0 && (
-                                    <div className="flex items-center justify-between text-amber-600">
-                                        <span>Balance due on delivery</span>
-                                        <span className="flex items-center gap-2">
-                                            Rs. {order.balance_due}
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    router.patch(
-                                                        markBalancePaid(order)
-                                                            .url,
-                                                        {},
-                                                        {
-                                                            preserveScroll: true,
-                                                        },
-                                                    )
-                                                }
-                                            >
-                                                Mark paid
-                                            </Button>
+                                    Payment Breakdown
+                                </h2>
+                                <div className="space-y-1 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Items
                                         </span>
+                                        <span>Rs. {order.items_total}</span>
                                     </div>
-                                )}
-                                {order.payment_option && (
-                                    <p className="pt-1 text-xs text-muted-foreground">
-                                        Payment option:{' '}
-                                        {order.payment_option ===
-                                        'shipping_only'
-                                            ? 'Shipping only (rest on delivery)'
-                                            : 'Full payment'}
-                                    </p>
-                                )}
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Shipping
+                                        </span>
+                                        <span>Rs. {order.shipping_total}</span>
+                                    </div>
+                                    <div className="flex justify-between border-t pt-1 font-semibold">
+                                        <span>Total</span>
+                                        <span>Rs. {order.total_amount}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Paid / due now
+                                        </span>
+                                        <span>Rs. {order.amount_due_now}</span>
+                                    </div>
+                                    {Number(order.balance_due) > 0 && (
+                                        <div className="flex items-center justify-between text-amber-600">
+                                            <span>Balance due on delivery</span>
+                                            <span className="flex items-center gap-2">
+                                                Rs. {order.balance_due}
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        router.patch(
+                                                            markBalancePaid(
+                                                                order,
+                                                            ).url,
+                                                            {},
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        )
+                                                    }
+                                                >
+                                                    Mark paid
+                                                </Button>
+                                            </span>
+                                        </div>
+                                    )}
+                                    {order.payment_option && (
+                                        <p className="pt-1 text-xs text-muted-foreground">
+                                            Payment option:{' '}
+                                            {order.payment_option ===
+                                            'shipping_only'
+                                                ? 'Shipping only (rest on delivery)'
+                                                : 'Full payment'}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                        </div>
                         )}
 
                         {/* Shipment */}

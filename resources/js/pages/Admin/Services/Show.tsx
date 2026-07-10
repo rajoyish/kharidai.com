@@ -5,11 +5,16 @@ import { useState } from 'react';
 import { show as showAdminOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import {
     assignOrder,
-    linkOrder,
+    complete,
+    recordAdvance,
     saveInvoice,
+    signContract,
     updatePaymentStatus,
+    updateStatus,
 } from '@/actions/App/Http/Controllers/Admin/ServiceEngagementController';
+import { EngagementStatusBadge } from '@/components/engagement-status-badge';
 import InputError from '@/components/input-error';
+import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -47,13 +52,23 @@ type Engagement = {
     product: { id: number; title: string } | null;
     variant: { id: number; name: string } | null;
     brief: { note?: string } | null;
-    order: { id: number; order_number: string } | null;
+    order: {
+        id: number;
+        order_number: string;
+        payment_receipt: {
+            id: number;
+            file_path: string;
+            status: string;
+        } | null;
+    } | null;
+    advance_required_npr: number;
 };
 
-type LinkableOrderItem = {
-    id: number;
-    order_number: string;
+/** A status this engagement may move to; blocked ones carry the reason why. */
+type StatusOption = {
+    value: string;
     label: string;
+    blocked_reason: string | null;
 };
 
 /** Whole-rupee formatting with thousands separators, e.g. 32000 → "Rs 32,000". */
@@ -66,11 +81,11 @@ const num = (value: number | string): number => Number(value) || 0;
 export default function ServiceInvoice({
     engagement,
     lineItemSuggestions,
-    linkableOrderItems,
+    statusOptions,
 }: {
     engagement: Engagement;
     lineItemSuggestions: LineItem[];
-    linkableOrderItems: LinkableOrderItem[];
+    statusOptions: StatusOption[];
 }) {
     // Prefill from a previously saved invoice, otherwise seed the editable rows
     // from the service's pricing strategy so the admin starts with the right
@@ -169,10 +184,8 @@ export default function ServiceInvoice({
         );
     };
 
-    // Assigning an order gives the customer something payable; either generate a
-    // fresh order from the invoice or link one they already placed.
+    // Assigning an order gives the customer something payable.
     const [assigningOrder, setAssigningOrder] = useState(false);
-    const [selectedOrderItem, setSelectedOrderItem] = useState<string>('');
 
     const createOrder = () => {
         setAssigningOrder(true);
@@ -186,21 +199,47 @@ export default function ServiceInvoice({
         );
     };
 
-    const submitLinkOrder = () => {
-        if (!selectedOrderItem) {
+    // The lifecycle status moves through the guarded state machine, so the
+    // contract and advance gates get their own actions: they are the only way
+    // to satisfy the pre-conditions for reaching "In progress".
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [nextStatus, setNextStatus] = useState<string>('');
+
+    const runStatusAction = (url: string, payload: Record<string, number>) => {
+        setUpdatingStatus(true);
+        router.post(url, payload, {
+            preserveScroll: true,
+            onFinish: () => setUpdatingStatus(false),
+        });
+    };
+
+    const submitStatus = () => {
+        if (!nextStatus) {
             return;
         }
 
-        setAssigningOrder(true);
-        router.post(
-            linkOrder.url({ serviceEngagement: engagement.id }),
-            { order_item_id: Number(selectedOrderItem) },
+        setUpdatingStatus(true);
+        router.patch(
+            updateStatus.url({ serviceEngagement: engagement.id }),
+            { status: nextStatus },
             {
                 preserveScroll: true,
-                onFinish: () => setAssigningOrder(false),
+                onSuccess: () => setNextStatus(''),
+                onFinish: () => setUpdatingStatus(false),
             },
         );
     };
+
+    const [advanceAmount, setAdvanceAmount] = useState<string>('');
+
+    const awaitingContract = engagement.status === 'pending_contract';
+    const awaitingAdvance = engagement.status === 'awaiting_advance';
+    const takeableStatuses = statusOptions.filter(
+        (option) => option.blocked_reason === null,
+    );
+    const canComplete = takeableStatuses.some(
+        (option) => option.value === 'completed',
+    );
 
     return (
         <>
@@ -211,11 +250,177 @@ export default function ServiceInvoice({
                 title="Invoice Brief Generator"
                 variant="transparent"
                 actions={
-                    <Badge variant={paid ? 'default' : 'secondary'}>
-                        {paid ? 'Paid' : 'Due'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                        <EngagementStatusBadge
+                            status={engagement.status}
+                            label={engagement.status_label}
+                        />
+                        <Badge variant={paid ? 'default' : 'secondary'}>
+                            {paid ? 'Paid' : 'Due'}
+                        </Badge>
+                    </div>
                 }
             >
+                <div className="mb-6 grid max-w-3xl gap-4 rounded-xl border bg-card p-6">
+                    <div>
+                        <h2 className="text-base font-semibold">
+                            Service Status
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Where this engagement sits in its lifecycle. The
+                            customer sees this on their order and services
+                            pages.
+                        </p>
+                    </div>
+
+                    {awaitingContract && (
+                        <div className="grid gap-2 rounded-md border bg-muted/40 p-3">
+                            <p className="text-sm">
+                                Work cannot begin until the contract is signed.
+                            </p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-fit"
+                                disabled={updatingStatus}
+                                onClick={() =>
+                                    runStatusAction(
+                                        signContract.url({
+                                            serviceEngagement: engagement.id,
+                                        }),
+                                        {},
+                                    )
+                                }
+                            >
+                                Mark contract as signed
+                            </Button>
+                        </div>
+                    )}
+
+                    {awaitingAdvance && (
+                        <div className="grid gap-2 rounded-md border bg-muted/40 p-3">
+                            <p className="text-sm">
+                                Work begins once the advance of{' '}
+                                {rs(engagement.advance_required_npr)} is paid in
+                                full.
+                            </p>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    className="sm:w-48"
+                                    placeholder="Amount received"
+                                    value={advanceAmount}
+                                    onChange={(e) =>
+                                        setAdvanceAmount(e.target.value)
+                                    }
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={updatingStatus || !advanceAmount}
+                                    onClick={() =>
+                                        runStatusAction(
+                                            recordAdvance.url({
+                                                serviceEngagement:
+                                                    engagement.id,
+                                            }),
+                                            { amount_npr: num(advanceAmount) },
+                                        )
+                                    }
+                                >
+                                    Record advance
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {statusOptions.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                            {engagement.status_label} is a final state; this
+                            engagement can no longer change status.
+                        </p>
+                    ) : (
+                        <div className="grid gap-2">
+                            <Label htmlFor="next_status">Move status to</Label>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <Select
+                                    value={nextStatus}
+                                    onValueChange={setNextStatus}
+                                >
+                                    <SelectTrigger
+                                        id="next_status"
+                                        className="sm:w-72"
+                                    >
+                                        <SelectValue placeholder="Select a status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {statusOptions.map((option) => (
+                                            <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                                disabled={
+                                                    option.blocked_reason !==
+                                                    null
+                                                }
+                                            >
+                                                {option.label}
+                                                {option.blocked_reason && (
+                                                    <span className="text-muted-foreground">
+                                                        {' '}
+                                                        —{' '}
+                                                        {option.blocked_reason}
+                                                    </span>
+                                                )}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    type="button"
+                                    disabled={updatingStatus || !nextStatus}
+                                    onClick={submitStatus}
+                                >
+                                    Update status
+                                </Button>
+                            </div>
+                            {takeableStatuses.length === 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    Every next status is blocked until the step
+                                    above is completed.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {canComplete && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/40 p-3">
+                            <p className="text-sm">
+                                Work delivered and settled? Close this
+                                engagement out.
+                            </p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={updatingStatus}
+                                onClick={() =>
+                                    runStatusAction(
+                                        complete.url({
+                                            serviceEngagement: engagement.id,
+                                        }),
+                                        {},
+                                    )
+                                }
+                            >
+                                <Check className="mr-2 h-4 w-4" />
+                                Mark as Completed
+                            </Button>
+                        </div>
+                    )}
+                </div>
+
                 <form
                     onSubmit={submit}
                     className="grid max-w-3xl gap-6 rounded-xl border bg-card p-6"
@@ -456,25 +661,74 @@ export default function ServiceInvoice({
                     </div>
 
                     {engagement.order ? (
-                        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 p-3">
-                            <div className="text-sm">
-                                <span className="text-muted-foreground">
-                                    Linked to order{' '}
-                                </span>
-                                <span className="font-medium">
-                                    {engagement.order.order_number}
-                                </span>
+                        <div className="grid gap-3">
+                            <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 p-3">
+                                <div className="text-sm">
+                                    <span className="text-muted-foreground">
+                                        Linked to order{' '}
+                                    </span>
+                                    <span className="font-medium">
+                                        {engagement.order.order_number}
+                                    </span>
+                                </div>
+                                <Button asChild variant="outline" size="sm">
+                                    <Link
+                                        href={showAdminOrder.url({
+                                            order: engagement.order.id,
+                                        })}
+                                    >
+                                        Open order
+                                        <ExternalLink className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
                             </div>
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={showAdminOrder.url({
-                                        order: engagement.order.id,
-                                    })}
-                                >
-                                    Open order
-                                    <ExternalLink className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
+
+                            {engagement.order.payment_receipt ? (
+                                <div className="grid gap-2 rounded-md border p-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm font-medium">
+                                            Payment Receipt
+                                        </p>
+                                        <span
+                                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
+                                                engagement.order.payment_receipt
+                                                    .status === 'approved'
+                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                                    : engagement.order
+                                                            .payment_receipt
+                                                            .status ===
+                                                        'rejected'
+                                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
+                                                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
+                                            }`}
+                                        >
+                                            {
+                                                engagement.order.payment_receipt
+                                                    .status
+                                            }
+                                        </span>
+                                    </div>
+                                    <div className="overflow-hidden rounded-md border bg-muted p-2">
+                                        <LightboxImageLink
+                                            src={`/storage/${engagement.order.payment_receipt.file_path}`}
+                                            alt="Payment Receipt"
+                                            ariaLabel="View full-size payment receipt"
+                                            className="w-full"
+                                            imageClassName="h-auto max-h-48 w-full object-contain transition-opacity hover:opacity-90"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Verify the payment, then flip the
+                                        Payment Status toggle above to mark this
+                                        invoice as paid.
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    The customer has not uploaded a payment
+                                    receipt yet.
+                                </p>
+                            )}
                         </div>
                     ) : (
                         <div className="grid gap-5">
@@ -483,7 +737,8 @@ export default function ServiceInvoice({
                                     type="button"
                                     className="w-fit"
                                     disabled={
-                                        assigningOrder || !engagement.invoice_ready
+                                        assigningOrder ||
+                                        !engagement.invoice_ready
                                     }
                                     onClick={createOrder}
                                 >
@@ -495,47 +750,6 @@ export default function ServiceInvoice({
                                     </p>
                                 )}
                             </div>
-
-                            {linkableOrderItems.length > 0 && (
-                                <div className="grid gap-2 border-t pt-5">
-                                    <Label>Or link an existing order</Label>
-                                    <div className="flex flex-col gap-2 sm:flex-row">
-                                        <Select
-                                            value={selectedOrderItem}
-                                            onValueChange={setSelectedOrderItem}
-                                        >
-                                            <SelectTrigger className="sm:w-80">
-                                                <SelectValue placeholder="Select an order" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {linkableOrderItems.map(
-                                                    (item) => (
-                                                        <SelectItem
-                                                            key={item.id}
-                                                            value={String(
-                                                                item.id,
-                                                            )}
-                                                        >
-                                                            {item.label}
-                                                        </SelectItem>
-                                                    ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            disabled={
-                                                assigningOrder ||
-                                                !selectedOrderItem
-                                            }
-                                            onClick={submitLinkOrder}
-                                        >
-                                            Link Order
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>

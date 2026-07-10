@@ -75,14 +75,16 @@ class OrderSeeder extends Seeder
                 'price' => $variant->price_npr,
                 'purchase_price' => $variant->purchase_price_npr ?? $variant->price_npr * 0.6,
                 'quantity' => $qty,
+                'brief' => $type === 2 ? ['requirements' => 'Sample requirements for order '.$order->id, 'examples' => 'example.com'] : null,
             ]);
 
             if ($type === 1) { // Physical
+                $streets = ['New Road', 'Durbar Marg', 'Thamel', 'Baneshwor', 'Patan Dhoka', 'Jhamsikhel'];
                 $address = ShippingAddress::create([
                     'user_id' => $user->id,
                     'recipient_name' => $user->name,
                     'mobile_number' => '98'.rand(10000000, 99999999),
-                    'address_line' => $i.' Fake Street',
+                    'address_line' => rand(10, 999).' '.$streets[array_rand($streets)],
                     'city' => 'Kathmandu',
                     'shipping_zone_id' => 1,
                 ]);
@@ -112,7 +114,12 @@ class OrderSeeder extends Seeder
                     'purchase_price_npr' => $variant->purchase_price_npr ?? $variant->price_npr * 0.4,
                     'advance_required_npr' => 0,
                     'advance_paid_npr' => 0,
-                    'brief' => ['requirements' => 'Sample requirements for order '.$order->id, 'examples' => 'example.com'],
+                    'project_name' => $product->title,
+                    'line_items' => [
+                        ['label' => 'Standard Service', 'quantity' => 1, 'unit_price_npr' => $variant->price_npr],
+                    ],
+                    'tax_rate' => 13.00,
+                    'project_completion_date' => $engagementStatus === EngagementStatus::Completed ? now() : null,
                 ]);
             }
         }

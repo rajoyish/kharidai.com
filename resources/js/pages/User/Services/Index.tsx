@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 
+import { EngagementStatusBadge } from '@/components/engagement-status-badge';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import { show as showOrder } from '@/routes/orders';
 type Engagement = {
     id: number;
     status: string;
+    status_label: string;
     payment_status: string;
     project_name: string | null;
     total_npr: number;
@@ -51,6 +53,7 @@ export default function UserServicesIndex({
                             <TableHead>Service</TableHead>
                             <TableHead>Package</TableHead>
                             <TableHead>Order</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Completion Date</TableHead>
                             <TableHead className="text-right">
@@ -112,6 +115,12 @@ export default function UserServicesIndex({
                                     )}
                                 </TableCell>
                                 <TableCell>
+                                    <EngagementStatusBadge
+                                        status={engagement.status}
+                                        label={engagement.status_label}
+                                    />
+                                </TableCell>
+                                <TableCell>
                                     <Badge
                                         variant={
                                             engagement.payment_status === 'paid'
@@ -138,7 +147,7 @@ export default function UserServicesIndex({
                         {engagements.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={7}
+                                    colSpan={8}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     You have no services yet.

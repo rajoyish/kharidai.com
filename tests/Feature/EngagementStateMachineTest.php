@@ -65,6 +65,28 @@ it('blocks work until the advance is paid in full', function () {
     expect($engagement->status)->toBe(EngagementStatus::InProgress);
 });
 
+it('gates awaiting payment and completion on an agreed price', function () {
+    $engagement = ServiceEngagement::factory()->negotiation()->create();
+
+    expect($this->machine->canTransition($engagement, EngagementStatus::AwaitingPayment))->toBeFalse()
+        ->and($this->machine->canTransition($engagement, EngagementStatus::Completed))->toBeFalse();
+
+    $engagement->update(['agreed_price_npr' => 11000]);
+
+    expect($this->machine->canTransition($engagement, EngagementStatus::AwaitingPayment))->toBeTrue()
+        ->and($this->machine->canTransition($engagement, EngagementStatus::Completed))->toBeTrue();
+});
+
+it('walks awaiting payment through to completion', function () {
+    $engagement = ServiceEngagement::factory()->finalBilling()->create();
+
+    $this->machine->transition($engagement, EngagementStatus::AwaitingPayment);
+    expect($engagement->status)->toBe(EngagementStatus::AwaitingPayment);
+
+    $this->machine->transition($engagement, EngagementStatus::Completed);
+    expect($engagement->status)->toBe(EngagementStatus::Completed);
+});
+
 it('rejects an illegal jump to completed', function () {
     $engagement = ServiceEngagement::factory()->inProgress()->create();
 

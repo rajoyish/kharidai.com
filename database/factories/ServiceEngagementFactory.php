@@ -36,7 +36,11 @@ class ServiceEngagementFactory extends Factory
             'advance_required_npr' => 0,
             'advance_paid_npr' => 0,
             'advance_paid_at' => null,
+            'project_completion_date' => null,
             'measurement' => null,
+            'project_name' => $this->faker->words(3, true),
+            'line_items' => null,
+            'tax_rate' => 13.00,
             'calculated_cost_npr' => 0,
             'agreed_price_npr' => null,
             'brief' => null,
@@ -94,6 +98,16 @@ class ServiceEngagementFactory extends Factory
     {
         return $this->state([
             'status' => EngagementStatus::FinalBilling,
+            'measurement' => ['hours' => 8],
+            'calculated_cost_npr' => 12000,
+            'agreed_price_npr' => 11000,
+        ]);
+    }
+
+    public function awaitingPayment(): static
+    {
+        return $this->state([
+            'status' => EngagementStatus::AwaitingPayment,
             'measurement' => ['hours' => 8],
             'calculated_cost_npr' => 12000,
             'agreed_price_npr' => 11000,

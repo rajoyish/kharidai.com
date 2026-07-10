@@ -19,7 +19,8 @@ import { index as ordersIndex, show as showOrder } from '@/routes/orders';
 type Order = {
     id: number;
     order_number: string;
-    total_amount: string;
+    /** Invoice-aware total: service invoices supersede checkout estimates. */
+    display_total_npr: number;
     status: string;
     created_at: string;
     can_reupload_receipt: boolean;
@@ -94,7 +95,10 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     </div>
                                 </TableCell>
                                 <TableCell className="font-bold whitespace-nowrap">
-                                    Rs. {order.total_amount}
+                                    Rs.{' '}
+                                    {Math.round(
+                                        order.display_total_npr,
+                                    ).toLocaleString('en-IN')}
                                 </TableCell>
                                 <TableCell>
                                     <span

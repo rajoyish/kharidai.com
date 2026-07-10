@@ -155,6 +155,35 @@ class Order extends Model
     }
 
     /**
+     * The order total shown to the customer, in NPR. A service item's checkout
+     * price is only an estimate; once its engagement has a saved invoice, the
+     * invoice's grand total is what the customer actually owes. So each item
+     * with invoiced engagements contributes those grand totals in place of its
+     * snapshot price, everything else contributes price × quantity, and
+     * shipping is added on top.
+     */
+    public function displayTotalNpr(): float
+    {
+        $this->loadMissing('items.serviceEngagements');
+
+        $itemsTotal = $this->items->sum(function (OrderItem $item): float {
+            $invoiced = $item->serviceEngagements->filter(
+                fn (ServiceEngagement $engagement): bool => filled($engagement->line_items),
+            );
+
+            if ($invoiced->isEmpty()) {
+                return $item->price * $item->quantity;
+            }
+
+            return $invoiced->sum(
+                fn (ServiceEngagement $engagement): float => $engagement->grandTotalNpr(),
+            );
+        });
+
+        return round($itemsTotal + $this->shipping_total, 2);
+    }
+
+    /**
      * @return Attribute<float, float|int>
      */
     protected function totalAmount(): Attribute

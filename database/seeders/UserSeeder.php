@@ -12,7 +12,20 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Generate 10 completely random fake users for testing purposes.
+        // Create specific users for testing and local development
+        User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'admin@kharidai.test',
+            'is_admin' => true,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Regular Customer',
+            'email' => 'customer@kharidai.test',
+            'is_admin' => false,
+        ]);
+
+        // Generate additional random fake users for testing purposes.
         User::factory()->count(10)->create();
     }
 }

@@ -45,6 +45,35 @@ class EngagementStateMachine
     }
 
     /**
+     * Why a transition the lifecycle otherwise permits is currently blocked, or
+     * null when it may be taken. The admin UI offers every legal edge and uses
+     * this to explain the ones it has to disable.
+     */
+    public function blockedReason(ServiceEngagement $engagement, EngagementStatus $to): ?string
+    {
+        if (! $engagement->status->canTransitionTo($to)) {
+            return 'Not reachable from '.$engagement->status->label().'.';
+        }
+
+        if ($this->guardPasses($engagement, $to)) {
+            return null;
+        }
+
+        return match ($to) {
+            EngagementStatus::AwaitingAdvance => 'The contract must be signed first.',
+            EngagementStatus::InProgress => $engagement->status === EngagementStatus::PendingContract
+                ? 'The contract must be signed first.'
+                : 'The advance must be paid in full first.',
+            EngagementStatus::Negotiation => 'Save the invoice brief first so a cost is calculated.',
+            EngagementStatus::FinalBilling,
+            EngagementStatus::AwaitingPayment,
+            EngagementStatus::Completed => 'Save the invoice brief first so a price is agreed.',
+            EngagementStatus::PendingContract => 'An engagement cannot return to Pending contract.',
+            EngagementStatus::Cancelled => null,
+        };
+    }
+
+    /**
      * @throws InvalidEngagementTransitionException
      */
     public function transition(ServiceEngagement $engagement, EngagementStatus $to): void
@@ -67,6 +96,7 @@ class EngagementStateMachine
             EngagementStatus::InProgress => $this->readyForWork($engagement),
             EngagementStatus::Negotiation => $engagement->calculated_cost_npr > 0,
             EngagementStatus::FinalBilling => $engagement->agreed_price_npr !== null,
+            EngagementStatus::AwaitingPayment => $engagement->agreed_price_npr !== null,
             EngagementStatus::Completed => $engagement->agreed_price_npr !== null,
             EngagementStatus::PendingContract => false,
         };

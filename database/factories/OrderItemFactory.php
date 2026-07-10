@@ -18,7 +18,7 @@ class OrderItemFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'brief' => null,
         ];
     }
 }
