@@ -29,6 +29,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { formatNpr } from '@/lib/currency';
 
 type LineItem = {
     label: string;
@@ -70,11 +71,6 @@ type StatusOption = {
     label: string;
     blocked_reason: string | null;
 };
-
-/** Whole-rupee formatting with thousands separators, e.g. 32000 → "Rs 32,000". */
-function rs(value: number): string {
-    return `Rs ${Math.round(value).toLocaleString('en-IN')}`;
-}
 
 const num = (value: number | string): number => Number(value) || 0;
 
@@ -302,8 +298,8 @@ export default function ServiceInvoice({
                         <div className="grid gap-2 rounded-md border bg-muted/40 p-3">
                             <p className="text-sm">
                                 Work begins once the advance of{' '}
-                                {rs(engagement.advance_required_npr)} is paid in
-                                full.
+                                {formatNpr(engagement.advance_required_npr)} is
+                                paid in full.
                             </p>
                             <div className="flex flex-col gap-2 sm:flex-row">
                                 <Input
@@ -518,7 +514,7 @@ export default function ServiceInvoice({
                                         placeholder="Rate"
                                     />
                                     <div className="self-center text-right text-sm font-medium tabular-nums">
-                                        {rs(
+                                        {formatNpr(
                                             num(item.quantity) *
                                                 num(item.unit_price_npr),
                                         )}
@@ -544,7 +540,7 @@ export default function ServiceInvoice({
                                 Sub Total
                             </span>
                             <span className="font-medium tabular-nums">
-                                {rs(subtotal)}
+                                {formatNpr(subtotal)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-2 text-sm">
@@ -564,14 +560,14 @@ export default function ServiceInvoice({
                                 %
                             </span>
                             <span className="font-medium tabular-nums">
-                                {rs(tax)}
+                                {formatNpr(tax)}
                             </span>
                         </div>
                         <InputError message={errors.tax_rate} />
                         <div className="flex items-center justify-between border-t pt-2 text-base font-semibold">
                             <span>Grand Total</span>
                             <span className="tabular-nums">
-                                {rs(grandTotal)}
+                                {formatNpr(grandTotal)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-2 text-sm">
@@ -596,7 +592,9 @@ export default function ServiceInvoice({
                         <InputError message={errors.advance_paid_npr} />
                         <div className="flex items-center justify-between text-base font-semibold">
                             <span>Due Amount</span>
-                            <span className="tabular-nums">{rs(due)}</span>
+                            <span className="tabular-nums">
+                                {formatNpr(due)}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <Label

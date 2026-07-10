@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyNpr;
 use Database\Factories\MonthlyTitheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -36,19 +36,9 @@ class MonthlyTithe extends Model
     protected function casts(): array
     {
         return [
+            'total_amount' => MoneyNpr::class,
             'is_paid' => 'boolean',
             'paid_at' => 'datetime',
         ];
-    }
-
-    /**
-     * @return Attribute<float, int>
-     */
-    protected function totalAmount(): Attribute
-    {
-        return Attribute::make(
-            get: fn (mixed $value): float => round(((int) $value) / 100, 2),
-            set: fn (float|int $value): int => (int) round($value * 100),
-        );
     }
 }

@@ -21,6 +21,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
 import {
     index as adminOrdersIndex,
     show as showAdminOrder,
@@ -73,7 +74,7 @@ export default function Dashboard({
                             Total Sales (Completed)
                         </div>
                         <div className="mt-2 text-2xl font-bold">
-                            Rs. {stats.total_sales_npr.toLocaleString()}
+                            {formatNpr(stats.total_sales_npr)}
                         </div>
                     </div>
                     <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
@@ -84,7 +85,7 @@ export default function Dashboard({
                             Total Profit
                         </div>
                         <div className="mt-2 text-2xl font-bold">
-                            Rs. {stats.total_profit_npr.toLocaleString()}
+                            {formatNpr(stats.total_profit_npr)}
                         </div>
                     </div>
                     <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
@@ -95,14 +96,7 @@ export default function Dashboard({
                             Total Tithes Collected (All Time)
                         </div>
                         <div className="mt-2 text-2xl font-bold">
-                            Rs.{' '}
-                            {stats.total_tithes_collected_npr.toLocaleString(
-                                undefined,
-                                {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                },
-                            )}
+                            {formatNpr(stats.total_tithes_collected_npr)}
                         </div>
                     </div>
                     <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
@@ -113,14 +107,7 @@ export default function Dashboard({
                             Pending Tithes (Unpaid)
                         </div>
                         <div className="mt-2 text-2xl font-bold">
-                            Rs.{' '}
-                            {stats.pending_tithes_npr.toLocaleString(
-                                undefined,
-                                {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                },
-                            )}
+                            {formatNpr(stats.pending_tithes_npr)}
                         </div>
                     </div>
                     <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
@@ -219,11 +206,11 @@ export default function Dashboard({
                                     ).toLocaleDateString()}
                                 </TableCell>
                                 <TableCell className="font-bold">
-                                    Rs. {order.total_amount}
+                                    {formatNpr(order.total_amount)}
                                 </TableCell>
                                 <TableCell className="font-medium text-green-600">
                                     {order.status === 'completed' ? (
-                                        <>Rs. {order.profit.toFixed(0)}</>
+                                        <>{formatNpr(order.profit)}</>
                                     ) : (
                                         <span className="text-muted-foreground">
                                             —

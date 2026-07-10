@@ -13,6 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
 import { dashboard } from '@/routes/admin';
 import { index as adminTithesIndex, toggleStatus } from '@/routes/admin/tithes';
 
@@ -40,12 +41,6 @@ const breadcrumbs = [
     { title: 'Admin Dashboard', href: dashboard() },
     { title: 'Tithes', href: adminTithesIndex() },
 ];
-
-const formatMoney = (amount: number): string =>
-    `Rs. ${amount.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    })}`;
 
 function MonthlyTitheSummary({
     tithe,
@@ -116,10 +111,10 @@ function MonthlyTitheSummary({
                                     {product.name}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    {formatMoney(product.profit)}
+                                    {formatNpr(product.profit)}
                                 </TableCell>
                                 <TableCell className="text-right font-semibold text-green-600 dark:text-green-400">
-                                    {formatMoney(product.tithe)}
+                                    {formatNpr(product.tithe)}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -142,7 +137,7 @@ function MonthlyTitheSummary({
                             </TableCell>
                             <TableCell />
                             <TableCell className="text-right font-bold">
-                                {formatMoney(tithe.total_amount)}
+                                {formatNpr(tithe.total_amount)}
                             </TableCell>
                         </TableRow>
                     </TableFooter>

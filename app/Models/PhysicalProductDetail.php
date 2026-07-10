@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyNpr;
 use Database\Factories\PhysicalProductDetailFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +33,7 @@ class PhysicalProductDetail extends Model
     {
         return [
             'weight_kg' => 'decimal:2',
+            'flat_shipping_npr' => MoneyNpr::class,
             'free_shipping' => 'boolean',
         ];
     }
@@ -43,16 +44,5 @@ class PhysicalProductDetail extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * @return Attribute<float|null, int|null>
-     */
-    protected function flatShippingNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value === null ? null : (float) $value / 100,
-            set: fn ($value) => $value === null ? null : (int) round($value * 100),
-        );
     }
 }

@@ -20,6 +20,7 @@ import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { VariantOptionBadges } from '@/components/variant-option-badges';
 import type { SelectedOptions } from '@/components/variant-option-badges';
+import { formatNpr } from '@/lib/currency';
 
 type Order = {
     id: number;
@@ -71,9 +72,6 @@ type Order = {
         file_path: string;
     } | null;
 };
-
-const rs = (value: number): string =>
-    `Rs ${Math.round(value).toLocaleString('en-IN')}`;
 
 export default function OrderShow({ order }: { order: Order }) {
     // Chat component handles messages
@@ -208,7 +206,7 @@ export default function OrderShow({ order }: { order: Order }) {
                         <div>
                             <strong>Action Required:</strong> You have
                             outstanding invoices totaling{' '}
-                            {rs(unpaidInvoicesTotal)}.
+                            {formatNpr(unpaidInvoicesTotal)}.
                         </div>
                     </div>
                 )}
@@ -321,7 +319,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                                                     upload your
                                                                     receipt to
                                                                     settle{' '}
-                                                                    {rs(
+                                                                    {formatNpr(
                                                                         invoice.due_npr,
                                                                     )}
                                                                     .
@@ -505,7 +503,9 @@ export default function OrderShow({ order }: { order: Order }) {
                                         Pay for Services
                                     </h3>
                                     <PaymentQrPanel
-                                        amountLabel={rs(awaitingPaymentDue)}
+                                        amountLabel={formatNpr(
+                                            awaitingPaymentDue,
+                                        )}
                                     />
                                     <div className="mt-4 border-t pt-4">
                                         <p className="mb-3 text-sm text-muted-foreground">
@@ -537,7 +537,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                         Total
                                     </span>
                                     <span className="text-lg font-bold">
-                                        {rs(order.display_total_npr)}
+                                        {formatNpr(order.display_total_npr)}
                                     </span>
                                 </div>
                             </div>
@@ -579,7 +579,8 @@ export default function OrderShow({ order }: { order: Order }) {
                                     <div className="mt-4 border-t pt-4">
                                         <div className="mb-3 text-sm font-medium text-amber-700 dark:text-amber-400">
                                             You have outstanding invoices
-                                            totaling {rs(unpaidInvoicesTotal)}.
+                                            totaling{' '}
+                                            {formatNpr(unpaidInvoicesTotal)}.
                                         </div>
                                         {order.payment_receipt.status ===
                                         'pending' ? (
@@ -650,7 +651,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                 </h3>
                                 <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
                                     {unpaidInvoicesTotal > 0
-                                        ? `You have an outstanding invoice amount of ${rs(unpaidInvoicesTotal)}. Please upload your payment receipt to settle the balance.`
+                                        ? `You have an outstanding invoice amount of ${formatNpr(unpaidInvoicesTotal)}. Please upload your payment receipt to settle the balance.`
                                         : `No receipt uploaded yet. Please upload your payment receipt to process the order.`}
                                 </div>
                                 <div className="mt-4 border-t pt-4">

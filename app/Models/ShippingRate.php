@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyNpr;
 use Database\Factories\ShippingRateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +35,9 @@ class ShippingRate extends Model
     protected function casts(): array
     {
         return [
+            'base_fee_npr' => MoneyNpr::class,
+            'per_kg_fee_npr' => MoneyNpr::class,
+            'free_over_npr' => MoneyNpr::class,
             'parcel_capacity_kg' => 'decimal:2',
             'min_days' => 'integer',
             'max_days' => 'integer',
@@ -47,38 +50,5 @@ class ShippingRate extends Model
     public function zone(): BelongsTo
     {
         return $this->belongsTo(ShippingZone::class, 'shipping_zone_id');
-    }
-
-    /**
-     * @return Attribute<float, int>
-     */
-    protected function baseFeeNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, int>
-     */
-    protected function perKgFeeNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float|null, int|null>
-     */
-    protected function freeOverNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value === null ? null : (float) $value / 100,
-            set: fn ($value) => $value === null ? null : (int) round($value * 100),
-        );
     }
 }

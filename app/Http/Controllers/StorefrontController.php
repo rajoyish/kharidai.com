@@ -152,16 +152,22 @@ class StorefrontController extends Controller
 
         $product->load($relations);
 
-        $startingPriceInCents = $canViewVariants
+        // Read the price off the cheapest priced variant as a model attribute so
+        // the paisa-to-NPR conversion goes through the MoneyNpr cast rather than
+        // a manual divide on the raw aggregate.
+        $startingPrice = $canViewVariants
             ? null
-            : $product->variants()->where('show_pricing', true)->min('price_npr');
+            : $product->variants()
+                ->where('show_pricing', true)
+                ->orderBy('price_npr')
+                ->first()?->price_npr;
 
         $productSeoImage = $this->storageSeoImage($product->image);
 
         return Inertia::render('Products/Show', [
             'product' => $product,
             'canViewVariants' => $canViewVariants,
-            'startingPrice' => $startingPriceInCents !== null ? $startingPriceInCents / 100 : null,
+            'startingPrice' => $startingPrice,
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($product->seo_title ?? $product->title),

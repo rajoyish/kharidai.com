@@ -128,7 +128,7 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                                         </div>
                                     )}
                                 </TableCell>
-                                <TableCell className="max-w-50 font-medium sm:max-w-[200px] md:max-w-[300px] lg:max-w-[400px]">
+                                <TableCell className="max-w-50 font-medium sm:max-w-50 md:max-w-75 lg:max-w-100">
                                     <TruncatedText>
                                         {product.title}
                                     </TruncatedText>

@@ -2,6 +2,7 @@ import { MobileNumberInput } from '@/components/mobile-number-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { formatNpr } from '@/lib/currency';
 
 type Zone = {
     id: number;
@@ -34,8 +35,6 @@ type ShippingData = {
 
 const selectClassName =
     'flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
-
-const rupees = (value: number) => `Rs. ${value.toFixed(0)}`;
 
 export function ShippingSelector({
     data,
@@ -200,7 +199,7 @@ export function ShippingSelector({
                     >
                         {zones.map((zone) => (
                             <option key={zone.id} value={zone.id}>
-                                {zone.name} — {rupees(zone.fee)}
+                                {zone.name} — {formatNpr(zone.fee)}
                                 {zone.min_days && zone.max_days
                                     ? ` (${zone.min_days}–${zone.max_days} days)`
                                     : ''}

@@ -13,6 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
 import { dashboard } from '@/routes/admin';
 import {
     index as adminOrdersIndex,
@@ -130,11 +131,11 @@ function OrderTable({
                             {new Date(order.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="font-bold">
-                            Rs. {order.total_amount}
+                            {formatNpr(order.total_amount)}
                         </TableCell>
                         <TableCell className="font-medium text-green-600">
                             {order.status === 'completed' ? (
-                                <>Rs. {order.profit?.toFixed(0) ?? '0'}</>
+                                <>{formatNpr(order.profit ?? 0)}</>
                             ) : (
                                 <span className="text-muted-foreground">—</span>
                             )}
