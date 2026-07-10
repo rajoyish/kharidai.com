@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyNpr;
 use App\Enums\EngagementSource;
 use App\Enums\EngagementStatus;
 use App\Enums\PricingStrategy;
@@ -11,7 +12,6 @@ use App\Services\Pricing\PricingStrategy as PricingStrategyContract;
 use Database\Factories\ServiceEngagementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -90,6 +90,12 @@ class ServiceEngagement extends Model
     protected function casts(): array
     {
         return [
+            'price_npr' => MoneyNpr::class,
+            'purchase_price_npr' => MoneyNpr::class,
+            'advance_required_npr' => MoneyNpr::class,
+            'advance_paid_npr' => MoneyNpr::class,
+            'calculated_cost_npr' => MoneyNpr::class,
+            'agreed_price_npr' => MoneyNpr::class,
             'source' => EngagementSource::class,
             'status' => EngagementStatus::class,
             'pricing_strategy' => PricingStrategy::class,
@@ -295,71 +301,5 @@ class ServiceEngagement extends Model
         }
 
         return $this->grandTotalNpr() > 0 && $this->outstandingNpr() <= 0 ? 'paid' : 'due';
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function priceNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function purchasePriceNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function advanceRequiredNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function advancePaidNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function calculatedCostNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float|null, float|int|null>
-     */
-    protected function agreedPriceNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value === null ? null : (float) $value / 100,
-            set: fn ($value) => $value === null ? null : (int) round($value * 100),
-        );
     }
 }

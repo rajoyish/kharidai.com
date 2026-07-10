@@ -20,6 +20,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
 
 type Engagement = {
     id: number;
@@ -38,9 +39,6 @@ type Engagement = {
     order: { id: number; order_number: string } | null;
     created_at: string | null;
 };
-
-const rs = (value: number): string =>
-    `Rs ${Math.round(value).toLocaleString('en-IN')}`;
 
 export default function ServicesIndex({
     engagements,
@@ -162,10 +160,10 @@ export default function ServicesIndex({
                                     {engagement.project_completion_date ?? '—'}
                                 </TableCell>
                                 <TableCell className="text-right tabular-nums">
-                                    {rs(engagement.total_npr)}
+                                    {formatNpr(engagement.total_npr)}
                                 </TableCell>
                                 <TableCell className="text-right tabular-nums">
-                                    {rs(engagement.due_npr)}
+                                    {formatNpr(engagement.due_npr)}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">

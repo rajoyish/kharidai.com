@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyNpr;
 use Database\Factories\OrderItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,6 +38,8 @@ class OrderItem extends Model
     protected function casts(): array
     {
         return [
+            'price' => MoneyNpr::class,
+            'purchase_price' => MoneyNpr::class,
             'selected_options' => 'array',
             'brief' => 'array',
         ];
@@ -129,28 +131,6 @@ class OrderItem extends Model
     {
         return $this->serviceEngagements->filter(
             fn (ServiceEngagement $engagement): bool => filled($engagement->line_items),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function price(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value / 100,
-            set: fn ($value) => $value * 100,
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function purchasePrice(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value / 100,
-            set: fn ($value) => $value * 100,
         );
     }
 }

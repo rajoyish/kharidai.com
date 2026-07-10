@@ -7,6 +7,7 @@ import { ShippingSelector } from '@/components/shipping-selector';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { formatNpr } from '@/lib/currency';
 
 type Product = {
     id: number;
@@ -51,8 +52,6 @@ type SavedAddress = {
     landmark: string | null;
     shipping_zone_id: number | null;
 };
-
-const rupees = (value: number) => `Rs. ${value.toFixed(0)}`;
 
 export default function CheckoutIndex({
     cart,
@@ -198,7 +197,7 @@ export default function CheckoutIndex({
                                                 ({item.product_variant.name})
                                             </span>
                                             <span className="text-right font-medium">
-                                                {rupees(
+                                                {formatNpr(
                                                     parseFloat(
                                                         item.product_variant
                                                             .price_npr,
@@ -214,28 +213,30 @@ export default function CheckoutIndex({
                                         <span className="text-muted-foreground">
                                             Subtotal
                                         </span>
-                                        <span>{rupees(itemsTotal)}</span>
+                                        <span>{formatNpr(itemsTotal)}</span>
                                     </div>
                                     {hasPhysicalItems && (
                                         <div className="flex justify-between text-sm">
                                             <span className="text-muted-foreground">
                                                 Shipping
                                             </span>
-                                            <span>{rupees(shippingTotal)}</span>
+                                            <span>
+                                                {formatNpr(shippingTotal)}
+                                            </span>
                                         </div>
                                     )}
                                     <div className="flex justify-between border-t pt-2 text-lg font-bold">
                                         <span>Total</span>
-                                        <span>{rupees(total)}</span>
+                                        <span>{formatNpr(total)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm font-semibold text-primary">
                                         <span>Pay now</span>
-                                        <span>{rupees(amountDueNow)}</span>
+                                        <span>{formatNpr(amountDueNow)}</span>
                                     </div>
                                     {balanceDue > 0 && (
                                         <div className="flex justify-between text-sm text-muted-foreground">
                                             <span>Due on delivery</span>
-                                            <span>{rupees(balanceDue)}</span>
+                                            <span>{formatNpr(balanceDue)}</span>
                                         </div>
                                     )}
                                 </div>

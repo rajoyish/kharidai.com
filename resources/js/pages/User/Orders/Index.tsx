@@ -13,6 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
 import { home } from '@/routes';
 import { index as ordersIndex, show as showOrder } from '@/routes/orders';
 
@@ -95,10 +96,7 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     </div>
                                 </TableCell>
                                 <TableCell className="font-bold whitespace-nowrap">
-                                    Rs.{' '}
-                                    {Math.round(
-                                        order.display_total_npr,
-                                    ).toLocaleString('en-IN')}
+                                    {formatNpr(order.display_total_npr)}
                                 </TableCell>
                                 <TableCell>
                                     <span

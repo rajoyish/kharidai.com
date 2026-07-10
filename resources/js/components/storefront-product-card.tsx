@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 
 import { TruncatedText } from '@/components/truncated-text';
 import { Badge } from '@/components/ui/badge';
+import { formatNpr } from '@/lib/currency';
 import { show as showProduct } from '@/routes/products';
 import type { StorefrontProduct } from '@/types';
 
@@ -15,7 +16,7 @@ function formatStartingPrice(product: StorefrontProduct): string | null {
         return null;
     }
 
-    return (cents / 100).toLocaleString();
+    return formatNpr(cents / 100);
 }
 
 export function StorefrontProductCard({
@@ -74,7 +75,7 @@ export function StorefrontProductCard({
                         <p className="mt-1 text-sm font-medium text-slate-600">
                             Starting at{' '}
                             <span className="text-base font-semibold text-primary">
-                                Rs. {startingPrice}
+                                {startingPrice}
                             </span>
                         </p>
                     )}

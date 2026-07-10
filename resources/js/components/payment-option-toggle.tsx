@@ -6,8 +6,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-const rupees = (value: number) => `Rs. ${value.toFixed(0)}`;
+import { formatNpr } from '@/lib/currency';
 
 export function PaymentOptionToggle({
     data,
@@ -100,8 +99,8 @@ export function PaymentOptionToggle({
                             <span>
                                 Pay shipping only
                                 <span className="mt-1 block text-sm font-normal text-muted-foreground">
-                                    Pay {rupees(shippingTotal)} now, the rest (
-                                    {rupees(itemsTotal)}) on delivery.
+                                    Pay {formatNpr(shippingTotal)} now, the rest
+                                    ({formatNpr(itemsTotal)}) on delivery.
                                 </span>
                             </span>
                         </Label>
@@ -115,10 +114,11 @@ export function PaymentOptionToggle({
                             <span>
                                 Pay advance now
                                 <span className="mt-1 block text-sm font-normal text-muted-foreground">
-                                    Pay {rupees(shippingTotal + advanceTotal)}{' '}
-                                    now (shipping + {rupees(advanceTotal)}{' '}
+                                    Pay{' '}
+                                    {formatNpr(shippingTotal + advanceTotal)}{' '}
+                                    now (shipping + {formatNpr(advanceTotal)}{' '}
                                     advance), the rest (
-                                    {rupees(itemsTotal - advanceTotal)}) on
+                                    {formatNpr(itemsTotal - advanceTotal)}) on
                                     delivery.
                                 </span>
                             </span>

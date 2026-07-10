@@ -17,16 +17,14 @@ import {
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
-import {
-    ServiceInvoiceCard
-    
-} from '@/components/service-invoice-card';
-import type {ServiceInvoice} from '@/components/service-invoice-card';
+import { ServiceInvoiceCard } from '@/components/service-invoice-card';
+import type { ServiceInvoice } from '@/components/service-invoice-card';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { VariantOptionBadges } from '@/components/variant-option-badges';
 import type { SelectedOptions } from '@/components/variant-option-badges';
+import { formatNpr } from '@/lib/currency';
 
 type Order = {
     id: number;
@@ -283,7 +281,7 @@ export default function AdminOrderShow({
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-xl font-semibold">Items</h2>
                                 <div className="text-lg font-bold">
-                                    Total: Rs. {order.total_amount}
+                                    Total: {formatNpr(order.total_amount)}
                                 </div>
                             </div>
                             <div className="divide-y border-t">
@@ -324,7 +322,7 @@ export default function AdminOrderShow({
                                             />
                                             <p className="mt-1 text-sm font-medium">
                                                 Qty: {item.quantity} | Selling
-                                                Price: Rs. {item.price}
+                                                Price: {formatNpr(item.price)}
                                             </p>
                                             {order.status === 'completed' && (
                                                 <div className="mt-2 rounded border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-800">
@@ -333,25 +331,23 @@ export default function AdminOrderShow({
                                                             Purchase Price:
                                                         </span>
                                                         <span>
-                                                            Rs.{' '}
-                                                            {
-                                                                item.purchase_price
-                                                            }
+                                                            {formatNpr(
+                                                                item.purchase_price,
+                                                            )}
                                                         </span>
                                                     </div>
                                                     <div className="mt-1 flex justify-between font-semibold">
                                                         <span>Profit:</span>
                                                         <span>
-                                                            Rs.{' '}
-                                                            {(
+                                                            {formatNpr(
                                                                 (parseFloat(
                                                                     item.price,
                                                                 ) -
                                                                     parseFloat(
                                                                         item.purchase_price,
                                                                     )) *
-                                                                item.quantity
-                                                            ).toFixed(0)}
+                                                                    item.quantity,
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -549,29 +545,37 @@ export default function AdminOrderShow({
                                         <span className="text-muted-foreground">
                                             Items
                                         </span>
-                                        <span>Rs. {order.items_total}</span>
+                                        <span>
+                                            {formatNpr(order.items_total)}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
                                             Shipping
                                         </span>
-                                        <span>Rs. {order.shipping_total}</span>
+                                        <span>
+                                            {formatNpr(order.shipping_total)}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between border-t pt-1 font-semibold">
                                         <span>Total</span>
-                                        <span>Rs. {order.total_amount}</span>
+                                        <span>
+                                            {formatNpr(order.total_amount)}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
                                             Paid / due now
                                         </span>
-                                        <span>Rs. {order.amount_due_now}</span>
+                                        <span>
+                                            {formatNpr(order.amount_due_now)}
+                                        </span>
                                     </div>
                                     {Number(order.balance_due) > 0 && (
                                         <div className="flex items-center justify-between text-amber-600">
                                             <span>Balance due on delivery</span>
                                             <span className="flex items-center gap-2">
-                                                Rs. {order.balance_due}
+                                                {formatNpr(order.balance_due)}
                                                 <Button
                                                     size="sm"
                                                     variant="outline"

@@ -17,18 +17,12 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { VariantOptionSelector } from '@/components/variant-option-selector';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
+import { formatNpr, formatNprAmount } from '@/lib/currency';
 import { login } from '@/routes';
 import { show as showCategory } from '@/routes/categories';
 import type { PageProps } from '@/types';
 
 const ImageLightbox = lazy(() => import('@/components/image-lightbox'));
-
-/** Drop trailing ".00" so whole-rupee prices read cleanly (e.g. "2160.00" → "2160"). */
-function formatNpr(value: string): string {
-    const amount = Number(value);
-
-    return Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
-}
 
 /** Price with a small muted "Rs." and a large bold amount, matching the variant header. */
 function VariantPrice({ value }: { value: string }) {
@@ -38,7 +32,7 @@ function VariantPrice({ value }: { value: string }) {
                 Rs.
             </span>
             <span className="text-3xl font-bold tracking-tight">
-                {formatNpr(value)}
+                {formatNprAmount(value)}
             </span>
         </div>
     );
@@ -258,7 +252,7 @@ export default function Show({
                         offers: {
                             '@type': 'AggregateOffer',
                             priceCurrency: 'NPR',
-                            lowPrice: formatNpr(String(startingPrice)),
+                            lowPrice: Number(startingPrice),
                             availability: 'https://schema.org/InStock',
                             url: seo.url,
                         },
@@ -290,7 +284,9 @@ export default function Show({
                                 showPrice &&
                                 !showVariantSelector && (
                                     <div className="text-2xl font-semibold text-primary">
-                                        Rs. {selectedVariant?.price_npr}
+                                        {formatNpr(
+                                            selectedVariant?.price_npr ?? 0,
+                                        )}
                                     </div>
                                 )}
                         </div>
@@ -487,7 +483,9 @@ export default function Show({
                                 showPrice &&
                                 !showVariantSelector && (
                                     <div className="mb-6 text-2xl font-semibold text-primary">
-                                        Rs. {selectedVariant?.price_npr}
+                                        {formatNpr(
+                                            selectedVariant?.price_npr ?? 0,
+                                        )}
                                     </div>
                                 )}
 

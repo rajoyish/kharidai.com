@@ -20,6 +20,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
 
 type Zone = {
     id: number;
@@ -47,7 +48,7 @@ const emptyForm = {
 };
 
 const rupees = (value: number | null) =>
-    value === null ? '—' : `Rs. ${value.toFixed(0)}`;
+    value === null ? '—' : formatNpr(value);
 
 export default function ShippingIndex({ zones }: { zones: Zone[] }) {
     const [editingZone, setEditingZone] = useState<Zone | null>(null);

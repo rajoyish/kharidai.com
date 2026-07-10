@@ -37,16 +37,13 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { formatNpr } from '@/lib/currency';
 
 type Variant = { id: number; name: string; price_npr: number };
 type Service = { id: number; title: string; variants: Variant[] };
 type User = { id: number; name: string; email: string };
 
 type ClientOption = { value: number; label: string; email: string };
-
-function formatNpr(amount: number): string {
-    return `Rs. ${amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-}
 
 /**
  * Admins recognise a client by either their name or their email, and duplicate

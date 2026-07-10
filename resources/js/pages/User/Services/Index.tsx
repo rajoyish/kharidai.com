@@ -13,6 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
 import { home } from '@/routes';
 import { index as servicesIndex } from '@/routes/account/services';
 import { show as showOrder } from '@/routes/orders';
@@ -33,9 +34,6 @@ type Engagement = {
     delivery_note: string | null;
     created_at: string | null;
 };
-
-const rs = (value: number): string =>
-    `Rs ${Math.round(value).toLocaleString('en-IN')}`;
 
 export default function UserServicesIndex({
     engagements,
@@ -137,10 +135,10 @@ export default function UserServicesIndex({
                                     {engagement.project_completion_date ?? '—'}
                                 </TableCell>
                                 <TableCell className="text-right tabular-nums">
-                                    {rs(engagement.total_npr)}
+                                    {formatNpr(engagement.total_npr)}
                                 </TableCell>
                                 <TableCell className="text-right tabular-nums">
-                                    {rs(engagement.due_npr)}
+                                    {formatNpr(engagement.due_npr)}
                                 </TableCell>
                             </TableRow>
                         ))}

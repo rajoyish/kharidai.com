@@ -1,9 +1,5 @@
 import { EngagementStatusBadge } from '@/components/engagement-status-badge';
-
-const rs = (value: number): string =>
-    new Intl.NumberFormat('en-IN', {
-        maximumFractionDigits: 0,
-    }).format(value);
+import { formatNpr } from '@/lib/currency';
 
 export type ServiceInvoice = {
     id: number;
@@ -101,11 +97,10 @@ export function ServiceInvoiceCard({
                                             {line.quantity}
                                         </td>
                                         <td className="px-2 py-2.5 text-right whitespace-nowrap tabular-nums">
-                                            Rs {rs(line.unit_price_npr)}
+                                            {formatNpr(line.unit_price_npr)}
                                         </td>
                                         <td className="py-2.5 pl-2 text-right whitespace-nowrap tabular-nums">
-                                            Rs{' '}
-                                            {rs(
+                                            {formatNpr(
                                                 line.quantity *
                                                     line.unit_price_npr,
                                             )}
@@ -122,7 +117,7 @@ export function ServiceInvoiceCard({
                                 Sub Total
                             </span>
                             <span className="tabular-nums">
-                                Rs {rs(invoice.subtotal_npr)}
+                                {formatNpr(invoice.subtotal_npr)}
                             </span>
                         </div>
                         {invoice.tax_rate > 0 && (
@@ -131,14 +126,14 @@ export function ServiceInvoiceCard({
                                     Tax ({invoice.tax_rate}%)
                                 </span>
                                 <span className="tabular-nums">
-                                    Rs {rs(invoice.tax_npr)}
+                                    {formatNpr(invoice.tax_npr)}
                                 </span>
                             </div>
                         )}
                         <div className="flex items-center justify-between pt-1 font-semibold">
                             <span>Grand Total</span>
                             <span className="tabular-nums">
-                                Rs {rs(invoice.grand_total_npr)}
+                                {formatNpr(invoice.grand_total_npr)}
                             </span>
                         </div>
 
@@ -148,7 +143,7 @@ export function ServiceInvoiceCard({
                                     Advance Paid
                                 </span>
                                 <span className="tabular-nums">
-                                    Rs {rs(invoice.advance_paid_npr)}
+                                    {formatNpr(invoice.advance_paid_npr)}
                                 </span>
                             </div>
                         )}
@@ -156,7 +151,7 @@ export function ServiceInvoiceCard({
                         <div className="flex items-center justify-between pt-1 font-bold">
                             <span>Due Amount</span>
                             <span className="tabular-nums">
-                                Rs {rs(invoice.due_npr)}
+                                {formatNpr(invoice.due_npr)}
                             </span>
                         </div>
 

@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyNpr;
 use App\Enums\PaymentOption;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +61,11 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'total_amount' => MoneyNpr::class,
+            'items_total' => MoneyNpr::class,
+            'shipping_total' => MoneyNpr::class,
+            'amount_due_now' => MoneyNpr::class,
+            'balance_due' => MoneyNpr::class,
             'additional_data' => 'array',
             'can_reupload_receipt' => 'boolean',
             'request_receipt_upload' => 'boolean',
@@ -169,60 +174,5 @@ class Order extends Model
         );
 
         return round($itemsTotal + $this->shipping_total, 2);
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function totalAmount(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value / 100,
-            set: fn ($value) => $value * 100,
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function itemsTotal(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function shippingTotal(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function amountDueNow(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function balanceDue(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => (float) $value / 100,
-            set: fn ($value) => (int) round($value * 100),
-        );
     }
 }

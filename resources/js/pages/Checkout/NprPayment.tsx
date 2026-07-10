@@ -7,6 +7,7 @@ import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatNpr } from '@/lib/currency';
 import { process as processNpr } from '@/routes/checkout/npr';
 
 type Order = {
@@ -52,12 +53,15 @@ export default function NprPayment({ order }: { order: Order }) {
                         </p>
                     </div>
 
-                    <PaymentQrPanel amountLabel={`Rs. ${order.amount_due_now}`}>
+                    <PaymentQrPanel
+                        amountLabel={formatNpr(order.amount_due_now)}
+                    >
                         {Number(order.balance_due) > 0 && (
                             <p className="mt-1 text-center text-sm text-muted-foreground">
-                                Pay Rs. {order.amount_due_now} now (shipping).
-                                Remaining Rs. {order.balance_due} is collected
-                                on delivery.
+                                Pay {formatNpr(order.amount_due_now)} now
+                                (shipping). Remaining{' '}
+                                {formatNpr(order.balance_due)} is collected on
+                                delivery.
                             </p>
                         )}
                     </PaymentQrPanel>

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyNpr;
 use Database\Factories\ProductVariantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,6 +40,8 @@ class ProductVariant extends Model
     protected function casts(): array
     {
         return [
+            'price_npr' => MoneyNpr::class,
+            'purchase_price_npr' => MoneyNpr::class,
             'validity_days' => 'integer',
             'show_pricing' => 'boolean',
             'colors' => 'array',
@@ -69,27 +71,5 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function priceNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value / 100,
-            set: fn ($value) => $value * 100,
-        );
-    }
-
-    /**
-     * @return Attribute<float, float|int>
-     */
-    protected function purchasePriceNpr(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($value) => $value / 100,
-            set: fn ($value) => $value * 100,
-        );
     }
 }

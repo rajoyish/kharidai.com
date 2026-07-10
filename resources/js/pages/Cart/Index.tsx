@@ -5,6 +5,7 @@ import { process as processCheckout } from '@/actions/App/Http/Controllers/Check
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
+import { formatNpr } from '@/lib/currency';
 import { home } from '@/routes';
 import {
     remove as removeCartItem,
@@ -179,11 +180,10 @@ export default function CartIndex({
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="font-medium">
-                                                        Rs.{' '}
-                                                        {
+                                                        {formatNpr(
                                                             item.product_variant
-                                                                .price_npr
-                                                        }
+                                                                .price_npr,
+                                                        )}
                                                     </p>
                                                 </div>
                                             </div>
@@ -249,7 +249,7 @@ export default function CartIndex({
                                         <div className="flex justify-between text-muted-foreground">
                                             <span>Subtotal (NPR)</span>
                                             <span className="font-medium text-foreground">
-                                                Rs. {totalNpr.toFixed(0)}
+                                                {formatNpr(totalNpr)}
                                             </span>
                                         </div>
                                     </div>
