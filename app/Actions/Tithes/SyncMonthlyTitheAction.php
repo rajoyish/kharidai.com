@@ -3,25 +3,24 @@
 namespace App\Actions\Tithes;
 
 use App\Models\MonthlyTithe;
-use App\Models\OrderItem;
 use Carbon\CarbonInterface;
 
 class SyncMonthlyTitheAction
 {
+    public function __construct(
+        private readonly CalculateMonthlyProfitAction $calculateMonthlyProfit,
+    ) {}
+
     public function execute(CarbonInterface $date): void
     {
         $month = (int) $date->month;
         $year = (int) $date->year;
 
-        $profitAmountInCents = (int) OrderItem::query()
-            ->selectRaw('COALESCE(SUM((order_items.price - order_items.purchase_price) * order_items.quantity), 0) as total_profit_amount')
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('orders.status', 'completed')
-            ->whereYear('orders.created_at', $year)
-            ->whereMonth('orders.created_at', $month)
-            ->value('total_profit_amount');
+        $breakdown = $this->calculateMonthlyProfit->execute($year, $month);
 
-        if ($profitAmountInCents <= 0) {
+        // A month that made no profit owes no tithe, so it should not linger as a
+        // zero row an admin can mark "paid".
+        if ($breakdown['total_profit'] <= 0) {
             MonthlyTithe::query()
                 ->where('year', $year)
                 ->where('month', $month)
@@ -36,7 +35,7 @@ class SyncMonthlyTitheAction
                 'month' => $month,
             ],
             [
-                'total_amount' => round($profitAmountInCents / 1000, 2),
+                'total_amount' => $breakdown['total_tithe'],
             ],
         );
     }

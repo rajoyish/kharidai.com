@@ -5,8 +5,11 @@ namespace App\Providers;
 use App\Models\Order;
 use App\Observers\OrderObserver;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\LazyLoadingViolationException;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -41,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
+        $this->configureModels();
+
         Password::defaults(fn (): ?Password => app()->isProduction()
             ? Password::min(12)
                 ->mixedCase()
@@ -50,5 +55,33 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Catch N+1 queries at the source. Prevention stays on everywhere so the same
+     * rule holds in every environment, but a violation is only fatal while
+     * developing — in production it is logged, because a page that renders one
+     * query too many still beats a page that 500s.
+     */
+    protected function configureModels(): void
+    {
+        Model::preventLazyLoading();
+
+        Model::handleLazyLoadingViolationUsing(function (Model $model, string $relation): void {
+            // A custom callback replaces Laravel's default handler wholesale, so the
+            // exemption it grants to unsaved and just-created models has to be
+            // restated here — neither can have caused an N+1.
+            if (! $model->exists || $model->wasRecentlyCreated) {
+                return;
+            }
+
+            if (! app()->isProduction()) {
+                throw new LazyLoadingViolationException($model, $relation);
+            }
+
+            $class = $model::class;
+
+            Log::warning("Attempted to lazy load [{$relation}] on model [{$class}].");
+        });
     }
 }

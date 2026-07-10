@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Actions\Tithes\CalculateMonthlyProfitAction;
+use App\Actions\Tithes\SyncMonthlyTitheAction;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Gallery;
@@ -14,6 +16,7 @@ use App\Models\PaymentReceipt;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -63,17 +66,9 @@ class MiscSeeder extends Seeder
             ]);
         }
 
-        // 3. MonthlyTithe
-        for ($i = 1; $i <= 3; $i++) {
-            MonthlyTithe::firstOrCreate(
-                ['month' => $i, 'year' => (int) date('Y')],
-                [
-                    'total_amount' => (float) rand(1000, 5000),
-                    'is_paid' => true,
-                    'paid_at' => now(),
-                ]
-            );
-        }
+        // 3. MonthlyTithe — derived from the profit of the seeded completed orders
+        // rather than invented, so the breakdown on /admin/tithes adds up.
+        $this->seedMonthlyTithes();
 
         // 4. OrderCredential, OrderMessage, PaymentReceipt, Subscription
         $admin = User::where('is_admin', true)->first();
@@ -119,5 +114,29 @@ class MiscSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    /**
+     * Recalculate a tithe for every month that has completed orders, then settle
+     * the months that have already closed so the dashboard shows both a collected
+     * and a pending figure.
+     */
+    private function seedMonthlyTithes(): void
+    {
+        $calculateMonthlyProfit = app(CalculateMonthlyProfitAction::class);
+        $syncMonthlyTithe = app(SyncMonthlyTitheAction::class);
+        $currentMonth = CarbonImmutable::now()->startOfMonth();
+
+        foreach ($calculateMonthlyProfit->monthsWithCompletedOrders() as ['year' => $year, 'month' => $month]) {
+            $syncMonthlyTithe->execute(CarbonImmutable::create($year, $month, 1));
+        }
+
+        MonthlyTithe::query()
+            ->get()
+            ->filter(fn (MonthlyTithe $monthlyTithe): bool => CarbonImmutable::create($monthlyTithe->year, $monthlyTithe->month, 1)->lessThan($currentMonth))
+            ->each(fn (MonthlyTithe $monthlyTithe) => $monthlyTithe->update([
+                'is_paid' => true,
+                'paid_at' => now(),
+            ]));
     }
 }

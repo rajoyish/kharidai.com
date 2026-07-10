@@ -18,7 +18,7 @@ class SubscriptionController extends Controller
         $subscriptions = Subscription::with([
             'user:id,name,email,mobile_number',
             'orderItem.productVariant.product',
-            'order',
+            'order.items.serviceEngagements',
         ])->latest('id')->paginate(10);
 
         return Inertia::render('Admin/Subscriptions/Index', [
