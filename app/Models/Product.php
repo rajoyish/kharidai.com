@@ -20,13 +20,16 @@ use Illuminate\Support\Str;
  * @property string $title
  * @property string|null $description
  * @property string|null $image
+ * @property string|null $image_alt
+ * @property string|null $seo_title
+ * @property string|null $seo_description
  * @property bool $in_stock
  * @property bool $is_visible
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property string|null $slug
  */
-#[Fillable(['type', 'title', 'slug', 'description', 'image', 'in_stock', 'is_visible'])]
+#[Fillable(['type', 'title', 'slug', 'description', 'image', 'image_alt', 'seo_title', 'seo_description', 'in_stock', 'is_visible'])]
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */

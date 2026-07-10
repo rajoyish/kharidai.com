@@ -106,8 +106,6 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::resource('posts', AdminPostController::class)->except(['show']);
 
     Route::resource('products', ProductController::class)->except(['show']);
-    Route::post('products/{product}/media', [ProductController::class, 'uploadMedia'])->name('products.media.store');
-    Route::delete('products/{product}/media/{media}', [ProductController::class, 'deleteMedia'])->name('products.media.destroy');
     Route::patch('products/{product}/toggle-stock', [ProductController::class, 'toggleStock'])->name('products.toggle-stock');
     Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
     Route::resource('products.variants', ProductVariantController::class)->except(['show']);

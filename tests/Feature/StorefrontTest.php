@@ -482,3 +482,24 @@ it('can view a single product page', function () {
     expect(strpos($content, '<meta data-inertia="og:image" property="og:image" content="'.$expectedImage.'" />'))
         ->toBeLessThan(strpos($content, 'window.matchMedia'));
 });
+
+it('prefers the manually entered product seo metadata over the generated values', function () {
+    $product = Product::factory()->create([
+        'title' => 'Test Product',
+        'description' => '<p>This is a great product for testing.</p>',
+        'image_alt' => 'A pair of headphones on a desk',
+        'seo_title' => 'Buy Test Product Online',
+        'seo_description' => 'Hand-written snippet for search engines.',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get('/products/'.$product->slug);
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Products/Show')
+        ->where('seo.title', 'Buy Test Product Online - '.config('app.name'))
+        ->where('seo.description', 'Hand-written snippet for search engines.')
+        ->where('seo.imageAlt', 'A pair of headphones on a desk'),
+    );
+});

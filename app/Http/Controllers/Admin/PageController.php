@@ -44,7 +44,7 @@ class PageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validatePage($request);
-        $validated['image'] = $this->storeHeroImage($request, 'pages');
+        $validated['image'] = $this->storeHeroImage($request, 'pages', null, $validated['title'] ?? null);
         $validated['is_published'] = $request->boolean('is_published');
         $validated['published_at'] = $this->normalizePublishDate($request->input('published_at'));
 
@@ -75,7 +75,7 @@ class PageController extends Controller
     public function update(Request $request, Page $page): RedirectResponse
     {
         $validated = $this->validatePage($request, $page);
-        $validated['image'] = $this->storeHeroImage($request, 'pages', $page->image);
+        $validated['image'] = $this->storeHeroImage($request, 'pages', $page->image, $validated['title'] ?? $page->title);
         $validated['is_published'] = $request->boolean('is_published');
         $validated['published_at'] = $this->normalizePublishDate($request->input('published_at'));
 

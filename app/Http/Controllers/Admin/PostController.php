@@ -52,7 +52,7 @@ class PostController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validatePost($request);
-        $validated['image'] = $this->storeHeroImage($request, 'posts');
+        $validated['image'] = $this->storeHeroImage($request, 'posts', null, $validated['title'] ?? null);
         $validated['is_published'] = $request->boolean('is_published');
         $validated['published_at'] = $this->normalizePublishDate($request->input('published_at'));
         $validated['user_id'] = $request->user()->id;
@@ -85,7 +85,7 @@ class PostController extends Controller
     public function update(Request $request, Post $post): RedirectResponse
     {
         $validated = $this->validatePost($request, $post);
-        $validated['image'] = $this->storeHeroImage($request, 'posts', $post->image);
+        $validated['image'] = $this->storeHeroImage($request, 'posts', $post->image, $validated['title'] ?? $post->title);
         $validated['is_published'] = $request->boolean('is_published');
         $validated['published_at'] = $this->normalizePublishDate($request->input('published_at'));
 
