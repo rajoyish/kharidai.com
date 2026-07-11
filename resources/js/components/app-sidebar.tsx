@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Bell,
     Briefcase,
     CalendarDays,
     ClipboardList,
@@ -32,6 +33,7 @@ import { home } from '@/routes';
 import { index as servicesIndex } from '@/routes/account/services';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCategoriesIndex } from '@/routes/admin/categories';
+import { index as adminNotificationsIndex } from '@/routes/admin/notifications';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
 import { index as adminPagesIndex } from '@/routes/admin/pages';
 import { index as adminPostsIndex } from '@/routes/admin/posts';
@@ -43,6 +45,7 @@ import { index as adminTithesIndex } from '@/routes/admin/tithes';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as ordersIndex } from '@/routes/orders';
 import { index as subscriptionsIndex } from '@/routes/subscriptions';
+import { index as userNotificationsIndex } from '@/routes/user/notifications';
 import type { NavItem, SharedData } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -68,6 +71,14 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+// Admins reach their notifications through the "Store Management" section, so
+// this Personal entry is appended only for non-admin users.
+const userNotificationsNavItem: NavItem = {
+    title: 'Notifications',
+    href: userNotificationsIndex(),
+    icon: Bell,
+};
+
 const adminNavItems: NavItem[] = [
     {
         title: 'Admin Dashboard',
@@ -83,6 +94,11 @@ const adminNavItems: NavItem[] = [
         title: 'Orders',
         href: adminOrdersIndex(),
         icon: ClipboardList,
+    },
+    {
+        title: 'Notifications',
+        href: adminNotificationsIndex(),
+        icon: Bell,
     },
     {
         title: 'Subscriptions',
@@ -130,6 +146,10 @@ export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
     const { state } = useSidebar();
 
+    const personalNavItems: NavItem[] = auth.user.is_admin
+        ? mainNavItems
+        : [...mainNavItems, userNotificationsNavItem];
+
     return (
         <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader>
@@ -151,7 +171,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} label="Personal" />
+                <NavMain items={personalNavItems} label="Personal" />
                 {auth.user.is_admin && (
                     <NavMain items={adminNavItems} label="Store Management" />
                 )}

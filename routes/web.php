@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\User\AddressController;
+use App\Http\Controllers\User\NotificationController as UserNotificationController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\ServiceController as UserServiceController;
 use App\Http\Controllers\User\SubscriptionController as UserSubscriptionController;
@@ -67,6 +69,12 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+
+    Route::prefix('user')->name('user.')->group(function () {
+        Route::get('notifications', [UserNotificationController::class, 'index'])->name('notifications.index');
+        Route::patch('notifications/mark-all-read', [UserNotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+        Route::delete('notifications', [UserNotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
+    });
 
     Route::post('/orders/{order}/messages', [OrderController::class, 'storeMessage'])->name('orders.messages.store');
     Route::post('/orders/{order}/ask-reupload-receipt', [OrderController::class, 'askForReceiptReupload'])->name('orders.ask-reupload-receipt');
@@ -135,6 +143,10 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::get('tithes', [TitheController::class, 'index'])->name('tithes.index');
     Route::patch('tithes/{monthlyTithe}/toggle-status', [TitheController::class, 'toggleStatus'])->name('tithes.toggle-status');
+
+    Route::get('notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('notifications', [AdminNotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
 });
 
 require __DIR__.'/settings.php';

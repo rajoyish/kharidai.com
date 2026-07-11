@@ -38,7 +38,7 @@ it('can mark a notification as read', function () {
     expect($notification->read_at)->not->toBeNull();
 });
 
-it('can mark all notifications as read (deletes them)', function () {
+it('marks all notifications as read without deleting them', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
     $this->user->notify(new OrderPlacedNotification($order));
 
@@ -46,5 +46,6 @@ it('can mark all notifications as read (deletes them)', function () {
 
     $response->assertSuccessful();
 
-    expect($this->user->notifications()->count())->toBe(0);
+    expect($this->user->notifications()->count())->toBe(1)
+        ->and($this->user->unreadNotifications()->count())->toBe(0);
 });
