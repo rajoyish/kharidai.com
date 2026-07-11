@@ -24,11 +24,21 @@ class ProductController extends Controller
 {
     use StoresSeoFriendlyImages;
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $products = Product::with('categories:id,name')->latest()->get();
+        $type = ProductType::tryFrom((string) $request->query('type'));
 
-        return Inertia::render('Admin/Products/Index', ['products' => $products]);
+        $products = Product::query()
+            ->with('categories:id,name')
+            ->when($type, fn ($query) => $query->where('type', $type))
+            ->latest()
+            ->get();
+
+        return Inertia::render('Admin/Products/Index', [
+            'products' => $products,
+            'productTypes' => $this->productTypeOptions(),
+            'filters' => ['type' => $type?->value],
+        ]);
     }
 
     public function create(): Response

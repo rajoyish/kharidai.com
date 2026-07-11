@@ -22,6 +22,41 @@ it('can list categories', function () {
     $response->assertSuccessful();
 });
 
+it('filters categories by product type', function () {
+    $digital = Category::factory()->create(['type' => 'digital']);
+    Category::factory()->create(['type' => 'physical']);
+
+    $response = $this->actingAs($this->admin)->get('/admin/categories?type=digital');
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Admin/Categories/Index')
+        ->where('filters.type', 'digital')
+        ->has('categories', 1)
+        ->where('categories.0.id', $digital->id),
+    );
+});
+
+it('keeps ancestors when filtering categories by type so the hierarchy stays intact', function () {
+    // A physical subcategory nested under a parent of a different type: the
+    // parent must survive the filter so the child still renders in the tree.
+    $parent = Category::factory()->create(['type' => 'digital']);
+    $child = Category::factory()->childOf($parent)->create(['type' => 'physical']);
+
+    $response = $this->actingAs($this->admin)->get('/admin/categories?type=physical');
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Admin/Categories/Index')
+        ->has('categories', 2)
+        ->where('categories', fn ($categories) => collect($categories)
+            ->pluck('id')
+            ->contains($parent->id) && collect($categories)
+            ->pluck('id')
+            ->contains($child->id)),
+    );
+});
+
 it('counts product variants rather than base products for each category', function () {
     $category = Category::factory()->create();
 

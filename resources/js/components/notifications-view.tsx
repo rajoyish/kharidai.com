@@ -1,6 +1,6 @@
-import { Form, Link } from '@inertiajs/react';
+import { Form, Link, router } from '@inertiajs/react';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import {
@@ -25,6 +25,11 @@ import {
     TimelineTime,
     TimelineTitle,
 } from '@/components/ui/timeline';
+import {
+    markNotificationRead,
+    notifyNotificationsChanged,
+    onNotificationsChanged,
+} from '@/lib/notifications';
 import { cn } from '@/lib/utils';
 import type { RouteFormDefinition } from '@/wayfinder';
 
@@ -53,14 +58,6 @@ export type PaginatedNotifications = {
     total: number;
 };
 
-/**
- * Notify the bell dropdown (which keeps its own local state) that the
- * notification set changed so it can re-fetch its unread badge count.
- */
-function syncNotificationBell(): void {
-    window.dispatchEvent(new CustomEvent('notifications-changed'));
-}
-
 function formatTimestamp(value: string): string {
     return new Date(value).toLocaleString(undefined, {
         dateStyle: 'medium',
@@ -83,6 +80,35 @@ export function NotificationsView({
 
     const hasNotifications = notifications.data.length > 0;
 
+    // Reload the timeline props when the bell dropdown changes the set (e.g.
+    // marking one or all read there) so the page reflects it without a refresh.
+    // The page's own broadcasts are ignored to avoid a redundant reload.
+    useEffect(
+        () =>
+            onNotificationsChanged('page', () => {
+                router.reload({ only: ['notifications', 'unread_count'] });
+            }),
+        [],
+    );
+
+    // Mark the specific notification read, then route to its target link. The
+    // navigation proceeds regardless so following the link stays seamless.
+    const openNotification = async (notification: NotificationItem) => {
+        if (!notification.data.url) {
+            return;
+        }
+
+        if (!notification.read_at) {
+            try {
+                await markNotificationRead(notification.id, 'page');
+            } catch (error) {
+                console.error('Failed to mark notification as read', error);
+            }
+        }
+
+        router.visit(notification.data.url);
+    };
+
     return (
         <>
             <SeoHead title="Notifications" />
@@ -96,7 +122,7 @@ export function NotificationsView({
                         <Form
                             {...markAllReadForm}
                             options={{ preserveScroll: true }}
-                            onSuccess={() => syncNotificationBell()}
+                            onSuccess={() => notifyNotificationsChanged('page')}
                         >
                             {({ processing }) => (
                                 <Button
@@ -140,7 +166,7 @@ export function NotificationsView({
                                     {...destroyAllForm}
                                     options={{ preserveScroll: true }}
                                     onSuccess={() => {
-                                        syncNotificationBell();
+                                        notifyNotificationsChanged('page');
                                         setIsDeleteOpen(false);
                                     }}
                                 >
@@ -198,7 +224,8 @@ export function NotificationsView({
                                                             'font-semibold',
                                                     )}
                                                 >
-                                                    {notification.data.message ??
+                                                    {notification.data
+                                                        .message ??
                                                         'Notification'}
                                                     {isUnread && (
                                                         <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 align-middle text-[10px] font-semibold text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
@@ -228,18 +255,17 @@ export function NotificationsView({
 
                                             {notification.data.url && (
                                                 <Button
+                                                    type="button"
                                                     variant="link"
                                                     size="sm"
-                                                    asChild
                                                     className="mt-1 h-auto p-0 text-xs"
+                                                    onClick={() =>
+                                                        openNotification(
+                                                            notification,
+                                                        )
+                                                    }
                                                 >
-                                                    <Link
-                                                        href={
-                                                            notification.data.url
-                                                        }
-                                                    >
-                                                        View details
-                                                    </Link>
+                                                    View details
                                                 </Button>
                                             )}
                                         </TimelineContent>

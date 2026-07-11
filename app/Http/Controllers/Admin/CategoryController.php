@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,17 +14,26 @@ use Inertia\Response;
 
 class CategoryController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $type = ProductType::tryFrom((string) $request->query('type'));
+
+        $categories = Category::query()
+            ->select(['id', 'parent_id', 'name', 'slug', 'type', 'sort_order'])
+            ->with('parent:id,name')
+            ->withProductVariantsCount()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        if ($type !== null) {
+            $categories = $this->filterCategoriesByType($categories, $type);
+        }
+
         return Inertia::render('Admin/Categories/Index', [
-            'categories' => Category::query()
-                ->select(['id', 'parent_id', 'name', 'slug', 'type', 'sort_order'])
-                ->with('parent:id,name')
-                ->withProductVariantsCount()
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get(),
+            'categories' => $categories->values(),
             'productTypes' => $this->productTypeOptions(),
+            'filters' => ['type' => $type?->value],
         ]);
     }
 
@@ -92,6 +102,35 @@ class CategoryController extends Controller
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
 
         return $validated;
+    }
+
+    /**
+     * Reduce the category collection to those matching the given product type,
+     * keeping every ancestor of a match so the parent-child hierarchy stays
+     * intact when the tree is rebuilt on the client.
+     *
+     * @param  Collection<int, Category>  $categories
+     * @return Collection<int, Category>
+     */
+    protected function filterCategoriesByType(Collection $categories, ProductType $type): Collection
+    {
+        $byId = $categories->keyBy('id');
+        $keep = [];
+
+        foreach ($categories as $category) {
+            if ($category->type !== $type) {
+                continue;
+            }
+
+            $current = $category;
+
+            while ($current !== null && ! isset($keep[$current->id])) {
+                $keep[$current->id] = true;
+                $current = $current->parent_id !== null ? $byId->get($current->parent_id) : null;
+            }
+        }
+
+        return $categories->filter(fn (Category $category): bool => isset($keep[$category->id]));
     }
 
     /**

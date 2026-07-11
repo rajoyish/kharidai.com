@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -20,6 +21,36 @@ it('can list products', function () {
     $response = $this->actingAs($this->admin)->get('/admin/products');
 
     $response->assertSuccessful();
+});
+
+it('filters products by type', function () {
+    $digital = Product::factory()->create(['type' => 'digital']);
+    $physical = Product::factory()->create(['type' => 'physical']);
+
+    $response = $this->actingAs($this->admin)->get('/admin/products?type=digital');
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Admin/Products/Index')
+        ->where('filters.type', 'digital')
+        ->has('products', 1)
+        ->where('products.0.id', $digital->id),
+    );
+
+    expect($physical->type->value)->toBe('physical');
+});
+
+it('ignores an invalid product type filter', function () {
+    Product::factory()->count(2)->create();
+
+    $response = $this->actingAs($this->admin)->get('/admin/products?type=bogus');
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Admin/Products/Index')
+        ->where('filters.type', null)
+        ->has('products', 2),
+    );
 });
 
 it('can create a product', function () {

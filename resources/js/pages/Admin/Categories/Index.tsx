@@ -13,6 +13,7 @@ import {
 import { useMemo, useState } from 'react';
 import {
     destroy as destroyCategory,
+    index as categoriesIndex,
     store as storeCategory,
     update as updateCategory,
 } from '@/actions/App/Http/Controllers/Admin/CategoryController';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 
 type Category = {
@@ -105,9 +107,11 @@ function countDescendants(node: CategoryNode): number {
 export default function CategoriesIndex({
     categories,
     productTypes,
+    filters,
 }: {
     categories: Category[];
     productTypes: ProductTypeOption[];
+    filters: { type: string | null };
 }) {
     const [editingCategory, setEditingCategory] = useState<Category | null>(
         null,
@@ -174,6 +178,14 @@ export default function CategoriesIndex({
         }
     };
 
+    const handleTypeChange = (type: string) => {
+        router.get(categoriesIndex().url, type ? { type } : {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
     const handleDelete = (category: Category) => {
         if (
             !confirm(
@@ -217,6 +229,24 @@ export default function CategoriesIndex({
                 }
             >
                 <div className="flex flex-col gap-4">
+                    <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={filters.type ?? ''}
+                        onValueChange={handleTypeChange}
+                        className="w-fit"
+                    >
+                        <ToggleGroupItem value="">All</ToggleGroupItem>
+                        {productTypes.map((option) => (
+                            <ToggleGroupItem
+                                key={option.value}
+                                value={option.value}
+                            >
+                                {option.label}
+                            </ToggleGroupItem>
+                        ))}
+                    </ToggleGroup>
+
                     <div className="grid grid-cols-2 gap-3 sm:max-w-2xl sm:grid-cols-3">
                         <div className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm">
                             <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -568,5 +598,5 @@ function CategoryRow({
 }
 
 CategoriesIndex.layout = {
-    breadcrumbs: [{ title: 'Categories', href: '/admin/categories' }],
+    breadcrumbs: [{ title: 'Categories', href: categoriesIndex().url }],
 };

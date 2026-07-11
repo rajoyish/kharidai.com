@@ -22,6 +22,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { show as showStorefrontProduct } from '@/routes/products';
 
 type Product = {
@@ -37,14 +38,35 @@ type Product = {
     }[];
 };
 
+type ProductTypeOption = {
+    value: string;
+    label: string;
+};
+
 const PRODUCT_IMAGE_COLUMN_CLASSES = 'w-22 min-w-22 max-w-22 px-4';
 const PRODUCT_STATUS_COLUMN_CLASSES = 'w-33 min-w-33';
 
-export default function ProductsIndex({ products }: { products: Product[] }) {
+export default function ProductsIndex({
+    products,
+    productTypes,
+    filters,
+}: {
+    products: Product[];
+    productTypes: ProductTypeOption[];
+    filters: { type: string | null };
+}) {
     const [searchQuery, setSearchQuery] = useState('');
     const [deletingProductId, setDeletingProductId] = useState<number | null>(
         null,
     );
+
+    const handleTypeChange = (type: string) => {
+        router.get(productsIndex().url, type ? { type } : {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
 
     const filteredProducts = useMemo(() => {
         if (!searchQuery.trim()) {
@@ -90,6 +112,24 @@ export default function ProductsIndex({ products }: { products: Product[] }) {
                     </div>
                 }
             >
+                <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={filters.type ?? ''}
+                    onValueChange={handleTypeChange}
+                    className="mb-4 w-fit"
+                >
+                    <ToggleGroupItem value="">All</ToggleGroupItem>
+                    {productTypes.map((option) => (
+                        <ToggleGroupItem
+                            key={option.value}
+                            value={option.value}
+                        >
+                            {option.label}
+                        </ToggleGroupItem>
+                    ))}
+                </ToggleGroup>
+
                 <Table>
                     <TableHeader>
                         <TableRow>
