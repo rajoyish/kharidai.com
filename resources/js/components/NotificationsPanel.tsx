@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { Bell, Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
     index as notificationsIndex,
     markAllAsRead as markAllAsReadRoute,
@@ -37,7 +37,7 @@ export function NotificationsPanel() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const res = await axios.get(notificationsIndex.url());
             setNotifications(res.data.notifications);
@@ -45,11 +45,22 @@ export function NotificationsPanel() {
         } catch (error) {
             console.error('Failed to fetch notifications', error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchNotifications();
+
+        // Re-sync when a bulk action elsewhere (e.g. the dedicated
+        // notifications page) changes the notification set.
+        const handleNotificationsChanged = () => {
+            fetchNotifications();
+        };
+
+        window.addEventListener(
+            'notifications-changed',
+            handleNotificationsChanged,
+        );
 
         const handleNewNotification = (e: CustomEvent) => {
             const newNotification = e.detail;
@@ -87,8 +98,12 @@ export function NotificationsPanel() {
                 'new-notification',
                 handleNewNotification as EventListener,
             );
+            window.removeEventListener(
+                'notifications-changed',
+                handleNotificationsChanged,
+            );
         };
-    }, []);
+    }, [fetchNotifications]);
 
     const markAsRead = async (notification: Notification) => {
         if (!notification.read_at) {
@@ -114,7 +129,13 @@ export function NotificationsPanel() {
     const markAllAsRead = async () => {
         try {
             await axios.post(markAllAsReadRoute.url());
-            setNotifications([]);
+            setNotifications((prev) =>
+                prev.map((n) =>
+                    n.read_at
+                        ? n
+                        : { ...n, read_at: new Date().toISOString() },
+                ),
+            );
             setUnreadCount(0);
             setIsOpen(false);
         } catch (error) {
