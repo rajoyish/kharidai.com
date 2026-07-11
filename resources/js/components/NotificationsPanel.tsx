@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     index as notificationsIndex,
     markAllAsRead as markAllAsReadRoute,
-    markAsRead as markAsReadRoute,
 } from '@/actions/App/Http/Controllers/NotificationController';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,8 +16,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+import {
+    markNotificationRead,
+    notifyNotificationsChanged,
+    onNotificationsChanged,
+} from '@/lib/notifications';
+import { cn } from '@/lib/utils';
 
 interface Notification {
     id: string;
@@ -51,16 +54,10 @@ export function NotificationsPanel() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchNotifications();
 
-        // Re-sync when a bulk action elsewhere (e.g. the dedicated
-        // notifications page) changes the notification set.
-        const handleNotificationsChanged = () => {
-            fetchNotifications();
-        };
-
-        window.addEventListener(
-            'notifications-changed',
-            handleNotificationsChanged,
-        );
+        // Re-sync when the dedicated notifications page changes the set (e.g.
+        // opening, marking, or clearing notifications there). Broadcasts made
+        // by this bell itself are ignored to avoid a redundant re-fetch.
+        const unsubscribe = onNotificationsChanged('bell', fetchNotifications);
 
         const handleNewNotification = (e: CustomEvent) => {
             const newNotification = e.detail;
@@ -77,15 +74,24 @@ export function NotificationsPanel() {
                 created_at: new Date().toISOString(),
             };
 
+            // Decide newness inside the updater (which has the latest list),
+            // but keep the updater side-effect free: apply the badge increment
+            // afterwards so it isn't double-scheduled under StrictMode.
+            let didAdd = false;
+
             setNotifications((prev) => {
                 if (prev.some((n) => n.id === formatted.id)) {
                     return prev;
                 }
 
-                setUnreadCount((c) => c + 1);
+                didAdd = true;
 
                 return [formatted, ...prev].slice(0, 20);
             });
+
+            if (didAdd) {
+                setUnreadCount((c) => c + 1);
+            }
         };
 
         window.addEventListener(
@@ -98,17 +104,14 @@ export function NotificationsPanel() {
                 'new-notification',
                 handleNewNotification as EventListener,
             );
-            window.removeEventListener(
-                'notifications-changed',
-                handleNotificationsChanged,
-            );
+            unsubscribe();
         };
     }, [fetchNotifications]);
 
     const markAsRead = async (notification: Notification) => {
         if (!notification.read_at) {
             try {
-                await axios.post(markAsReadRoute.url(notification.id));
+                await markNotificationRead(notification.id, 'bell');
                 setNotifications((prev) =>
                     prev.map((n) =>
                         n.id === notification.id
@@ -123,6 +126,8 @@ export function NotificationsPanel() {
         }
 
         setIsOpen(false);
+        // Routing to the target link always proceeds, even if the read request
+        // above failed, so navigation stays seamless.
         router.visit(notification.data.url);
     };
 
@@ -131,13 +136,13 @@ export function NotificationsPanel() {
             await axios.post(markAllAsReadRoute.url());
             setNotifications((prev) =>
                 prev.map((n) =>
-                    n.read_at
-                        ? n
-                        : { ...n, read_at: new Date().toISOString() },
+                    n.read_at ? n : { ...n, read_at: new Date().toISOString() },
                 ),
             );
             setUnreadCount(0);
             setIsOpen(false);
+            // Let the dedicated notifications page reflect the bulk change.
+            notifyNotificationsChanged('bell');
         } catch (error) {
             console.error('Failed to mark all as read', error);
         }
@@ -183,25 +188,41 @@ export function NotificationsPanel() {
                             No notifications
                         </div>
                     ) : (
-                        notifications.map((notification) => (
-                            <DropdownMenuItem
-                                key={notification.id}
-                                className={`flex cursor-pointer flex-col items-start gap-1 p-3 ${!notification.read_at ? 'bg-muted/50' : ''}`}
-                                onClick={() => markAsRead(notification)}
-                            >
-                                <div className="flex w-full items-center justify-between">
-                                    <span className="text-sm font-medium">
-                                        {notification.data.message}
-                                    </span>
-                                    {!notification.read_at && (
-                                        <span className="h-2 w-2 rounded-full bg-blue-600" />
+                        notifications.map((notification) => {
+                            const isRead = Boolean(notification.read_at);
+
+                            return (
+                                <DropdownMenuItem
+                                    key={notification.id}
+                                    className={cn(
+                                        'flex cursor-pointer flex-col items-start gap-1 p-3',
+                                        isRead
+                                            ? 'bg-muted/30 text-muted-foreground opacity-60'
+                                            : 'bg-muted/50',
                                     )}
-                                </div>
-                                <span className="line-clamp-2 text-xs text-muted-foreground">
-                                    {notification.data.description}
-                                </span>
-                            </DropdownMenuItem>
-                        ))
+                                    onClick={() => markAsRead(notification)}
+                                >
+                                    <div className="flex w-full items-center justify-between">
+                                        <span
+                                            className={cn(
+                                                'text-sm',
+                                                isRead
+                                                    ? 'font-normal text-muted-foreground'
+                                                    : 'font-medium',
+                                            )}
+                                        >
+                                            {notification.data.message}
+                                        </span>
+                                        {!isRead && (
+                                            <span className="h-2 w-2 rounded-full bg-blue-600" />
+                                        )}
+                                    </div>
+                                    <span className="line-clamp-2 text-xs text-muted-foreground">
+                                        {notification.data.description}
+                                    </span>
+                                </DropdownMenuItem>
+                            );
+                        })
                     )}
                 </DropdownMenuGroup>
             </DropdownMenuContent>
