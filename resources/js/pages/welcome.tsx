@@ -1,13 +1,12 @@
-import { router, usePage } from '@inertiajs/react';
 import { Briefcase, CloudDownload, Search, Star, Truck } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 
 import { HeroFanCards } from '@/components/hero-fan-cards';
 import { MaskedLinesHeading } from '@/components/masked-lines-heading';
 import { PinnedPanels } from '@/components/pinned-panels';
 import { SeoHead } from '@/components/seo-head';
 import { StorefrontHomeSection } from '@/components/storefront-home-section';
-import { Input } from '@/components/ui/input';
+import { StorefrontSearch } from '@/components/storefront-search';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
 import { collectAllProducts } from '@/lib/storefront-products';
 import { home } from '@/routes';
@@ -29,45 +28,19 @@ const SECTION_HREF: Record<
     service: services(),
 };
 
+const SEARCH_ONLY = ['sections', 'filters'];
+
 function countProduct(product: StorefrontProduct): number {
     return 1 + (product.variants_count ?? 0);
 }
 
 export default function Welcome({
     sections,
+    filters,
 }: {
     sections: StorefrontSection[];
+    filters: { search: string | null };
 }) {
-    const { url } = usePage();
-    const searchParams = new URLSearchParams(url.split('?')[1] || '');
-    const initialSearch = searchParams.get('search') || '';
-
-    const [searchQuery, setSearchQuery] = useState(initialSearch);
-    const isFirstRender = useRef(true);
-
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-
-            return;
-        }
-
-        const handler = setTimeout(() => {
-            router.get(
-                home.url(),
-                { search: searchQuery || undefined },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                    only: ['sections'],
-                },
-            );
-        }, 300);
-
-        return () => clearTimeout(handler);
-    }, [searchQuery]);
-
     const totalItemsCount = useMemo(
         () =>
             sections.reduce((total, section) => {
@@ -119,10 +92,14 @@ export default function Welcome({
                             <MaskedLinesHeading className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-[#1A1A1A] md:text-7xl">
                                 Premium tools &
                                 <br />
-                                goods in one place<span className='text-accent'>.</span>
+                                goods in one place
+                                <span className="text-accent">.</span>
                             </MaskedLinesHeading>
                             <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl">
-                                From cutting-edge AI subscriptions and productivity software to curated fashion and expert freelance services in Nepal. Experience seamless local shopping tailored for your needs.
+                                From cutting-edge AI subscriptions and
+                                productivity software to curated fashion and
+                                expert freelance services in Nepal. Experience
+                                seamless local shopping tailored for your needs.
                             </p>
 
                             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -157,7 +134,11 @@ export default function Welcome({
                                 Everything you need to create, live, and work.
                             </h2>
                             <p className="text-lg text-gray-400">
-                                <span className='text-accent font-bold'>Kharidai.com</span> brings the world's best digital tools and everyday essentials straight to you in Nepal.
+                                <span className="font-bold text-accent">
+                                    Kharidai.com
+                                </span>{' '}
+                                brings the world's best digital tools and
+                                everyday essentials straight to you in Nepal.
                             </p>
                         </div>
 
@@ -169,7 +150,10 @@ export default function Welcome({
                                     Software & Digital Goods
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Instant access to essential productivity software, cloud storage, and creative tools. Delivered directly to your user panel in seconds.
+                                    Instant access to essential productivity
+                                    software, cloud storage, and creative tools.
+                                    Delivered directly to your user panel in
+                                    seconds.
                                 </p>
                             </div>
                             <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
@@ -179,7 +163,9 @@ export default function Welcome({
                                     AI & Premium Subscriptions
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Unlock premium AI models like ChatGPT and Claude, alongside top-tier VPNs and SaaS platforms at unbeatable local rates.
+                                    Unlock premium AI models like ChatGPT and
+                                    Claude, alongside top-tier VPNs and SaaS
+                                    platforms at unbeatable local rates.
                                 </p>
                             </div>
                             <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
@@ -189,7 +175,9 @@ export default function Welcome({
                                     Professional Services
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Hire top-rated professionals for digital marketing, design tasks, and specialized freelance work with secure payments.
+                                    Hire top-rated professionals for digital
+                                    marketing, design tasks, and specialized
+                                    freelance work with secure payments.
                                 </p>
                             </div>
                             <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
@@ -199,7 +187,9 @@ export default function Welcome({
                                     Physical Lifestyle Goods
                                 </h3>
                                 <p className="relative z-10 leading-relaxed text-gray-400">
-                                    Shop for curated fashion, cosmetics, and lifestyle essentials with fast, reliable shipping right to your doorstep.
+                                    Shop for curated fashion, cosmetics, and
+                                    lifestyle essentials with fast, reliable
+                                    shipping right to your doorstep.
                                 </p>
                             </div>
                         </div>
@@ -218,21 +208,17 @@ export default function Welcome({
                             Explore Nepal's diverse catalog
                         </h2>
                         <p className="text-gray-500">
-                            Find exactly what you're looking for across software, services, and physical goods.
+                            Find exactly what you're looking for across
+                            software, services, and physical goods.
                         </p>
                     </div>
 
-                    <div className="mb-16 flex flex-col items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_0.5rem_1.875rem_rgba(0,0,0,0.04)] sm:flex-row">
-                        <Input
-                            type="search"
-                            placeholder="Search categories or products..."
-                            value={searchQuery}
-                            onChange={(event) =>
-                                setSearchQuery(event.target.value)
-                            }
-                            className="h-12 w-full rounded-xl border-gray-200 bg-gray-50/50 text-base focus-visible:ring-accent sm:flex-1"
-                        />
-                    </div>
+                    <StorefrontSearch
+                        href={home().url}
+                        only={SEARCH_ONLY}
+                        currentSearch={filters.search ?? ''}
+                        className="mb-16 flex flex-col items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_0.5rem_1.875rem_rgba(0,0,0,0.04)] sm:flex-row"
+                    />
 
                     {hasResults ? (
                         <div className="space-y-20">

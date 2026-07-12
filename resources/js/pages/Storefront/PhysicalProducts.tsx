@@ -8,6 +8,7 @@ export default function PhysicalProducts(props: {
     tagline: string;
     categories: StorefrontCategory[];
     uncategorizedProducts: StorefrontProduct[];
+    filters: { search: string | null };
 }) {
     return <StorefrontTypePage {...props} />;
 }

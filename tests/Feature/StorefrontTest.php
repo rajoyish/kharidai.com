@@ -5,6 +5,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -501,5 +502,186 @@ it('prefers the manually entered product seo metadata over the generated values'
         ->where('seo.title', 'Buy Test Product Online - '.config('app.name'))
         ->where('seo.description', 'Hand-written snippet for search engines.')
         ->where('seo.imageAlt', 'A pair of headphones on a desk'),
+    );
+});
+
+it('filters homepage sections by the search term', function () {
+    $category = Category::factory()->create(['type' => ProductType::Digital]);
+
+    Product::factory()->hasAttached($category)->create([
+        'title' => 'Claude Subscription',
+        'in_stock' => true,
+    ]);
+    Product::factory()->hasAttached($category)->create([
+        'title' => 'Unrelated Widget',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('home', ['search' => 'Claude']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('welcome')
+        ->has('sections.0.categories.0.products', 1)
+        ->where('sections.0.categories.0.products.0.title', 'Claude Subscription'),
+    );
+});
+
+it('filters an uncategorized product on a type page by the search term', function () {
+    Product::factory()->create([
+        'title' => 'Claude Subscription',
+        'in_stock' => true,
+    ]);
+    Product::factory()->create([
+        'title' => 'Unrelated Widget',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('digital-products.index', ['search' => 'Claude']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/DigitalProducts')
+        ->has('uncategorizedProducts', 1)
+        ->where('uncategorizedProducts.0.title', 'Claude Subscription'),
+    );
+});
+
+it('filters categorized products on a type page by the search term', function () {
+    $category = Category::factory()->create(['type' => ProductType::Physical]);
+
+    Product::factory()->physical()->hasAttached($category)->create([
+        'title' => 'Leather Wallet',
+        'in_stock' => true,
+    ]);
+    Product::factory()->physical()->hasAttached($category)->create([
+        'title' => 'Cotton Shirt',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('physical-products.index', ['search' => 'Wallet']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/PhysicalProducts')
+        ->has('categories.0.products', 1)
+        ->where('categories.0.products.0.title', 'Leather Wallet'),
+    );
+});
+
+it('keeps the product type scope when searching a type page', function () {
+    Product::factory()->create([
+        'title' => 'Claude Subscription',
+        'in_stock' => true,
+    ]);
+    Product::factory()->service()->create([
+        'title' => 'Claude Setup Consulting',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('services.index', ['search' => 'Claude']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/Services')
+        ->has('uncategorizedProducts', 1)
+        ->where('uncategorizedProducts.0.title', 'Claude Setup Consulting'),
+    );
+});
+
+it('returns no results on a type page when nothing matches the search term', function () {
+    Product::factory()->create([
+        'title' => 'Claude Subscription',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('digital-products.index', ['search' => 'nothing-matches-this']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/DigitalProducts')
+        ->has('categories', 0)
+        ->has('uncategorizedProducts', 0),
+    );
+});
+
+it('does not issue more queries as more categories match the search', function () {
+    $countQueriesForCategories = function (int $categoryCount): int {
+        Category::query()->delete();
+        Product::query()->delete();
+
+        for ($i = 0; $i < $categoryCount; $i++) {
+            $category = Category::factory()->create([
+                'name' => "Claude Category {$i}",
+                'type' => ProductType::Digital,
+            ]);
+
+            Product::factory()->count(3)->hasAttached($category)->create([
+                'in_stock' => true,
+            ]);
+        }
+
+        // Warm the shared-layout caches first; otherwise the very first request
+        // of the test would be counted with extra one-off lookups.
+        $this->get(route('digital-products.index', ['search' => 'Claude']))->assertSuccessful();
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->get(route('digital-products.index', ['search' => 'Claude']))->assertSuccessful();
+
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $queries;
+    };
+
+    // A category-count-dependent query total would mean the products relation is
+    // being lazy-loaded per category rather than eager-loaded in one go.
+    expect($countQueriesForCategories(6))->toBe($countQueriesForCategories(2));
+});
+
+it('echoes the active search term back to the type page', function () {
+    $response = $this->get(route('digital-products.index', ['search' => 'Claude']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/DigitalProducts')
+        ->where('filters.search', 'Claude'),
+    );
+});
+
+it('echoes a null search term when the type page is unfiltered', function () {
+    $response = $this->get(route('digital-products.index'));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/DigitalProducts')
+        ->where('filters.search', null),
+    );
+});
+
+it('echoes the active search term back to the homepage', function () {
+    $response = $this->get(route('home', ['search' => 'Claude']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('welcome')
+        ->where('filters.search', 'Claude'),
+    );
+});
+
+it('ignores a blank search term on a type page', function () {
+    Product::factory()->create([
+        'title' => 'Claude Subscription',
+        'in_stock' => true,
+    ]);
+
+    $response = $this->get(route('digital-products.index', ['search' => '   ']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Storefront/DigitalProducts')
+        ->has('uncategorizedProducts', 1),
     );
 });
