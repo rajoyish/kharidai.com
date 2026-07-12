@@ -1,6 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
+import { CopyableOrderNumber } from '@/components/copy-button';
 import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
@@ -156,12 +157,16 @@ export default function SubscriptionIndex({
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    <Link
-                                        href={showOrder(sub.order.id)}
-                                        className="text-primary hover:underline"
+                                    <CopyableOrderNumber
+                                        orderNumber={sub.order.order_number}
                                     >
-                                        {sub.order.order_number}
-                                    </Link>
+                                        <Link
+                                            href={showOrder(sub.order.id)}
+                                            className="text-primary hover:underline"
+                                        >
+                                            {sub.order.order_number}
+                                        </Link>
+                                    </CopyableOrderNumber>
                                 </TableCell>
                                 <TableCell className="whitespace-nowrap">
                                     {sub.start_date}

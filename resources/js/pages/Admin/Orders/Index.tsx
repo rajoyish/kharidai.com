@@ -3,7 +3,9 @@ import { Eye, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { CopyableOrderNumber } from '@/components/copy-button';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,10 +49,12 @@ export default function AdminOrderIndex({
     physicalOrders,
     digitalOrders,
     serviceOrders,
+    filters,
 }: {
     physicalOrders: { data: Order[] };
     digitalOrders: { data: Order[] };
     serviceOrders: { data: Order[] };
+    filters: { search?: string };
 }) {
     const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
     /**
@@ -75,7 +79,19 @@ export default function AdminOrderIndex({
             <SeoHead title="Manage Orders" />
 
             <div className="space-y-8">
-                <PagePanel title="Digital Orders" variant="transparent">
+                <PagePanel
+                    title="Digital Orders"
+                    variant="transparent"
+                    actions={
+                        // One search box drives all three tables, since the server
+                        // filters every paginator by the same term.
+                        <SearchFilter
+                            href={adminOrdersIndex().url}
+                            currentSearch={filters?.search ?? ''}
+                            placeholder="Search order # or customer..."
+                        />
+                    }
+                >
                     <OrderTable
                         orders={digitalOrders.data}
                         deletingOrderId={deletingOrderId}
@@ -151,9 +167,13 @@ function OrderTable({
                 {orders.map((order) => (
                     <TableRow key={order.id}>
                         <TableCell className="font-medium text-primary">
-                            <Link href={showAdminOrder(order.id)}>
-                                {order.order_number}
-                            </Link>
+                            <CopyableOrderNumber
+                                orderNumber={order.order_number}
+                            >
+                                <Link href={showAdminOrder(order.id)}>
+                                    {order.order_number}
+                                </Link>
+                            </CopyableOrderNumber>
                         </TableCell>
                         <TableCell>
                             <div className="font-medium">{order.user.name}</div>

@@ -17,11 +17,15 @@ class CategoryController extends Controller
     public function index(Request $request): Response
     {
         $type = ProductType::tryFrom((string) $request->query('type'));
+        $search = $request->string('search')->trim()->value();
 
         $categories = Category::query()
             ->select(['id', 'parent_id', 'name', 'slug', 'type', 'sort_order'])
             ->with('parent:id,name')
             ->withProductVariantsCount()
+            // A match whose parent is filtered out is surfaced at the root of the
+            // tree by the client rather than hidden, so searching stays lossless.
+            ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
@@ -33,7 +37,7 @@ class CategoryController extends Controller
         return Inertia::render('Admin/Categories/Index', [
             'categories' => $categories->values(),
             'productTypes' => $this->productTypeOptions(),
-            'filters' => ['type' => $type?->value],
+            'filters' => ['type' => $type?->value, 'search' => $search],
         ]);
     }
 

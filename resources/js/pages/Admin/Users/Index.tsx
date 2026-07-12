@@ -8,6 +8,7 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/UserController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import {
@@ -56,7 +57,13 @@ function UserDateCell({
     );
 }
 
-export default function UsersIndex({ users }: { users: User[] }) {
+export default function UsersIndex({
+    users,
+    filters,
+}: {
+    users: User[];
+    filters: { search?: string };
+}) {
     const { post, delete: destroy } = useForm();
     /**
      * The user awaiting delete confirmation. One dialog is driven by this value
@@ -80,9 +87,16 @@ export default function UsersIndex({ users }: { users: User[] }) {
                 title="User Management"
                 variant="transparent"
                 actions={
-                    <Button asChild className="w-fit">
-                        <Link href={createUser.url()}>New User</Link>
-                    </Button>
+                    <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
+                        <SearchFilter
+                            href={usersIndex.url()}
+                            currentSearch={filters?.search ?? ''}
+                            placeholder="Search users..."
+                        />
+                        <Button asChild className="w-fit">
+                            <Link href={createUser.url()}>New User</Link>
+                        </Button>
+                    </div>
                 }
             >
                 <Table>
@@ -171,7 +185,9 @@ export default function UsersIndex({ users }: { users: User[] }) {
                                     colSpan={7}
                                     className="h-24 text-center text-muted-foreground"
                                 >
-                                    No users found.
+                                    {filters?.search
+                                        ? 'No users match your search.'
+                                        : 'No users found.'}
                                 </TableCell>
                             </TableRow>
                         )}

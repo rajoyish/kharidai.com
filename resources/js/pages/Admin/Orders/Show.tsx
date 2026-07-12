@@ -15,6 +15,7 @@ import {
     updateStatus as updateOrderStatus,
 } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { CopyButton } from '@/components/copy-button';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
@@ -234,7 +235,15 @@ export default function AdminOrderShow({
             <SeoHead title={`Manage Order ${order.order_number}`} />
 
             <PagePanel
-                title={`Order ${order.order_number}`}
+                title={
+                    <h1 className="flex items-center gap-1 text-2xl font-bold tracking-tight">
+                        Order {order.order_number}
+                        <CopyButton
+                            value={order.order_number}
+                            label="order number"
+                        />
+                    </h1>
+                }
                 description={`Customer: ${order.user.name} (${order.user.email}) | Date: ${new Date(order.created_at).toLocaleString()}`}
                 variant="transparent"
                 actions={

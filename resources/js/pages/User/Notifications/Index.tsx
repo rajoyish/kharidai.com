@@ -1,8 +1,5 @@
-import {
-    NotificationsView
-    
-} from '@/components/notifications-view';
-import type {PaginatedNotifications} from '@/components/notifications-view';
+import { NotificationsView } from '@/components/notifications-view';
+import type { PaginatedNotifications } from '@/components/notifications-view';
 import { home } from '@/routes';
 import {
     destroyAll,

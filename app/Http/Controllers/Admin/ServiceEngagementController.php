@@ -25,10 +25,23 @@ class ServiceEngagementController extends Controller
 {
     public function __construct(private EngagementStateMachine $stateMachine) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = $request->string('search')->trim()->value();
+
         $engagements = ServiceEngagement::query()
             ->with(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'assignedBy:id,name', 'orderItem.order:id,order_number'])
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('project_name', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($user) use ($search) {
+                            $user->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('product', fn ($product) => $product->where('title', 'like', "%{$search}%"))
+                        ->orWhereHas('orderItem.order', fn ($order) => $order->where('order_number', 'like', "%{$search}%"));
+                });
+            })
             ->latest()
             ->get()
             ->map(fn (ServiceEngagement $engagement): array => [
@@ -52,6 +65,7 @@ class ServiceEngagementController extends Controller
         return Inertia::render('Admin/Services/Index', [
             'engagements' => $engagements,
             'statuses' => EngagementStatus::values(),
+            'filters' => ['search' => $search],
         ]);
     }
 
