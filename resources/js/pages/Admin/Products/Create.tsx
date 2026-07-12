@@ -1,4 +1,8 @@
-import { store } from '@/actions/App/Http/Controllers/Admin/ProductController';
+import {
+    create as createProduct,
+    index as productsIndex,
+    store,
+} from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { PagePanel } from '@/components/page-panel';
 import { ProductForm } from '@/components/ProductForm';
 import { SeoHead } from '@/components/seo-head';
@@ -29,7 +33,7 @@ export default function CreateProduct({
 
 CreateProduct.layout = {
     breadcrumbs: [
-        { title: 'Products', href: '/admin/products' },
-        { title: 'Create', href: '/admin/products/create' },
+        { title: 'Products', href: productsIndex().url },
+        { title: 'Create', href: createProduct().url },
     ],
 };

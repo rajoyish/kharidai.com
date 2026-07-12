@@ -7,6 +7,7 @@ import {
     edit,
     index as postsIndex,
 } from '@/actions/App/Http/Controllers/Admin/PostController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
@@ -49,6 +50,11 @@ export default function PostsIndex({
 }) {
     const [searchQuery, setSearchQuery] = useState(filters?.search ?? '');
     const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
+    /**
+     * The post awaiting delete confirmation. One dialog is driven by this value
+     * rather than one per row, so the table stays cheap to render.
+     */
+    const [postToDelete, setPostToDelete] = useState<PostRow | null>(null);
 
     useEffect(() => {
         // Skip when the input already matches the server-side filter, so the
@@ -69,16 +75,14 @@ export default function PostsIndex({
     }, [searchQuery, filters?.search]);
 
     const handleDelete = (post: PostRow) => {
-        if (confirm('Are you sure you want to delete this post?')) {
-            setDeletingPostId(post.id);
+        setDeletingPostId(post.id);
 
-            router.delete(destroyPost(post).url, {
-                preserveScroll: true,
-                onFinish: () => {
-                    setDeletingPostId(null);
-                },
-            });
-        }
+        router.delete(destroyPost(post).url, {
+            preserveScroll: true,
+            onFinish: () => {
+                setDeletingPostId(null);
+            },
+        });
     };
 
     return (
@@ -187,7 +191,7 @@ export default function PostsIndex({
                                         size="sm"
                                         className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
                                         disabled={deletingPostId === post.id}
-                                        onClick={() => handleDelete(post)}
+                                        onClick={() => setPostToDelete(post)}
                                     >
                                         Delete
                                     </Button>
@@ -218,20 +222,38 @@ export default function PostsIndex({
                                         key={i}
                                         href={link.url}
                                         className={`rounded-md px-3 py-1 text-sm ${link.active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
                                     />
                                 ) : (
                                     <span
                                         key={i}
                                         className="px-3 py-1 text-sm text-muted-foreground opacity-50"
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
                                     />
-                                )
+                                ),
                             )}
                         </nav>
                     </div>
                 )}
             </PagePanel>
+
+            {postToDelete && (
+                <ConfirmDialog
+                    title="Are you sure you want to delete this post?"
+                    description={
+                        <>
+                            This permanently removes &ldquo;{postToDelete.title}
+                            &rdquo; and cannot be undone.
+                        </>
+                    }
+                    onConfirm={() => handleDelete(postToDelete)}
+                    onOpenChange={() => setPostToDelete(null)}
+                />
+            )}
         </>
     );
 }

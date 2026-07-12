@@ -15,6 +15,7 @@
 .env
 .env.backup
 .env.production
+.env.testing
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -32,3 +33,4 @@ yarn-error.log
 /playwright-report/
 /test-results/
 /.playwright/
+/tests/browser/.auth/

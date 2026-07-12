@@ -1,10 +1,12 @@
 import { Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     ban as banUser,
     create as createUser,
     destroy as destroyUser,
     index as usersIndex,
 } from '@/actions/App/Http/Controllers/Admin/UserController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -56,15 +58,18 @@ function UserDateCell({
 
 export default function UsersIndex({ users }: { users: User[] }) {
     const { post, delete: destroy } = useForm();
+    /**
+     * The user awaiting delete confirmation. One dialog is driven by this value
+     * rather than one per row, so the table stays cheap to render.
+     */
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const handleBan = (user: User) => {
         post(banUser.url(user.id));
     };
 
     const handleDelete = (user: User) => {
-        if (confirm('Are you sure you want to delete this user?')) {
-            destroy(destroyUser.url(user.id));
-        }
+        destroy(destroyUser.url(user.id));
     };
 
     return (
@@ -153,7 +158,7 @@ export default function UsersIndex({ users }: { users: User[] }) {
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                        onClick={() => handleDelete(user)}
+                                        onClick={() => setUserToDelete(user)}
                                     >
                                         Delete
                                     </Button>
@@ -173,10 +178,24 @@ export default function UsersIndex({ users }: { users: User[] }) {
                     </TableBody>
                 </Table>
             </PagePanel>
+
+            {userToDelete && (
+                <ConfirmDialog
+                    title="Are you sure you want to delete this user?"
+                    description={
+                        <>
+                            This permanently removes {userToDelete.name} (
+                            {userToDelete.email}) and cannot be undone.
+                        </>
+                    }
+                    onConfirm={() => handleDelete(userToDelete)}
+                    onOpenChange={() => setUserToDelete(null)}
+                />
+            )}
         </>
     );
 }
 
 UsersIndex.layout = {
-    breadcrumbs: [{ title: 'User Management', href: usersIndex() }],
+    breadcrumbs: [{ title: 'User Management', href: usersIndex().url }],
 };

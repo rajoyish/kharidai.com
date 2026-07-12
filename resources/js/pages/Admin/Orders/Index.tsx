@@ -2,6 +2,7 @@ import { Link, router } from '@inertiajs/react';
 import { Eye, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -38,8 +39,8 @@ type Order = {
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Admin Dashboard', href: dashboard() },
-    { title: 'Orders', href: adminOrdersIndex() },
+    { title: 'Admin Dashboard', href: dashboard().url },
+    { title: 'Orders', href: adminOrdersIndex().url },
 ];
 
 export default function AdminOrderIndex({
@@ -52,6 +53,22 @@ export default function AdminOrderIndex({
     serviceOrders: { data: Order[] };
 }) {
     const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
+    /**
+     * The order awaiting delete confirmation. A single dialog is shared by all
+     * three tables rather than rendering one per row.
+     */
+    const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+
+    const handleDelete = (order: Order) => {
+        setDeletingOrderId(order.id);
+
+        router.delete(destroyOrder(order), {
+            preserveScroll: true,
+            onFinish: () => {
+                setDeletingOrderId(null);
+            },
+        });
+    };
 
     return (
         <>
@@ -62,7 +79,7 @@ export default function AdminOrderIndex({
                     <OrderTable
                         orders={digitalOrders.data}
                         deletingOrderId={deletingOrderId}
-                        setDeletingOrderId={setDeletingOrderId}
+                        onRequestDelete={setOrderToDelete}
                     />
                 </PagePanel>
 
@@ -70,7 +87,7 @@ export default function AdminOrderIndex({
                     <OrderTable
                         orders={physicalOrders.data}
                         deletingOrderId={deletingOrderId}
-                        setDeletingOrderId={setDeletingOrderId}
+                        onRequestDelete={setOrderToDelete}
                     />
                 </PagePanel>
 
@@ -78,10 +95,27 @@ export default function AdminOrderIndex({
                     <OrderTable
                         orders={serviceOrders.data}
                         deletingOrderId={deletingOrderId}
-                        setDeletingOrderId={setDeletingOrderId}
+                        onRequestDelete={setOrderToDelete}
                     />
                 </PagePanel>
             </div>
+
+            {orderToDelete && (
+                <ConfirmDialog
+                    title="Are you sure you want to delete this order?"
+                    description={
+                        <>
+                            This permanently removes order{' '}
+                            {orderToDelete.order_number} placed by{' '}
+                            {orderToDelete.user.name}, along with its shipment
+                            and any subscription bought in it. This cannot be
+                            undone.
+                        </>
+                    }
+                    onConfirm={() => handleDelete(orderToDelete)}
+                    onOpenChange={() => setOrderToDelete(null)}
+                />
+            )}
         </>
     );
 }
@@ -93,11 +127,11 @@ AdminOrderIndex.layout = {
 function OrderTable({
     orders,
     deletingOrderId,
-    setDeletingOrderId,
+    onRequestDelete,
 }: {
     orders: Order[];
     deletingOrderId: number | null;
-    setDeletingOrderId: (id: number | null) => void;
+    onRequestDelete: (order: Order) => void;
 }) {
     return (
         <Table>
@@ -186,22 +220,7 @@ function OrderTable({
                                 size="sm"
                                 className="text-red-500 hover:bg-red-50 hover:text-red-600"
                                 disabled={deletingOrderId === order.id}
-                                onClick={() => {
-                                    if (
-                                        confirm(
-                                            'Are you sure you want to delete this order?',
-                                        )
-                                    ) {
-                                        setDeletingOrderId(order.id);
-
-                                        router.delete(destroyOrder(order), {
-                                            preserveScroll: true,
-                                            onFinish: () => {
-                                                setDeletingOrderId(null);
-                                            },
-                                        });
-                                    }
-                                }}
+                                onClick={() => onRequestDelete(order)}
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>

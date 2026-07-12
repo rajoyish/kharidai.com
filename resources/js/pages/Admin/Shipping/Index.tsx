@@ -6,6 +6,7 @@ import {
     store as storeZone,
     update as updateZone,
 } from '@/actions/App/Http/Controllers/Admin/ShippingController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,11 @@ const rupees = (value: number | null) =>
 export default function ShippingIndex({ zones }: { zones: Zone[] }) {
     const [editingZone, setEditingZone] = useState<Zone | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    /**
+     * The zone awaiting delete confirmation. One dialog is driven by this value
+     * rather than one per row, so the table stays cheap to render.
+     */
+    const [zoneToDelete, setZoneToDelete] = useState<Zone | null>(null);
 
     const { data, setData, post, put, processing, errors, reset } =
         useForm(emptyForm);
@@ -96,11 +102,9 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
     };
 
     const handleDelete = (zone: Zone) => {
-        if (confirm(`Delete shipping zone "${zone.name}"?`)) {
-            router.delete(destroyZone(zone).url, {
-                preserveScroll: true,
-            });
-        }
+        router.delete(destroyZone(zone).url, {
+            preserveScroll: true,
+        });
     };
 
     return (
@@ -377,7 +381,7 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                        onClick={() => handleDelete(zone)}
+                                        onClick={() => setZoneToDelete(zone)}
                                     >
                                         Delete
                                     </Button>
@@ -397,6 +401,20 @@ export default function ShippingIndex({ zones }: { zones: Zone[] }) {
                     </TableBody>
                 </Table>
             </PagePanel>
+
+            {zoneToDelete && (
+                <ConfirmDialog
+                    title={
+                        <>
+                            Delete shipping zone &ldquo;{zoneToDelete.name}
+                            &rdquo;?
+                        </>
+                    }
+                    description="This permanently removes the zone and its delivery rates. This cannot be undone."
+                    onConfirm={() => handleDelete(zoneToDelete)}
+                    onOpenChange={() => setZoneToDelete(null)}
+                />
+            )}
         </>
     );
 }

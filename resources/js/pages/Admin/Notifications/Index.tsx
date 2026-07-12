@@ -12,8 +12,8 @@ import {
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Admin Dashboard', href: dashboard() },
-    { title: 'Notifications', href: adminNotificationsIndex() },
+    { title: 'Admin Dashboard', href: dashboard().url },
+    { title: 'Notifications', href: adminNotificationsIndex().url },
 ];
 
 export default function AdminNotificationsIndex({

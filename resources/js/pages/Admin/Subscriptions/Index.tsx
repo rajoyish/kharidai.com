@@ -46,8 +46,8 @@ type Subscription = {
 };
 
 const breadcrumbs = [
-    { title: 'Admin', href: dashboard() },
-    { title: 'Subscriptions', href: adminSubscriptionsIndex() },
+    { title: 'Admin', href: dashboard().url },
+    { title: 'Subscriptions', href: adminSubscriptionsIndex().url },
 ];
 
 export default function AdminSubscriptionIndex({

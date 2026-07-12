@@ -12,6 +12,7 @@ import {
     toggleFooter,
     toggleNav,
 } from '@/actions/App/Http/Controllers/Admin/PageController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
@@ -50,6 +51,11 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [deletingPageId, setDeletingPageId] = useState<number | null>(null);
+    /**
+     * The page awaiting delete confirmation. One dialog is driven by this value
+     * rather than one per row, so the table stays cheap to render.
+     */
+    const [pageToDelete, setPageToDelete] = useState<CmsPageRow | null>(null);
 
     // `rows` is optimistic during a drag; re-sync whenever the server sends
     // fresh props (reorder, toggle, delete).
@@ -98,16 +104,14 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
     };
 
     const handleDelete = (page: CmsPageRow) => {
-        if (confirm('Are you sure you want to delete this page?')) {
-            setDeletingPageId(page.id);
+        setDeletingPageId(page.id);
 
-            router.delete(destroyPage(page).url, {
-                preserveScroll: true,
-                onFinish: () => {
-                    setDeletingPageId(null);
-                },
-            });
-        }
+        router.delete(destroyPage(page).url, {
+            preserveScroll: true,
+            onFinish: () => {
+                setDeletingPageId(null);
+            },
+        });
     };
 
     return (
@@ -276,7 +280,7 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
                                         size="sm"
                                         className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
                                         disabled={deletingPageId === page.id}
-                                        onClick={() => handleDelete(page)}
+                                        onClick={() => setPageToDelete(page)}
                                     >
                                         Delete
                                     </Button>
@@ -298,6 +302,20 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
                     </TableBody>
                 </Table>
             </PagePanel>
+
+            {pageToDelete && (
+                <ConfirmDialog
+                    title="Are you sure you want to delete this page?"
+                    description={
+                        <>
+                            This permanently removes &ldquo;{pageToDelete.title}
+                            &rdquo; (/{pageToDelete.slug}) and cannot be undone.
+                        </>
+                    }
+                    onConfirm={() => handleDelete(pageToDelete)}
+                    onOpenChange={() => setPageToDelete(null)}
+                />
+            )}
         </>
     );
 }

@@ -14,6 +14,7 @@ import {
     updateShipmentStatus,
     updateStatus as updateOrderStatus,
 } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
@@ -25,6 +26,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { VariantOptionBadges } from '@/components/variant-option-badges';
 import type { SelectedOptions } from '@/components/variant-option-badges';
 import { formatNpr } from '@/lib/currency';
+import { dashboard } from '@/routes/admin';
+import { index as adminOrdersIndex } from '@/routes/admin/orders';
 
 type Order = {
     id: number;
@@ -189,11 +192,12 @@ export default function AdminOrderShow({
         );
     };
 
-    const handleDeleteCredential = (credId: number) => {
-        if (!confirm('Are you sure you want to delete this credential?')) {
-            return;
-        }
+    /** The credential id awaiting delete confirmation. */
+    const [credentialToDelete, setCredentialToDelete] = useState<number | null>(
+        null,
+    );
 
+    const handleDeleteCredential = (credId: number) => {
         router.delete(destroyCredential({ order, credential: credId }), {
             preserveScroll: true,
             onSuccess: () => toast.success('Credential deleted'),
@@ -209,6 +213,19 @@ export default function AdminOrderShow({
     };
 
     const [deletingOrder, setDeletingOrder] = useState(false);
+    const [isDeleteOrderDialogOpen, setIsDeleteOrderDialogOpen] =
+        useState(false);
+
+    const handleDeleteOrder = () => {
+        setDeletingOrder(true);
+
+        router.delete(destroyOrder(order), {
+            preserveScroll: true,
+            onFinish: () => {
+                setDeletingOrder(false);
+            },
+        });
+    };
 
     // handleSendMessage moved to SupportChat
 
@@ -226,22 +243,7 @@ export default function AdminOrderShow({
                             variant="outline"
                             className="border-red-200 text-red-600 hover:bg-red-50"
                             disabled={deletingOrder}
-                            onClick={() => {
-                                if (
-                                    confirm(
-                                        'Are you sure you want to delete this order completely?',
-                                    )
-                                ) {
-                                    setDeletingOrder(true);
-
-                                    router.delete(destroyOrder(order), {
-                                        preserveScroll: true,
-                                        onFinish: () => {
-                                            setDeletingOrder(false);
-                                        },
-                                    });
-                                }
-                            }}
+                            onClick={() => setIsDeleteOrderDialogOpen(true)}
                         >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete Order
                         </Button>
@@ -470,7 +472,7 @@ export default function AdminOrderShow({
                                                             <button
                                                                 type="button"
                                                                 onClick={() =>
-                                                                    handleDeleteCredential(
+                                                                    setCredentialToDelete(
                                                                         cred.id,
                                                                     )
                                                                 }
@@ -773,14 +775,40 @@ export default function AdminOrderShow({
                     </div>
                 </div>
             </PagePanel>
+
+            {isDeleteOrderDialogOpen && (
+                <ConfirmDialog
+                    title="Are you sure you want to delete this order completely?"
+                    description={
+                        <>
+                            This permanently removes order {order.order_number}{' '}
+                            along with its items, receipt, messages, shipment,
+                            and any subscription bought in it. This cannot be
+                            undone.
+                        </>
+                    }
+                    confirmLabel="Delete Order"
+                    onConfirm={handleDeleteOrder}
+                    onOpenChange={() => setIsDeleteOrderDialogOpen(false)}
+                />
+            )}
+
+            {credentialToDelete !== null && (
+                <ConfirmDialog
+                    title="Are you sure you want to delete this credential?"
+                    description="The customer will no longer be able to see it. This cannot be undone."
+                    onConfirm={() => handleDeleteCredential(credentialToDelete)}
+                    onOpenChange={() => setCredentialToDelete(null)}
+                />
+            )}
         </>
     );
 }
 
 AdminOrderShow.layout = {
     breadcrumbs: [
-        { title: 'Admin Dashboard', href: '/admin' },
-        { title: 'Orders', href: '/admin/orders' },
+        { title: 'Admin Dashboard', href: dashboard().url },
+        { title: 'Orders', href: adminOrdersIndex().url },
         { title: 'Order Details', href: '#' },
     ],
 };

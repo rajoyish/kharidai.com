@@ -1,4 +1,7 @@
-import { update } from '@/actions/App/Http/Controllers/Admin/ProductController';
+import {
+    index as productsIndex,
+    update,
+} from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { PagePanel } from '@/components/page-panel';
 import { ProductForm } from '@/components/ProductForm';
 import type { Product } from '@/components/ProductForm';
@@ -34,7 +37,7 @@ export default function EditProduct({
 
 EditProduct.layout = {
     breadcrumbs: [
-        { title: 'Products', href: '/admin/products' },
+        { title: 'Products', href: productsIndex().url },
         { title: 'Edit', href: '#' },
     ],
 };

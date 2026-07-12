@@ -17,6 +17,7 @@ import {
     store as storeCategory,
     update as updateCategory,
 } from '@/actions/App/Http/Controllers/Admin/CategoryController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
@@ -120,6 +121,13 @@ export default function CategoriesIndex({
     const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(
         null,
     );
+    /**
+     * The category awaiting delete confirmation. One dialog is driven by this
+     * value rather than one per row, so the tree stays cheap to render.
+     */
+    const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+        null,
+    );
 
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         name: '',
@@ -187,14 +195,6 @@ export default function CategoriesIndex({
     };
 
     const handleDelete = (category: Category) => {
-        if (
-            !confirm(
-                `Are you sure you want to delete the category "${category.name}"?`,
-            )
-        ) {
-            return;
-        }
-
         setDeletingCategoryId(category.id);
         router.delete(destroyCategory(category), {
             preserveScroll: true,
@@ -322,7 +322,9 @@ export default function CategoriesIndex({
                                         depth={0}
                                         deletingCategoryId={deletingCategoryId}
                                         onEdit={openEdit}
-                                        onDelete={handleDelete}
+                                        onDelete={(category) =>
+                                            setCategoryToDelete(category)
+                                        }
                                     />
                                 ))}
                             </ul>
@@ -471,6 +473,20 @@ export default function CategoriesIndex({
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {categoryToDelete && (
+                <ConfirmDialog
+                    title={
+                        <>
+                            Are you sure you want to delete the category &ldquo;
+                            {categoryToDelete.name}&rdquo;?
+                        </>
+                    }
+                    description="Products keep existing but lose this category. This cannot be undone."
+                    onConfirm={() => handleDelete(categoryToDelete)}
+                    onOpenChange={() => setCategoryToDelete(null)}
+                />
+            )}
         </>
     );
 }

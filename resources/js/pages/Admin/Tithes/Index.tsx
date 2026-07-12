@@ -41,8 +41,8 @@ type Tithe = {
 };
 
 const breadcrumbs = [
-    { title: 'Admin Dashboard', href: dashboard() },
-    { title: 'Tithes', href: adminTithesIndex() },
+    { title: 'Admin Dashboard', href: dashboard().url },
+    { title: 'Tithes', href: adminTithesIndex().url },
 ];
 
 function YearSummary({ year, tithes }: { year: number; tithes: Tithe[] }) {

@@ -151,6 +151,10 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
 
 require __DIR__.'/settings.php';
 
+if (app()->environment('testing')) {
+    require __DIR__.'/testing.php';
+}
+
 /*
  * CMS static pages live at the root (`/privacy`, `/delivery`, ...), so this
  * catch-all is registered last and only matches slug-shaped single segments.

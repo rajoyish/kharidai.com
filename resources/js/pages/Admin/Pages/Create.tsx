@@ -1,4 +1,5 @@
 import {
+    create as createPage,
     index as pagesIndex,
     store,
 } from '@/actions/App/Http/Controllers/Admin/PageController';
@@ -24,7 +25,7 @@ export default function CreatePage() {
 
 CreatePage.layout = {
     breadcrumbs: [
-        { title: 'Pages', href: '/admin/pages' },
-        { title: 'Create', href: '/admin/pages/create' },
+        { title: 'Pages', href: pagesIndex().url },
+        { title: 'Create', href: createPage().url },
     ],
 };

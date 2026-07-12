@@ -5,8 +5,10 @@ import { show as showOrder } from '@/actions/App/Http/Controllers/Admin/OrderCon
 import {
     create as createEngagement,
     destroy as destroyEngagement,
+    index as engagementsIndex,
     show as showEngagement,
 } from '@/actions/App/Http/Controllers/Admin/ServiceEngagementController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EngagementStatusBadge } from '@/components/engagement-status-badge';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
@@ -46,21 +48,23 @@ export default function ServicesIndex({
     engagements: Engagement[];
 }) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    /**
+     * The engagement awaiting delete confirmation. One dialog is driven by this
+     * value rather than one per row, so the table stays cheap to render.
+     */
+    const [engagementToDelete, setEngagementToDelete] =
+        useState<Engagement | null>(null);
 
     const handleDelete = (engagement: Engagement) => {
-        const label = engagement.project_name ?? 'this engagement';
+        setDeletingId(engagement.id);
 
-        if (confirm(`Are you sure you want to delete ${label}?`)) {
-            setDeletingId(engagement.id);
-
-            router.delete(
-                destroyEngagement.url({ serviceEngagement: engagement.id }),
-                {
-                    preserveScroll: true,
-                    onFinish: () => setDeletingId(null),
-                },
-            );
-        }
+        router.delete(
+            destroyEngagement.url({ serviceEngagement: engagement.id }),
+            {
+                preserveScroll: true,
+                onFinish: () => setDeletingId(null),
+            },
+        );
     };
 
     return (
@@ -189,7 +193,9 @@ export default function ServicesIndex({
                                                 deletingId === engagement.id
                                             }
                                             onClick={() =>
-                                                handleDelete(engagement)
+                                                setEngagementToDelete(
+                                                    engagement,
+                                                )
                                             }
                                         >
                                             Delete
@@ -211,10 +217,26 @@ export default function ServicesIndex({
                     </TableBody>
                 </Table>
             </PagePanel>
+
+            {engagementToDelete && (
+                <ConfirmDialog
+                    title={
+                        <>
+                            Are you sure you want to delete{' '}
+                            {engagementToDelete.project_name ??
+                                'this engagement'}
+                            ?
+                        </>
+                    }
+                    description="This permanently removes the engagement and its invoices. This cannot be undone."
+                    onConfirm={() => handleDelete(engagementToDelete)}
+                    onOpenChange={() => setEngagementToDelete(null)}
+                />
+            )}
         </>
     );
 }
 
 ServicesIndex.layout = {
-    breadcrumbs: [{ title: 'Services', href: '/admin/services' }],
+    breadcrumbs: [{ title: 'Services', href: engagementsIndex().url }],
 };
