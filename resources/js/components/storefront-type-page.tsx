@@ -3,7 +3,11 @@ import type { ComponentType } from 'react';
 
 import { SeoHead } from '@/components/seo-head';
 import { StorefrontCatalog } from '@/components/storefront-catalog';
+import { StorefrontSearch } from '@/components/storefront-search';
 import { collectAllProducts } from '@/lib/storefront-products';
+import { index as digitalProducts } from '@/routes/digital-products';
+import { index as physicalProducts } from '@/routes/physical-products';
+import { index as services } from '@/routes/services';
 import type {
     StorefrontCategory,
     StorefrontProduct,
@@ -19,6 +23,14 @@ const TYPE_ICON: Record<
     service: Wrench,
 };
 
+const TYPE_HREF: Record<StorefrontType, string> = {
+    digital: digitalProducts().url,
+    physical: physicalProducts().url,
+    service: services().url,
+};
+
+const SEARCH_ONLY = ['categories', 'uncategorizedProducts', 'filters'];
+
 /**
  * Shared body for the dedicated, single-type storefront pages
  * (`/digital-products`, `/physical-products`, `/services`). Each page passes its
@@ -30,18 +42,22 @@ export function StorefrontTypePage({
     tagline,
     categories,
     uncategorizedProducts,
+    filters,
 }: {
     type: StorefrontType;
     label: string;
     tagline: string;
     categories: StorefrontCategory[];
     uncategorizedProducts: StorefrontProduct[];
+    filters: { search: string | null };
 }) {
     const Icon = TYPE_ICON[type];
     const itemCount = collectAllProducts(
         categories,
         uncategorizedProducts,
     ).length;
+
+    const activeSearch = filters.search ?? '';
 
     return (
         <>
@@ -77,11 +93,27 @@ export function StorefrontTypePage({
                     </div>
                 </section>
 
+                <StorefrontSearch
+                    href={TYPE_HREF[type]}
+                    only={SEARCH_ONLY}
+                    currentSearch={activeSearch}
+                    placeholder={`Search ${label.toLowerCase()}...`}
+                    className="mb-12 flex flex-col items-center gap-4 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_1.25rem_3.125rem_-2.5rem_rgba(15,23,42,0.45)] sm:flex-row"
+                />
+
                 <StorefrontCatalog
                     categories={categories}
                     uncategorizedProducts={uncategorizedProducts}
-                    emptyTitle={`No ${label.toLowerCase()} yet`}
-                    emptyDescription={`We're still curating our ${label.toLowerCase()}. Check back soon — new listings arrive regularly.`}
+                    emptyTitle={
+                        activeSearch
+                            ? `No ${label.toLowerCase()} match your search`
+                            : `No ${label.toLowerCase()} yet`
+                    }
+                    emptyDescription={
+                        activeSearch
+                            ? `We couldn't find any ${label.toLowerCase()} matching "${activeSearch}". Try a different term.`
+                            : `We're still curating our ${label.toLowerCase()}. Check back soon — new listings arrive regularly.`
+                    }
                 />
             </main>
         </>

@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\BuildsSeoMetadata;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -20,7 +21,7 @@ class StorefrontController extends Controller
     public function index(): Response
     {
         $defaultSeoImage = $this->defaultSeoImage();
-        $search = request('search');
+        $search = request()->string('search')->trim()->value() ?: null;
 
         $sections = collect(ProductType::cases())
             ->map(fn (ProductType $type): array => [
@@ -34,6 +35,7 @@ class StorefrontController extends Controller
 
         return Inertia::render('welcome', [
             'sections' => $sections,
+            'filters' => ['search' => $search],
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle('Your all-in-one marketplace!'),
@@ -72,7 +74,7 @@ class StorefrontController extends Controller
     private function renderTypePage(ProductType $type, string $routeName, string $component): Response
     {
         $defaultSeoImage = $this->defaultSeoImage();
-        $search = request('search');
+        $search = request()->string('search')->trim()->value() ?: null;
 
         return Inertia::render($component, [
             'type' => $type->value,
@@ -80,6 +82,7 @@ class StorefrontController extends Controller
             'tagline' => $type->tagline(),
             'categories' => $this->storefrontCategories($type, $search),
             'uncategorizedProducts' => $this->uncategorizedProducts($type, $search),
+            'filters' => ['search' => $search],
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($type->pluralLabel()),
@@ -209,43 +212,20 @@ class StorefrontController extends Controller
 
                     return $query;
                 },
-                'products' => fn (Relation $query): Relation => $this->storefrontProductQuery($query, $type),
-                'children.products' => fn (Relation $query): Relation => $this->storefrontProductQuery($query, $type),
+                'products' => fn (Relation $query): Relation => $this->storefrontProductQuery($query, $type, $search),
+                'children.products' => fn (Relation $query): Relation => $this->storefrontProductQuery($query, $type, $search),
             ])
             ->when($search, function (Builder $query) use ($search) {
-                $query->where(function ($q) use ($search) {
+                $query->where(function (Builder $q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                        ->orWhereHas('products', function (Builder $q) use ($search) {
-                            $q->where('title', 'like', "%{$search}%")
-                                ->orWhere('description', 'like', "%{$search}%");
-                        })
-                        ->orWhereHas('children', function ($q) use ($search) {
-                            $q->where('name', 'like', "%{$search}%")
-                                ->orWhereHas('products', function (Builder $q) use ($search) {
-                                    $q->where('title', 'like', "%{$search}%")
-                                        ->orWhere('description', 'like', "%{$search}%");
-                                });
+                        ->orWhereHas('products', fn (Builder $inner) => $this->searchProductQuery($inner, $search))
+                        ->orWhereHas('children', function (Builder $inner) use ($search) {
+                            $inner->where('name', 'like', "%{$search}%")
+                                ->orWhereHas('products', fn (Builder $q) => $this->searchProductQuery($q, $search));
                         });
                 });
             })
             ->get()
-            ->map(function (Category $category) use ($search) {
-                if ($search) {
-                    $category->setRelation('products', $category->products->filter(function ($product) use ($search) {
-                        return stripos($product->title, $search) !== false ||
-                               stripos((string) $product->description, $search) !== false;
-                    })->values());
-
-                    $category->children->each(function ($child) use ($search) {
-                        $child->setRelation('products', $child->products->filter(function ($product) use ($search) {
-                            return stripos($product->title, $search) !== false ||
-                                   stripos((string) $product->description, $search) !== false;
-                        })->values());
-                    });
-                }
-
-                return $category;
-            })
             ->filter(function (Category $category) use ($search) {
                 if ($search && stripos($category->name, $search) !== false) {
                     return true;
@@ -271,12 +251,29 @@ class StorefrontController extends Controller
             ->where('in_stock', true)
             ->withCount('variants')
             ->withMin(['variants as starting_price_cents' => fn (Builder $query): Builder => $query->where('show_pricing', true)], 'price_npr')
-            ->when($search, fn ($query) => $query->where(function (Builder $inner) use ($search) {
-                $inner->where('title', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            }))
+            ->when($search, fn (Builder $query) => $this->searchProductQuery($query, $search))
             ->latest()
             ->get();
+    }
+
+    /**
+     * Constrain a product query to those matching a free-text search term.
+     *
+     * Generic over the builder's model because this also runs inside
+     * `whereHas('products', ...)` closures, where the related builder is only
+     * statically known as a bare Eloquent builder.
+     *
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    private function searchProductQuery(Builder $query, string $search): Builder
+    {
+        return $query->where(function (Builder $inner) use ($search): void {
+            $inner->where('title', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%");
+        });
     }
 
     /**
@@ -324,12 +321,13 @@ class StorefrontController extends Controller
      * @param  Relation<Product, Category, *>  $query
      * @return Relation<Product, Category, *>
      */
-    private function storefrontProductQuery(Relation $query, ?ProductType $type = null): Relation
+    private function storefrontProductQuery(Relation $query, ?ProductType $type = null, ?string $search = null): Relation
     {
         $query
             ->when($type, fn ($inner) => $inner->where('type', $type))
             ->where('in_stock', true)
             ->where('is_visible', true)
+            ->when($search, fn ($inner) => $this->searchProductQuery($inner, $search))
             ->withCount('variants')
             ->withMin(['variants as starting_price_cents' => fn (Builder $query): Builder => $query->where('show_pricing', true)], 'price_npr')
             ->latest();
