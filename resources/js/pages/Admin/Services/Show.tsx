@@ -6,6 +6,7 @@ import { show as showAdminOrder } from '@/actions/App/Http/Controllers/Admin/Ord
 import {
     assignOrder,
     complete,
+    index as servicesIndex,
     recordAdvance,
     saveInvoice,
     signContract,
@@ -758,7 +759,7 @@ export default function ServiceInvoice({
 
 ServiceInvoice.layout = {
     breadcrumbs: [
-        { title: 'Services', href: '/admin/services' },
+        { title: 'Services', href: servicesIndex().url },
         { title: 'Invoice Brief', href: '#' },
     ],
 };

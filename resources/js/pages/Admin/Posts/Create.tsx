@@ -1,4 +1,5 @@
 import {
+    create as createPost,
     index as postsIndex,
     store,
 } from '@/actions/App/Http/Controllers/Admin/PostController';
@@ -25,7 +26,7 @@ export default function CreatePost() {
 
 CreatePost.layout = {
     breadcrumbs: [
-        { title: 'Blog Posts', href: '/admin/posts' },
-        { title: 'Create', href: '/admin/posts/create' },
+        { title: 'Blog Posts', href: postsIndex().url },
+        { title: 'Create', href: createPost().url },
     ],
 };

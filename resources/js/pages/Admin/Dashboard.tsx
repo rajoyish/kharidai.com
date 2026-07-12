@@ -22,6 +22,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { formatNpr } from '@/lib/currency';
+import { dashboard } from '@/routes/admin';
 import {
     index as adminOrdersIndex,
     show as showAdminOrder,
@@ -282,5 +283,5 @@ export default function Dashboard({
 }
 
 Dashboard.layout = {
-    breadcrumbs: [{ title: 'Admin Dashboard', href: '/admin' }],
+    breadcrumbs: [{ title: 'Admin Dashboard', href: dashboard().url }],
 };

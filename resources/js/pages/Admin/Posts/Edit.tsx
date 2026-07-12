@@ -27,7 +27,7 @@ export default function EditPost({ post }: { post: CmsRecord }) {
 
 EditPost.layout = {
     breadcrumbs: [
-        { title: 'Blog Posts', href: '/admin/posts' },
+        { title: 'Blog Posts', href: postsIndex().url },
         { title: 'Edit', href: '#' },
     ],
 };

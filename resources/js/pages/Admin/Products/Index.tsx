@@ -8,6 +8,7 @@ import {
     toggleStock,
 } from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { index as productVariants } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
@@ -59,6 +60,13 @@ export default function ProductsIndex({
     const [deletingProductId, setDeletingProductId] = useState<number | null>(
         null,
     );
+    /**
+     * The product awaiting delete confirmation. One dialog is driven by this
+     * value rather than one per row, so the table stays cheap to render.
+     */
+    const [productToDelete, setProductToDelete] = useState<Product | null>(
+        null,
+    );
 
     const handleTypeChange = (type: string) => {
         router.get(productsIndex().url, type ? { type } : {}, {
@@ -79,16 +87,14 @@ export default function ProductsIndex({
     }, [products, searchQuery]);
 
     const handleDelete = (product: Product) => {
-        if (confirm('Are you sure you want to delete this product?')) {
-            setDeletingProductId(product.id);
+        setDeletingProductId(product.id);
 
-            router.delete(destroyProduct(product), {
-                preserveScroll: true,
-                onFinish: () => {
-                    setDeletingProductId(null);
-                },
-            });
-        }
+        router.delete(destroyProduct(product), {
+            preserveScroll: true,
+            onFinish: () => {
+                setDeletingProductId(null);
+            },
+        });
     };
 
     return (
@@ -263,7 +269,9 @@ export default function ProductsIndex({
                                         disabled={
                                             deletingProductId === product.id
                                         }
-                                        onClick={() => handleDelete(product)}
+                                        onClick={() =>
+                                            setProductToDelete(product)
+                                        }
                                     >
                                         Delete
                                     </Button>
@@ -285,6 +293,21 @@ export default function ProductsIndex({
                     </TableBody>
                 </Table>
             </PagePanel>
+
+            {productToDelete && (
+                <ConfirmDialog
+                    title="Are you sure you want to delete this product?"
+                    description={
+                        <>
+                            This permanently removes &ldquo;
+                            {productToDelete.title}&rdquo; along with its
+                            variants and cannot be undone.
+                        </>
+                    }
+                    onConfirm={() => handleDelete(productToDelete)}
+                    onOpenChange={() => setProductToDelete(null)}
+                />
+            )}
         </>
     );
 }

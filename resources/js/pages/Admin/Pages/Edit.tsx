@@ -26,7 +26,7 @@ export default function EditPage({ page }: { page: CmsRecord }) {
 
 EditPage.layout = {
     breadcrumbs: [
-        { title: 'Pages', href: '/admin/pages' },
+        { title: 'Pages', href: pagesIndex().url },
         { title: 'Edit', href: '#' },
     ],
 };
