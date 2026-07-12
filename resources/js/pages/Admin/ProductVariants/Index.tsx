@@ -1,4 +1,6 @@
-import { Link, useForm } from '@inertiajs/react';
+import { Form, Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { index as productsIndex } from '@/actions/App/Http/Controllers/Admin/ProductController';
 import {
     create as createVariant,
     destroy as destroyVariant,
@@ -6,6 +8,15 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -37,20 +48,22 @@ export default function VariantsIndex({
     product: Product;
     variants: Variant[];
 }) {
-    const { delete: destroy } = useForm();
-
-    const handleDelete = (variant: Variant) => {
-        if (confirm('Are you sure you want to delete this variant?')) {
-            destroy(destroyVariant.url({ product, variant }));
-        }
-    };
+    /**
+     * The variant awaiting delete confirmation. A single dialog is driven by
+     * this value rather than one dialog per row, so the table stays cheap to
+     * render no matter how many variants the product has.
+     */
+    const [variantToDelete, setVariantToDelete] = useState<Variant | null>(
+        null,
+    );
 
     return (
         <>
             <SeoHead title={`Variants - ${product.title}`} />
 
             <PagePanel
-                title="Product Variants"
+                eyebrow="Product Variants"
+                title={product.title}
                 variant="transparent"
                 actions={
                     <Button asChild>
@@ -102,7 +115,9 @@ export default function VariantsIndex({
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                        onClick={() => handleDelete(variant)}
+                                        onClick={() =>
+                                            setVariantToDelete(variant)
+                                        }
                                     >
                                         Delete
                                     </Button>
@@ -122,13 +137,60 @@ export default function VariantsIndex({
                     </TableBody>
                 </Table>
             </PagePanel>
+
+            {variantToDelete && (
+                <AlertDialog
+                    open
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setVariantToDelete(null);
+                        }
+                    }}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                Delete this variant?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This permanently removes the &ldquo;
+                                {variantToDelete.name}&rdquo; variant from{' '}
+                                {product.title} and cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <Form
+                            {...destroyVariant.form({
+                                product,
+                                variant: variantToDelete,
+                            })}
+                            options={{ preserveScroll: true }}
+                            onSuccess={() => setVariantToDelete(null)}
+                        >
+                            {({ processing }) => (
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel type="button">
+                                        Cancel
+                                    </AlertDialogCancel>
+                                    <Button
+                                        type="submit"
+                                        variant="destructive"
+                                        disabled={processing}
+                                    >
+                                        {processing ? 'Deleting…' : 'Delete'}
+                                    </Button>
+                                </AlertDialogFooter>
+                            )}
+                        </Form>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </>
     );
 }
 
 VariantsIndex.layout = {
     breadcrumbs: [
-        { title: 'Products', href: '/admin/products' },
+        { title: 'Products', href: productsIndex().url },
         { title: 'Variants', href: '#' },
     ],
 };

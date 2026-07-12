@@ -1,10 +1,15 @@
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
+import { index as productsIndex } from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { update as updateVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { PagePanel } from '@/components/page-panel';
 import { PhysicalVariantFields } from '@/components/product-form/PhysicalVariantFields';
-import { getProductTypeTheme } from '@/components/product-form/product-type-theme';
+import {
+    getProductTypeTheme,
+    supportsAdvancePayment,
+    supportsValidityDays,
+} from '@/components/product-form/product-type-theme';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,27 +55,36 @@ export default function EditVariant({
     product: Product;
     variant: Variant;
 }) {
+    const isPhysical = product.type === 'physical';
+    const showValidityDays = supportsValidityDays(product.type);
+    const showAdvancePayment = supportsAdvancePayment(product.type);
+    const theme = getProductTypeTheme(product.type);
+
     const [hasValidity, setHasValidity] = useState(
-        variant.validity_days != null,
+        showValidityDays && variant.validity_days != null,
     );
 
+    /**
+     * Fields that do not apply to this product type seed as blank so a hidden
+     * input can never submit a stale value inherited from the record.
+     */
     const { data, setData, patch, processing, errors } = useForm({
         name: variant.name,
         details: variant.details || '',
         price_npr: variant.price_npr,
         purchase_price_npr: variant.purchase_price_npr || '',
         show_pricing: variant.show_pricing ?? true,
-        validity_days: variant.validity_days?.toString() ?? '',
+        validity_days: showValidityDays
+            ? (variant.validity_days?.toString() ?? '')
+            : '',
         colors: variant.colors ?? [],
         sizes: variant.sizes ?? [],
         weight_kg: variant.weight_kg?.toString() ?? '',
         ships_individually: variant.ships_individually ?? false,
-        advance_payment_percent:
-            variant.advance_payment_percent?.toString() ?? '',
+        advance_payment_percent: showAdvancePayment
+            ? (variant.advance_payment_percent?.toString() ?? '')
+            : '',
     });
-
-    const isPhysical = product.type === 'physical';
-    const theme = getProductTypeTheme(product.type);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -210,83 +224,88 @@ export default function EditVariant({
                                 </p>
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="advance_payment_percent">
-                                    Advance Payment (%)
-                                </Label>
-                                <Input
-                                    id="advance_payment_percent"
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    value={data.advance_payment_percent}
-                                    onChange={(e) =>
-                                        setData(
-                                            'advance_payment_percent',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="e.g. 30"
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Portion of this variant's price collected up
-                                    front at checkout. Leave blank for none.
-                                </p>
-                                {errors.advance_payment_percent && (
-                                    <div className="text-sm text-destructive">
-                                        {errors.advance_payment_percent}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid gap-2">
-                                <div className="flex items-center space-x-2">
-                                    <Switch
-                                        id="has_validity"
-                                        checked={hasValidity}
-                                        onCheckedChange={(checked) => {
-                                            setHasValidity(checked);
-                                            setData('validity_days', '');
-                                        }}
-                                    />
-                                    <Label htmlFor="has_validity">
-                                        Enable Validity Days
+                            {showAdvancePayment && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="advance_payment_percent">
+                                        Advance Payment (%)
                                     </Label>
-                                </div>
-
-                                {hasValidity && (
-                                    <div className="mt-2 grid gap-2">
-                                        <Label htmlFor="validity_days">
-                                            Validity Days
-                                        </Label>
-                                        <Input
-                                            id="validity_days"
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            value={data.validity_days}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'validity_days',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            placeholder="30"
-                                        />
-                                        <div className="text-sm text-muted-foreground">
-                                            Leave this blank for lifetime or
-                                            one-time purchase products. Fill it
-                                            only for timed subscriptions.
+                                    <Input
+                                        id="advance_payment_percent"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="1"
+                                        value={data.advance_payment_percent}
+                                        onChange={(e) =>
+                                            setData(
+                                                'advance_payment_percent',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="e.g. 30"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Portion of this variant's price
+                                        collected up front at checkout. Leave
+                                        blank for none.
+                                    </p>
+                                    {errors.advance_payment_percent && (
+                                        <div className="text-sm text-destructive">
+                                            {errors.advance_payment_percent}
                                         </div>
-                                        {errors.validity_days && (
-                                            <div className="text-sm text-destructive">
-                                                {errors.validity_days}
-                                            </div>
-                                        )}
+                                    )}
+                                </div>
+                            )}
+
+                            {showValidityDays && (
+                                <div className="grid gap-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Switch
+                                            id="has_validity"
+                                            checked={hasValidity}
+                                            onCheckedChange={(checked) => {
+                                                setHasValidity(checked);
+                                                setData('validity_days', '');
+                                            }}
+                                        />
+                                        <Label htmlFor="has_validity">
+                                            Enable Validity Days
+                                        </Label>
                                     </div>
-                                )}
-                            </div>
+
+                                    {hasValidity && (
+                                        <div className="mt-2 grid gap-2">
+                                            <Label htmlFor="validity_days">
+                                                Validity Days
+                                            </Label>
+                                            <Input
+                                                id="validity_days"
+                                                type="number"
+                                                min="1"
+                                                step="1"
+                                                value={data.validity_days}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'validity_days',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="30"
+                                            />
+                                            <div className="text-sm text-muted-foreground">
+                                                Leave this blank for lifetime or
+                                                one-time purchase products. Fill
+                                                it only for timed subscriptions.
+                                            </div>
+                                            {errors.validity_days && (
+                                                <div className="text-sm text-destructive">
+                                                    {errors.validity_days}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {isPhysical && (
                                 <PhysicalVariantFields
@@ -314,7 +333,7 @@ export default function EditVariant({
 
 EditVariant.layout = {
     breadcrumbs: [
-        { title: 'Products', href: '/admin/products' },
+        { title: 'Products', href: productsIndex().url },
         { title: 'Variants', href: '#' },
     ],
 };
