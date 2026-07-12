@@ -3,6 +3,7 @@ import { CalendarOff } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -96,6 +97,21 @@ function EmptyYear({ year }: { year: number }) {
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
                 Tithes appear here once orders from {year} are marked completed.
                 Pick another year to review earlier records.
+            </p>
+        </div>
+    );
+}
+
+function EmptySearch() {
+    return (
+        <div className="flex flex-col items-center rounded-xl border border-dashed bg-card p-12 text-center shadow-sm">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <CalendarOff className="size-5" />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold">No matching tithes</h2>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                No month or product in this year matches your search. Clear it
+                to see every tithe again.
             </p>
         </div>
     );
@@ -214,7 +230,7 @@ export default function AdminTithesIndex({
 }: {
     tithes: Tithe[];
     years: number[];
-    filters: { year: number };
+    filters: { year: number; search?: string };
 }) {
     const [processingId, setProcessingId] = useState<number | null>(null);
 
@@ -225,12 +241,20 @@ export default function AdminTithesIndex({
             return;
         }
 
-        router.visit(adminTithesIndex({ query: { year: selected } }), {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-            only: ['tithes', 'years', 'filters'],
-        });
+        router.visit(
+            adminTithesIndex({
+                query: {
+                    year: selected,
+                    ...(filters.search ? { search: filters.search } : {}),
+                },
+            }),
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                only: ['tithes', 'years', 'filters'],
+            },
+        );
     };
 
     const handleToggleStatus = (tithe: Tithe) => {
@@ -257,27 +281,40 @@ export default function AdminTithesIndex({
                 description="Review monthly tithes owed on completed-order profit."
                 variant="transparent"
                 actions={
-                    <ToggleGroup
-                        type="single"
-                        variant="outline"
-                        value={String(filters.year)}
-                        onValueChange={handleYearChange}
-                        className="w-fit"
-                    >
-                        {years.map((year) => (
-                            <ToggleGroupItem
-                                key={year}
-                                value={String(year)}
-                                aria-label={`Show ${year} tithes`}
-                            >
-                                {year}
-                            </ToggleGroupItem>
-                        ))}
-                    </ToggleGroup>
+                    <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
+                        <SearchFilter
+                            href={adminTithesIndex().url}
+                            currentSearch={filters.search ?? ''}
+                            placeholder="Search month or product..."
+                            params={{ year: filters.year }}
+                            only={['tithes', 'years', 'filters']}
+                        />
+                        <ToggleGroup
+                            type="single"
+                            variant="outline"
+                            value={String(filters.year)}
+                            onValueChange={handleYearChange}
+                            className="w-fit"
+                        >
+                            {years.map((year) => (
+                                <ToggleGroupItem
+                                    key={year}
+                                    value={String(year)}
+                                    aria-label={`Show ${year} tithes`}
+                                >
+                                    {year}
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
+                    </div>
                 }
             >
                 {tithes.length === 0 ? (
-                    <EmptyYear year={filters.year} />
+                    filters.search ? (
+                        <EmptySearch />
+                    ) : (
+                        <EmptyYear year={filters.year} />
+                    )
                 ) : (
                     <div className="flex flex-col gap-6">
                         <YearSummary year={filters.year} tithes={tithes} />

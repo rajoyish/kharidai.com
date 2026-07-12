@@ -19,6 +19,7 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/CategoryController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -112,7 +113,7 @@ export default function CategoriesIndex({
 }: {
     categories: Category[];
     productTypes: ProductTypeOption[];
-    filters: { type: string | null };
+    filters: { type: string | null; search?: string };
 }) {
     const [editingCategory, setEditingCategory] = useState<Category | null>(
         null,
@@ -187,11 +188,18 @@ export default function CategoriesIndex({
     };
 
     const handleTypeChange = (type: string) => {
-        router.get(categoriesIndex().url, type ? { type } : {}, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            categoriesIndex().url,
+            {
+                ...(type ? { type } : {}),
+                ...(filters.search ? { search: filters.search } : {}),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
     };
 
     const handleDelete = (category: Category) => {
@@ -222,10 +230,18 @@ export default function CategoriesIndex({
                 description="Organize your catalog into a tidy, nested hierarchy."
                 variant="transparent"
                 actions={
-                    <Button onClick={openCreate} className="w-fit">
-                        <Plus className="size-4" />
-                        Add Category
-                    </Button>
+                    <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
+                        <SearchFilter
+                            href={categoriesIndex().url}
+                            currentSearch={filters.search ?? ''}
+                            placeholder="Search categories..."
+                            params={{ type: filters.type ?? undefined }}
+                        />
+                        <Button onClick={openCreate} className="w-fit">
+                            <Plus className="size-4" />
+                            Add Category
+                        </Button>
+                    </div>
                 }
             >
                 <div className="flex flex-col gap-4">
@@ -297,21 +313,26 @@ export default function CategoriesIndex({
                                 </div>
                                 <div>
                                     <p className="font-medium">
-                                        No categories yet
+                                        {filters.search
+                                            ? 'No categories match your search'
+                                            : 'No categories yet'}
                                     </p>
                                     <p className="mt-1 text-sm text-muted-foreground">
-                                        Create your first category to start
-                                        organizing your catalog.
+                                        {filters.search
+                                            ? 'Try a different name, or clear the search to see them all.'
+                                            : 'Create your first category to start organizing your catalog.'}
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={openCreate}
-                                    variant="outline"
-                                    className="mt-1"
-                                >
-                                    <Plus className="size-4" />
-                                    Add Category
-                                </Button>
+                                {!filters.search && (
+                                    <Button
+                                        onClick={openCreate}
+                                        variant="outline"
+                                        className="mt-1"
+                                    >
+                                        <Plus className="size-4" />
+                                        Add Category
+                                    </Button>
+                                )}
                             </div>
                         ) : (
                             <ul className="divide-y">

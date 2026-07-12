@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 
+import { CopyableOrderNumber } from '@/components/copy-button';
 import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
 import {
@@ -52,14 +54,26 @@ const breadcrumbs = [
 
 export default function AdminSubscriptionIndex({
     subscriptions,
+    filters,
 }: {
     subscriptions: { data: Subscription[] };
+    filters: { search?: string };
 }) {
     return (
         <>
             <SeoHead title="Subscriptions - Admin" />
 
-            <PagePanel title="Subscriptions" variant="transparent">
+            <PagePanel
+                title="Subscriptions"
+                variant="transparent"
+                actions={
+                    <SearchFilter
+                        href={adminSubscriptionsIndex().url}
+                        currentSearch={filters?.search ?? ''}
+                        placeholder="Search order #, customer..."
+                    />
+                }
+            >
                 <div className="space-y-4">
                     <Table>
                         <TableHeader>
@@ -111,12 +125,18 @@ export default function AdminSubscriptionIndex({
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <Link
-                                            href={showAdminOrder(sub.order.id)}
-                                            className="text-primary hover:underline"
+                                        <CopyableOrderNumber
+                                            orderNumber={sub.order.order_number}
                                         >
-                                            {sub.order.order_number}
-                                        </Link>
+                                            <Link
+                                                href={showAdminOrder(
+                                                    sub.order.id,
+                                                )}
+                                                className="text-primary hover:underline"
+                                            >
+                                                {sub.order.order_number}
+                                            </Link>
+                                        </CopyableOrderNumber>
                                     </TableCell>
                                     <TableCell className="whitespace-nowrap">
                                         {sub.start_date}
@@ -148,7 +168,9 @@ export default function AdminSubscriptionIndex({
                                         colSpan={7}
                                         className="h-24 text-center text-muted-foreground"
                                     >
-                                        No subscriptions found.
+                                        {filters?.search
+                                            ? 'No subscriptions match your search.'
+                                            : 'No subscriptions found.'}
                                     </TableCell>
                                 </TableRow>
                             )}

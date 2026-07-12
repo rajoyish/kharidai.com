@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 
+import { CopyableOrderNumber } from '@/components/copy-button';
 import { EngagementStatusBadge } from '@/components/engagement-status-badge';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
@@ -84,14 +85,20 @@ export default function UserServicesIndex({
                                     {engagement.order_id &&
                                     engagement.order_number ? (
                                         <div className="flex flex-col items-start gap-1">
-                                            <Link
-                                                href={showOrder(
-                                                    engagement.order_id,
-                                                )}
-                                                className="font-medium text-primary underline-offset-4 hover:underline"
+                                            <CopyableOrderNumber
+                                                orderNumber={
+                                                    engagement.order_number
+                                                }
                                             >
-                                                {engagement.order_number}
-                                            </Link>
+                                                <Link
+                                                    href={showOrder(
+                                                        engagement.order_id,
+                                                    )}
+                                                    className="font-medium text-primary underline-offset-4 hover:underline"
+                                                >
+                                                    {engagement.order_number}
+                                                </Link>
+                                            </CopyableOrderNumber>
                                             {engagement.payment_status ===
                                                 'due' &&
                                                 engagement.due_npr > 0 && (

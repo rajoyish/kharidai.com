@@ -27,17 +27,19 @@ class ProductController extends Controller
     public function index(Request $request): Response
     {
         $type = ProductType::tryFrom((string) $request->query('type'));
+        $search = $request->string('search')->trim()->value();
 
         $products = Product::query()
             ->with('categories:id,name')
             ->when($type, fn ($query) => $query->where('type', $type))
+            ->when($search, fn ($query) => $query->where('title', 'like', "%{$search}%"))
             ->latest()
             ->get();
 
         return Inertia::render('Admin/Products/Index', [
             'products' => $products,
             'productTypes' => $this->productTypeOptions(),
-            'filters' => ['type' => $type?->value],
+            'filters' => ['type' => $type?->value, 'search' => $search],
         ]);
     }
 

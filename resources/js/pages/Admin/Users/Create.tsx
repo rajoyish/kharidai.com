@@ -1,5 +1,9 @@
 import { useForm } from '@inertiajs/react';
-import { store, index, create } from '@/actions/App/Http/Controllers/Admin/UserController';
+import {
+    store,
+    index,
+    create,
+} from '@/actions/App/Http/Controllers/Admin/UserController';
 import InputError from '@/components/input-error';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';

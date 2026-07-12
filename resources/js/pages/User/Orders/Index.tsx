@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 
 import { Eye, MessageCircle, Upload } from 'lucide-react';
+import { CopyableOrderNumber } from '@/components/copy-button';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
@@ -69,9 +70,13 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                         {orders.data.map((order) => (
                             <TableRow key={order.id}>
                                 <TableCell className="font-medium text-primary">
-                                    <Link href={showOrder(order.id)}>
-                                        {order.order_number}
-                                    </Link>
+                                    <CopyableOrderNumber
+                                        orderNumber={order.order_number}
+                                    >
+                                        <Link href={showOrder(order.id)}>
+                                            {order.order_number}
+                                        </Link>
+                                    </CopyableOrderNumber>
                                 </TableCell>
                                 <TableCell className="whitespace-nowrap">
                                     {new Date(

@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
     create,
     destroy as destroyProduct,
@@ -10,11 +10,11 @@ import {
 import { index as productVariants } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -54,9 +54,8 @@ export default function ProductsIndex({
 }: {
     products: Product[];
     productTypes: ProductTypeOption[];
-    filters: { type: string | null };
+    filters: { type: string | null; search?: string };
 }) {
-    const [searchQuery, setSearchQuery] = useState('');
     const [deletingProductId, setDeletingProductId] = useState<number | null>(
         null,
     );
@@ -69,22 +68,19 @@ export default function ProductsIndex({
     );
 
     const handleTypeChange = (type: string) => {
-        router.get(productsIndex().url, type ? { type } : {}, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            productsIndex().url,
+            {
+                ...(type ? { type } : {}),
+                ...(filters.search ? { search: filters.search } : {}),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
     };
-
-    const filteredProducts = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return products;
-        }
-
-        const query = searchQuery.toLowerCase();
-
-        return products.filter((p) => p.title.toLowerCase().includes(query));
-    }, [products, searchQuery]);
 
     const handleDelete = (product: Product) => {
         setDeletingProductId(product.id);
@@ -106,11 +102,11 @@ export default function ProductsIndex({
                 variant="transparent"
                 actions={
                     <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
-                        <Input
+                        <SearchFilter
+                            href={productsIndex().url}
+                            currentSearch={filters.search ?? ''}
                             placeholder="Search products..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full sm:w-64"
+                            params={{ type: filters.type ?? undefined }}
                         />
                         <Button asChild className="w-fit">
                             <Link href={create()}>Add Product</Link>
@@ -155,7 +151,7 @@ export default function ProductsIndex({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredProducts.map((product) => (
+                        {products.map((product) => (
                             <TableRow key={product.id}>
                                 <TableCell
                                     className={PRODUCT_IMAGE_COLUMN_CLASSES}
@@ -278,15 +274,15 @@ export default function ProductsIndex({
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {filteredProducts.length === 0 && (
+                        {products.length === 0 && (
                             <TableRow>
                                 <TableCell
                                     colSpan={4}
                                     className="h-24 text-center text-muted-foreground"
                                 >
-                                    {products.length === 0
-                                        ? 'No products found.'
-                                        : 'No products match your search.'}
+                                    {filters.search
+                                        ? 'No products match your search.'
+                                        : 'No products found.'}
                                 </TableCell>
                             </TableRow>
                         )}

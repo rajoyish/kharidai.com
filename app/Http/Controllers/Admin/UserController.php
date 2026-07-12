@@ -41,9 +41,10 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $userTable = (new User)->getTable();
+        $search = $request->string('search')->trim()->value();
 
         $users = User::query()
             ->select([
@@ -56,6 +57,13 @@ class UserController extends Controller
                 "{$userTable}.created_at",
                 "{$userTable}.last_active_at",
             ])
+            ->when($search, function ($query) use ($search, $userTable) {
+                $query->where(function ($query) use ($search, $userTable) {
+                    $query->where("{$userTable}.name", 'like', "%{$search}%")
+                        ->orWhere("{$userTable}.email", 'like', "%{$search}%")
+                        ->orWhere("{$userTable}.mobile_number", 'like', "%{$search}%");
+                });
+            })
             ->latest()
             ->get()
             ->map(function (User $user): array {
@@ -80,6 +88,7 @@ class UserController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
+            'filters' => ['search' => $search],
         ]);
     }
 

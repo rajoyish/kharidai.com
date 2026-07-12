@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
     create,
@@ -9,10 +9,10 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/PostController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -48,31 +48,12 @@ export default function PostsIndex({
     posts: Paginator<PostRow>;
     filters: { search?: string };
 }) {
-    const [searchQuery, setSearchQuery] = useState(filters?.search ?? '');
     const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
     /**
      * The post awaiting delete confirmation. One dialog is driven by this value
      * rather than one per row, so the table stays cheap to render.
      */
     const [postToDelete, setPostToDelete] = useState<PostRow | null>(null);
-
-    useEffect(() => {
-        // Skip when the input already matches the server-side filter, so the
-        // initial mount (and search-driven reloads) don't refetch page one.
-        if (searchQuery === (filters?.search ?? '')) {
-            return;
-        }
-
-        const timeout = setTimeout(() => {
-            router.get(
-                postsIndex().url,
-                searchQuery ? { search: searchQuery } : {},
-                { preserveState: true, preserveScroll: true, replace: true },
-            );
-        }, 300);
-
-        return () => clearTimeout(timeout);
-    }, [searchQuery, filters?.search]);
 
     const handleDelete = (post: PostRow) => {
         setDeletingPostId(post.id);
@@ -94,11 +75,10 @@ export default function PostsIndex({
                 variant="transparent"
                 actions={
                     <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
-                        <Input
+                        <SearchFilter
+                            href={postsIndex().url}
+                            currentSearch={filters?.search ?? ''}
                             placeholder="Search posts..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full sm:w-64"
                         />
                         <Button asChild className="w-fit">
                             <Link href={create()}>Add Post</Link>
@@ -204,7 +184,7 @@ export default function PostsIndex({
                                     colSpan={5}
                                     className="h-24 text-center text-muted-foreground"
                                 >
-                                    {searchQuery.trim()
+                                    {filters?.search
                                         ? 'No posts match your search.'
                                         : 'No posts found.'}
                                 </TableCell>

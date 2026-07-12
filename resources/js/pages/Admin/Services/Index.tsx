@@ -9,8 +9,10 @@ import {
     show as showEngagement,
 } from '@/actions/App/Http/Controllers/Admin/ServiceEngagementController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { CopyableOrderNumber } from '@/components/copy-button';
 import { EngagementStatusBadge } from '@/components/engagement-status-badge';
 import { PagePanel } from '@/components/page-panel';
+import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,8 +46,10 @@ type Engagement = {
 
 export default function ServicesIndex({
     engagements,
+    filters,
 }: {
     engagements: Engagement[];
+    filters: { search?: string };
 }) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
     /**
@@ -75,11 +79,18 @@ export default function ServicesIndex({
                 title="Service Engagements"
                 variant="transparent"
                 actions={
-                    <Button asChild className="w-fit">
-                        <Link href={createEngagement.url()}>
-                            Assign Service
-                        </Link>
-                    </Button>
+                    <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
+                        <SearchFilter
+                            href={engagementsIndex.url()}
+                            currentSearch={filters?.search ?? ''}
+                            placeholder="Search engagements..."
+                        />
+                        <Button asChild className="w-fit">
+                            <Link href={createEngagement.url()}>
+                                Assign Service
+                            </Link>
+                        </Button>
+                    </div>
                 }
             >
                 <Table>
@@ -118,15 +129,22 @@ export default function ServicesIndex({
                                 </TableCell>
                                 <TableCell>
                                     {engagement.order ? (
-                                        <Link
-                                            href={
-                                                showOrder(engagement.order.id)
-                                                    .url
+                                        <CopyableOrderNumber
+                                            orderNumber={
+                                                engagement.order.order_number
                                             }
-                                            className="font-medium text-primary hover:underline"
                                         >
-                                            {engagement.order.order_number}
-                                        </Link>
+                                            <Link
+                                                href={
+                                                    showOrder(
+                                                        engagement.order.id,
+                                                    ).url
+                                                }
+                                                className="font-medium text-primary hover:underline"
+                                            >
+                                                {engagement.order.order_number}
+                                            </Link>
+                                        </CopyableOrderNumber>
                                     ) : (
                                         <span className="text-muted-foreground">
                                             —
@@ -210,7 +228,9 @@ export default function ServicesIndex({
                                     colSpan={9}
                                     className="h-24 text-center text-muted-foreground"
                                 >
-                                    No service engagements yet.
+                                    {filters?.search
+                                        ? 'No engagements match your search.'
+                                        : 'No service engagements yet.'}
                                 </TableCell>
                             </TableRow>
                         )}

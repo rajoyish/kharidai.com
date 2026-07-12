@@ -8,6 +8,7 @@ use App\Models\MonthlyTithe;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,6 +18,7 @@ class TitheController extends Controller
     {
         $years = $this->yearsWithTithes();
         $selectedYear = $this->selectedYear($request, $years);
+        $search = $request->string('search')->trim()->value();
 
         $breakdowns = $calculateMonthlyProfit->executeForYear($selectedYear);
 
@@ -44,6 +46,10 @@ class TitheController extends Controller
             // surface as an empty zero row an admin can mark "paid". SyncMonthlyTitheAction deletes
             // such months; this guards the page against any that outlive a later data change.
             ->filter(fn (array $tithe): bool => $tithe['total_profit'] > 0)
+            // A tithe row is a month plus the products that earned it, and both are
+            // computed above rather than stored, so the term is matched here instead
+            // of in the query.
+            ->filter(fn (array $tithe): bool => $search === '' || $this->titheMatchesSearch($tithe, $search))
             ->values();
 
         return Inertia::render('Admin/Tithes/Index', [
@@ -51,6 +57,7 @@ class TitheController extends Controller
             'years' => $years,
             'filters' => [
                 'year' => $selectedYear,
+                'search' => $search,
             ],
         ]);
     }
@@ -72,6 +79,22 @@ class TitheController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Match a search term against the month label ("January 2026") or any product
+     * that contributed profit to it.
+     *
+     * @param  array{label: string, products: array<int, array{name: string}>}  $tithe
+     */
+    private function titheMatchesSearch(array $tithe, string $search): bool
+    {
+        if (Str::contains($tithe['label'], $search, ignoreCase: true)) {
+            return true;
+        }
+
+        return collect($tithe['products'])
+            ->contains(fn (array $product): bool => Str::contains($product['name'], $search, ignoreCase: true));
     }
 
     /**

@@ -10,6 +10,7 @@ import {
     storeMessage,
 } from '@/actions/App/Http/Controllers/User/OrderController';
 import { agreeInvoice } from '@/actions/App/Http/Controllers/User/ServiceController';
+import { CopyButton } from '@/components/copy-button';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { PaymentQrPanel } from '@/components/payment-qr-panel';
@@ -162,7 +163,15 @@ export default function OrderShow({ order }: { order: Order }) {
             />
 
             <PagePanel
-                title={`Order ${order.order_number}`}
+                title={
+                    <h1 className="flex items-center gap-1 text-2xl font-bold tracking-tight">
+                        Order {order.order_number}
+                        <CopyButton
+                            value={order.order_number}
+                            label="order number"
+                        />
+                    </h1>
+                }
                 description={`Placed on ${new Date(order.created_at).toLocaleString()}`}
                 actions={
                     <div className="flex items-center gap-3">

@@ -21,9 +21,21 @@ class OrderController extends Controller
 {
     public function index(Request $request): Response
     {
+        $search = $request->string('search')->trim()->value();
+
         // items.serviceEngagements feeds the appended `profit` attribute, which is
         // serialized for every order below; without it each order lazy-loads.
-        $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product', 'items.serviceEngagements'])->latest();
+        $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product', 'items.serviceEngagements'])
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('order_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->latest();
 
         $digitalOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
             $q->where('type', 'digital');
@@ -41,6 +53,7 @@ class OrderController extends Controller
             'digitalOrders' => $digitalOrders,
             'physicalOrders' => $physicalOrders,
             'serviceOrders' => $serviceOrders,
+            'filters' => ['search' => $search],
         ]);
     }
 
