@@ -77,14 +77,41 @@ export const PRODUCT_TYPE_THEMES: Record<ProductTypeValue, ProductTypeTheme> = {
 };
 
 /**
+ * Narrow an unknown or missing product type to a known one. Unknown values fall
+ * back to `digital`, which keeps the type-driven rules below in lockstep with
+ * the theme resolved by `getProductTypeTheme`.
+ */
+export function resolveProductType(type?: string): ProductTypeValue {
+    return type != null && type in PRODUCT_TYPE_THEMES
+        ? (type as ProductTypeValue)
+        : 'digital';
+}
+
+/**
  * Resolve the theme for a product type, defaulting to the digital theme for any
  * unknown or missing value so the form always has a coherent look.
  */
 export function getProductTypeTheme(type?: string): ProductTypeTheme {
-    return (
-        PRODUCT_TYPE_THEMES[type as ProductTypeValue] ??
-        PRODUCT_TYPE_THEMES.digital
-    );
+    return PRODUCT_TYPE_THEMES[resolveProductType(type)];
+}
+
+/**
+ * Validity days model a subscription or licence window, which only applies to
+ * digitally delivered products. Physical goods and services do not expire.
+ */
+export function supportsValidityDays(type?: string): boolean {
+    return resolveProductType(type) === 'digital';
+}
+
+/**
+ * An advance payment is collected up front against goods still to be shipped or
+ * work still to be done, so it applies to physical and service products only.
+ * Digital products are delivered instantly and are always paid in full.
+ */
+export function supportsAdvancePayment(type?: string): boolean {
+    const resolved = resolveProductType(type);
+
+    return resolved === 'physical' || resolved === 'service';
 }
 
 type ProductTypeSectionProps = {
