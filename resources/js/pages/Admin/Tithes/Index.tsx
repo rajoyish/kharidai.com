@@ -1,8 +1,10 @@
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
+import { CalendarOff } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -13,6 +15,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { formatNpr } from '@/lib/currency';
 import { dashboard } from '@/routes/admin';
 import { index as adminTithesIndex, toggleStatus } from '@/routes/admin/tithes';
@@ -42,6 +45,62 @@ const breadcrumbs = [
     { title: 'Tithes', href: adminTithesIndex() },
 ];
 
+function YearSummary({ year, tithes }: { year: number; tithes: Tithe[] }) {
+    const totals = useMemo(() => {
+        return tithes.reduce(
+            (carry, tithe) => ({
+                payable: carry.payable + tithe.total_amount,
+                paid: carry.paid + (tithe.is_paid ? tithe.total_amount : 0),
+                outstanding:
+                    carry.outstanding +
+                    (tithe.is_paid ? 0 : tithe.total_amount),
+            }),
+            { payable: 0, paid: 0, outstanding: 0 },
+        );
+    }, [tithes]);
+
+    const stats = [
+        { label: `Total Tithe ${year}`, value: totals.payable },
+        { label: 'Paid', value: totals.paid },
+        { label: 'Outstanding', value: totals.outstanding },
+    ];
+
+    return (
+        <dl className="grid gap-4 sm:grid-cols-3">
+            {stats.map((stat) => (
+                <div
+                    key={stat.label}
+                    className="rounded-xl border bg-card p-4 shadow-sm"
+                >
+                    <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        {stat.label}
+                    </dt>
+                    <dd className="mt-1 text-2xl font-semibold tabular-nums">
+                        {formatNpr(stat.value)}
+                    </dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
+function EmptyYear({ year }: { year: number }) {
+    return (
+        <div className="flex flex-col items-center rounded-xl border border-dashed bg-card p-12 text-center shadow-sm">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <CalendarOff className="size-5" />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold">
+                No tithes recorded for {year}
+            </h2>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                Tithes appear here once orders from {year} are marked completed.
+                Pick another year to review earlier records.
+            </p>
+        </div>
+    );
+}
+
 function MonthlyTitheSummary({
     tithe,
     isUpdating,
@@ -61,15 +120,16 @@ function MonthlyTitheSummary({
                         {tithe.label} Tithe Summary
                     </h2>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span
-                            className={`inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        <Badge
+                            variant="outline"
+                            className={
                                 tithe.is_paid
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                            }`}
+                                    ? 'border-green-200 bg-green-100 text-green-800 dark:border-green-900 dark:bg-green-900/40 dark:text-green-300'
+                                    : 'border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-900 dark:bg-amber-900/40 dark:text-amber-300'
+                            }
                         >
                             {tithe.is_paid ? 'Paid' : 'Unpaid'}
-                        </span>
+                        </Badge>
                         {tithe.paid_at && (
                             <span className="text-xs text-muted-foreground">
                                 Paid on{' '}
@@ -110,10 +170,10 @@ function MonthlyTitheSummary({
                                 <TableCell className="font-medium">
                                     {product.name}
                                 </TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right tabular-nums">
                                     {formatNpr(product.profit)}
                                 </TableCell>
-                                <TableCell className="text-right font-semibold text-green-600 dark:text-green-400">
+                                <TableCell className="text-right font-semibold text-green-600 tabular-nums dark:text-green-400">
                                     {formatNpr(product.tithe)}
                                 </TableCell>
                             </TableRow>
@@ -136,7 +196,7 @@ function MonthlyTitheSummary({
                                 Total Tithes Payable ({tithe.label})
                             </TableCell>
                             <TableCell />
-                            <TableCell className="text-right font-bold">
+                            <TableCell className="text-right font-bold tabular-nums">
                                 {formatNpr(tithe.total_amount)}
                             </TableCell>
                         </TableRow>
@@ -147,8 +207,31 @@ function MonthlyTitheSummary({
     );
 }
 
-export default function AdminTithesIndex({ tithes }: { tithes: Tithe[] }) {
+export default function AdminTithesIndex({
+    tithes,
+    years,
+    filters,
+}: {
+    tithes: Tithe[];
+    years: number[];
+    filters: { year: number };
+}) {
     const [processingId, setProcessingId] = useState<number | null>(null);
+
+    const handleYearChange = (year: string) => {
+        const selected = Number(year);
+
+        if (!year || selected === filters.year) {
+            return;
+        }
+
+        router.visit(adminTithesIndex({ query: { year: selected } }), {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['tithes', 'years', 'filters'],
+        });
+    };
 
     const handleToggleStatus = (tithe: Tithe) => {
         router.visit(toggleStatus(tithe.id), {
@@ -169,13 +252,36 @@ export default function AdminTithesIndex({ tithes }: { tithes: Tithe[] }) {
         <>
             <SeoHead title="Tithes" />
 
-            <PagePanel title="Tithes" variant="transparent">
+            <PagePanel
+                title="Tithes"
+                description="Review monthly tithes owed on completed-order profit."
+                variant="transparent"
+                actions={
+                    <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={String(filters.year)}
+                        onValueChange={handleYearChange}
+                        className="w-fit"
+                    >
+                        {years.map((year) => (
+                            <ToggleGroupItem
+                                key={year}
+                                value={String(year)}
+                                aria-label={`Show ${year} tithes`}
+                            >
+                                {year}
+                            </ToggleGroupItem>
+                        ))}
+                    </ToggleGroup>
+                }
+            >
                 {tithes.length === 0 ? (
-                    <div className="rounded-xl border bg-card p-10 text-center text-muted-foreground shadow-sm">
-                        No monthly tithes have been calculated yet.
-                    </div>
+                    <EmptyYear year={filters.year} />
                 ) : (
                     <div className="flex flex-col gap-6">
+                        <YearSummary year={filters.year} tithes={tithes} />
+
                         {tithes.map((tithe) => (
                             <MonthlyTitheSummary
                                 key={tithe.id}

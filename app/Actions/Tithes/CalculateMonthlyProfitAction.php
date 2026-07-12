@@ -40,15 +40,17 @@ class CalculateMonthlyProfitAction
     }
 
     /**
-     * Every month that has completed orders, keyed "year-month" and newest first.
-     * One pass over the order items serves the whole history, so the tithes page
-     * costs the same handful of queries whether it shows one month or fifty.
+     * Every month of the given year that has completed orders, keyed "year-month"
+     * and newest first. One pass over the year's order items serves every month in
+     * it, so the tithes page costs the same handful of queries whether the year
+     * holds one month or twelve.
      *
      * @return array<string, MonthBreakdown>
      */
-    public function executeForAllMonths(): array
+    public function executeForYear(int $year): array
     {
         $breakdowns = $this->completedItemsQuery()
+            ->whereHas('order', fn (Builder $query) => $query->whereYear('created_at', $year))
             ->get()
             ->groupBy(fn (OrderItem $item): string => $this->monthKeyFor($item->order->created_at))
             ->map(fn (Collection $items): array => $this->breakdown($items))
@@ -60,7 +62,7 @@ class CalculateMonthlyProfitAction
     }
 
     /**
-     * The key `executeForAllMonths()` files a given year and month under.
+     * The key `executeForYear()` files a given year and month under.
      */
     public function monthKey(int $year, int $month): string
     {

@@ -22,6 +22,34 @@ beforeEach(function () {
     $this->user = User::factory()->create();
 });
 
+/**
+ * A tithe only exists off the back of a completed order's profit, so seed the order
+ * that earns it and let the sync action derive the row.
+ */
+function seedTitheFor(User $user, int $year, int $month): MonthlyTithe
+{
+    $order = Order::factory()->create([
+        'user_id' => $user->id,
+        'status' => 'completed',
+        'created_at' => CarbonImmutable::create($year, $month, 10, 10),
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'product_variant_id' => ProductVariant::factory()->create()->id,
+        'price' => 1000,
+        'purchase_price' => 400,
+        'quantity' => 1,
+    ]);
+
+    app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create($year, $month, 1));
+
+    return MonthlyTithe::query()
+        ->where('year', $year)
+        ->where('month', $month)
+        ->sole();
+}
+
 it('groups completed order profit into monthly tithes by month', function () {
     $julyFirstOrder = Order::factory()->create([
         'user_id' => $this->user->id,
@@ -148,7 +176,7 @@ it('breaks a month down per product, tithing ten percent of each product profit'
 
     app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, 7, 1));
 
-    $response = $this->actingAs($this->admin)->get(route('admin.tithes.index'));
+    $response = $this->actingAs($this->admin)->get(route('admin.tithes.index', ['year' => 2026]));
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
@@ -191,7 +219,7 @@ it('separates the per-product breakdown by month', function () {
     app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, 8, 1));
 
     $this->actingAs($this->admin)
-        ->get(route('admin.tithes.index'))
+        ->get(route('admin.tithes.index', ['year' => 2026]))
         ->assertInertia(fn (Assert $page) => $page
             ->has('tithes', 2)
             ->where('tithes.0.label', 'August 2026')
@@ -238,7 +266,7 @@ it('tithes service profit on the invoiced grand total rather than the estimate',
 
     // Grand total 8,500 less the 1,500 engagement cost leaves 7,000 profit.
     $this->actingAs($this->admin)
-        ->get(route('admin.tithes.index'))
+        ->get(route('admin.tithes.index', ['year' => 2026]))
         ->assertInertia(fn (Assert $page) => $page
             ->where('tithes.0.products.0.name', 'Consulting')
             ->where('tithes.0.products.0.profit', 7000)
@@ -273,16 +301,76 @@ it('lists the distinct months that have completed orders, newest first', functio
     ]);
 });
 
-it('allows admins to view and toggle monthly tithes', function () {
-    $monthlyTithe = MonthlyTithe::factory()->create([
-        'month' => 7,
-        'year' => 2026,
-        'total_amount' => 125.5,
-        'is_paid' => false,
-        'paid_at' => null,
-    ]);
+it('shows only the tithes of the requested year', function () {
+    seedTitheFor($this->user, 2026, 7);
+    seedTitheFor($this->user, 2027, 3);
+    seedTitheFor($this->user, 2027, 4);
 
-    $response = $this->actingAs($this->admin)->get(route('admin.tithes.index'));
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2027]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.year', 2027)
+            ->has('tithes', 2)
+            ->where('tithes.0.label', 'April 2027')
+            ->where('tithes.1.label', 'March 2027')
+        );
+});
+
+it('hides a tithe whose month no longer has any completed-order profit', function () {
+    seedTitheFor($this->user, 2026, 7);
+
+    // Stale: a tithe row survives for a month that never earned anything.
+    MonthlyTithe::factory()->create(['year' => 2026, 'month' => 3, 'is_paid' => true]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('tithes', 1)
+            ->where('tithes.0.label', 'July 2026')
+        );
+});
+
+it('lists the years that have tithes, newest first, alongside the current year', function () {
+    MonthlyTithe::factory()->create(['year' => 2024, 'month' => 5]);
+    MonthlyTithe::factory()->create(['year' => 2027, 'month' => 1]);
+
+    $currentYear = (int) now()->year;
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('years', collect([2027, $currentYear, 2024])->unique()->sortDesc()->values()->all())
+        );
+});
+
+it('defaults to the current year when no year is requested', function () {
+    seedTitheFor($this->user, 2024, 5);
+    $currentTithe = seedTitheFor($this->user, (int) now()->year, 2);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.year', (int) now()->year)
+            ->has('tithes', 1)
+            ->where('tithes.0.id', $currentTithe->id)
+        );
+});
+
+it('falls back to the current year when an unknown year is requested', function () {
+    seedTitheFor($this->user, (int) now()->year, 2);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 1999]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.year', (int) now()->year)
+            ->has('tithes', 1)
+        );
+});
+
+it('allows admins to view and toggle monthly tithes', function () {
+    $monthlyTithe = seedTitheFor($this->user, 2026, 7);
+
+    $response = $this->actingAs($this->admin)->get(route('admin.tithes.index', ['year' => 2026]));
 
     $response->assertSuccessful();
     $response->assertInertia(fn (Assert $page) => $page
@@ -338,7 +426,7 @@ it('costs the same number of queries however many months of tithes exist', funct
             $queries++;
         });
 
-        $this->actingAs($this->admin)->get(route('admin.tithes.index'))->assertSuccessful();
+        $this->actingAs($this->admin)->get(route('admin.tithes.index', ['year' => 2026]))->assertSuccessful();
 
         return $queries;
     };
@@ -357,7 +445,7 @@ it('prevents non-admins from accessing tithe management', function () {
     $monthlyTithe = MonthlyTithe::factory()->create();
 
     $this->actingAs($this->user)
-        ->get(route('admin.tithes.index'))
+        ->get(route('admin.tithes.index', ['year' => 2026]))
         ->assertForbidden();
 
     $this->actingAs($this->user)
