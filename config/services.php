@@ -46,4 +46,17 @@ return [
         'webhook_secret' => env('POCKETSFLOW_WEBHOOK_SECRET'),
     ],
 
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID', '2087629375156375'),
+        'conversions_api_token' => env('META_CONVERSIONS_API_TOKEN'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v21.0'),
+
+        /*
+         * Routes events to the Test Events panel in Events Manager instead of the
+         * live dataset. Must stay empty in production: Meta discards test-coded
+         * events from attribution and ad optimisation.
+         */
+        'test_event_code' => env('META_TEST_EVENT_CODE'),
+    ],
+
 ];
