@@ -146,7 +146,10 @@ export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
     const { state } = useSidebar();
 
-    const personalNavItems: NavItem[] = auth.user.is_admin
+    // `auth.user` is null for guests. Under SSR a throw here is not a local
+    // failure: Inertia falls back to client rendering for the whole page, so
+    // the crawler receives an empty root and the page silently loses its SEO.
+    const personalNavItems: NavItem[] = auth.user?.is_admin
         ? mainNavItems
         : [...mainNavItems, userNotificationsNavItem];
 
@@ -172,7 +175,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={personalNavItems} label="Personal" />
-                {auth.user.is_admin && (
+                {auth.user?.is_admin && (
                     <NavMain items={adminNavItems} label="Store Management" />
                 )}
             </SidebarContent>

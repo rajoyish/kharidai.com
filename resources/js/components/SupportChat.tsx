@@ -19,8 +19,14 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
     const [isLocalOnline, setIsLocalOnline] = useState(false);
     const [isGlobalAdminOnline, setIsGlobalAdminOnline] = useState(false);
 
-    const isOnline =
-        isLocalOnline || (!auth.user.is_admin && isGlobalAdminOnline);
+    // `auth.user` is null for guests. A throw during SSR is not contained to
+    // this component: Inertia abandons the server render for the whole page and
+    // falls back to the client, so the response still returns 200 while
+    // shipping an empty root. Treat a missing user as "not an admin".
+    const isAdmin = auth.user?.is_admin ?? false;
+    const currentUserId = auth.user?.id;
+
+    const isOnline = isLocalOnline || (!isAdmin && isGlobalAdminOnline);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -32,18 +38,16 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
                 const channel = window.Echo.join(`orders.${order.id}`)
                     .here((users: any[]) => {
                         setIsLocalOnline(
-                            users.some(
-                                (u) => u.is_admin !== auth.user.is_admin,
-                            ),
+                            users.some((u) => u.is_admin !== isAdmin),
                         );
                     })
                     .joining((user: any) => {
-                        if (user.is_admin !== auth.user.is_admin) {
+                        if (user.is_admin !== isAdmin) {
                             setIsLocalOnline(true);
                         }
                     })
                     .leaving((user: any) => {
-                        if (user.is_admin !== auth.user.is_admin) {
+                        if (user.is_admin !== isAdmin) {
                             setIsLocalOnline(false);
                         }
                     })
@@ -53,7 +57,7 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
 
                 let supportChannel: any;
 
-                if (!auth.user.is_admin) {
+                if (!isAdmin) {
                     supportChannel = window.Echo.join('support')
                         .here((users: any[]) => {
                             setIsGlobalAdminOnline(
@@ -86,7 +90,7 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
                 console.warn('Real-time chat is unavailable:', error);
             }
         }
-    }, [order.id, auth.user.is_admin]);
+    }, [order.id, isAdmin]);
 
     const handleSendMessage = (e?: React.FormEvent) => {
         if (e) {
@@ -140,7 +144,7 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
             </div>
             <div className="mb-4 flex-1 space-y-4 overflow-y-auto pr-2">
                 {order.messages.map((msg: any) => {
-                    const isMine = msg.user_id === auth.user.id;
+                    const isMine = msg.user_id === currentUserId;
 
                     return (
                         <div
