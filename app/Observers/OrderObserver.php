@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Actions\Tithes\SyncMonthlyTitheAction;
+use App\Jobs\SendMetaPurchaseEvent;
 use App\Models\Order;
 use Carbon\CarbonImmutable;
 
@@ -14,7 +15,13 @@ class OrderObserver
 
     public function created(Order $order): void
     {
-        if ($order->status !== 'completed' || $order->created_at === null) {
+        if ($order->status !== 'completed') {
+            return;
+        }
+
+        $this->reportPurchaseToMeta($order);
+
+        if ($order->created_at === null) {
             return;
         }
 
@@ -32,6 +39,10 @@ class OrderObserver
 
         if (! $currentStatusIsCompleted && ! $originalStatusWasCompleted) {
             return;
+        }
+
+        if ($currentStatusIsCompleted && ! $originalStatusWasCompleted) {
+            $this->reportPurchaseToMeta($order);
         }
 
         $affectedMonths = [];
@@ -59,5 +70,19 @@ class OrderObserver
         }
 
         $this->syncMonthlyTithe->execute($order->created_at);
+    }
+
+    /**
+     * Report the sale to Meta's Conversions API, after the response has been sent.
+     *
+     * Dispatched after-response rather than queued because this app runs no queue
+     * worker — a queued job would sit in the `jobs` table forever. After-response
+     * keeps Meta's API off the critical path of the admin's request while still
+     * actually running. The job no-ops when the API token is unconfigured, so
+     * local and test environments send nothing.
+     */
+    private function reportPurchaseToMeta(Order $order): void
+    {
+        SendMetaPurchaseEvent::dispatchAfterResponse($order->id);
     }
 }
