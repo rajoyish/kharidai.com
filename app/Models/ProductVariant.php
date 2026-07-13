@@ -35,6 +35,17 @@ class ProductVariant extends Model
     use HasFactory;
 
     /**
+     * The wholesale cost is internal margin data that no storefront, cart, or
+     * checkout screen ever renders, yet variants are serialized into the Inertia
+     * page payload on all of them — where anything present is readable from the
+     * HTML source. Hiding it here keeps it out by default; the admin screens
+     * that genuinely display it opt back in with `makeVisible()`.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['purchase_price_npr'];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

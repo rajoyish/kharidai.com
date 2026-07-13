@@ -6,6 +6,7 @@ use App\Enums\ProductType;
 use App\Http\Controllers\Concerns\BuildsSeoMetadata;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -49,6 +50,10 @@ class StorefrontController extends Controller
                 'type' => 'website',
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
+                'jsonLd' => [
+                    $this->organizationSchema(),
+                    $this->websiteSchema(),
+                ],
             ],
         ]);
     }
@@ -96,6 +101,13 @@ class StorefrontController extends Controller
                 'type' => 'website',
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
+                'jsonLd' => [
+                    $this->organizationSchema(),
+                    $this->breadcrumbSchema([
+                        ['name' => 'Home', 'url' => route('home')],
+                        ['name' => $type->pluralLabel(), 'url' => route($routeName)],
+                    ]),
+                ],
             ],
         ]);
     }
@@ -126,8 +138,49 @@ class StorefrontController extends Controller
                 'type' => 'website',
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
+                'jsonLd' => [
+                    $this->organizationSchema(),
+                    $this->breadcrumbSchema($this->categoryTrail($category)),
+                ],
             ],
         ]);
+    }
+
+    /**
+     * Breadcrumb trail for a category: Home, its product-type listing page, the
+     * parent category when the category is nested, then the category itself.
+     *
+     * @return list<array{name: string, url: string}>
+     */
+    private function categoryTrail(Category $category): array
+    {
+        $trail = [['name' => 'Home', 'url' => route('home')]];
+
+        if ($category->type instanceof ProductType) {
+            $trail[] = [
+                'name' => $category->type->pluralLabel(),
+                'url' => route($this->typeRouteName($category->type)),
+            ];
+        }
+
+        $parent = $category->parent;
+
+        if ($parent instanceof Category) {
+            $trail[] = ['name' => $parent->name, 'url' => route('categories.show', $parent)];
+        }
+
+        $trail[] = ['name' => $category->name, 'url' => route('categories.show', $category)];
+
+        return $trail;
+    }
+
+    private function typeRouteName(ProductType $type): string
+    {
+        return match ($type) {
+            ProductType::Digital => 'digital-products.index',
+            ProductType::Physical => 'physical-products.index',
+            ProductType::Service => 'services.index',
+        };
     }
 
     public function show(Product $product): Response
@@ -155,6 +208,17 @@ class StorefrontController extends Controller
 
         $product->load($relations);
 
+        // A variant with `show_pricing` off is quoted on request: the storefront
+        // renders no price for it, but the row still travels to the browser for
+        // its name and options. Withhold the amount at serialization rather than
+        // relying on the UI to not render it, since anything in the payload is
+        // readable straight from the HTML source.
+        if ($canViewVariants) {
+            $product->variants
+                ->reject(fn (ProductVariant $variant): bool => (bool) $variant->show_pricing)
+                ->each(fn (ProductVariant $variant) => $variant->makeHidden('price_npr'));
+        }
+
         // Read the price off the cheapest priced variant as a model attribute so
         // the paisa-to-NPR conversion goes through the MoneyNpr cast rather than
         // a manual divide on the raw aggregate.
@@ -166,6 +230,7 @@ class StorefrontController extends Controller
                 ->first()?->price_npr;
 
         $productSeoImage = $this->storageSeoImage($product->image);
+        $description = $product->seo_description ?? $this->seoDescription($product->description, $product->title);
 
         return Inertia::render('Products/Show', [
             'product' => $product,
@@ -174,7 +239,7 @@ class StorefrontController extends Controller
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($product->seo_title ?? $product->title),
-                'description' => $product->seo_description ?? $this->seoDescription($product->description, $product->title),
+                'description' => $description,
                 'image' => $productSeoImage['url'],
                 'imageAlt' => $product->image_alt ?? $product->title,
                 'imageType' => $productSeoImage['type'],
@@ -185,8 +250,37 @@ class StorefrontController extends Controller
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
                 'updatedTime' => $product->updated_at?->toAtomString(),
+                'jsonLd' => [
+                    $this->organizationSchema(),
+                    $this->productSchema($product, $canViewVariants, $startingPrice, $description),
+                    $this->breadcrumbSchema($this->productTrail($product)),
+                ],
             ],
         ]);
+    }
+
+    /**
+     * Breadcrumb trail for a product: Home, its type listing page, its first
+     * category when it has one, then the product itself.
+     *
+     * @return list<array{name: string, url: string}>
+     */
+    private function productTrail(Product $product): array
+    {
+        $trail = [
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => $product->type->pluralLabel(), 'url' => route($this->typeRouteName($product->type))],
+        ];
+
+        $category = $product->categories->first();
+
+        if ($category instanceof Category) {
+            $trail[] = ['name' => $category->name, 'url' => route('categories.show', $category)];
+        }
+
+        $trail[] = ['name' => $product->title, 'url' => route('products.show', $product)];
+
+        return $trail;
     }
 
     /**

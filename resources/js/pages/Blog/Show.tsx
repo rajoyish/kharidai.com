@@ -2,7 +2,6 @@ import { Link } from '@inertiajs/react';
 import React from 'react';
 
 import { CmsContent } from '@/components/cms-content';
-import { JsonLd } from '@/components/json-ld';
 import { OptimizedImage } from '@/components/optimized-image';
 import { SeoHead } from '@/components/seo-head';
 import {
@@ -69,20 +68,6 @@ export default function BlogShow({ post }: { post: Post }) {
                 imageHeight={post.image ? HERO_IMAGE_HEIGHT : undefined}
                 type="article"
                 updatedTime={post.updated_at ?? undefined}
-            />
-
-            <JsonLd
-                data={{
-                    '@context': 'https://schema.org',
-                    '@type': 'BlogPosting',
-                    headline: post.title,
-                    image: post.image ? [post.image] : undefined,
-                    datePublished: post.published_at,
-                    dateModified: post.updated_at,
-                    author: post.author
-                        ? { '@type': 'Person', name: post.author }
-                        : undefined,
-                }}
             />
 
             <main className="flex-1">

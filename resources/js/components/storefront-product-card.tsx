@@ -36,7 +36,11 @@ export function StorefrontProductCard({
                 {product.image ? (
                     <img
                         src={`/storage/${product.image}`}
-                        alt={product.title}
+                        alt={product.image_alt ?? product.title}
+                        width={640}
+                        height={480}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     />
                 ) : (
