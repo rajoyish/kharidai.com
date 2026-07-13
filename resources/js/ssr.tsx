@@ -17,12 +17,13 @@ const pages = import.meta.glob<{ default: ResolvedComponent }>(
 );
 
 /**
- * Phusion Passenger assigns this process its port at boot and passes it in as
- * `PORT`. Binding to a hard-coded 13714 would mean listening on a port that
- * Passenger is not proxying, so the port is read from the environment, with
- * Inertia's default kept as the fallback for local runs.
+ * Laravel reaches this process over loopback, so it binds to 127.0.0.1 rather
+ * than Inertia's `0.0.0.0` default: on shared hosting a wildcard bind would put
+ * the render endpoint on a public interface. Both values stay overridable so
+ * the server can be moved off the default port without a rebuild.
  */
 const port = Number(process.env.PORT) || 13714;
+const host = process.env.SSR_HOST || '127.0.0.1';
 
 createServer(
     (page) =>
@@ -40,5 +41,5 @@ createServer(
                 </TooltipProvider>
             ),
         }),
-    port,
+    { port, host },
 );
