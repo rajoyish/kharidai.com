@@ -14,6 +14,8 @@ export type StorefrontProduct = {
     slug: string;
     description: string | null;
     image: string | null;
+    /** Author-supplied alt text; falls back to the title when not set. */
+    image_alt?: string | null;
     /**
      * Lowest variant price in paisa (1/100 NPR), aggregated in the database via
      * `withMin`. Used to render the "Starting at" price without exposing the

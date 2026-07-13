@@ -47,6 +47,19 @@ class BlogController extends Controller
                 'type' => 'website',
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
+                'jsonLd' => [
+                    $this->organizationSchema(),
+                    [
+                        '@type' => 'Blog',
+                        'name' => $this->pageTitle('Blog'),
+                        'url' => route('blog.index'),
+                        'publisher' => ['@id' => route('home').'#organization'],
+                    ],
+                    $this->breadcrumbSchema([
+                        ['name' => 'Home', 'url' => route('home')],
+                        ['name' => 'Blog', 'url' => route('blog.index')],
+                    ]),
+                ],
             ],
         ]);
     }
@@ -58,6 +71,7 @@ class BlogController extends Controller
         $post->load('author:id,name');
 
         $seoImage = $this->storageSeoImage($post->image);
+        $description = $post->seo_description ?? $post->excerpt ?? $this->seoDescription($post->content, $post->title);
 
         return Inertia::render('Blog/Show', [
             'post' => [
@@ -77,7 +91,7 @@ class BlogController extends Controller
             'seo' => [
                 'name' => config('app.name'),
                 'title' => $this->pageTitle($post->seo_title ?? $post->title),
-                'description' => $post->seo_description ?? $post->excerpt ?? $this->seoDescription($post->content, $post->title),
+                'description' => $description,
                 'image' => $seoImage['url'],
                 'imageAlt' => $post->image_alt ?? $post->title,
                 'imageType' => $seoImage['type'],
@@ -88,6 +102,30 @@ class BlogController extends Controller
                 'robots' => 'index,follow',
                 'twitterCard' => 'summary_large_image',
                 'updatedTime' => $post->updated_at?->toAtomString(),
+                'jsonLd' => [
+                    $this->organizationSchema(),
+                    array_filter([
+                        '@type' => 'BlogPosting',
+                        'headline' => $post->title,
+                        'description' => $description,
+                        'image' => [$seoImage['url']],
+                        'datePublished' => $post->published_at?->toAtomString(),
+                        'dateModified' => $post->updated_at?->toAtomString(),
+                        'author' => $post->author?->name
+                            ? ['@type' => 'Person', 'name' => $post->author->name]
+                            : null,
+                        'publisher' => ['@id' => route('home').'#organization'],
+                        'mainEntityOfPage' => [
+                            '@type' => 'WebPage',
+                            '@id' => route('blog.show', $post),
+                        ],
+                    ], fn (mixed $value): bool => $value !== null),
+                    $this->breadcrumbSchema([
+                        ['name' => 'Home', 'url' => route('home')],
+                        ['name' => 'Blog', 'url' => route('blog.index')],
+                        ['name' => $post->title, 'url' => route('blog.show', $post)],
+                    ]),
+                ],
             ],
         ]);
     }

@@ -18,6 +18,7 @@
             'robots' => 'noindex,nofollow',
             'twitterCard' => 'summary_large_image',
             'updatedTime' => null,
+            'jsonLd' => [],
         ], data_get($page, 'props.seo', [])))
         <x-inertia::head>
             <title>{{ $seo['title'] }}</title>
@@ -56,6 +57,18 @@
             <meta data-inertia="twitter:image:alt" name="twitter:image:alt" content="{{ $seo['imageAlt'] }}" />
             <meta data-inertia="twitter:url" name="twitter:url" content="{{ $seo['url'] }}" />
         </x-inertia::head>
+
+        {{-- Structured data is rendered here, outside the Inertia-managed head, so
+             that non-JavaScript crawlers see it in the initial HTML. JSON_HEX_TAG
+             neutralises any `</script>` sequence coming from page content. --}}
+        @if(filled($seo['jsonLd']))
+        <script type="application/ld+json">
+            @json([
+                '@context' => 'https://schema.org',
+                '@graph' => array_values($seo['jsonLd']),
+            ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        </script>
+        @endif
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>

@@ -18,6 +18,11 @@ interface LightboxImageLinkProps {
     className?: string;
     imageClassName?: string;
     src: string;
+    /**
+     * `eager` for the image above the fold (the product hero), so it is never
+     * deferred and can serve as the LCP element. Everything else stays lazy.
+     */
+    loading?: 'eager' | 'lazy';
 }
 
 interface LightboxImageAnchorProps extends LightboxImageLinkProps {
@@ -43,6 +48,7 @@ export function LightboxImageAnchor({
     imageClassName,
     onClick,
     src,
+    loading = 'lazy',
 }: LightboxImageAnchorProps) {
     return (
         <a
@@ -56,7 +62,13 @@ export function LightboxImageAnchor({
             )}
             aria-label={ariaLabel}
         >
-            <img src={src} alt={alt} className={imageClassName} />
+            <img
+                src={src}
+                alt={alt}
+                loading={loading}
+                decoding={loading === 'eager' ? 'sync' : 'async'}
+                className={imageClassName}
+            />
         </a>
     );
 }
@@ -67,6 +79,7 @@ export function LightboxImageLink({
     className,
     imageClassName,
     src,
+    loading,
 }: LightboxImageLinkProps) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -78,6 +91,7 @@ export function LightboxImageLink({
                 className={className}
                 imageClassName={imageClassName}
                 src={src}
+                loading={loading}
                 onClick={(event) => {
                     if (!shouldOpenLightboxFromClick(event)) {
                         return;

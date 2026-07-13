@@ -15,6 +15,11 @@ export type SeoData = {
     robots: string;
     twitterCard: string;
     updatedTime?: string | null;
+    /**
+     * Structured data for this page. Rendered server-side into the document
+     * head by the root Blade template, so nothing on the client reads it.
+     */
+    jsonLd?: Record<string, unknown>[];
 };
 
 export type SharedData = {

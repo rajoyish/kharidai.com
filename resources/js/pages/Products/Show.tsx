@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 
 import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
 import { CategoryPill } from '@/components/category-pill';
-import { JsonLd } from '@/components/json-ld';
 import {
     LightboxImageAnchor,
     shouldOpenLightboxFromClick,
@@ -42,7 +41,11 @@ type Variant = {
     id: number;
     name: string;
     details: string | null;
-    price_npr: string;
+    /**
+     * Absent when `show_pricing` is false — the server withholds the amount for
+     * quote-on-request variants instead of sending it for the UI to hide.
+     */
+    price_npr?: string;
     show_pricing?: boolean;
     colors?: string[] | null;
     sizes?: string[] | null;
@@ -59,6 +62,7 @@ type Product = {
     title: string;
     description: string | null;
     image: string | null;
+    image_alt: string | null;
     type: string;
     /**
      * Absent for digital products viewed by a guest — those visitors receive
@@ -92,7 +96,7 @@ export default function Show({
     canViewVariants: boolean;
     startingPrice: number | null;
 }) {
-    const { auth, seo } = usePage<PageProps>().props;
+    const { auth } = usePage<PageProps>().props;
     const variants = product.variants ?? [];
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
         variants.length > 0 ? variants[0] : null,
@@ -223,42 +227,6 @@ export default function Show({
     return (
         <>
             <SeoHead />
-            {selectedVariant && (
-                <JsonLd
-                    data={{
-                        '@context': 'https://schema.org',
-                        '@type': 'Product',
-                        name: product.title,
-                        image: seo.image,
-                        description: seo.description,
-                        offers: {
-                            '@type': 'Offer',
-                            priceCurrency: 'NPR',
-                            price: selectedVariant?.price_npr || '0.00',
-                            availability: 'https://schema.org/InStock',
-                            url: seo.url,
-                        },
-                    }}
-                />
-            )}
-            {!selectedVariant && showStartingPrice && (
-                <JsonLd
-                    data={{
-                        '@context': 'https://schema.org',
-                        '@type': 'Product',
-                        name: product.title,
-                        image: seo.image,
-                        description: seo.description,
-                        offers: {
-                            '@type': 'AggregateOffer',
-                            priceCurrency: 'NPR',
-                            lowPrice: Number(startingPrice),
-                            availability: 'https://schema.org/InStock',
-                            url: seo.url,
-                        },
-                    }}
-                />
-            )}
             <main className="container mx-auto flex-1 px-4 py-8">
                 <div className="my-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:my-12 lg:gap-20">
                     <div className="order-1 flex flex-col gap-8 md:order-2">
@@ -299,8 +267,9 @@ export default function Show({
                                         ? `/storage/${product.image}`
                                         : galleryImages[0]
                                 }
-                                alt={product.title}
+                                alt={product.image_alt ?? product.title}
                                 ariaLabel={`View main image for ${product.title}`}
+                                loading="eager"
                                 className="aspect-1200/630 w-full overflow-hidden rounded-lg border bg-muted"
                                 imageClassName="h-full w-full object-cover transition-opacity hover:opacity-90"
                                 onClick={(event) => {
@@ -340,7 +309,7 @@ export default function Show({
                                     <h3 className="text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Select Variant
                                     </h3>
-                                    {showPrice && selectedVariant && (
+                                    {showPrice && selectedVariant?.price_npr && (
                                         <VariantPrice
                                             value={selectedVariant.price_npr}
                                         />
@@ -551,7 +520,7 @@ export default function Show({
                                     <LightboxImageAnchor
                                         key={idx}
                                         src={imgSrc}
-                                        alt={`${product.title} gallery ${idx + 1}`}
+                                        alt={`${product.title} — image ${idx + 1} of ${galleryImages.length}`}
                                         ariaLabel={`View gallery image ${idx + 1} for ${product.title}`}
                                         className="aspect-square overflow-hidden rounded-md border-2 border-transparent transition-colors hover:border-primary/50"
                                         imageClassName="h-full w-full object-cover"

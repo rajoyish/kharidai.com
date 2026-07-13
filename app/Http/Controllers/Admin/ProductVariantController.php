@@ -18,7 +18,9 @@ class ProductVariantController extends Controller
 
         return Inertia::render('Admin/ProductVariants/Index', [
             'product' => $product,
-            'variants' => $variants,
+            // Admins are the only audience allowed to see wholesale cost, which
+            // the model hides from serialization by default.
+            'variants' => $variants->each->makeVisible('purchase_price_npr'),
         ]);
     }
 
@@ -38,7 +40,7 @@ class ProductVariantController extends Controller
     {
         return Inertia::render('Admin/ProductVariants/Edit', [
             'product' => $product,
-            'variant' => $variant,
+            'variant' => $variant->makeVisible('purchase_price_npr'),
         ]);
     }
 
