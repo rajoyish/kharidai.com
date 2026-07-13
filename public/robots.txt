@@ -3,7 +3,13 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /auth/
 Disallow: /settings/
-Disallow: /*?*
+
+# Search results are unbounded crawl space — every term invents a new URL — so
+# they stay blocked. Pagination is not: `?page=2` and beyond are the only route
+# to products past the first page of a category, so it must stay crawlable.
+# Google applies the most specific rule, so `Allow` wins for paginated URLs.
+Disallow: /*?*search=
+Allow: /*?*page=
 
 Allow: /
 

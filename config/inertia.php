@@ -16,10 +16,14 @@ return [
     */
 
     'ssr' => [
-        'enabled' => true,
-        'url' => 'http://127.0.0.1:13714',
-        // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
+        'enabled' => env('INERTIA_SSR_ENABLED', true),
 
+        // Passenger assigns the Node process its port at boot, so the address
+        // Laravel dispatches renders to is environment-specific and must be
+        // configurable without a code change.
+        'url' => env('INERTIA_SSR_URL', 'http://127.0.0.1:13714'),
+
+        'bundle' => base_path('bootstrap/ssr/ssr.js'),
     ],
 
     /*
