@@ -18,7 +18,17 @@ declare global {
     }
 }
 
-window.Pusher = Pusher;
+/**
+ * Echo is a browser-only concern: it opens a WebSocket and hangs itself off
+ * `window`. Under SSR this module is evaluated in Node, where `window` does not
+ * exist, so everything here is a no-op on the server and the client wires up on
+ * hydration instead.
+ */
+const isBrowser = typeof window !== 'undefined';
+
+if (isBrowser) {
+    window.Pusher = Pusher;
+}
 
 function getDevelopmentEchoConfig(): EchoConfig {
     const cluster = import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1';
@@ -46,30 +56,32 @@ function resolveEchoConfig(): EchoConfig | undefined {
     return undefined;
 }
 
-try {
-    const config = resolveEchoConfig();
+if (isBrowser) {
+    try {
+        const config = resolveEchoConfig();
 
-    if (config?.key) {
-        window.Echo = new Echo<'pusher'>({
-            broadcaster: 'pusher',
-            key: config.key,
-            cluster: config.cluster,
-            wsHost: config.wsHost,
-            wsPort: config.wsPort,
-            wssPort: config.wssPort,
-            forceTLS: config.forceTLS,
-            enabledTransports: ['ws', 'wss'],
-        });
-    } else {
-        console.warn(
-            import.meta.env.PROD
-                ? 'Echo runtime config missing. Real-time updates are disabled.'
-                : 'Pusher app key not found. Real-time updates are disabled.',
+        if (config?.key) {
+            window.Echo = new Echo<'pusher'>({
+                broadcaster: 'pusher',
+                key: config.key,
+                cluster: config.cluster,
+                wsHost: config.wsHost,
+                wsPort: config.wsPort,
+                wssPort: config.wssPort,
+                forceTLS: config.forceTLS,
+                enabledTransports: ['ws', 'wss'],
+            });
+        } else {
+            console.warn(
+                import.meta.env.PROD
+                    ? 'Echo runtime config missing. Real-time updates are disabled.'
+                    : 'Pusher app key not found. Real-time updates are disabled.',
+            );
+        }
+    } catch (e) {
+        console.error(
+            'Pusher connection failed. Falling back to refresh-based updates.',
+            e,
         );
     }
-} catch (e) {
-    console.error(
-        'Pusher connection failed. Falling back to refresh-based updates.',
-        e,
-    );
 }

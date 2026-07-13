@@ -10,6 +10,13 @@ export default defineConfig({
     resolve: {
         dedupe: ['react', 'react-dom'],
     },
+    ssr: {
+        // The admin editor (`novel`) reaches `react-tweet`, which imports a CSS
+        // module. Left external, Node would try to `import` that .css at runtime
+        // and die with ERR_UNKNOWN_FILE_EXTENSION, taking the SSR server with it.
+        // Bundling it through Vite lets Vite handle the stylesheet instead.
+        noExternal: ['novel', 'react-tweet'],
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
@@ -22,7 +29,13 @@ export default defineConfig({
                 }),
             ],
         }),
-        inertia(),
+        // `app.tsx` supplies a manual `setup` callback, which opts out of the
+        // plugin's automatic SSR handling, so the SSR entry is named explicitly.
+        inertia({
+            ssr: {
+                entry: 'resources/js/ssr.tsx',
+            },
+        }),
         react({
             babel: {
                 plugins: ['babel-plugin-react-compiler'],
