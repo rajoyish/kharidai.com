@@ -31,8 +31,8 @@ jobs:
           cache: 'npm'
 
       # `build:ssr` produces the client bundle *and* bootstrap/ssr/ssr.js, which
-      # is the file Passenger boots. A plain `npm run build` would ship the app
-      # without an SSR bundle, and Inertia would silently fall back to
+      # is the file the SSR process runs. A plain `npm run build` would ship the
+      # app without an SSR bundle, and Inertia would silently fall back to
       # client-side rendering.
       - name: Install NPM Dependencies & Build Assets
         run: |
@@ -40,7 +40,7 @@ jobs:
           npm run build:ssr
 
       - name: Verify SSR Bundle Was Built
-        run: test -f bootstrap/ssr/ssr.js || (echo "SSR bundle missing — Passenger has nothing to boot." && exit 1)
+        run: test -f bootstrap/ssr/ssr.js || (echo "SSR bundle missing — the SSR server has nothing to run." && exit 1)
 
       # 3. DEPLOYMENT STEPS REMAIN THE SAME
       - name: Setup SSH Key
@@ -64,7 +64,7 @@ jobs:
             php artisan down --refresh=15 || true
 
       # NOTE: bootstrap/ssr is deliberately NOT excluded — it holds the SSR
-      # bundle Passenger boots. It is gitignored, but rsync copies the CI
+      # bundle the Node process runs. It is gitignored, but rsync copies the CI
       # workspace rather than the git index, so the freshly built bundle ships.
       - name: Deploy with Rsync
         run: |
@@ -104,11 +104,12 @@ jobs:
             php artisan event:cache
             php artisan queue:restart || true
 
-            # Passenger keeps the old SSR bundle resident in memory across a
-            # deploy. Touching restart.txt makes it pick up the new one on the
-            # next request; without this the site serves a stale render.
-            mkdir -p tmp
-            touch tmp/restart.txt
+            # The SSR server is a long-lived Node process holding the previous
+            # bundle in memory, so it has to be recycled or the site keeps
+            # serving stale renders. rsync runs with --no-perms, which drops the
+            # exec bit, hence the explicit chmod and the `bash` invocation.
+            chmod +x scripts/ssr-server.sh
+            bash scripts/ssr-server.sh restart
 
             php artisan up
 
