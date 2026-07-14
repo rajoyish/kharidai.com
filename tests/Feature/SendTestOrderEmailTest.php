@@ -1,7 +1,9 @@
 <?php
 
+use App\Mail\OrderConfirmation;
 use App\Mail\OrderPlaced;
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 
@@ -44,6 +46,38 @@ it('fails when no shop inbox is configured', function () {
     config(['mail.order_notification_address' => null]);
 
     $this->artisan('mail:test-order')->assertFailed();
+
+    Mail::assertNothingSent();
+});
+
+it('sends the customer confirmation on the customer mailer with --customer', function () {
+    Mail::fake();
+
+    $user = User::factory()->create(['email' => 'buyer@example.test']);
+    $order = Order::factory()->for($user)->create();
+
+    config(['mail.customer_mailer' => 'brevo']);
+
+    $this->artisan('mail:test-order', ['--customer' => true])->assertSuccessful();
+
+    Mail::assertSent(
+        OrderConfirmation::class,
+        fn (OrderConfirmation $mail) => $mail->order->is($order)
+            && $mail->hasTo('buyer@example.test'),
+    );
+
+    // The shop's alert is a different mailable on a different transport; testing
+    // one must not send the other.
+    Mail::assertNotSent(OrderPlaced::class);
+});
+
+it('fails --customer when no customer mailer is configured', function () {
+    Mail::fake();
+
+    Order::factory()->create();
+    config(['mail.customer_mailer' => null]);
+
+    $this->artisan('mail:test-order', ['--customer' => true])->assertFailed();
 
     Mail::assertNothingSent();
 });
