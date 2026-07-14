@@ -1,5 +1,6 @@
 <?php
 
+use App\Mail\OrderPlaced;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -8,6 +9,7 @@ use App\Notifications\OrderPlacedNotification;
 use App\Notifications\PaymentReceiptUploadedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
@@ -35,6 +37,7 @@ it('can view the checkout page with items in cart', function () {
 
 it('can process NPR checkout', function () {
     Notification::fake();
+    Mail::fake();
 
     $cart = Cart::factory()->create(['user_id' => $this->user->id]);
     CartItem::factory()->create(['cart_id' => $cart->id]);
@@ -51,6 +54,72 @@ it('can process NPR checkout', function () {
     $this->assertDatabaseMissing('carts', ['id' => $cart->id]);
 
     Notification::assertSentTo($this->admin, OrderPlacedNotification::class);
+});
+
+it('queues an order email to the shop when an order is placed', function () {
+    Notification::fake();
+    Mail::fake();
+
+    $cart = Cart::factory()->create(['user_id' => $this->user->id]);
+    CartItem::factory()->create(['cart_id' => $cart->id]);
+
+    $this->actingAs($this->user)->post('/checkout', [
+        'additional_data' => 'test note',
+    ]);
+
+    $order = Order::first();
+
+    // Queued, not sent: the SMTP round-trip must stay off the checkout request.
+    Mail::assertQueued(OrderPlaced::class, function (OrderPlaced $mail) use ($order) {
+        return $mail->order->is($order)
+            && $mail->hasTo(config('mail.order_notification_address'));
+    });
+
+    Mail::assertNotSent(OrderPlaced::class);
+});
+
+it('completes checkout without an order email when no shop inbox is configured', function () {
+    Notification::fake();
+    Mail::fake();
+
+    // The address has no default in config — a public repo must not carry the
+    // shop's inbox — so an unset one must not take checkout down with it.
+    config(['mail.order_notification_address' => null]);
+
+    $cart = Cart::factory()->create(['user_id' => $this->user->id]);
+    CartItem::factory()->create(['cart_id' => $cart->id]);
+
+    $response = $this->actingAs($this->user)->post('/checkout');
+
+    $order = Order::first();
+
+    expect($order)->not->toBeNull();
+    $response->assertRedirect(route('checkout.npr', $order));
+
+    Mail::assertNothingQueued();
+});
+
+it('renders the order email', function () {
+    $cart = Cart::factory()->create(['user_id' => $this->user->id]);
+    CartItem::factory()->create(['cart_id' => $cart->id]);
+
+    $this->actingAs($this->user)->post('/checkout');
+
+    $order = Order::first()->load('items.productVariant.product');
+    $item = $order->items->first();
+
+    /*
+     * Rendered for real rather than faked: the mail is built on the worker, where
+     * a broken view would surface as a failed job long after checkout succeeded.
+     */
+    $rendered = (new OrderPlaced($order))->render();
+
+    expect($rendered)
+        ->toContain($order->order_number)
+        ->toContain($this->user->email)
+        // The line item, which is what walks productVariant.product.
+        ->toContain($item->productVariant->product->name)
+        ->toContain($item->productVariant->name);
 });
 
 it('can view NPR payment page', function () {
