@@ -78,6 +78,18 @@ class OrderItem extends Model
     }
 
     /**
+     * The item's name for display: the product and its variant together.
+     *
+     * The product's name lives on `title` — there is no `name` column. Reading
+     * ->name yielded null for every item, because Eloquent answers null for an
+     * attribute that does not exist rather than complaining.
+     */
+    public function displayName(): string
+    {
+        return $this->productVariant->product->title.' — '.$this->productVariant->name;
+    }
+
+    /**
      * The revenue this item actually earned, in NPR. A service item's checkout
      * price is only an estimate; once its engagements have saved invoices, those
      * grand totals are what the customer owes. Everything else earns price × quantity.

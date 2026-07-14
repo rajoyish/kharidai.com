@@ -3,11 +3,20 @@
 
 **{{ $order->user->name }}** ({{ $order->user->email }}) just placed an order.
 
+{{--
+    A pipe is Markdown's column separator, and variant names really do contain one
+    ("Activation Link | 18 Months"). Left raw it splits the row into extra cells,
+    shunting quantity and price into the wrong columns and dropping the price off
+    the end. Escaping it keeps the name in its own cell.
+
+    Keep comments and blank lines out of the table below: a blank line ends the
+    table, and the rows after it render as a literal paragraph of pipes.
+--}}
 <x-mail::table>
 | Item | Qty | Price |
 | :--- | :-: | ----: |
 @foreach ($order->items as $item)
-| {{ $item->productVariant->product->name }} — {{ $item->productVariant->name }} | {{ $item->quantity }} | Rs. {{ number_format($item->revenueNpr(), 0) }} |
+| {{ str_replace('|', '\|', $item->displayName()) }} | {{ $item->quantity }} | Rs. {{ number_format($item->revenueNpr(), 0) }} |
 @endforeach
 </x-mail::table>
 
