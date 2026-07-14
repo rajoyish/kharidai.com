@@ -81,8 +81,30 @@ export type StorefrontNavigationPage = {
     slug: string;
 };
 
+/**
+ * A link in an admin-built menu. `href` is already resolved server-side — a
+ * page's path, or a hand-typed custom URL — and is only ever null for a
+ * top-level item that exists purely to open its dropdown.
+ */
+export type MenuLink = {
+    id: number;
+    label: string;
+    href: string | null;
+    opensInNewTab: boolean;
+};
+
+/** A top-level menu item, with the dropdown it opens (empty for a plain link). */
+export type MenuNode = MenuLink & {
+    children: MenuLink[];
+};
+
 export type StorefrontNavigationData = {
     groups: StorefrontNavigationGroup[];
+    /**
+     * The menu built in the admin menu builder. Empty when no menu has been
+     * built, in which case the header falls back to `navPages`.
+     */
+    menu: MenuNode[];
     /** Published pages toggled visible in the main navigation, in menu order. */
     navPages: StorefrontNavigationPage[];
     /** Published pages toggled visible in the footer, in menu order. */

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
@@ -110,6 +111,10 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::resource('pages', AdminPageController::class)->except(['show']);
     Route::patch('pages/{page}/toggle-nav', [AdminPageController::class, 'toggleNav'])->name('pages.toggle-nav');
     Route::patch('pages/{page}/toggle-footer', [AdminPageController::class, 'toggleFooter'])->name('pages.toggle-footer');
+
+    // Registered before the resource so `menus/reorder` is not captured by `menus/{menu}`.
+    Route::patch('menus/reorder', [MenuController::class, 'reorder'])->name('menus.reorder');
+    Route::resource('menus', MenuController::class)->only(['index', 'store', 'update', 'destroy']);
 
     Route::resource('posts', AdminPostController::class)->except(['show']);
 

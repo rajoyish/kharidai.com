@@ -2,10 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\MenuLocation;
 use App\Enums\ProductType;
 use App\Http\Controllers\Settings\MobileNumberController;
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\MenuItem;
 use App\Models\Page;
 use App\Models\Post;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,6 +94,7 @@ class HandleInertiaRequests extends Middleware
 
                 return [
                     'groups' => $this->storefrontNavigation(),
+                    'menu' => $this->menu(MenuLocation::Header),
                     'navPages' => $visibleOn($pages, 'show_in_nav'),
                     'footerPages' => $visibleOn($pages, 'show_in_footer'),
                     // The blog is only linked once there is something to read.
@@ -125,6 +128,63 @@ class HandleInertiaRequests extends Middleware
                     ->all()
             );
         });
+    }
+
+    /**
+     * The admin-built menu for a location, as a two-level tree of links.
+     *
+     * Inactive items are skipped, as are items that resolve to nothing — a link
+     * to a page that has since been unpublished or deleted — unless they still
+     * carry a dropdown, in which case the parent survives as a plain label. An
+     * empty list means no menu has been built, and the storefront falls back to
+     * listing the pages flagged `show_in_nav`.
+     *
+     * Each element has the shape `array{id: int, label: string, href: string|null,
+     * opensInNewTab: bool, children: list<array{id: int, label: string, href: string,
+     * opensInNewTab: bool}>}`.
+     *
+     * @return list<mixed>
+     */
+    private function menu(MenuLocation $location): array
+    {
+        return Cache::rememberForever(
+            MenuItem::CACHE_KEY_PREFIX.$location->value,
+            function () use ($location): array {
+                $items = MenuItem::query()
+                    ->forLocation($location)
+                    ->where('is_active', true)
+                    ->with('page:id,slug,is_published,published_at')
+                    ->ordered()
+                    ->get();
+
+                $childrenByParent = $items->whereNotNull('parent_id')->groupBy('parent_id');
+
+                $link = fn (MenuItem $item): array => [
+                    'id' => $item->id,
+                    'label' => $item->label,
+                    'href' => $item->resolveHref(),
+                    'opensInNewTab' => $item->opens_in_new_tab,
+                ];
+
+                return array_values(
+                    $items
+                        ->whereNull('parent_id')
+                        ->map(function (MenuItem $item) use ($childrenByParent, $link): array {
+                            $children = array_values(
+                                $childrenByParent
+                                    ->get($item->id, collect())
+                                    ->map($link)
+                                    ->filter(fn (array $child): bool => $child['href'] !== null)
+                                    ->all()
+                            );
+
+                            return [...$link($item), 'children' => $children];
+                        })
+                        ->filter(fn (array $item): bool => $item['href'] !== null || $item['children'] !== [])
+                        ->all()
+                );
+            },
+        );
     }
 
     /**

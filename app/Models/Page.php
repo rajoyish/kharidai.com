@@ -83,8 +83,17 @@ class Page extends Model
             }
         });
 
-        static::saved(fn () => Cache::forget('storefront_pages'));
-        static::deleted(fn () => Cache::forget('storefront_pages'));
+        // A slug or publish-state change moves (or hides) every menu item that
+        // points at this page, so the built menus are rebuilt alongside it.
+        static::saved(function (): void {
+            Cache::forget('storefront_pages');
+            MenuItem::flushCache();
+        });
+
+        static::deleted(function (): void {
+            Cache::forget('storefront_pages');
+            MenuItem::flushCache();
+        });
     }
 
     /** @return array<string, string> */

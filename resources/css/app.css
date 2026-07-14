@@ -156,3 +156,17 @@
         @apply font-heading font-bold;
     }
 }
+
+/**
+ * Hides the scrollbar on a container that still scrolls. Used by the storefront
+ * header, where the nav row is swiped or driven by its own arrow buttons, so a
+ * native scrollbar would only add visual noise under the links.
+ */
+@utility scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

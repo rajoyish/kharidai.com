@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\MenuItem;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Product;
@@ -174,4 +175,32 @@ it('server-renders a page using the app layout when nobody is authenticated', fu
 
     expect($response->status())->toBe(200)
         ->and($response->json('body'))->not->toBeEmpty();
+});
+
+it('server-renders the payment methods the footer accepts', function () {
+    $html = $this->get('/')->getContent();
+
+    expect($html)->toContain('We accept:')
+        ->toContain('/images/kharidai-accepts.png');
+});
+
+it('server-renders footer pages in their own column rather than the bottom bar', function () {
+    Page::factory()->create(['title' => 'Refund Policy', 'slug' => 'refund-policy']);
+
+    $html = $this->get('/')->getContent();
+
+    expect($html)->toContain('Refund Policy')
+        // The column heading only exists on the footer's fourth column, so its
+        // presence pins where the page links now live.
+        ->toContain('Quick Links');
+});
+
+it('server-renders the admin-built header menu, dropdown and all', function () {
+    $parent = MenuItem::factory()->create(['label' => 'Our Company', 'url' => '/company']);
+    MenuItem::factory()->childOf($parent)->create(['label' => 'Careers Page', 'url' => '/careers']);
+
+    $html = $this->get('/')->getContent();
+
+    expect($html)->toContain('Our Company')
+        ->toContain('/careers');
 });
