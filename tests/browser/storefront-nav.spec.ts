@@ -23,8 +23,13 @@ const ITEMS = [
     { label: 'Partner With Kharidai', url: '/partners' },
 ];
 
-/** A parent and its child, so the header has a real dropdown to open. */
-const DROPDOWN_PARENT = { label: 'Help Centre', url: '/help' };
+/**
+ * A parent and its child, so the header has a real dropdown to open. The parent
+ * deliberately has no URL of its own: it exists only to open the dropdown, which
+ * is the case that used to force a placeholder `#` and make the parent render as
+ * a link inside its own panel.
+ */
+const DROPDOWN_PARENT = { label: 'Help Centre', url: '' };
 const DROPDOWN_CHILD = { label: 'Contact Support', url: '/support' };
 
 /** Everything the spec creates at the top level; children cascade on delete. */
@@ -108,6 +113,40 @@ test.describe('storefront navigation', () => {
         }
     });
 
+    test('the builder form clears after saving instead of lagging an item behind', async ({
+        page,
+    }) => {
+        // The form used to reset to the *previous* item's values, because
+        // `reset()` read the defaults `setDefaults()` had not committed yet.
+        await page.goto('/admin/menus');
+
+        const label = page.getByLabel('Display name');
+        const url = page.getByLabel('URL');
+
+        // Adding an item must leave a blank form, not the values just submitted.
+        await expect(label).toHaveValue('');
+        await expect(url).toHaveValue('');
+
+        // Editing must load that item's values immediately, on the first click.
+        await page
+            .locator(ITEM_LIST)
+            .locator('li', { hasText: ITEMS[0].label })
+            .first()
+            .locator('> div')
+            .first()
+            .getByRole('button', { name: 'Edit' })
+            .click();
+
+        await expect(label).toHaveValue(ITEMS[0].label);
+        await expect(url).toHaveValue(ITEMS[0].url);
+
+        // And cancelling must return to a blank form, not the edited values.
+        await page.getByRole('button', { name: 'Cancel' }).click();
+
+        await expect(label).toHaveValue('');
+        await expect(url).toHaveValue('');
+    });
+
     test('an overflowing nav scrolls instead of breaking the header', async ({
         page,
     }) => {
@@ -185,6 +224,12 @@ test.describe('storefront navigation', () => {
         await expect(
             panel.getByRole('link', { name: DROPDOWN_CHILD.label }),
         ).toHaveAttribute('href', DROPDOWN_CHILD.url);
+
+        // A parent with no destination of its own must not appear as an entry in
+        // the very dropdown it opens — that is the duplicate-label bug.
+        await expect(
+            panel.getByRole('link', { name: DROPDOWN_PARENT.label }),
+        ).toHaveCount(0);
 
         // The track clips its own overflow, so a panel rendered inside it would
         // be cut off at the header's edge. Portaling is what keeps it whole:

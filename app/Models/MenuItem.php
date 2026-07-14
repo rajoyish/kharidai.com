@@ -132,10 +132,18 @@ class MenuItem extends Model
     }
 
     /**
-     * The destination this item points at, or `null` when it cannot resolve — a
+     * The destination this item points at, or `null` when it has none — a
      * page-linked item whose page is missing or unpublished, or a custom item
-     * with a blank URL. The storefront drops unresolvable items so a menu never
-     * renders a dead link.
+     * left without a URL.
+     *
+     * A parent that only exists to open its dropdown has no destination of its
+     * own, so a blank URL is a legitimate state rather than an error. `#` means
+     * the same thing (it is what a hand-written placeholder link looks like) and
+     * is normalised to null, because treating it as a real href makes the parent
+     * render as a link *inside its own dropdown*, repeating itself.
+     *
+     * The storefront drops items that resolve to nothing and carry no dropdown,
+     * so a menu never renders a dead link.
      */
     public function resolveHref(): ?string
     {
@@ -145,6 +153,8 @@ class MenuItem extends Model
             return $page && $page->isPublished() ? '/'.$page->slug : null;
         }
 
-        return Str::of((string) $this->url)->trim()->value() ?: null;
+        $url = Str::of((string) $this->url)->trim()->value();
+
+        return ($url === '' || $url === '#') ? null : $url;
     }
 }
