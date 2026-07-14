@@ -115,4 +115,21 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Order Notification Address
+    |--------------------------------------------------------------------------
+    |
+    | The shop inbox that is emailed whenever a customer places an order. This
+    | is the shop's own address, not a customer's, so it is a single mailbox
+    | rather than a per-user routing decision.
+    |
+    | Deliberately without a fallback address: this repository is public, and a
+    | default here would publish the shop's inbox to anyone reading the source.
+    | Left unset, no order email is sent.
+    |
+    */
+
+    'order_notification_address' => env('MAIL_ORDER_NOTIFICATION_ADDRESS'),
+
 ];

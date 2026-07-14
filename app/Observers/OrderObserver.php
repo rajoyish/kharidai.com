@@ -75,11 +75,15 @@ class OrderObserver
     /**
      * Report the sale to Meta's Conversions API, after the response has been sent.
      *
-     * Dispatched after-response rather than queued because this app runs no queue
-     * worker — a queued job would sit in the `jobs` table forever. After-response
-     * keeps Meta's API off the critical path of the admin's request while still
-     * actually running. The job no-ops when the API token is unconfigured, so
-     * local and test environments send nothing.
+     * After-response rather than queued, which keeps Meta's API off the critical
+     * path of the admin's request. Cron now drains a Redis queue (see
+     * routes/console.php), so switching this to a plain dispatch() would also give
+     * it retries — but that is a deliberate follow-up, not a free swap: the test
+     * suite runs the sync queue driver, so dispatch() would execute this job inline
+     * and the Meta tests would need reworking to keep it off the network.
+     *
+     * The job no-ops when the API token is unconfigured, so local and test
+     * environments send nothing.
      */
     private function reportPurchaseToMeta(Order $order): void
     {

@@ -6,6 +6,7 @@ use App\Enums\EngagementSource;
 use App\Enums\EngagementStatus;
 use App\Enums\PaymentOption;
 use App\Enums\ProductType;
+use App\Mail\OrderPlaced;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -189,6 +191,15 @@ class CheckoutController extends Controller
 
         $admins = User::where('is_admin', true)->get();
         Notification::send($admins, new OrderPlacedNotification($order));
+
+        $shopInbox = config('mail.order_notification_address');
+
+        // Unconfigured in local and CI, where there is no inbox to notify. Queued
+        // when it is set, so the SMTP round-trip happens on the worker rather than
+        // in front of the customer's redirect.
+        if (filled($shopInbox)) {
+            Mail::to($shopInbox)->queue(new OrderPlaced($order));
+        }
 
         $cart->items()->delete();
         $cart->delete();

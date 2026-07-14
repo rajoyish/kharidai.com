@@ -53,7 +53,14 @@ class SendMetaPurchaseEvent implements ShouldQueue
             return;
         }
 
-        $order = Order::with(['user', 'items'])->find($this->orderId);
+        /*
+         * serviceEngagements is not optional: the payload's value comes from
+         * displayTotalNpr() and each item's revenueNpr(), both of which read an
+         * item's engagements to decide whether an invoiced grand total supersedes
+         * the snapshot price. Left unloaded it is an N+1 per line item, and a
+         * lazy-load violation everywhere lazy loading is fatal.
+         */
+        $order = Order::with(['user', 'items.serviceEngagements'])->find($this->orderId);
 
         // Deleted between completion and this job running.
         if ($order === null) {
