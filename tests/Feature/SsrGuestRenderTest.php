@@ -148,6 +148,15 @@ it('server-renders a blog post for a guest', function () {
     expectServerRendered($this->get(route('blog.show', $post)));
 });
 
+it('server-renders the toaster, so hydration finds the same tree the client builds', function () {
+    // Sonner renders an empty landmark <section> even with no toasts pending, and
+    // app.tsx always mounts the Toaster. Leaving it out of the server tree makes
+    // the client's first render one node longer than the markup it hydrates, which
+    // React rejects: it throws (error #418) and re-renders the page from scratch,
+    // discarding the server-rendered DOM on every route.
+    expect($this->get('/')->getContent())->toContain('aria-label="Notifications');
+});
+
 it('server-renders a page using the app layout when nobody is authenticated', function () {
     // Every guest-facing route currently overrides `.layout`, so none of them
     // reach AppLayout — which is exactly how AppSidebar came to dereference a
