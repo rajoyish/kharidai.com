@@ -82,15 +82,11 @@ test.describe('storefront navigation', () => {
         const list = page.locator(ITEM_LIST);
 
         for (const item of TOP_LEVEL) {
-            // A parent `<li>` wraps its children's rows too, so target the row's
-            // own controls rather than every Delete button beneath it.
-            const row = list
-                .locator('li', { hasText: item.label })
-                .first()
-                .locator('> div')
-                .first();
-
-            await row.getByRole('button', { name: 'Delete' }).click();
+            // Each row's controls name the item they act on, so a parent's own
+            // Delete is unambiguous even though its children's sit inside it.
+            await list
+                .getByRole('button', { name: `Delete ${item.label}` })
+                .click();
             await page
                 .getByRole('alertdialog')
                 .getByRole('button', { name: 'Delete' })
@@ -132,11 +128,7 @@ test.describe('storefront navigation', () => {
         // Editing must load that item's values immediately, on the first click.
         await page
             .locator(ITEM_LIST)
-            .locator('li', { hasText: ITEMS[0].label })
-            .first()
-            .locator('> div')
-            .first()
-            .getByRole('button', { name: 'Edit' })
+            .getByRole('button', { name: `Edit ${ITEMS[0].label}` })
             .click();
 
         await expect(label).toHaveValue(ITEMS[0].label);
@@ -269,6 +261,145 @@ test.describe('storefront navigation', () => {
         await expect(page).toHaveURL(new RegExp(`${DROPDOWN_CHILD.url}$`));
         await expect(panel).toBeHidden();
     });
+
+    test('the whole nav is operable from the keyboard alone', async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 900, height: 800 });
+        await page.goto('/');
+
+        const nav = page.getByRole('navigation', { name: 'Main' });
+        await expect(nav).toBeVisible();
+
+        // Tabbing must reach a link that is scrolled out of view, and the browser
+        // must bring it into view — that is what makes an overflowing nav usable
+        // without a mouse.
+        const lastLink = nav.getByRole('link', {
+            name: ITEMS[ITEMS.length - 1].label,
+        });
+
+        await lastLink.focus();
+        await expect(lastLink).toBeFocused();
+        await expect(lastLink).toBeInViewport();
+
+        // The dropdown opens, moves and closes on the keyboard.
+        const trigger = nav.getByRole('button', {
+            name: DROPDOWN_PARENT.label,
+        });
+
+        // The open menu is modal, so Radix marks the rest of the page
+        // aria-hidden — correct, but it takes the whole nav out of the
+        // accessibility tree, so this assertion has to reach the trigger by CSS
+        // rather than by role.
+        const triggerElement = page
+            .locator(
+                'nav[aria-label="Main"] [data-slot="dropdown-menu-trigger"]',
+            )
+            .filter({ hasText: DROPDOWN_PARENT.label });
+
+        await expect(triggerElement).toHaveAttribute('aria-expanded', 'false');
+
+        await trigger.focus();
+        await page.keyboard.press('Enter');
+
+        const panel = page.locator('[data-slot="dropdown-menu-content"]');
+        await expect(panel).toBeVisible();
+        await expect(triggerElement).toHaveAttribute('aria-expanded', 'true');
+
+        await page.keyboard.press('ArrowDown');
+
+        const child = panel.getByRole('menuitem', {
+            name: DROPDOWN_CHILD.label,
+        });
+
+        await expect(child).toBeFocused();
+
+        // Arrowing moves Radix's *highlight*, so the item must actually look
+        // selected. Without this the menu responds but appears inert, which is
+        // indistinguishable from keyboard navigation being broken.
+        await expect(child).toHaveAttribute('data-highlighted', '');
+        await expect
+            .poll(() =>
+                child.evaluate((el) => getComputedStyle(el).backgroundColor),
+            )
+            .not.toBe('rgba(0, 0, 0, 0)');
+
+        await page.keyboard.press('Escape');
+        await expect(panel).toBeHidden();
+
+        // Focus returns to the trigger, rather than being dumped at the top.
+        await expect(trigger).toBeFocused();
+    });
+
+    test('a focused nav item shows its whole focus ring', async ({ page }) => {
+        await page.setViewportSize({ width: 900, height: 800 });
+        await page.goto('/');
+
+        const track = page.locator(TRACK);
+
+        // `overflow-x` clips vertically too, so the track needs inner room or the
+        // ring is shaved off at the top and bottom edges.
+        const room = await track.evaluate((element) => {
+            const style = getComputedStyle(element);
+
+            return Math.min(
+                parseFloat(style.paddingTop),
+                parseFloat(style.paddingBottom),
+            );
+        });
+
+        // 2px ring + 1px offset.
+        expect(room).toBeGreaterThanOrEqual(3);
+    });
+
+    test('the scroll arrows stay out of the tab order', async ({ page }) => {
+        // They are a pointer affordance: a keyboard user reaches the links
+        // directly and the browser scrolls them into view, so arrows in the tab
+        // order would be two dead stops on every page.
+        await page.setViewportSize({ width: 900, height: 800 });
+        await page.goto('/');
+
+        await expect(
+            page.getByRole('button', { name: 'Scroll navigation right' }),
+        ).toHaveAttribute('tabindex', '-1');
+    });
+
+    test('the current page is marked, not just coloured', async ({ page }) => {
+        await page.goto('/');
+
+        const nav = page.getByRole('navigation', { name: 'Main' });
+
+        await expect(nav.getByRole('link', { name: 'Home' })).toHaveAttribute(
+            'aria-current',
+            'page',
+        );
+
+        // And only the current one: colour is not a message a screen reader gets.
+        await expect(
+            nav.getByRole('link', { name: ITEMS[0].label }),
+        ).not.toHaveAttribute('aria-current', 'page');
+    });
+});
+
+test('a skip link jumps past the navigation to the content', async ({
+    page,
+}) => {
+    await page.goto('/');
+
+    // Hidden until focused, then the first thing the keyboard reaches.
+    const skip = page.getByRole('link', { name: 'Skip to content' });
+
+    await expect(skip).not.toBeInViewport();
+
+    await page.keyboard.press('Tab');
+
+    await expect(skip).toBeFocused();
+    await expect(skip).toBeInViewport();
+
+    await page.keyboard.press('Enter');
+
+    await expect(page).toHaveURL(/#main-content$/);
+    await expect(page.locator('#main-content')).toBeVisible();
 });
 
 // The footer's page column is asserted server-side in SsrGuestRenderTest, which

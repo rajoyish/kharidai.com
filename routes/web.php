@@ -106,8 +106,6 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
 
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
 
-    // Registered before the resource so `pages/reorder` is not captured by `pages/{page}`.
-    Route::patch('pages/reorder', [AdminPageController::class, 'reorder'])->name('pages.reorder');
     Route::resource('pages', AdminPageController::class)->except(['show']);
     Route::patch('pages/{page}/toggle-nav', [AdminPageController::class, 'toggleNav'])->name('pages.toggle-nav');
     Route::patch('pages/{page}/toggle-footer', [AdminPageController::class, 'toggleFooter'])->name('pages.toggle-footer');

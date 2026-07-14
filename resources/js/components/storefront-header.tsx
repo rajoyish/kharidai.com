@@ -71,33 +71,58 @@ const GROUP_HREF: Partial<
     service: services(),
 };
 
-const DESKTOP_LINK_CLASSES =
-    'shrink-0 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors hover:text-primary';
+/**
+ * Every nav control carries a visible focus ring. Tabbing is the only way a
+ * keyboard user can tell where they are, and the scroll track relies on it too:
+ * focusing a link the browser has to scroll into view is what makes an
+ * overflowing menu keyboard-reachable at all.
+ */
+const FOCUS_CLASSES =
+    'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background';
 
-const DESKTOP_TRIGGER_CLASSES =
-    'group flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors outline-none hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary';
+const DESKTOP_LINK_CLASSES = `shrink-0 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors hover:text-primary aria-[current=page]:text-primary ${FOCUS_CLASSES}`;
 
-const MOBILE_LINK_CLASSES =
-    'rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary';
+const DESKTOP_TRIGGER_CLASSES = `group flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary ${FOCUS_CLASSES}`;
+
+const MOBILE_LINK_CLASSES = `rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary aria-[current=page]:text-primary ${FOCUS_CLASSES}`;
 
 /**
  * Links inside a dropdown are wrapped in a `DropdownMenuItem` so that Radix
  * registers the click as a selection and closes the panel — a bare anchor
  * navigates but leaves the menu hanging open over the new page.
  *
- * The wrapper's own padding and focus styling are stripped, because the link it
- * wraps already carries them.
+ * The wrapper's own padding is stripped, because the link it wraps carries it.
  */
-const DROPDOWN_ITEM_CLASSES = 'p-0 focus:bg-transparent';
+const DROPDOWN_ITEM_CLASSES = 'p-0';
+
+/**
+ * Arrowing through an open dropdown moves Radix's *highlight*, not DOM focus, so
+ * a `:focus` style shows nothing and the menu looks inert to a keyboard user
+ * even though it is responding. `data-highlighted` is the state to paint.
+ */
+const DROPDOWN_LINK_CLASSES =
+    'block truncate rounded-md px-3 py-2 text-sm font-semibold no-underline transition-colors outline-none hover:bg-primary/10 hover:text-primary data-highlighted:bg-primary/10 data-highlighted:text-primary';
 
 export function StorefrontHeader({
     hideNavigation = false,
 }: {
     hideNavigation?: boolean;
 }) {
-    const { auth, cartCount, storefront } = usePage<SharedData>().props;
+    const { props, url } = usePage<SharedData>();
+    const { auth, cartCount, storefront } = props;
     const groups = storefront?.groups ?? [];
     const hasBlogPosts = storefront?.hasBlogPosts ?? false;
+
+    // Marks the link for the page you are already on, which is how a screen
+    // reader conveys "you are here" — the colour change alone says nothing.
+    const currentPath = url.split('?')[0];
+    const isCurrent = (href: string): boolean => {
+        const path = href.split('?')[0];
+
+        return path === '/'
+            ? currentPath === '/'
+            : currentPath === path || currentPath.startsWith(`${path}/`);
+    };
 
     // The admin-built menu owns the custom links once one exists. Until then the
     // header falls back to listing the pages flagged "show in nav", so a site
@@ -142,11 +167,17 @@ export function StorefrontHeader({
                 {/* Main navigation. Overflowing items stay reachable by swipe or
                     arrow instead of wrapping and breaking the header's height. */}
                 {!hideNavigation ? (
-                    <div className="hidden min-w-0 flex-1 md:block">
+                    <nav
+                        aria-label="Main"
+                        className="hidden min-w-0 flex-1 md:block"
+                    >
                         <NavScroller>
                             <Link
                                 href={home()}
                                 prefetch
+                                aria-current={
+                                    isCurrent('/') ? 'page' : undefined
+                                }
                                 className={DESKTOP_LINK_CLASSES}
                             >
                                 Home
@@ -160,6 +191,11 @@ export function StorefrontHeader({
                                 <Link
                                     href={blogIndex()}
                                     prefetch
+                                    aria-current={
+                                        isCurrent(blogIndex().url)
+                                            ? 'page'
+                                            : undefined
+                                    }
                                     className={DESKTOP_LINK_CLASSES}
                                 >
                                     Blog
@@ -173,12 +209,17 @@ export function StorefrontHeader({
                                     <StorefrontNavLink
                                         key={item.id}
                                         link={item}
+                                        aria-current={
+                                            item.href && isCurrent(item.href)
+                                                ? 'page'
+                                                : undefined
+                                        }
                                         className={DESKTOP_LINK_CLASSES}
                                     />
                                 ),
                             )}
                         </NavScroller>
-                    </div>
+                    </nav>
                 ) : (
                     <div className="hidden flex-1 md:block" />
                 )}
@@ -188,9 +229,9 @@ export function StorefrontHeader({
                     <Link
                         href={accountHref}
                         prefetch
-                        className="flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary"
+                        className={`flex items-center gap-2 rounded-md text-sm font-semibold transition-colors hover:text-primary ${FOCUS_CLASSES}`}
                     >
-                        <User className="h-5 w-5 shrink-0" />
+                        <User className="h-5 w-5 shrink-0" aria-hidden />
                         <span className="max-w-40 truncate">
                             {accountLabel}
                         </span>
@@ -198,17 +239,21 @@ export function StorefrontHeader({
                     <Link
                         href={cartIndex()}
                         prefetch
-                        className="relative flex items-center gap-2 text-sm font-semibold transition-colors hover:text-primary"
+                        className={`relative flex items-center gap-2 rounded-md text-sm font-semibold transition-colors hover:text-primary ${FOCUS_CLASSES}`}
                     >
                         <div className="relative">
-                            <ShoppingCart className="h-5 w-5" />
+                            <ShoppingCart className="h-5 w-5" aria-hidden />
                             {cartCount > 0 && (
-                                <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem] leading-none font-bold text-primary-foreground">
+                                <span
+                                    aria-hidden
+                                    className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem] leading-none font-bold text-primary-foreground"
+                                >
                                     {cartCount}
                                 </span>
                             )}
                         </div>
                         <span>Cart</span>
+                        <CartCountLabel count={cartCount} />
                     </Link>
                 </div>
 
@@ -236,10 +281,18 @@ export function StorefrontHeader({
                             </SheetHeader>
                             <div className="mt-4 flex flex-col gap-6 px-4 pb-8">
                                 {!hideNavigation && (
-                                    <>
+                                    <nav
+                                        aria-label="Main"
+                                        className="flex flex-col gap-6"
+                                    >
                                         <Link
                                             href={home()}
                                             prefetch
+                                            aria-current={
+                                                isCurrent('/')
+                                                    ? 'page'
+                                                    : undefined
+                                            }
                                             className={MOBILE_LINK_CLASSES}
                                         >
                                             Home
@@ -254,6 +307,11 @@ export function StorefrontHeader({
                                             <Link
                                                 href={blogIndex()}
                                                 prefetch
+                                                aria-current={
+                                                    isCurrent(blogIndex().url)
+                                                        ? 'page'
+                                                        : undefined
+                                                }
                                                 className={MOBILE_LINK_CLASSES}
                                             >
                                                 Blog
@@ -265,19 +323,23 @@ export function StorefrontHeader({
                                                     <MobileMenuItem
                                                         key={item.id}
                                                         item={item}
+                                                        isCurrent={isCurrent}
                                                     />
                                                 ))}
                                             </div>
                                         )}
-                                    </>
+                                    </nav>
                                 )}
                                 <div className="flex flex-col gap-1 border-t pt-6">
                                     <Link
                                         href={accountHref}
                                         prefetch
-                                        className="flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary"
+                                        className={`flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary ${FOCUS_CLASSES}`}
                                     >
-                                        <User className="h-5 w-5 shrink-0" />
+                                        <User
+                                            className="h-5 w-5 shrink-0"
+                                            aria-hidden
+                                        />
                                         <span className="truncate">
                                             {accountLabel}
                                         </span>
@@ -285,17 +347,24 @@ export function StorefrontHeader({
                                     <Link
                                         href={cartIndex()}
                                         prefetch
-                                        className="relative flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary"
+                                        className={`relative flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary ${FOCUS_CLASSES}`}
                                     >
                                         <div className="relative">
-                                            <ShoppingCart className="h-5 w-5" />
+                                            <ShoppingCart
+                                                className="h-5 w-5"
+                                                aria-hidden
+                                            />
                                             {cartCount > 0 && (
-                                                <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem] leading-none font-bold text-primary-foreground">
+                                                <span
+                                                    aria-hidden
+                                                    className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem] leading-none font-bold text-primary-foreground"
+                                                >
                                                     {cartCount}
                                                 </span>
                                             )}
                                         </div>
                                         <span>Cart</span>
+                                        <CartCountLabel count={cartCount} />
                                     </Link>
                                 </div>
                             </div>
@@ -304,6 +373,23 @@ export function StorefrontHeader({
                 </div>
             </div>
         </header>
+    );
+}
+
+/**
+ * The cart count, spoken rather than shown. The badge itself is a bare number
+ * pinned to an icon, which a screen reader would otherwise read as a stray digit
+ * next to the word "Cart".
+ */
+function CartCountLabel({ count }: { count: number }) {
+    if (count === 0) {
+        return null;
+    }
+
+    return (
+        <span className="sr-only">
+            {count === 1 ? '1 item in cart' : `${count} items in cart`}
+        </span>
     );
 }
 
@@ -344,7 +430,7 @@ function GroupDropdown({ group }: { group: StorefrontNavigationGroup }) {
                         <Link
                             href={groupHref}
                             prefetch
-                            className="mb-1 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                            className="mb-1 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary no-underline transition-colors outline-none hover:bg-primary/10 data-highlighted:bg-primary/10"
                         >
                             View all {group.label}
                             <ArrowRight className="size-4 shrink-0" />
@@ -362,7 +448,7 @@ function GroupDropdown({ group }: { group: StorefrontNavigationGroup }) {
                                 <Link
                                     href={showCategory(category)}
                                     prefetch
-                                    className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                                    className={DROPDOWN_LINK_CLASSES}
                                 >
                                     {category.name}
                                 </Link>
@@ -396,7 +482,7 @@ function MenuDropdown({ item }: { item: MenuNode }) {
                     <DropdownMenuItem asChild className={DROPDOWN_ITEM_CLASSES}>
                         <StorefrontNavLink
                             link={item}
-                            className="mb-1 block rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                            className="mb-1 block rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary no-underline transition-colors outline-none hover:bg-primary/10 data-highlighted:bg-primary/10"
                         />
                     </DropdownMenuItem>
                 )}
@@ -408,7 +494,7 @@ function MenuDropdown({ item }: { item: MenuNode }) {
                     >
                         <StorefrontNavLink
                             link={child}
-                            className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                            className={DROPDOWN_LINK_CLASSES}
                         />
                     </DropdownMenuItem>
                 ))}
@@ -418,10 +504,23 @@ function MenuDropdown({ item }: { item: MenuNode }) {
 }
 
 /** A menu item in the mobile drawer, with its dropdown flattened into an indent. */
-function MobileMenuItem({ item }: { item: MenuNode }) {
+function MobileMenuItem({
+    item,
+    isCurrent,
+}: {
+    item: MenuNode;
+    isCurrent: (href: string) => boolean;
+}) {
+    const current = (href: string | null) =>
+        href && isCurrent(href) ? ('page' as const) : undefined;
+
     if (item.children.length === 0) {
         return (
-            <StorefrontNavLink link={item} className={MOBILE_LINK_CLASSES} />
+            <StorefrontNavLink
+                link={item}
+                aria-current={current(item.href)}
+                className={MOBILE_LINK_CLASSES}
+            />
         );
     }
 
@@ -430,6 +529,7 @@ function MobileMenuItem({ item }: { item: MenuNode }) {
             {item.href ? (
                 <StorefrontNavLink
                     link={item}
+                    aria-current={current(item.href)}
                     className={MOBILE_LINK_CLASSES}
                 />
             ) : (
@@ -437,15 +537,17 @@ function MobileMenuItem({ item }: { item: MenuNode }) {
                     {item.label}
                 </span>
             )}
-            <div className="flex flex-col gap-0.5 border-l pl-3">
+            <ul className="flex flex-col gap-0.5 border-l pl-3">
                 {item.children.map((child) => (
-                    <StorefrontNavLink
-                        key={child.id}
-                        link={child}
-                        className="rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                    />
+                    <li key={child.id}>
+                        <StorefrontNavLink
+                            link={child}
+                            aria-current={current(child.href)}
+                            className={`block rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary aria-[current=page]:text-primary ${FOCUS_CLASSES}`}
+                        />
+                    </li>
                 ))}
-            </div>
+            </ul>
         </div>
     );
 }

@@ -228,43 +228,13 @@ it('appends a newly created page to the end of the menu', function () {
     expect(Page::firstWhere('slug', 'third')->sort_order)->toBe(3);
 });
 
-it('reorders pages from the drag and drop table', function () {
-    $about = Page::factory()->create(['slug' => 'about', 'sort_order' => 1]);
-    $privacy = Page::factory()->create(['slug' => 'privacy', 'sort_order' => 2]);
-    $delivery = Page::factory()->create(['slug' => 'delivery', 'sort_order' => 3]);
-
-    $this->actingAs($this->admin)
-        ->patch('/admin/pages/reorder', ['ids' => [$delivery->id, $about->id, $privacy->id]])
-        ->assertRedirect();
-
-    expect($delivery->fresh()->sort_order)->toBe(1)
-        ->and($about->fresh()->sort_order)->toBe(2)
-        ->and($privacy->fresh()->sort_order)->toBe(3);
-
-    // The storefront menu reflects the new order immediately.
-    $this->get('/')->assertInertia(fn ($inertia) => $inertia
-        ->where('storefront.navPages.0.slug', 'delivery')
-        ->where('storefront.navPages.2.slug', 'privacy')
-    );
-});
-
-it('rejects a reorder payload referencing an unknown page', function () {
-    $page = Page::factory()->create(['sort_order' => 1]);
-
-    $this->actingAs($this->admin)
-        ->patch('/admin/pages/reorder', ['ids' => [$page->id, 99999]])
-        ->assertSessionHasErrors('ids.1');
-
-    expect($page->fresh()->sort_order)->toBe(1);
-});
-
-it('does not treat the reorder route as a page slug', function () {
-    // `pages/reorder` must not be captured by the `pages/{page}` resource route.
-    Page::factory()->create(['slug' => 'reorder', 'sort_order' => 1]);
+it('no longer exposes a page reorder endpoint', function () {
+    // Menu order is owned by the menu builder now; the pages table only lists.
+    Page::factory()->create();
 
     $this->actingAs($this->admin)
         ->patch('/admin/pages/reorder', ['ids' => []])
-        ->assertSessionHasErrors('ids');
+        ->assertNotFound();
 });
 
 it('toggles a page in and out of the main navigation', function () {
@@ -298,11 +268,10 @@ it('toggles a page in and out of the footer', function () {
     );
 });
 
-it('blocks non-admins from reordering and toggling pages', function () {
+it('blocks non-admins from toggling pages', function () {
     $user = User::factory()->create(['is_admin' => false]);
     $page = Page::factory()->create(['slug' => 'privacy', 'sort_order' => 1]);
 
-    $this->actingAs($user)->patch('/admin/pages/reorder', ['ids' => [$page->id]])->assertForbidden();
     $this->actingAs($user)->patch("/admin/pages/{$page->slug}/toggle-nav")->assertForbidden();
     $this->actingAs($user)->patch("/admin/pages/{$page->slug}/toggle-footer")->assertForbidden();
 
