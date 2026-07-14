@@ -78,7 +78,7 @@ it('queues an order email to the shop when an order is placed', function () {
     Mail::assertNotSent(OrderPlaced::class);
 });
 
-it('completes checkout without an order email when no shop inbox is configured', function () {
+it('completes checkout without the shop email when no shop inbox is configured', function () {
     Notification::fake();
     Mail::fake();
 
@@ -96,7 +96,9 @@ it('completes checkout without an order email when no shop inbox is configured',
     expect($order)->not->toBeNull();
     $response->assertRedirect(route('checkout.npr', $order));
 
-    Mail::assertNothingQueued();
+    // Only the shop's half is gated on the shop inbox; the customer is still
+    // told about their own order.
+    Mail::assertNotQueued(OrderPlaced::class);
 });
 
 it('renders the order email', function () {

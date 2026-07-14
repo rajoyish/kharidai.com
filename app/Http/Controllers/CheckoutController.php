@@ -6,6 +6,7 @@ use App\Enums\EngagementSource;
 use App\Enums\EngagementStatus;
 use App\Enums\PaymentOption;
 use App\Enums\ProductType;
+use App\Mail\OrderConfirmation;
 use App\Mail\OrderPlaced;
 use App\Models\Cart;
 use App\Models\CartItem;
@@ -192,14 +193,7 @@ class CheckoutController extends Controller
         $admins = User::where('is_admin', true)->get();
         Notification::send($admins, new OrderPlacedNotification($order));
 
-        $shopInbox = config('mail.order_notification_address');
-
-        // Unconfigured in local and CI, where there is no inbox to notify. Queued
-        // when it is set, so the SMTP round-trip happens on the worker rather than
-        // in front of the customer's redirect.
-        if (filled($shopInbox)) {
-            Mail::to($shopInbox)->queue(new OrderPlaced($order));
-        }
+        $this->sendOrderEmails($order);
 
         $cart->items()->delete();
         $cart->delete();
@@ -211,6 +205,37 @@ class CheckoutController extends Controller
         }
 
         return redirect()->route('checkout.npr', $order);
+    }
+
+    /**
+     * Tell the shop and the customer that the order exists.
+     *
+     * Both are queued, so neither SMTP round-trip — measured at seconds — happens
+     * in front of the customer's redirect.
+     *
+     * They go out on different mailers. The shop's alert lands in the owner's own
+     * inbox, where Gmail is fine. The customer's copy must come from our own
+     * authenticated domain via a transactional provider, or it reads as forged and
+     * lands in spam. Each is skipped when its half is unconfigured, so a missing
+     * provider costs us an email rather than the whole checkout.
+     */
+    private function sendOrderEmails(Order $order): void
+    {
+        $shopInbox = config('mail.order_notification_address');
+
+        if (filled($shopInbox)) {
+            Mail::mailer(config('mail.shop_mailer'))
+                ->to($shopInbox)
+                ->queue(new OrderPlaced($order));
+        }
+
+        $customerEmail = $order->user->email;
+
+        if (filled(config('mail.customer_mailer')) && filled($customerEmail)) {
+            Mail::mailer(config('mail.customer_mailer'))
+                ->to($customerEmail)
+                ->queue(new OrderConfirmation($order));
+        }
     }
 
     /**

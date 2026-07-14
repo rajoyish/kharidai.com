@@ -29,6 +29,8 @@
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="MAIL_ORDER_NOTIFICATION_ADDRESS" value="shop@example.test"/>
+        <env name="MAIL_CUSTOMER_MAILER" value="array"/>
+        <env name="MAIL_CUSTOMER_FROM_ADDRESS" value="support@example.test"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
