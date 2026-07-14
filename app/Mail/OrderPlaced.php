@@ -2,52 +2,72 @@
 
 namespace App\Mail;
 
+use App\Models\Order;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrderPlaced extends Mailable
+/**
+ * Tells the shop that a customer has placed an order.
+ *
+ * Queued rather than sent inline: an SMTP handshake and send costs hundreds of
+ * milliseconds to several seconds, and the customer must never wait on it to
+ * reach their confirmation page. Queueing pushes the send onto Redis in about a
+ * millisecond; the cron-driven worker delivers it moments later.
+ */
+class OrderPlaced extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct()
-    {
-        //
-    }
+    public int $tries = 3;
 
     /**
-     * Get the message envelope.
+     * @var array<int, int>
      */
+    public array $backoff = [30, 120];
+
+    public function __construct(
+        public Order $order,
+    ) {}
+
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order Placed',
+            subject: "New order {$this->order->order_number}",
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
-        return new Content(
-            view: 'view.name',
-        );
-    }
+        /*
+         * Eager-load what the view and displayTotalNpr() walk, so the mail costs a
+         * fixed handful of queries rather than one per line item.
+         *
+         * serviceEngagements is not decoration: displayTotalNpr() sums each item's
+         * revenueNpr(), which reads the item's engagements to decide whether an
+         * invoiced grand total supersedes the snapshot price. Omitting it makes a
+         * service order's email throw a LazyLoadingViolationException outright.
+         */
+        $this->order->loadMissing([
+            'user',
+            'items.productVariant.product',
+            'items.serviceEngagements',
+            'shipment',
+        ]);
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
+        return new Content(
+            markdown: 'emails.orders.placed',
+            with: [
+                /*
+                 * The total the customer actually owes, which for service items
+                 * with a saved invoice differs from the snapshot total_amount.
+                 */
+                'total' => $this->order->displayTotalNpr(),
+                'adminUrl' => route('admin.orders.show', $this->order->id),
+            ],
+        );
     }
 }
