@@ -76,14 +76,54 @@ it('adds an item that links to a page', function () {
         ->and($item->resolveHref())->toBe('/about-us');
 });
 
-it('requires a url for a custom item and a page for a page item', function () {
-    $this->actingAs($this->admin)
-        ->post('/admin/menus', ['location' => 'header', 'label' => 'Broken', 'link_type' => 'custom'])
-        ->assertSessionHasErrors('url');
-
+it('requires a page for a page item', function () {
     $this->actingAs($this->admin)
         ->post('/admin/menus', ['location' => 'header', 'label' => 'Broken', 'link_type' => 'page'])
         ->assertSessionHasErrors('page_id');
+});
+
+it('accepts a custom item with no url, so a parent can exist only to open its dropdown', function () {
+    $this->actingAs($this->admin)
+        ->post('/admin/menus', ['location' => 'header', 'label' => 'Policies', 'link_type' => 'custom'])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect(MenuItem::sole()->resolveHref())->toBeNull();
+});
+
+it('treats a placeholder hash url as no destination', function () {
+    // Otherwise the parent counts as a real link and the header renders it
+    // *inside its own dropdown*, repeating the label.
+    $item = MenuItem::factory()->create(['url' => '#']);
+
+    expect($item->resolveHref())->toBeNull();
+});
+
+it('renders a dropdown parent without repeating it inside its own dropdown', function () {
+    $parent = MenuItem::factory()->create(['label' => 'Policies', 'url' => '#']);
+    MenuItem::factory()->childOf($parent)->create(['label' => 'Privacy Policy', 'url' => '/privacy']);
+
+    $this->get('/')
+        ->assertInertia(fn (Assert $inertia) => $inertia
+            ->has('storefront.menu', 1)
+            ->where('storefront.menu.0.label', 'Policies')
+            // No href means the header renders a bare trigger, so "Policies"
+            // never appears as an entry within the panel it opens.
+            ->where('storefront.menu.0.href', null)
+            ->has('storefront.menu.0.children', 1)
+            ->where('storefront.menu.0.children.0.label', 'Privacy Policy')
+        );
+});
+
+it('drops a destinationless item that has no dropdown to justify it', function () {
+    MenuItem::factory()->create(['label' => 'Dangling', 'url' => '']);
+    MenuItem::factory()->create(['label' => 'Live', 'url' => '/live']);
+
+    $this->get('/')
+        ->assertInertia(fn (Assert $inertia) => $inertia
+            ->has('storefront.menu', 1)
+            ->where('storefront.menu.0.label', 'Live')
+        );
 });
 
 it('drops the previous destination when an item switches link type', function () {

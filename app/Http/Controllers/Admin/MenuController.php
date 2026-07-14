@@ -210,12 +210,10 @@ class MenuController extends Controller
             'location' => ['required', Rule::in(MenuLocation::values())],
             'label' => ['required', 'string', 'max:255'],
             'link_type' => ['required', Rule::in(MenuLinkType::values())],
-            'url' => [
-                Rule::requiredIf(fn (): bool => $request->input('link_type') === MenuLinkType::Custom->value),
-                'nullable',
-                'string',
-                'max:2048',
-            ],
+            // Optional on purpose: a parent that only opens a dropdown has no
+            // destination of its own. An item left with neither a URL nor any
+            // children simply never reaches the storefront.
+            'url' => ['nullable', 'string', 'max:2048'],
             'page_id' => [
                 Rule::requiredIf(fn (): bool => $request->input('link_type') === MenuLinkType::Page->value),
                 'nullable',
@@ -228,8 +226,10 @@ class MenuController extends Controller
 
         $isCustom = $validated['link_type'] === MenuLinkType::Custom->value;
 
-        $validated['url'] = $isCustom ? $validated['url'] : null;
-        $validated['page_id'] = $isCustom ? null : $validated['page_id'];
+        // A nullable field the request omitted entirely is absent from the
+        // validated set, not null — so both are coalesced rather than indexed.
+        $validated['url'] = $isCustom ? ($validated['url'] ?? null) : null;
+        $validated['page_id'] = $isCustom ? null : ($validated['page_id'] ?? null);
         $validated['opens_in_new_tab'] = $request->boolean('opens_in_new_tab');
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['parent_id'] = $this->resolveParent($validated, $menu);

@@ -100,10 +100,13 @@ export default function MenusIndex({
         setRows(items);
     }
 
+    // `setDefaults()` is a state update, so a `reset()` in the same tick still
+    // reads the *previous* defaults out of its closure and leaves the form one
+    // action behind. Writing the data straight across avoids that entirely.
     const startEditing = (item: MenuItemRow, parentId: number | null) => {
         setEditingId(item.id);
         form.clearErrors();
-        form.setDefaults({
+        form.setData({
             location,
             label: item.label,
             link_type: item.link_type,
@@ -113,14 +116,12 @@ export default function MenusIndex({
             opens_in_new_tab: item.opens_in_new_tab,
             is_active: item.is_active,
         });
-        form.reset();
     };
 
     const stopEditing = () => {
         setEditingId(null);
         form.clearErrors();
-        form.setDefaults(blankForm(location));
-        form.reset();
+        form.setData(blankForm(location));
     };
 
     const submit = (event: React.FormEvent) => {
@@ -250,6 +251,9 @@ export default function MenusIndex({
                                     >
                                         <MenuRow
                                             item={node}
+                                            hasChildren={
+                                                node.children.length > 0
+                                            }
                                             isEditing={editingId === node.id}
                                             onEdit={() =>
                                                 startEditing(node, null)
@@ -339,7 +343,12 @@ export default function MenusIndex({
 
                         {isCustom ? (
                             <div className="grid gap-2">
-                                <Label htmlFor="url">URL</Label>
+                                <Label htmlFor="url">
+                                    URL{' '}
+                                    <span className="font-normal text-muted-foreground">
+                                        (optional)
+                                    </span>
+                                </Label>
                                 <Input
                                     id="url"
                                     value={form.data.url}
@@ -350,7 +359,9 @@ export default function MenusIndex({
                                 />
                                 <p className="text-xs text-muted-foreground">
                                     Use a path like <code>/blog</code> for this
-                                    site, or a full URL to link elsewhere.
+                                    site, or a full URL to link elsewhere. Leave
+                                    it blank for an item that only opens a
+                                    dropdown.
                                 </p>
                                 <InputError message={form.errors.url} />
                             </div>
@@ -482,12 +493,14 @@ export default function MenusIndex({
 function MenuRow({
     item,
     nested = false,
+    hasChildren = false,
     isEditing,
     onEdit,
     onDelete,
 }: {
     item: MenuItemRow;
     nested?: boolean;
+    hasChildren?: boolean;
     isEditing: boolean;
     onEdit: () => void;
     onDelete: () => void;
@@ -515,13 +528,18 @@ function MenuRow({
                     )}
                 </div>
                 <p className="truncate text-xs text-muted-foreground">
-                    {item.href ?? (
-                        <span className="text-red-600">
-                            {item.link_type === 'page'
-                                ? 'Linked page is unpublished — hidden from the storefront'
-                                : 'No destination set'}
-                        </span>
-                    )}
+                    {item.href ??
+                        // An item with a dropdown but no destination of its own
+                        // is a deliberate, working state, not a broken link.
+                        (hasChildren ? (
+                            'Opens its dropdown only'
+                        ) : (
+                            <span className="text-red-600">
+                                {item.link_type === 'page'
+                                    ? 'Linked page is unpublished — hidden from the storefront'
+                                    : 'No destination — hidden from the storefront'}
+                            </span>
+                        ))}
                 </p>
             </div>
 
