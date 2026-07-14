@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Page;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -28,7 +27,6 @@ class PageController extends Controller
             'image' => $page->image ? asset('storage/'.$page->image) : null,
             'is_published' => $page->is_published,
             'published_at' => $page->published_at?->toDateString(),
-            'sort_order' => $page->sort_order,
             'show_in_nav' => $page->show_in_nav,
             'show_in_footer' => $page->show_in_footer,
         ]);
@@ -93,25 +91,6 @@ class PageController extends Controller
         $page->delete();
 
         return redirect()->route('admin.pages.index')->with('success', 'Page deleted successfully.');
-    }
-
-    /**
-     * Persists a new menu order from the drag-and-drop admin table.
-     */
-    public function reorder(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'ids' => ['required', 'array'],
-            'ids.*' => ['integer', Rule::exists('pages', 'id')],
-        ]);
-
-        DB::transaction(function () use ($validated): void {
-            foreach ($validated['ids'] as $position => $id) {
-                Page::whereKey($id)->update(['sort_order' => $position + 1]);
-            }
-        });
-
-        return redirect()->back()->with('success', 'Menu order updated.');
     }
 
     public function toggleNav(Page $page): RedirectResponse

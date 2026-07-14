@@ -17,6 +17,11 @@ const EDGE_TOLERANCE = 2;
  * only while there is more content that way, so a menu that already fits looks
  * like a plain row.
  *
+ * The arrows are deliberately not tab stops (`tabIndex={-1}`). A keyboard user
+ * reaches the nav items themselves, and the browser scrolls each focused item
+ * into view — so the arrows add nothing but two dead stops in the tab order,
+ * between the logo and the first link, on every page.
+ *
  * Children that open a popover must portal it (`DropdownMenu` does) — the
  * overflow that makes this scroll would otherwise clip the panel.
  */
@@ -82,6 +87,7 @@ export function NavScroller({ children }: PropsWithChildren) {
                     />
                     <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => scrollBy(-1)}
                         aria-label="Scroll navigation left"
                         className="absolute top-1/2 left-0 z-20 flex size-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-primary"
@@ -91,11 +97,14 @@ export function NavScroller({ children }: PropsWithChildren) {
                 </>
             )}
 
+            {/* The padding is load bearing: `overflow-x` clips on *both* axes, so
+                without room inside the track a focused item's ring is shaved off
+                at the top and bottom edges. */}
             <div
                 ref={trackRef}
                 onScroll={syncEdges}
                 data-slot="nav-scroller-track"
-                className="scrollbar-none flex items-center gap-1 overflow-x-auto scroll-smooth"
+                className="scrollbar-none flex items-center gap-1 overflow-x-auto scroll-smooth px-1 py-2"
             >
                 {children}
             </div>
@@ -108,6 +117,7 @@ export function NavScroller({ children }: PropsWithChildren) {
                     />
                     <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => scrollBy(1)}
                         aria-label="Scroll navigation right"
                         className="absolute top-1/2 right-0 z-20 flex size-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-primary"

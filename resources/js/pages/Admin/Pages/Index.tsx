@@ -1,14 +1,11 @@
 import { Link, router } from '@inertiajs/react';
-import { GripVertical } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import type { DragEvent } from 'react';
 
 import {
     create,
     destroy as destroyPage,
     edit,
     index as pagesIndex,
-    reorder,
     toggleFooter,
     toggleNav,
 } from '@/actions/App/Http/Controllers/Admin/PageController';
@@ -36,20 +33,15 @@ type CmsPageRow = {
     image: string | null;
     is_published: boolean;
     published_at: string | null;
-    sort_order: number;
     show_in_nav: boolean;
     show_in_footer: boolean;
 };
 
 const PAGE_IMAGE_COLUMN_CLASSES = 'w-22 min-w-22 max-w-22 px-4';
 const PAGE_STATUS_COLUMN_CLASSES = 'w-33 min-w-33';
-const PAGE_HANDLE_COLUMN_CLASSES = 'w-10 min-w-10 max-w-10 px-2';
 
 export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
-    const [rows, setRows] = useState<CmsPageRow[]>(pages);
-    const [syncedPages, setSyncedPages] = useState<CmsPageRow[]>(pages);
     const [searchQuery, setSearchQuery] = useState('');
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [deletingPageId, setDeletingPageId] = useState<number | null>(null);
     /**
      * The page awaiting delete confirmation. One dialog is driven by this value
@@ -57,51 +49,19 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
      */
     const [pageToDelete, setPageToDelete] = useState<CmsPageRow | null>(null);
 
-    // `rows` is optimistic during a drag; re-sync whenever the server sends
-    // fresh props (reorder, toggle, delete).
-    if (pages !== syncedPages) {
-        setSyncedPages(pages);
-        setRows(pages);
-    }
-
     const isSearching = searchQuery.trim().length > 0;
 
     const filteredPages = useMemo(() => {
         if (!isSearching) {
-            return rows;
+            return pages;
         }
 
         const query = searchQuery.toLowerCase();
 
-        return rows.filter((page) => page.title.toLowerCase().includes(query));
-    }, [rows, searchQuery, isSearching]);
-
-    const handleDragStart = (index: number) => setDraggedIndex(index);
-
-    const handleDragOver = (event: DragEvent) => event.preventDefault();
-
-    const handleDrop = (event: DragEvent, targetIndex: number) => {
-        event.preventDefault();
-
-        if (draggedIndex === null || draggedIndex === targetIndex) {
-            setDraggedIndex(null);
-
-            return;
-        }
-
-        const next = [...rows];
-        const [moved] = next.splice(draggedIndex, 1);
-        next.splice(targetIndex, 0, moved);
-
-        setRows(next);
-        setDraggedIndex(null);
-
-        router.patch(
-            reorder.url(),
-            { ids: next.map((page) => page.id) },
-            { preserveScroll: true },
+        return pages.filter((page) =>
+            page.title.toLowerCase().includes(query),
         );
-    };
+    }, [pages, searchQuery, isSearching]);
 
     const handleDelete = (page: CmsPageRow) => {
         setDeletingPageId(page.id);
@@ -121,11 +81,7 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
             <PagePanel
                 title="Pages"
                 variant="transparent"
-                description={
-                    isSearching
-                        ? 'Clear the search to drag pages into a new menu order.'
-                        : 'Drag rows to set the order of the navigation and footer menus.'
-                }
+                description="Content pages. Their order in the header and footer is set in the menu builder."
                 actions={
                     <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
                         <Input
@@ -143,9 +99,6 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className={PAGE_HANDLE_COLUMN_CLASSES}>
-                                <span className="sr-only">Reorder</span>
-                            </TableHead>
                             <TableHead className={PAGE_IMAGE_COLUMN_CLASSES}>
                                 Image
                             </TableHead>
@@ -164,34 +117,8 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredPages.map((page, index) => (
-                            <TableRow
-                                key={page.id}
-                                draggable={!isSearching}
-                                onDragStart={() => handleDragStart(index)}
-                                onDragOver={handleDragOver}
-                                onDrop={(event) => handleDrop(event, index)}
-                                onDragEnd={() => setDraggedIndex(null)}
-                                className={
-                                    draggedIndex === index
-                                        ? 'opacity-50'
-                                        : 'opacity-100'
-                                }
-                            >
-                                <TableCell
-                                    className={PAGE_HANDLE_COLUMN_CLASSES}
-                                >
-                                    <GripVertical
-                                        className={`size-4 text-muted-foreground ${
-                                            isSearching
-                                                ? 'cursor-not-allowed opacity-30'
-                                                : 'cursor-grab active:cursor-grabbing'
-                                        }`}
-                                    />
-                                    <span className="sr-only">
-                                        Drag to reorder
-                                    </span>
-                                </TableCell>
+                        {filteredPages.map((page) => (
+                            <TableRow key={page.id}>
                                 <TableCell
                                     className={PAGE_IMAGE_COLUMN_CLASSES}
                                 >
@@ -290,10 +217,10 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
                         {filteredPages.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={8}
+                                    colSpan={7}
                                     className="h-24 text-center text-muted-foreground"
                                 >
-                                    {rows.length === 0
+                                    {pages.length === 0
                                         ? 'No pages found.'
                                         : 'No pages match your search.'}
                                 </TableCell>

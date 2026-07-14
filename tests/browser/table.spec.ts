@@ -2,10 +2,6 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
-const tableSource = readFileSync(
-    resolve(process.cwd(), 'resources/js/components/ui/table.tsx'),
-    'utf8',
-);
 const productsIndexSource = readFileSync(
     resolve(process.cwd(), 'resources/js/pages/Admin/Products/Index.tsx'),
     'utf8',
@@ -15,14 +11,13 @@ const categoriesIndexSource = readFileSync(
     'utf8',
 );
 
-test.describe('table sticky first column', () => {
-    test('is enabled by default on the shared table component', () => {
-        expect(tableSource).toContain('stickyFirstColumn = true');
-        expect(tableSource).toContain('[&_tr>*:first-child]:sticky');
-        expect(tableSource).toContain('[&_tr>*:first-child]:left-0');
-        expect(tableSource).toContain('[&_tbody_tr>*:first-child]:bg-card');
-    });
-
+/*
+ * The shared Table no longer pins its first column — that was removed in
+ * "refactor(ui): remove table sticky column functionality". These cases now only
+ * pin the CSS behaviour the admin tables still rely on when a column *is* made
+ * sticky by hand, so a future change cannot break it silently.
+ */
+test.describe('sticky table columns', () => {
     for (const viewport of [
         { name: 'desktop', width: 1024, height: 720 },
         { name: 'mobile', width: 390, height: 720 },
@@ -153,13 +148,15 @@ test.describe('table sticky first column', () => {
 });
 
 test.describe('admin table sticky overrides', () => {
-    test('keeps product images sticky and disables category stickiness', () => {
+    test('keeps the old per-column sticky hacks out of the admin tables', () => {
+        // `stickyFirstColumn` and the hand-positioned sticky cells are gone; these
+        // guard against them creeping back in.
         expect(productsIndexSource).toContain('PRODUCT_IMAGE_COLUMN_CLASSES');
         expect(productsIndexSource).not.toContain(
             'PRODUCT_TITLE_STICKY_CELL_CLASSES',
         );
         expect(productsIndexSource).not.toContain('sticky left-[88px]');
-        expect(categoriesIndexSource).toContain('stickyFirstColumn={false}');
+        expect(categoriesIndexSource).not.toContain('stickyFirstColumn');
         expect(categoriesIndexSource).not.toContain(
             'CATEGORY_NAME_STICKY_CELL_CLASSES',
         );

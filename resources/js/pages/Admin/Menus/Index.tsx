@@ -1,7 +1,27 @@
+import {
+    DndContext,
+    DragOverlay,
+    KeyboardSensor,
+    PointerSensor,
+    closestCenter,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import type {
+    DragEndEvent,
+    DragMoveEvent,
+    DragStartEvent,
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Link, router, useForm } from '@inertiajs/react';
 import { CornerDownRight, ExternalLink, GripVertical } from 'lucide-react';
-import { useState } from 'react';
-import type { DragEvent } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
     destroy as destroyItem,
@@ -25,6 +45,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import type { FlatMenuItem, MenuProjection } from '@/lib/menu-tree';
+import {
+    INDENT_WIDTH,
+    applyDrag,
+    flattenTree,
+    getProjection,
+    toReorderTree,
+} from '@/lib/menu-tree';
 
 type LinkType = 'custom' | 'page';
 
@@ -41,7 +69,9 @@ type MenuItemRow = {
     href: string | null;
 };
 
-type MenuNodeRow = MenuItemRow & { children: MenuItemRow[] };
+type MenuNodeRow = MenuItemRow & { children: MenuNodeRow[] };
+
+type FlatRow = FlatMenuItem<MenuItemRow>;
 
 type PageOption = { id: number; title: string; slug: string };
 
@@ -89,7 +119,7 @@ export default function MenusIndex({
     const [syncedItems, setSyncedItems] = useState<MenuNodeRow[]>(items);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [itemToDelete, setItemToDelete] = useState<MenuItemRow | null>(null);
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [activeId, setActiveId] = useState<number | null>(null);
 
     const form = useForm<MenuForm>(blankForm(location));
 
@@ -99,6 +129,93 @@ export default function MenusIndex({
         setSyncedItems(items);
         setRows(items);
     }
+
+    const sensors = useSensors(
+        // A small distance threshold, so clicking Edit or Delete on a row is not
+        // swallowed as the start of a drag.
+        useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
+
+    const flattened = useMemo(() => flattenTree(rows), [rows]);
+
+    /**
+     * The dragged item's own children are lifted out of the sort for its
+     * duration, so a parent moves as one piece instead of the sort tearing its
+     * dropdown apart.
+     */
+    const sortable = useMemo(
+        () =>
+            activeId === null
+                ? flattened
+                : flattened.filter((item) => item.parentId !== activeId),
+        [flattened, activeId],
+    );
+
+    const activeItem = flattened.find((item) => item.id === activeId) ?? null;
+
+    const [projection, setProjection] = useState<MenuProjection | null>(null);
+
+    const handleDragStart = ({ active }: DragStartEvent) => {
+        setActiveId(Number(active.id));
+        setProjection(null);
+    };
+
+    /**
+     * Horizontal travel is what proposes the nesting depth, which is why the
+     * drag is deliberately *not* restricted to the vertical axis: a
+     * `restrictToVerticalAxis` modifier zeroes `delta.x` and nesting by drag
+     * would silently never work.
+     */
+    const handleDragMove = ({ delta, over, active }: DragMoveEvent) => {
+        if (!over) {
+            setProjection(null);
+
+            return;
+        }
+
+        setProjection(
+            getProjection(
+                sortable,
+                Number(active.id),
+                Number(over.id),
+                delta.x,
+            ),
+        );
+    };
+
+    const handleDragEnd = ({ active, over }: DragEndEvent) => {
+        const current = projection;
+
+        setActiveId(null);
+        setProjection(null);
+
+        if (!over || !current) {
+            return;
+        }
+
+        const next = applyDrag(
+            rows,
+            Number(active.id),
+            Number(over.id),
+            current,
+        );
+
+        setRows(next);
+
+        router.patch(
+            reorder.url(),
+            { location, tree: toReorderTree(next) },
+            { preserveScroll: true },
+        );
+    };
+
+    const handleDragCancel = () => {
+        setActiveId(null);
+        setProjection(null);
+    };
 
     // `setDefaults()` is a state update, so a `reset()` in the same tick still
     // reads the *previous* defaults out of its closure and leaves the form one
@@ -148,40 +265,6 @@ export default function MenusIndex({
         form.submit(storeItem(), options);
     };
 
-    /**
-     * Top-level rows reorder by drag. Which parent an item hangs off is set in
-     * the form instead — a two-axis drag (reorder *and* nest) is fiddly to hit
-     * accurately, and the menu is short enough that a select is faster.
-     */
-    const handleDrop = (event: DragEvent, targetIndex: number) => {
-        event.preventDefault();
-
-        if (draggedIndex === null || draggedIndex === targetIndex) {
-            setDraggedIndex(null);
-
-            return;
-        }
-
-        const next = [...rows];
-        const [moved] = next.splice(draggedIndex, 1);
-        next.splice(targetIndex, 0, moved);
-
-        setRows(next);
-        setDraggedIndex(null);
-
-        router.patch(
-            reorder.url(),
-            {
-                location,
-                tree: next.map((node) => ({
-                    id: node.id,
-                    children: node.children.map((child) => ({ id: child.id })),
-                })),
-            },
-            { preserveScroll: true },
-        );
-    };
-
     const parentOptions = rows.filter((row) => row.id !== editingId);
     const isCustom = form.data.link_type === 'custom';
 
@@ -192,7 +275,7 @@ export default function MenusIndex({
             <PagePanel
                 title="Menus"
                 variant="transparent"
-                description="Build the storefront menus. Drag rows to reorder; nest an item to turn its parent into a dropdown."
+                description="Build the storefront menus. Drag a row up or down to reorder it, or sideways to nest it under the item above."
                 actions={
                     <div className="flex gap-2">
                         {locations.map((option) => (
@@ -220,7 +303,7 @@ export default function MenusIndex({
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
                     <div
                         data-slot="menu-items"
-                        className="rounded-xl border bg-card"
+                        className="rounded-xl border bg-card p-1"
                     >
                         {rows.length === 0 ? (
                             <p className="p-8 text-center text-sm text-muted-foreground">
@@ -228,74 +311,75 @@ export default function MenusIndex({
                                 automatic page list on the storefront.
                             </p>
                         ) : (
-                            <ul className="divide-y">
-                                {rows.map((node, index) => (
-                                    <li
-                                        key={node.id}
-                                        draggable
-                                        onDragStart={() =>
-                                            setDraggedIndex(index)
-                                        }
-                                        onDragOver={(event) =>
-                                            event.preventDefault()
-                                        }
-                                        onDrop={(event) =>
-                                            handleDrop(event, index)
-                                        }
-                                        onDragEnd={() => setDraggedIndex(null)}
-                                        className={
-                                            draggedIndex === index
-                                                ? 'opacity-50'
-                                                : 'opacity-100'
-                                        }
-                                    >
-                                        <MenuRow
-                                            item={node}
-                                            hasChildren={
-                                                node.children.length > 0
-                                            }
-                                            isEditing={editingId === node.id}
-                                            onEdit={() =>
-                                                startEditing(node, null)
-                                            }
-                                            onDelete={() =>
-                                                setItemToDelete(node)
-                                            }
-                                        />
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragStart={handleDragStart}
+                                onDragMove={handleDragMove}
+                                onDragEnd={handleDragEnd}
+                                onDragCancel={handleDragCancel}
+                            >
+                                <SortableContext
+                                    items={sortable.map((item) => item.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <ul>
+                                        {sortable.map((item) => (
+                                            <SortableRow
+                                                key={item.id}
+                                                item={item}
+                                                // While dragging, the row follows
+                                                // the pointer's proposed depth, so
+                                                // the indent itself is the preview
+                                                // of where it will land.
+                                                depth={
+                                                    item.id === activeId &&
+                                                    projection
+                                                        ? projection.depth
+                                                        : item.depth
+                                                }
+                                                isEditing={
+                                                    editingId === item.id
+                                                }
+                                                onEdit={() =>
+                                                    startEditing(
+                                                        item,
+                                                        item.parentId,
+                                                    )
+                                                }
+                                                onDelete={() =>
+                                                    setItemToDelete(item)
+                                                }
+                                            />
+                                        ))}
+                                    </ul>
+                                </SortableContext>
 
-                                        {node.children.length > 0 && (
-                                            <ul className="border-t bg-muted/30">
-                                                {node.children.map((child) => (
-                                                    <li
-                                                        key={child.id}
-                                                        className="border-b last:border-b-0"
-                                                    >
-                                                        <MenuRow
-                                                            item={child}
-                                                            nested
-                                                            isEditing={
-                                                                editingId ===
-                                                                child.id
-                                                            }
-                                                            onEdit={() =>
-                                                                startEditing(
-                                                                    child,
-                                                                    node.id,
-                                                                )
-                                                            }
-                                                            onDelete={() =>
-                                                                setItemToDelete(
-                                                                    child,
-                                                                )
-                                                            }
-                                                        />
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
+                                {/* The row rendered under the cursor. Without it
+                                    the dragged row is clipped by the list.
+
+                                    It is a purely visual clone, and it outlives
+                                    the drop by the length of the drop animation —
+                                    so it is hidden from assistive tech, or its
+                                    handle briefly duplicates the real row's. */}
+                                <DragOverlay>
+                                    {activeItem && (
+                                        <div
+                                            aria-hidden
+                                            className="rounded-lg border bg-card shadow-lg"
+                                        >
+                                            <MenuRow
+                                                item={activeItem}
+                                                depth={0}
+                                                hasChildren={
+                                                    activeItem.hasChildren
+                                                }
+                                                isDragging
+                                            />
+                                        </div>
+                                    )}
+                                </DragOverlay>
+                            </DndContext>
                         )}
                     </div>
 
@@ -490,30 +574,92 @@ export default function MenusIndex({
     );
 }
 
-function MenuRow({
+/** One draggable row. The indent *is* the nesting, so it animates as you drag. */
+function SortableRow({
     item,
-    nested = false,
-    hasChildren = false,
+    depth,
     isEditing,
     onEdit,
     onDelete,
 }: {
-    item: MenuItemRow;
-    nested?: boolean;
-    hasChildren?: boolean;
+    item: FlatRow;
+    depth: number;
     isEditing: boolean;
     onEdit: () => void;
     onDelete: () => void;
 }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id });
+
+    return (
+        <li
+            ref={setNodeRef}
+            style={{
+                transform: CSS.Translate.toString(transform),
+                transition,
+                paddingLeft: depth * INDENT_WIDTH,
+            }}
+            // The original row is left as a gap under the DragOverlay copy.
+            className={
+                isDragging ? 'opacity-0' : 'transition-[padding] duration-150'
+            }
+        >
+            <MenuRow
+                item={item}
+                depth={depth}
+                hasChildren={item.hasChildren}
+                isEditing={isEditing}
+                dragHandleProps={{ ...attributes, ...listeners }}
+                onEdit={onEdit}
+                onDelete={onDelete}
+            />
+        </li>
+    );
+}
+
+function MenuRow({
+    item,
+    depth,
+    hasChildren = false,
+    isEditing = false,
+    isDragging = false,
+    dragHandleProps,
+    onEdit,
+    onDelete,
+}: {
+    item: MenuItemRow;
+    depth: number;
+    hasChildren?: boolean;
+    isEditing?: boolean;
+    isDragging?: boolean;
+    dragHandleProps?: Record<string, unknown>;
+    onEdit?: () => void;
+    onDelete?: () => void;
+}) {
+    const nested = depth > 0;
+
     return (
         <div
-            className={`flex items-center gap-3 px-3 py-3 ${nested ? 'pl-10' : ''} ${isEditing ? 'bg-primary/5' : ''}`}
+            className={`flex items-center gap-3 rounded-lg px-3 py-3 ${nested ? 'bg-muted/40' : ''} ${isEditing ? 'bg-primary/5' : ''}`}
         >
-            {nested ? (
-                <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
-            ) : (
-                <GripVertical className="size-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
-            )}
+            <button
+                type="button"
+                {...dragHandleProps}
+                aria-label={`Reorder ${item.label}`}
+                className="shrink-0 cursor-grab touch-none rounded text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:cursor-grabbing"
+            >
+                {nested ? (
+                    <CornerDownRight className="size-4" />
+                ) : (
+                    <GripVertical className="size-4" />
+                )}
+            </button>
 
             <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -547,22 +693,28 @@ function MenuRow({
                 {item.link_type === 'page' ? 'Page' : 'Custom'}
             </span>
 
-            <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={onEdit}
-            >
-                Edit
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
-                onClick={onDelete}
-            >
-                Delete
-            </Button>
+            {!isDragging && (
+                <>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2 text-xs"
+                        aria-label={`Edit ${item.label}`}
+                        onClick={onEdit}
+                    >
+                        Edit
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                        aria-label={`Delete ${item.label}`}
+                        onClick={onDelete}
+                    >
+                        Delete
+                    </Button>
+                </>
+            )}
         </div>
     );
 }
