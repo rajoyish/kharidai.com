@@ -3,6 +3,7 @@ import type { ResolvedComponent } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import ReactDOMServer from 'react-dom/server';
 
+import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { resolveLayout } from '@/lib/resolve-layout';
 
@@ -32,12 +33,14 @@ createServer(
             render: ReactDOMServer.renderToString,
             resolve: (name) => pages[`./pages/${name}.tsx`],
             layout: resolveLayout,
-            // The Toaster is deliberately absent: it renders nothing until a
-            // toast fires, and toasts are client-only, so server-rendering it
-            // would only invite a hydration mismatch.
+            // The Toaster renders an empty landmark `<section>` even with zero
+            // toasts, so it has to be in the server tree as well: leaving it out
+            // makes the client's first render one node longer than the markup it
+            // hydrates, which is a mismatch. Keep this tree in step with app.tsx.
             setup: ({ App, props }) => (
                 <TooltipProvider delayDuration={0}>
                     <App {...props} />
+                    <Toaster />
                 </TooltipProvider>
             ),
         }),
