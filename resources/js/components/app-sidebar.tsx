@@ -8,6 +8,7 @@ import {
     HandCoins,
     LayoutDashboard,
     LayoutGrid,
+    Menu,
     Newspaper,
     Package,
     ShoppingCart,
@@ -33,6 +34,7 @@ import { home } from '@/routes';
 import { index as servicesIndex } from '@/routes/account/services';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCategoriesIndex } from '@/routes/admin/categories';
+import { index as adminMenusIndex } from '@/routes/admin/menus';
 import { index as adminNotificationsIndex } from '@/routes/admin/notifications';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
 import { index as adminPagesIndex } from '@/routes/admin/pages';
@@ -129,6 +131,11 @@ const adminNavItems: NavItem[] = [
         title: 'Pages',
         href: adminPagesIndex(),
         icon: FileText,
+    },
+    {
+        title: 'Menus',
+        href: adminMenusIndex(),
+        icon: Menu,
     },
     {
         title: 'Shipping',

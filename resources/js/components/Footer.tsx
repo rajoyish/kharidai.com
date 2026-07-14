@@ -55,9 +55,9 @@ export function Footer() {
         <footer className="relative w-full overflow-hidden border-t border-primary-foreground/10 bg-blue-950 pt-16 pb-8 text-primary-foreground">
             {/* Top Section (Navigation) */}
             <div className="container mx-auto mb-16 px-4 md:px-8">
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Column 1: Brand / Logo */}
-                    <div className="col-span-1 flex flex-col items-start md:col-span-1">
+                    <div className="col-span-1 flex flex-col items-start">
                         <Link href={home()} prefetch className="mb-6">
                             <AppLogo className="h-10 w-auto" />
                         </Link>
@@ -119,6 +119,28 @@ export function Footer() {
                             </li>
                         </ul>
                     </div>
+
+                    {/* Column 4: CMS pages */}
+                    {pages.length > 0 && (
+                        <div>
+                            <h3 className="mb-4 text-sm font-bold tracking-wider text-primary-foreground uppercase">
+                                Quick Links
+                            </h3>
+                            <ul className="space-y-3">
+                                {pages.map((page) => (
+                                    <li key={page.slug}>
+                                        <Link
+                                            href={showPage(page.slug)}
+                                            prefetch
+                                            className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+                                        >
+                                            {page.title}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -137,17 +159,16 @@ export function Footer() {
                         <AppLogo className="h-5 w-auto opacity-60 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0" />
                     </div>
 
-                    <div className="flex flex-1 flex-wrap justify-center gap-x-6 gap-y-2 md:justify-end">
-                        {pages.map((page) => (
-                            <Link
-                                key={page.slug}
-                                href={showPage(page.slug)}
-                                prefetch
-                                className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
-                            >
-                                {page.title}
-                            </Link>
-                        ))}
+                    <div className="flex flex-1 flex-wrap items-center justify-center gap-x-3 gap-y-2 md:justify-end">
+                        <span className="text-xs font-bold tracking-wider text-primary-foreground/50 uppercase">
+                            We accept:
+                        </span>
+                        <img
+                            src="/images/kharidai-accepts.png"
+                            alt="Payment methods accepted by Kharidai"
+                            loading="lazy"
+                            className="h-7 w-auto"
+                        />
                     </div>
                 </div>
 

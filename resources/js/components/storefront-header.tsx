@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
+    ChevronDown,
     Cpu,
     LayoutGrid,
     Menu,
@@ -12,15 +13,14 @@ import {
 import { useEffect, useState } from 'react';
 import type { ComponentType } from 'react';
 import AppLogo from '@/components/app-logo';
+import { NavScroller } from '@/components/nav-scroller';
+import { StorefrontNavLink } from '@/components/storefront-nav-link';
 import { Button } from '@/components/ui/button';
 import {
-    NavigationMenu,
-    NavigationMenuContent,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-    NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu';
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Sheet,
     SheetContent,
@@ -40,6 +40,7 @@ import { index as physicalProducts } from '@/routes/physical-products';
 import { index as services } from '@/routes/services';
 import type { SharedData } from '@/types';
 import type {
+    MenuNode,
     StorefrontNavigationGroup,
     StorefrontNavigationGroupType,
 } from '@/types/storefront';
@@ -69,6 +70,15 @@ const GROUP_HREF: Partial<
     service: services(),
 };
 
+const DESKTOP_LINK_CLASSES =
+    'shrink-0 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors hover:text-primary';
+
+const DESKTOP_TRIGGER_CLASSES =
+    'group flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors outline-none hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary';
+
+const MOBILE_LINK_CLASSES =
+    'rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary';
+
 export function StorefrontHeader({
     hideNavigation = false,
 }: {
@@ -76,8 +86,24 @@ export function StorefrontHeader({
 }) {
     const { auth, cartCount, storefront } = usePage<SharedData>().props;
     const groups = storefront?.groups ?? [];
-    const pages = storefront?.navPages ?? [];
     const hasBlogPosts = storefront?.hasBlogPosts ?? false;
+
+    // The admin-built menu owns the custom links once one exists. Until then the
+    // header falls back to listing the pages flagged "show in nav", so a site
+    // that has never opened the menu builder keeps the navigation it had.
+    const menu = storefront?.menu ?? [];
+    const fallbackPages = storefront?.navPages ?? [];
+    const customLinks: MenuNode[] =
+        menu.length > 0
+            ? menu
+            : fallbackPages.map((page, index) => ({
+                  id: -(index + 1),
+                  label: page.title,
+                  href: showPage(page.slug).url,
+                  opensInNewTab: false,
+                  children: [],
+              }));
+
     const accountHref = auth.user
         ? auth.user.is_admin
             ? adminDashboard()
@@ -93,76 +119,61 @@ export function StorefrontHeader({
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-                <div className="flex items-center gap-8 lg:gap-12">
-                    <Link
-                        href={home()}
-                        prefetch
-                        className="flex shrink-0 items-center gap-2"
-                    >
-                        <AppLogo className="h-8 w-auto md:h-10" />
-                    </Link>
+            <div className="container mx-auto flex h-16 items-center gap-4 px-4 md:gap-6 md:px-6">
+                <Link
+                    href={home()}
+                    prefetch
+                    className="flex shrink-0 items-center gap-2"
+                >
+                    <AppLogo className="h-8 w-auto md:h-10" />
+                </Link>
 
-                    {/* Main Navigation (Center-Left) */}
-                    {!hideNavigation && (
-                        <div className="hidden md:flex md:items-center md:gap-1">
+                {/* Main navigation. Overflowing items stay reachable by swipe or
+                    arrow instead of wrapping and breaking the header's height. */}
+                {!hideNavigation ? (
+                    <div className="hidden min-w-0 flex-1 md:block">
+                        <NavScroller>
                             <Link
                                 href={home()}
                                 prefetch
-                                className="rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:text-primary"
+                                className={DESKTOP_LINK_CLASSES}
                             >
                                 Home
                             </Link>
-                            <NavigationMenu viewport={false}>
-                                <NavigationMenuList className="gap-0">
-                                    {groups.map((group) => {
-                                        const Icon =
-                                            GROUP_META[group.type]?.icon ??
-                                            LayoutGrid;
 
-                                        return (
-                                            <NavigationMenuItem
-                                                key={group.type}
-                                            >
-                                                <NavigationMenuTrigger className="h-auto gap-1.5 bg-transparent px-3 py-2 text-sm font-semibold hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary">
-                                                    <Icon className="h-4 w-4 text-muted-foreground" />
-                                                    {group.label}
-                                                </NavigationMenuTrigger>
-                                                <NavigationMenuContent>
-                                                    <NavigationGroupPanel
-                                                        group={group}
-                                                    />
-                                                </NavigationMenuContent>
-                                            </NavigationMenuItem>
-                                        );
-                                    })}
-                                </NavigationMenuList>
-                            </NavigationMenu>
+                            {groups.map((group) => (
+                                <GroupDropdown key={group.type} group={group} />
+                            ))}
+
                             {hasBlogPosts && (
                                 <Link
                                     href={blogIndex()}
                                     prefetch
-                                    className="rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:text-primary"
+                                    className={DESKTOP_LINK_CLASSES}
                                 >
                                     Blog
                                 </Link>
                             )}
-                            {pages.map((page) => (
-                                <Link
-                                    key={page.slug}
-                                    href={showPage(page.slug)}
-                                    prefetch
-                                    className="rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:text-primary"
-                                >
-                                    {page.title}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </div>
+
+                            {customLinks.map((item) =>
+                                item.children.length > 0 ? (
+                                    <MenuDropdown key={item.id} item={item} />
+                                ) : (
+                                    <StorefrontNavLink
+                                        key={item.id}
+                                        link={item}
+                                        className={DESKTOP_LINK_CLASSES}
+                                    />
+                                ),
+                            )}
+                        </NavScroller>
+                    </div>
+                ) : (
+                    <div className="hidden flex-1 md:block" />
+                )}
 
                 {/* User Actions (Right) Desktop */}
-                <div className="hidden items-center gap-6 md:flex">
+                <div className="hidden shrink-0 items-center gap-6 md:flex">
                     <Link
                         href={accountHref}
                         prefetch
@@ -191,7 +202,7 @@ export function StorefrontHeader({
                 </div>
 
                 {/* Mobile Menu (Right) */}
-                <div className="md:hidden">
+                <div className="ml-auto md:hidden">
                     <Sheet open={isOpen} onOpenChange={setIsOpen}>
                         <SheetTrigger asChild>
                             <Button
@@ -218,7 +229,7 @@ export function StorefrontHeader({
                                         <Link
                                             href={home()}
                                             prefetch
-                                            className="rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                                            className={MOBILE_LINK_CLASSES}
                                         >
                                             Home
                                         </Link>
@@ -232,24 +243,18 @@ export function StorefrontHeader({
                                             <Link
                                                 href={blogIndex()}
                                                 prefetch
-                                                className="rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                                                className={MOBILE_LINK_CLASSES}
                                             >
                                                 Blog
                                             </Link>
                                         )}
-                                        {pages.length > 0 && (
+                                        {customLinks.length > 0 && (
                                             <div className="flex flex-col gap-0.5 border-t pt-6">
-                                                {pages.map((page) => (
-                                                    <Link
-                                                        key={page.slug}
-                                                        href={showPage(
-                                                            page.slug,
-                                                        )}
-                                                        prefetch
-                                                        className="rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
-                                                    >
-                                                        {page.title}
-                                                    </Link>
+                                                {customLinks.map((item) => (
+                                                    <MobileMenuItem
+                                                        key={item.id}
+                                                        item={item}
+                                                    />
                                                 ))}
                                             </div>
                                         )}
@@ -291,55 +296,131 @@ export function StorefrontHeader({
     );
 }
 
-function NavigationGroupPanel({ group }: { group: StorefrontNavigationGroup }) {
+/** A product-type group and its category tree, as a dropdown in the nav track. */
+function GroupDropdown({ group }: { group: StorefrontNavigationGroup }) {
     const meta = GROUP_META[group.type] ?? GROUP_META.more;
     const Icon = meta.icon;
     const groupHref = GROUP_HREF[group.type];
 
     return (
-        <div className="w-[min(94vw,320px)] p-4">
-            <div className="mb-3 flex items-center gap-3 border-b pb-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Icon className="size-5" />
-                </span>
-                <div className="min-w-0">
-                    <p className="text-sm leading-tight font-semibold">
-                        {group.label}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                        {meta.description}
-                    </p>
+        <DropdownMenu>
+            <DropdownMenuTrigger className={DESKTOP_TRIGGER_CLASSES}>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                {group.label}
+                <ChevronDown className="size-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="start"
+                sideOffset={8}
+                className="w-[min(94vw,320px)] p-4"
+            >
+                <div className="mb-3 flex items-center gap-3 border-b pb-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <Icon className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="text-sm leading-tight font-semibold">
+                            {group.label}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                            {meta.description}
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            {groupHref && (
-                <NavigationMenuLink asChild>
+                {groupHref && (
                     <Link
                         href={groupHref}
                         prefetch
-                        className="mb-1 flex flex-row! items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary no-underline transition-colors outline-none hover:bg-primary/10 focus:bg-primary/10"
+                        className="mb-1 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
                     >
                         View all {group.label}
                         <ArrowRight className="size-4 shrink-0" />
                     </Link>
-                </NavigationMenuLink>
-            )}
+                )}
 
-            <ul className="flex flex-col gap-0.5">
-                {group.categories.map((category) => (
-                    <li key={category.id} className="min-w-0">
-                        <NavigationMenuLink asChild>
+                <ul className="flex flex-col gap-0.5">
+                    {group.categories.map((category) => (
+                        <li key={category.id} className="min-w-0">
                             <Link
                                 href={showCategory(category)}
                                 prefetch
-                                className="block truncate rounded-md px-3 py-2 text-left text-sm font-semibold text-foreground no-underline transition-colors outline-none hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
+                                className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
                             >
                                 {category.name}
                             </Link>
-                        </NavigationMenuLink>
-                    </li>
+                        </li>
+                    ))}
+                </ul>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+/**
+ * A top-level menu item that carries a dropdown. The trigger itself navigates
+ * only when the admin gave the parent its own destination; otherwise it exists
+ * purely to open the list.
+ */
+function MenuDropdown({ item }: { item: MenuNode }) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger className={DESKTOP_TRIGGER_CLASSES}>
+                {item.label}
+                <ChevronDown className="size-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="start"
+                sideOffset={8}
+                className="w-56 p-1.5"
+            >
+                {item.href && (
+                    <StorefrontNavLink
+                        link={item}
+                        className="mb-1 block rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                    />
+                )}
+                {item.children.map((child) => (
+                    <StorefrontNavLink
+                        key={child.id}
+                        link={child}
+                        className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                    />
                 ))}
-            </ul>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+/** A menu item in the mobile drawer, with its dropdown flattened into an indent. */
+function MobileMenuItem({ item }: { item: MenuNode }) {
+    if (item.children.length === 0) {
+        return (
+            <StorefrontNavLink link={item} className={MOBILE_LINK_CLASSES} />
+        );
+    }
+
+    return (
+        <div className="flex flex-col">
+            {item.href ? (
+                <StorefrontNavLink
+                    link={item}
+                    className={MOBILE_LINK_CLASSES}
+                />
+            ) : (
+                <span className="px-2 py-2 text-base font-semibold">
+                    {item.label}
+                </span>
+            )}
+            <div className="flex flex-col gap-0.5 border-l pl-3">
+                {item.children.map((child) => (
+                    <StorefrontNavLink
+                        key={child.id}
+                        link={child}
+                        className="rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                    />
+                ))}
+            </div>
         </div>
     );
 }
@@ -379,7 +460,7 @@ function MobileNavigationGroup({
                         <Link
                             href={showCategory(category)}
                             prefetch
-                            className="rounded-lg px-3 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                            className={MOBILE_LINK_CLASSES}
                         >
                             {category.name}
                         </Link>
