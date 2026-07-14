@@ -60,6 +60,10 @@ class OrderPlaced extends Mailable implements ShouldQueue
 
         return new Content(
             markdown: 'emails.orders.placed',
+
+            // See OrderConfirmation: the derived text part emits raw markdown.
+            text: 'emails.orders.placed_text',
+
             with: [
                 /*
                  * The total the customer actually owes, which for service items
