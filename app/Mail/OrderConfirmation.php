@@ -65,6 +65,15 @@ class OrderConfirmation extends Mailable implements ShouldQueue
 
         return new Content(
             markdown: 'emails.orders.confirmation',
+
+            /*
+             * A hand-written plain-text part, rather than the one Laravel derives
+             * from the markdown. That derivation emits the markdown source, so a
+             * text-only client is shown a pipe table — complete with the backslash
+             * escapes that only ever existed to keep the HTML table intact.
+             */
+            text: 'emails.orders.confirmation_text',
+
             with: [
                 'total' => $this->order->displayTotalNpr(),
                 'orderUrl' => route('orders.show', $this->order),
