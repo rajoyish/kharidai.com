@@ -26,6 +26,30 @@ it('renders the menu builder for a location', function () {
         );
 });
 
+it('reports a published page link as resolving in the builder', function () {
+    // The builder reads `resolveHref()`, which needs `is_published` and
+    // `published_at`. Leaving them out of the eager load made every page-linked
+    // item look unpublished, flagging healthy links as broken.
+    $page = Page::factory()->create(['slug' => 'privacy']);
+    MenuItem::factory()->forPage($page)->create(['label' => 'Privacy Policy']);
+
+    $this->actingAs($this->admin)
+        ->get('/admin/menus')
+        ->assertInertia(fn (Assert $inertia) => $inertia
+            ->where('items.0.label', 'Privacy Policy')
+            ->where('items.0.href', '/privacy')
+        );
+});
+
+it('still flags a draft page link as unresolvable in the builder', function () {
+    $draft = Page::factory()->draft()->create();
+    MenuItem::factory()->forPage($draft)->create();
+
+    $this->actingAs($this->admin)
+        ->get('/admin/menus')
+        ->assertInertia(fn (Assert $inertia) => $inertia->where('items.0.href', null));
+});
+
 it('keeps a guest out of the menu builder', function () {
     $this->get('/admin/menus')->assertRedirect('/login');
 });

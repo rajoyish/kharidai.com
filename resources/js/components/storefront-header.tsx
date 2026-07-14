@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -78,6 +79,16 @@ const DESKTOP_TRIGGER_CLASSES =
 
 const MOBILE_LINK_CLASSES =
     'rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary';
+
+/**
+ * Links inside a dropdown are wrapped in a `DropdownMenuItem` so that Radix
+ * registers the click as a selection and closes the panel — a bare anchor
+ * navigates but leaves the menu hanging open over the new page.
+ *
+ * The wrapper's own padding and focus styling are stripped, because the link it
+ * wraps already carries them.
+ */
+const DROPDOWN_ITEM_CLASSES = 'p-0 focus:bg-transparent';
 
 export function StorefrontHeader({
     hideNavigation = false,
@@ -329,26 +340,33 @@ function GroupDropdown({ group }: { group: StorefrontNavigationGroup }) {
                 </div>
 
                 {groupHref && (
-                    <Link
-                        href={groupHref}
-                        prefetch
-                        className="mb-1 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
-                    >
-                        View all {group.label}
-                        <ArrowRight className="size-4 shrink-0" />
-                    </Link>
+                    <DropdownMenuItem asChild className={DROPDOWN_ITEM_CLASSES}>
+                        <Link
+                            href={groupHref}
+                            prefetch
+                            className="mb-1 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                        >
+                            View all {group.label}
+                            <ArrowRight className="size-4 shrink-0" />
+                        </Link>
+                    </DropdownMenuItem>
                 )}
 
                 <ul className="flex flex-col gap-0.5">
                     {group.categories.map((category) => (
                         <li key={category.id} className="min-w-0">
-                            <Link
-                                href={showCategory(category)}
-                                prefetch
-                                className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                            <DropdownMenuItem
+                                asChild
+                                className={DROPDOWN_ITEM_CLASSES}
                             >
-                                {category.name}
-                            </Link>
+                                <Link
+                                    href={showCategory(category)}
+                                    prefetch
+                                    className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                                >
+                                    {category.name}
+                                </Link>
+                            </DropdownMenuItem>
                         </li>
                     ))}
                 </ul>
@@ -375,17 +393,24 @@ function MenuDropdown({ item }: { item: MenuNode }) {
                 className="w-56 p-1.5"
             >
                 {item.href && (
-                    <StorefrontNavLink
-                        link={item}
-                        className="mb-1 block rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
-                    />
+                    <DropdownMenuItem asChild className={DROPDOWN_ITEM_CLASSES}>
+                        <StorefrontNavLink
+                            link={item}
+                            className="mb-1 block rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                        />
+                    </DropdownMenuItem>
                 )}
                 {item.children.map((child) => (
-                    <StorefrontNavLink
+                    <DropdownMenuItem
                         key={child.id}
-                        link={child}
-                        className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
-                    />
+                        asChild
+                        className={DROPDOWN_ITEM_CLASSES}
+                    >
+                        <StorefrontNavLink
+                            link={child}
+                            className="block truncate rounded-md px-3 py-2 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+                        />
+                    </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>
         </DropdownMenu>

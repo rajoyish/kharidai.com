@@ -30,7 +30,9 @@ const ITEMS = [
  * a link inside its own panel.
  */
 const DROPDOWN_PARENT = { label: 'Help Centre', url: '' };
-const DROPDOWN_CHILD = { label: 'Contact Support', url: '/support' };
+
+/** Points at a real route, so the spec can click through it and land somewhere. */
+const DROPDOWN_CHILD = { label: 'Browse Services', url: '/services' };
 
 /** Everything the spec creates at the top level; children cascade on delete. */
 const TOP_LEVEL = [...ITEMS, DROPDOWN_PARENT];
@@ -221,14 +223,16 @@ test.describe('storefront navigation', () => {
         const panel = page.locator('[data-slot="dropdown-menu-content"]');
         await expect(panel).toBeVisible();
 
+        // Entries carry role="menuitem", not "link" — Radix owns the semantics
+        // of the panel — but they remain real anchors, so the href still holds.
         await expect(
-            panel.getByRole('link', { name: DROPDOWN_CHILD.label }),
+            panel.getByRole('menuitem', { name: DROPDOWN_CHILD.label }),
         ).toHaveAttribute('href', DROPDOWN_CHILD.url);
 
         // A parent with no destination of its own must not appear as an entry in
         // the very dropdown it opens — that is the duplicate-label bug.
         await expect(
-            panel.getByRole('link', { name: DROPDOWN_PARENT.label }),
+            panel.getByRole('menuitem', { name: DROPDOWN_PARENT.label }),
         ).toHaveCount(0);
 
         // The track clips its own overflow, so a panel rendered inside it would
@@ -240,6 +244,30 @@ test.describe('storefront navigation', () => {
         expect(panelBox.y + panelBox.height).toBeGreaterThan(
             trackBox.y + trackBox.height,
         );
+    });
+
+    test('choosing a dropdown item navigates and closes the dropdown', async ({
+        page,
+    }) => {
+        // A bare anchor inside the panel navigates but leaves the menu hanging
+        // open over the new page; Radix only closes on a registered selection.
+        await page.setViewportSize({ width: 900, height: 800 });
+        await page.goto('/');
+
+        await page
+            .locator(TRACK)
+            .getByRole('button', { name: DROPDOWN_PARENT.label })
+            .click();
+
+        const panel = page.locator('[data-slot="dropdown-menu-content"]');
+        await expect(panel).toBeVisible();
+
+        await panel
+            .getByRole('menuitem', { name: DROPDOWN_CHILD.label })
+            .click();
+
+        await expect(page).toHaveURL(new RegExp(`${DROPDOWN_CHILD.url}$`));
+        await expect(panel).toBeHidden();
     });
 });
 

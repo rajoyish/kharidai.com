@@ -28,7 +28,10 @@ class MenuController extends Controller
 
         $items = MenuItem::query()
             ->forLocation($location)
-            ->with('page:id,title,slug')
+            // `is_published` and `published_at` are what `resolveHref()` reads to
+            // decide whether a page-linked item resolves. Leaving them out of the
+            // select makes every such item look unpublished in the builder.
+            ->with('page:id,title,slug,is_published,published_at')
             ->ordered()
             ->get();
 
