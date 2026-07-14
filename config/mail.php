@@ -49,6 +49,38 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        /*
+         * The shop's own alerts, sent to the owner's inbox. Gmail is fine here and
+         * nowhere else: mail to yourself carries no deliverability risk, and free
+         * Gmail's terms do not cover automated mail to third parties.
+         */
+        'gmail' => [
+            'transport' => 'smtp',
+            'scheme' => env('MAIL_GMAIL_SCHEME', 'smtp'),
+            'host' => env('MAIL_GMAIL_HOST', 'smtp.gmail.com'),
+            'port' => env('MAIL_GMAIL_PORT', 587),
+            'username' => env('MAIL_GMAIL_USERNAME'),
+            'password' => env('MAIL_GMAIL_PASSWORD'),
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
+        /*
+         * Customer-facing mail. A transactional provider sending from our own
+         * authenticated domain, so the message can be verified as ours and lands
+         * in an inbox rather than a spam folder.
+         */
+        'brevo' => [
+            'transport' => 'smtp',
+            'scheme' => env('MAIL_BREVO_SCHEME', 'smtp'),
+            'host' => env('MAIL_BREVO_HOST', 'smtp-relay.brevo.com'),
+            'port' => env('MAIL_BREVO_PORT', 587),
+            'username' => env('MAIL_BREVO_USERNAME'),
+            'password' => env('MAIL_BREVO_PASSWORD'),
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
@@ -131,5 +163,32 @@ return [
     */
 
     'order_notification_address' => env('MAIL_ORDER_NOTIFICATION_ADDRESS'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mailer Routing
+    |--------------------------------------------------------------------------
+    |
+    | Which mailer each kind of message goes out on. The shop's own alerts and
+    | customer-facing mail have different needs, so they are sent on different
+    | transports rather than sharing the default one.
+    |
+    | Unset means "use the default mailer", which is what local and CI want.
+    |
+    */
+
+    'shop_mailer' => env('MAIL_SHOP_MAILER'),
+
+    /*
+    | Customer mail is gated on this: with no transactional provider configured,
+    | sending from our domain via Gmail would land in spam and put the account at
+    | risk, so we send the customer nothing at all rather than something harmful.
+    */
+    'customer_mailer' => env('MAIL_CUSTOMER_MAILER'),
+
+    'customer_from' => [
+        'address' => env('MAIL_CUSTOMER_FROM_ADDRESS'),
+        'name' => env('MAIL_CUSTOMER_FROM_NAME', env('APP_NAME', 'Laravel')),
+    ],
 
 ];

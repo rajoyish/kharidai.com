@@ -34,3 +34,12 @@ Artisan::command('inspire', function () {
 Schedule::command('queue:work', ['--stop-when-empty', '--max-time=55'])
     ->everyMinute()
     ->withoutOverlapping(2);
+
+/*
+| A failed job is silent: it sits in failed_jobs and waits for someone to look,
+| and nobody looks. Hourly is often enough to catch a broken mail transport the
+| same day without turning the inbox into a monitoring feed.
+*/
+Schedule::command('queue:alert-failed')
+    ->hourly()
+    ->withoutOverlapping(2);
