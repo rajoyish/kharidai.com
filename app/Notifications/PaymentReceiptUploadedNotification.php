@@ -7,11 +7,24 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
+/**
+ * Carries plain data, not the Order it was built from. See OrderPlacedNotification
+ * for why: a queued model is re-fetched when the job runs, and an order deleted in
+ * the meantime kills the job rather than letting it quietly give up.
+ */
 class PaymentReceiptUploadedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Order $order) {}
+    public int $orderId;
+
+    public string $orderNumber;
+
+    public function __construct(Order $order)
+    {
+        $this->orderId = $order->id;
+        $this->orderNumber = $order->order_number;
+    }
 
     /**
      * @return list<string>
@@ -23,12 +36,7 @@ class PaymentReceiptUploadedNotification extends Notification
 
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return new BroadcastMessage([
-            'message' => 'Payment Receipt Uploaded',
-            'description' => 'Customer uploaded a receipt for order #'.$this->order->order_number,
-            'url' => route('admin.orders.show', $this->order->id),
-            'order_id' => $this->order->id,
-        ]);
+        return new BroadcastMessage($this->payload());
     }
 
     /**
@@ -36,11 +44,19 @@ class PaymentReceiptUploadedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        return $this->payload();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function payload(): array
+    {
         return [
             'message' => 'Payment Receipt Uploaded',
-            'description' => 'Customer uploaded a receipt for order #'.$this->order->order_number,
-            'url' => route('admin.orders.show', $this->order->id),
-            'order_id' => $this->order->id,
+            'description' => 'Customer uploaded a receipt for order #'.$this->orderNumber,
+            'url' => route('admin.orders.show', $this->orderId),
+            'order_id' => $this->orderId,
         ];
     }
 }
