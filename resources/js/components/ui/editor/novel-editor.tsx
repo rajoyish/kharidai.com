@@ -18,6 +18,8 @@ interface NovelEditorProps {
     initialValue?: string | JSONContent;
     onChange: (html: string) => void;
     className?: string;
+    /** Extra classes for the inner ProseMirror content, e.g. a smaller min-height. */
+    contentClassName?: string;
 }
 
 const uploadFileToMedia = async (file: File, view: any) => {
@@ -50,6 +52,7 @@ export default function NovelEditor({
     initialValue,
     onChange,
     className,
+    contentClassName,
 }: NovelEditorProps) {
     const extensions = [...defaultExtensions, slashCommand];
 
@@ -72,7 +75,10 @@ export default function NovelEditor({
                 }}
                 editorProps={{
                     attributes: {
-                        class: `prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-50`,
+                        class: cn(
+                            'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-50',
+                            contentClassName,
+                        ),
                     },
                     handlePaste: (view, event) => {
                         const items = Array.from(event.clipboardData?.items || []);

@@ -22,6 +22,7 @@ class ProductFactory extends Factory
             'type' => ProductType::Digital,
             'title' => $this->faker->words(3, true),
             'description' => $this->faker->paragraph(),
+            'hidden_description' => null,
             'image_alt' => null,
             'seo_title' => null,
             'seo_description' => null,

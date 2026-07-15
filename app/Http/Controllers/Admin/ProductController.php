@@ -58,6 +58,8 @@ class ProductController extends Controller
             $this->productValidationMessages(),
         );
 
+        $validated = $this->discardHiddenDescriptionForNonDigital($validated);
+
         $uploadedFiles = [];
 
         try {
@@ -94,6 +96,10 @@ class ProductController extends Controller
     {
         $product->load('galleries', 'categories:id', 'serviceDetail');
 
+        // Hidden by default on the model so it never leaks to guests; the
+        // admin form needs it back to populate the editor.
+        $product->makeVisible('hidden_description');
+
         return Inertia::render('Admin/Products/Edit', [
             'product' => $product,
             'categories' => $this->categoryOptions(),
@@ -107,6 +113,8 @@ class ProductController extends Controller
             array_merge($this->productValidationRules(), $this->serviceValidationRules($request)),
             $this->productValidationMessages(),
         );
+
+        $validated = $this->discardHiddenDescriptionForNonDigital($validated);
 
         unset($validated['image']);
         $oldImage = null;
@@ -209,6 +217,23 @@ class ProductController extends Controller
     }
 
     /**
+     * The members-only hidden description exists only for digital products; the
+     * admin form doesn't render the field for other types, so wipe any stale
+     * value when a product is saved as (or converted to) a non-digital type.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    protected function discardHiddenDescriptionForNonDigital(array $validated): array
+    {
+        if (($validated['type'] ?? null) !== ProductType::Digital->value) {
+            $validated['hidden_description'] = null;
+        }
+
+        return $validated;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function productValidationRules(): array
@@ -217,6 +242,7 @@ class ProductController extends Controller
             'type' => ['nullable', Rule::enum(ProductType::class)],
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'hidden_description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'image_alt' => 'nullable|string|max:255',
             'seo_title' => 'nullable|string|max:255',
