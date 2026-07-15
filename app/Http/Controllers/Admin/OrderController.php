@@ -10,6 +10,8 @@ use App\Models\PaymentReceipt;
 use App\Models\Shipment;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,11 +23,14 @@ class OrderController extends Controller
 {
     public function index(Request $request): Response
     {
+        $years = $this->yearsWithOrders();
+        $selectedYear = $this->selectedYear($request, $years);
         $search = $request->string('search')->trim()->value();
 
         // items.serviceEngagements feeds the appended `profit` attribute, which is
         // serialized for every order below; without it each order lazy-loads.
         $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product', 'items.serviceEngagements'])
+            ->whereYear('created_at', $selectedYear)
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('order_number', 'like', "%{$search}%")
@@ -37,23 +42,22 @@ class OrderController extends Controller
             })
             ->latest();
 
-        $digitalOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
-            $q->where('type', 'digital');
-        })->paginate(10, ['*'], 'digital_page')->withQueryString();
-
-        $physicalOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
-            $q->where('type', 'physical');
-        })->paginate(10, ['*'], 'physical_page')->withQueryString();
-
-        $serviceOrders = (clone $baseQuery)->whereHas('items.productVariant.product', function ($q) {
-            $q->where('type', 'service');
-        })->paginate(10, ['*'], 'service_page')->withQueryString();
+        // A single year's orders are a bounded set, so the whole year is sent and the
+        // page sorts each column client-side. This keeps the computed `profit` column
+        // sortable, which a SQL sort could not offer.
+        $ordersOfType = fn (string $type) => (clone $baseQuery)
+            ->whereHas('items.productVariant.product', fn ($query) => $query->where('type', $type))
+            ->get();
 
         return Inertia::render('Admin/Orders/Index', [
-            'digitalOrders' => $digitalOrders,
-            'physicalOrders' => $physicalOrders,
-            'serviceOrders' => $serviceOrders,
-            'filters' => ['search' => $search],
+            'digitalOrders' => $ordersOfType('digital'),
+            'physicalOrders' => $ordersOfType('physical'),
+            'serviceOrders' => $ordersOfType('service'),
+            'years' => $years,
+            'filters' => [
+                'year' => $selectedYear,
+                'search' => $search,
+            ],
         ]);
     }
 
@@ -222,6 +226,37 @@ class OrderController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'User can now re-upload receipt.');
+    }
+
+    /**
+     * Every year that holds an order, newest first. The current year is always
+     * offered too, so a year without orders yet is still selectable.
+     *
+     * @return list<int>
+     */
+    private function yearsWithOrders(): array
+    {
+        return Order::query()
+            ->whereNotNull('created_at')
+            ->pluck('created_at')
+            ->map(fn (CarbonInterface $createdAt): int => $createdAt->year)
+            ->push((int) CarbonImmutable::now()->year)
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  list<int>  $years
+     */
+    private function selectedYear(Request $request, array $years): int
+    {
+        $requestedYear = $request->integer('year');
+
+        return in_array($requestedYear, $years, true)
+            ? $requestedYear
+            : (int) CarbonImmutable::now()->year;
     }
 
     private function createSubscriptionsForCompletedItems(Order $order): void

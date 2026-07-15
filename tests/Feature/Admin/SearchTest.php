@@ -124,8 +124,8 @@ it('filters orders by order number', function () {
         ->get(route('admin.orders.index', ['search' => $wanted->order_number]))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('digitalOrders.data', 1)
-            ->where('digitalOrders.data.0.order_number', $wanted->order_number)
+            ->has('digitalOrders', 1)
+            ->where('digitalOrders.0.order_number', $wanted->order_number)
             ->etc()
         );
 });
@@ -138,8 +138,8 @@ it('filters orders by customer', function () {
         ->get(route('admin.orders.index', ['search' => 'sita']))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('digitalOrders.data', 1)
-            ->where('digitalOrders.data.0.user.name', 'Sita Rai')
+            ->has('digitalOrders', 1)
+            ->where('digitalOrders.0.user.name', 'Sita Rai')
             ->etc()
         );
 });

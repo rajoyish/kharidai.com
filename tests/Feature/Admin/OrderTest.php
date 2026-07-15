@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -30,6 +31,78 @@ it('can list orders', function () {
     $response = $this->actingAs($this->admin)->get('/admin/orders');
 
     $response->assertSuccessful();
+});
+
+/**
+ * A digital order, which is the only kind the orders index lists under
+ * `digitalOrders`.
+ */
+function digitalOrder(User $user, string $createdAt): Order
+{
+    $order = Order::factory()->create([
+        'user_id' => $user->id,
+        'created_at' => $createdAt,
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'product_variant_id' => ProductVariant::factory()->create()->id,
+        'price' => 1000,
+        'purchase_price' => 400,
+        'quantity' => 1,
+    ]);
+
+    return $order->fresh();
+}
+
+it('shows only the orders of the requested year', function () {
+    $wanted = digitalOrder($this->user, '2027-03-10 10:00:00');
+    digitalOrder($this->user, '2026-05-10 10:00:00');
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.index', ['year' => 2027]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.year', 2027)
+            ->has('digitalOrders', 1)
+            ->where('digitalOrders.0.id', $wanted->id)
+        );
+});
+
+it('lists the years that have orders, newest first, alongside the current year', function () {
+    Order::factory()->create(['user_id' => $this->user->id, 'created_at' => '2024-05-01 10:00:00']);
+    Order::factory()->create(['user_id' => $this->user->id, 'created_at' => '2027-01-01 10:00:00']);
+
+    $currentYear = (int) now()->year;
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('years', collect([2027, $currentYear, 2024])->unique()->sortDesc()->values()->all())
+        );
+});
+
+it('defaults to the current year when no year is requested', function () {
+    $currentOrder = digitalOrder($this->user, now()->toDateTimeString());
+    digitalOrder($this->user, '2024-05-10 10:00:00');
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.year', (int) now()->year)
+            ->has('digitalOrders', 1)
+            ->where('digitalOrders.0.id', $currentOrder->id)
+        );
+});
+
+it('falls back to the current year when an unknown year is requested', function () {
+    digitalOrder($this->user, now()->toDateTimeString());
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.index', ['year' => 1999]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.year', (int) now()->year)
+            ->has('digitalOrders', 1)
+        );
 });
 
 it('lists orders without a query per order', function () {
