@@ -165,20 +165,29 @@ class CalculateMonthlyProfitAction
     {
         return $items
             ->groupBy('productVariant.product_id')
-            ->map(function (Collection $productItems): array {
-                $product = $productItems->first()->productVariant->product;
-
-                return [
-                    'product_id' => $product->id,
-                    'name' => $product->title,
-                    'type' => $product->type->value,
-                    'profit' => round($productItems->sum(fn (OrderItem $item): float => $item->profitNpr()), 2),
-                ];
-            })
+            ->map(fn (Collection $productItems): array => $this->orderProfitRow($productItems))
             ->values()
             // Grouping an Eloquent collection yields another Eloquent collection,
             // whose merge() expects models; drop to a plain collection of arrays.
             ->toBase();
+    }
+
+    /**
+     * The profit row for one product's completed-order items.
+     *
+     * @param  Collection<int, OrderItem>  $productItems
+     * @return ProfitRow
+     */
+    private function orderProfitRow(Collection $productItems): array
+    {
+        $product = $productItems->firstOrFail()->productVariant->product;
+
+        return [
+            'product_id' => $product->id,
+            'name' => $product->title,
+            'type' => $product->type->value,
+            'profit' => round($productItems->sum(fn (OrderItem $item): float => $item->profitNpr()), 2),
+        ];
     }
 
     /**
@@ -191,18 +200,27 @@ class CalculateMonthlyProfitAction
     {
         return $engagements
             ->groupBy('product_id')
-            ->map(function (Collection $group): array {
-                $product = $group->first()->product;
-
-                return [
-                    'product_id' => $product->id,
-                    'name' => $product->title,
-                    'type' => $product->type->value,
-                    'profit' => round($group->sum(fn (ServiceEngagement $engagement): float => $engagement->offlineProfitNpr()), 2),
-                ];
-            })
+            ->map(fn (Collection $group): array => $this->offlineProfitRow($group))
             ->values()
             ->toBase();
+    }
+
+    /**
+     * The profit row for one product's offline engagements.
+     *
+     * @param  Collection<int, ServiceEngagement>  $group
+     * @return ProfitRow
+     */
+    private function offlineProfitRow(Collection $group): array
+    {
+        $product = $group->firstOrFail()->product;
+
+        return [
+            'product_id' => $product->id,
+            'name' => $product->title,
+            'type' => $product->type->value,
+            'profit' => round($group->sum(fn (ServiceEngagement $engagement): float => $engagement->offlineProfitNpr()), 2),
+        ];
     }
 
     /**

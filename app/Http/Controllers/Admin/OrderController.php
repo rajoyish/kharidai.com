@@ -236,15 +236,16 @@ class OrderController extends Controller
      */
     private function yearsWithOrders(): array
     {
-        return Order::query()
+        $years = Order::query()
             ->whereNotNull('created_at')
             ->pluck('created_at')
             ->map(fn (CarbonInterface $createdAt): int => $createdAt->year)
             ->push((int) CarbonImmutable::now()->year)
             ->unique()
             ->sortDesc()
-            ->values()
             ->all();
+
+        return array_values($years);
     }
 
     /**

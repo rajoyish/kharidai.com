@@ -172,6 +172,11 @@ class CheckoutController extends Controller
                     'brief' => $item->brief,
                 ]);
 
+                // items()->create() sets the FK but not the relation, so reading
+                // $orderItem->order downstream would re-query the order once per
+                // line item. Hand it the parent that is already in memory.
+                $orderItem->setRelation('order', $order);
+
                 $this->createServiceEngagements($orderItem, $item);
             }
 

@@ -14,10 +14,17 @@ export default function AppLayout({
 }) {
     const { auth } = usePage<any>().props;
 
+    // Depend on primitives, not the `auth.user` object: Inertia delivers a
+    // fresh props object on every navigation, so keying the effect off the
+    // object identity would tear down and rejoin the Echo channels (dropping
+    // notifications in the gap) on every page visit.
+    const userId = auth?.user?.id;
+    const isAdmin = auth?.user?.is_admin;
+
     useEffect(() => {
-        if (typeof window !== 'undefined' && window.Echo && auth?.user) {
+        if (typeof window !== 'undefined' && window.Echo && userId) {
             // Global admin support presence
-            if (auth.user.is_admin) {
+            if (isAdmin) {
                 try {
                     window.Echo.join('support');
                 } catch (e) {
@@ -28,7 +35,7 @@ export default function AppLayout({
             // Global user notification listener
             try {
                 const privateChannel = window.Echo.private(
-                    `App.Models.User.${auth.user.id}`,
+                    `App.Models.User.${userId}`,
                 );
                 privateChannel.notification((notification: any) => {
                     // Prevent redundant message notifications if we are already on the order chat page
@@ -64,15 +71,15 @@ export default function AppLayout({
 
             return () => {
                 if (window.Echo) {
-                    if (auth.user.is_admin) {
+                    if (isAdmin) {
                         window.Echo.leave('support');
                     }
 
-                    window.Echo.leave(`App.Models.User.${auth.user.id}`);
+                    window.Echo.leave(`App.Models.User.${userId}`);
                 }
             };
         }
-    }, [auth.user, auth?.user?.id, auth?.user?.is_admin]);
+    }, [userId, isAdmin]);
 
     return (
         <AppLayoutTemplate breadcrumbs={breadcrumbs}>
