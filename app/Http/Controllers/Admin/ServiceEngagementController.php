@@ -175,10 +175,38 @@ class ServiceEngagementController extends Controller
                     'payment_receipt' => $linkedOrder->paymentReceipt?->only('id', 'file_path', 'status'),
                 ] : null,
                 'advance_required_npr' => (float) $serviceEngagement->advance_required_npr,
+                // Offline profit tracking: an engagement with no order records its
+                // profit and tithe from these manually entered figures.
+                'has_order' => $serviceEngagement->order_item_id !== null,
+                'offline_customer_paid_npr' => $serviceEngagement->offline_customer_paid_npr,
+                'offline_purchase_cost_npr' => $serviceEngagement->offline_purchase_cost_npr,
+                'offline_profit_npr' => $serviceEngagement->offlineProfitNpr(),
+                'offline_tithe_npr' => $serviceEngagement->offlineTitheNpr(),
+                'has_offline_financials' => $serviceEngagement->hasOfflineFinancials(),
             ],
             'lineItemSuggestions' => $serviceEngagement->calculator()->lineItemSuggestions($serviceEngagement->pricing_config ?? []),
             'statusOptions' => $this->statusOptions($serviceEngagement),
+            'allStatuses' => $this->allStatusOptions(),
+            'clients' => User::orderBy('name')->get(['id', 'name', 'email']),
         ]);
+    }
+
+    /**
+     * Every engagement status, for the manual override control. Unlike
+     * {@see statusOptions()} this ignores the lifecycle graph: an admin overriding
+     * an offline engagement may set any state, bypassing the funnel's guards.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function allStatusOptions(): array
+    {
+        return array_map(
+            fn (EngagementStatus $status): array => [
+                'value' => $status->value,
+                'label' => $status->label(),
+            ],
+            EngagementStatus::cases(),
+        );
     }
 
     /**
@@ -372,6 +400,64 @@ class ServiceEngagementController extends Controller
         $serviceEngagement->update(['is_paid' => $validated['is_paid']]);
 
         return redirect()->back()->with('success', $validated['is_paid'] ? 'Marked as paid.' : 'Marked as due.');
+    }
+
+    /**
+     * Force the engagement to any status, bypassing the lifecycle guards. This is
+     * the manual escape hatch for offline engagements that never pass through the
+     * standard contract/advance/negotiation funnel — e.g. closing an in-person
+     * renewal straight from In progress to Completed.
+     */
+    public function overrideStatus(Request $request, ServiceEngagement $serviceEngagement): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::enum(EngagementStatus::class)],
+        ]);
+
+        $serviceEngagement->update(['status' => EngagementStatus::from($validated['status'])]);
+
+        return redirect()->back()->with('success', 'Engagement status overridden.');
+    }
+
+    /**
+     * Reassign the engagement to a different client. Any order generated from the
+     * engagement is moved with it so the invoice stays payable by its new owner.
+     */
+    public function reassignClient(Request $request, ServiceEngagement $serviceEngagement): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+        ]);
+
+        $serviceEngagement->loadMissing('orderItem.order');
+
+        DB::transaction(function () use ($serviceEngagement, $validated): void {
+            $serviceEngagement->update(['user_id' => $validated['user_id']]);
+            $serviceEngagement->orderItem?->order?->update(['user_id' => $validated['user_id']]);
+        });
+
+        return redirect()->back()->with('success', 'Client reassigned.');
+    }
+
+    /**
+     * Record the offline payment details for an engagement that never passes
+     * through a standard order. The resulting profit (customer paid minus purchase
+     * cost) and its tithe are computed from these figures and, once the engagement
+     * is marked paid, feed the Monthly Tithe via {@see ServiceEngagementObserver}.
+     */
+    public function saveOfflineFinancials(Request $request, ServiceEngagement $serviceEngagement): RedirectResponse
+    {
+        $validated = $request->validate([
+            'offline_customer_paid_npr' => ['nullable', 'numeric', 'min:0'],
+            'offline_purchase_cost_npr' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $serviceEngagement->update([
+            'offline_customer_paid_npr' => $validated['offline_customer_paid_npr'] ?? null,
+            'offline_purchase_cost_npr' => $validated['offline_purchase_cost_npr'] ?? null,
+        ]);
+
+        return redirect()->back()->with('success', 'Offline payment details saved.');
     }
 
     public function destroy(ServiceEngagement $serviceEngagement): RedirectResponse

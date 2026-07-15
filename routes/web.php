@@ -100,6 +100,9 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::post('services/{serviceEngagement}/negotiate', [ServiceEngagementController::class, 'negotiate'])->name('services.negotiate');
     Route::post('services/{serviceEngagement}/complete', [ServiceEngagementController::class, 'complete'])->name('services.complete');
     Route::patch('services/{serviceEngagement}/status', [ServiceEngagementController::class, 'updateStatus'])->name('services.status.update');
+    Route::patch('services/{serviceEngagement}/status-override', [ServiceEngagementController::class, 'overrideStatus'])->name('services.status.override');
+    Route::patch('services/{serviceEngagement}/client', [ServiceEngagementController::class, 'reassignClient'])->name('services.client.reassign');
+    Route::patch('services/{serviceEngagement}/offline-financials', [ServiceEngagementController::class, 'saveOfflineFinancials'])->name('services.offline-financials.save');
     Route::patch('services/{serviceEngagement}/payment-status', [ServiceEngagementController::class, 'updatePaymentStatus'])->name('services.payment-status.update');
     Route::post('services/{serviceEngagement}/assign-order', [ServiceEngagementController::class, 'assignOrder'])->name('services.assign-order');
     Route::delete('services/{serviceEngagement}', [ServiceEngagementController::class, 'destroy'])->name('services.destroy');

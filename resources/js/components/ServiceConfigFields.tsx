@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 export function ServiceConfigFields({ data, setData, errors }: any) {
     const strategyOptions = [
         { value: '', label: 'Select a pricing strategy' },
+        { value: 'flat_rate', label: 'Flat rate' },
         { value: 'per_hour', label: 'Per hour' },
         { value: 'per_page', label: 'Per page (cover / inner)' },
         { value: 'tiered', label: 'Tiered packages' },
@@ -49,6 +50,7 @@ export function ServiceConfigFields({ data, setData, errors }: any) {
         data.pricing_strategy === 'per_hour' ||
         data.pricing_strategy === 'hybrid';
     const showPerPage = data.pricing_strategy === 'per_page';
+    const showFlatRate = data.pricing_strategy === 'flat_rate';
 
     return (
         <div className="grid gap-6">
@@ -77,6 +79,28 @@ export function ServiceConfigFields({ data, setData, errors }: any) {
 
             {data.pricing_strategy && (
                 <div className="grid gap-4 border-l-2 border-primary/20 py-2 pl-4">
+                    {showFlatRate && (
+                        <div className="grid gap-2">
+                            <Label htmlFor="base_fee_npr">
+                                Base Fee (NPR)
+                            </Label>
+                            <Input
+                                id="base_fee_npr"
+                                type="number"
+                                min="0"
+                                value={data.pricing_config?.base_fee_npr || ''}
+                                onChange={(e) =>
+                                    updateConfig('base_fee_npr', e.target.value)
+                                }
+                            />
+                            {errors['pricing_config.base_fee_npr'] && (
+                                <div className="text-sm text-destructive">
+                                    {errors['pricing_config.base_fee_npr']}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {showHourlyRate && (
                         <div className="grid gap-2">
                             <Label htmlFor="hourly_rate_npr">

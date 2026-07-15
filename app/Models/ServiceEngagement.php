@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Actions\Tithes\CalculateMonthlyProfitAction;
 use App\Casts\MoneyNpr;
 use App\Enums\EngagementSource;
 use App\Enums\EngagementStatus;
@@ -9,6 +10,7 @@ use App\Enums\PricingStrategy;
 use App\Exceptions\InvalidEngagementTransitionException;
 use App\Services\Engagements\EngagementStateMachine;
 use App\Services\Pricing\PricingStrategy as PricingStrategyContract;
+use Carbon\CarbonInterface;
 use Database\Factories\ServiceEngagementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,6 +44,8 @@ use Illuminate\Support\Carbon;
  * @property bool|null $is_paid
  * @property float $calculated_cost_npr
  * @property float|null $agreed_price_npr
+ * @property float|null $offline_customer_paid_npr
+ * @property float|null $offline_purchase_cost_npr
  * @property array<string, mixed>|null $brief
  * @property string|null $delivery_note
  * @property Carbon|null $created_at
@@ -76,6 +80,8 @@ use Illuminate\Support\Carbon;
     'is_paid',
     'calculated_cost_npr',
     'agreed_price_npr',
+    'offline_customer_paid_npr',
+    'offline_purchase_cost_npr',
     'brief',
     'delivery_note',
 ])]
@@ -96,6 +102,8 @@ class ServiceEngagement extends Model
             'advance_paid_npr' => MoneyNpr::class,
             'calculated_cost_npr' => MoneyNpr::class,
             'agreed_price_npr' => MoneyNpr::class,
+            'offline_customer_paid_npr' => MoneyNpr::class,
+            'offline_purchase_cost_npr' => MoneyNpr::class,
             'source' => EngagementSource::class,
             'status' => EngagementStatus::class,
             'pricing_strategy' => PricingStrategy::class,
@@ -161,6 +169,24 @@ class ServiceEngagement extends Model
             EngagementStatus::Completed->value,
             EngagementStatus::Cancelled->value,
         ]);
+    }
+
+    /**
+     * Engagements whose offline profit should feed the Monthly Tithe: a settled
+     * (paid) engagement with a recorded offline customer payment and a product to
+     * attribute the profit to, that is not billed through a standard Order. The
+     * order_item_id guard is what keeps its profit from being counted twice — an
+     * order-linked engagement earns its tithe through the completed order instead.
+     *
+     * @param  Builder<ServiceEngagement>  $query
+     * @return Builder<ServiceEngagement>
+     */
+    public function scopeOfflineTithed(Builder $query): Builder
+    {
+        return $query->whereNull('order_item_id')
+            ->whereNotNull('product_id')
+            ->whereNotNull('offline_customer_paid_npr')
+            ->where('is_paid', true);
     }
 
     /**
@@ -301,5 +327,40 @@ class ServiceEngagement extends Model
         }
 
         return $this->grandTotalNpr() > 0 && $this->outstandingNpr() <= 0 ? 'paid' : 'due';
+    }
+
+    /**
+     * Whether offline payment details have been recorded for this engagement.
+     */
+    public function hasOfflineFinancials(): bool
+    {
+        return $this->offline_customer_paid_npr !== null;
+    }
+
+    /**
+     * The manually tracked profit for an offline engagement, in NPR: what the
+     * customer paid minus the admin's purchase cost.
+     */
+    public function offlineProfitNpr(): float
+    {
+        return round(($this->offline_customer_paid_npr ?? 0.0) - ($this->offline_purchase_cost_npr ?? 0.0), 2);
+    }
+
+    /**
+     * The tithe owed on this engagement's offline profit, in NPR.
+     */
+    public function offlineTitheNpr(): float
+    {
+        return round($this->offlineProfitNpr() * CalculateMonthlyProfitAction::TITHE_RATE, 2);
+    }
+
+    /**
+     * The date an offline engagement's profit is attributed to when bucketing it
+     * into a tithe month: the recorded completion date, falling back to when the
+     * engagement was created.
+     */
+    public function offlineTitheDate(): ?CarbonInterface
+    {
+        return $this->project_completion_date ?? $this->created_at;
     }
 }
