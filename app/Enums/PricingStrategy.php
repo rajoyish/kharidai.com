@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use App\Services\Pricing\FlatRateStrategy;
 use App\Services\Pricing\HybridStrategy;
 use App\Services\Pricing\PerHourStrategy;
 use App\Services\Pricing\PerPageStrategy;
@@ -10,6 +11,7 @@ use App\Services\Pricing\TieredStrategy;
 
 enum PricingStrategy: string
 {
+    case FlatRate = 'flat_rate';
     case PerHour = 'per_hour';
     case PerPage = 'per_page';
     case Tiered = 'tiered';
@@ -21,6 +23,7 @@ enum PricingStrategy: string
     public function label(): string
     {
         return match ($this) {
+            self::FlatRate => 'Flat rate',
             self::PerHour => 'Per hour',
             self::PerPage => 'Per page (cover / inner)',
             self::Tiered => 'Tiered packages',
@@ -34,6 +37,7 @@ enum PricingStrategy: string
     public function calculator(): PricingStrategyContract
     {
         return match ($this) {
+            self::FlatRate => new FlatRateStrategy,
             self::PerHour => new PerHourStrategy,
             self::PerPage => new PerPageStrategy,
             self::Tiered => new TieredStrategy,

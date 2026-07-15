@@ -113,4 +113,18 @@ class ServiceEngagementFactory extends Factory
             'agreed_price_npr' => 11000,
         ]);
     }
+
+    /**
+     * An offline engagement whose manually recorded, settled profit feeds the
+     * Monthly Tithe: no order, both offline figures set, marked paid.
+     */
+    public function offlineTithed(float $customerPaidNpr = 17000, float $purchaseCostNpr = 9040): static
+    {
+        return $this->state([
+            'order_item_id' => null,
+            'offline_customer_paid_npr' => $customerPaidNpr,
+            'offline_purchase_cost_npr' => $purchaseCostNpr,
+            'is_paid' => true,
+        ]);
+    }
 }

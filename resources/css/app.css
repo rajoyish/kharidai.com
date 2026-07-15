@@ -170,3 +170,7 @@
         display: none;
     }
 }
+
+.prose li::marker {
+    color: var(--accent);
+}

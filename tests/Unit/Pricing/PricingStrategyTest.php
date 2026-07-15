@@ -1,10 +1,35 @@
 <?php
 
 use App\Enums\PricingStrategy;
+use App\Services\Pricing\FlatRateStrategy;
 use App\Services\Pricing\HybridStrategy;
 use App\Services\Pricing\PerHourStrategy;
 use App\Services\Pricing\PerPageStrategy;
 use App\Services\Pricing\TieredStrategy;
+
+it('prices a flat rate service by its fixed base fee', function () {
+    $cost = (new FlatRateStrategy)->calculate(
+        ['base_fee_npr' => 25000],
+        [],
+    );
+
+    expect($cost)->toBe(25000.0);
+});
+
+it('ignores any measurement when pricing a flat rate service', function () {
+    $cost = (new FlatRateStrategy)->calculate(
+        ['base_fee_npr' => 25000],
+        ['hours' => 999, 'tier_key' => 'ghost'],
+    );
+
+    expect($cost)->toBe(25000.0);
+});
+
+it('prices a flat rate service as zero when no base fee is configured', function () {
+    $cost = (new FlatRateStrategy)->calculate([], []);
+
+    expect($cost)->toBe(0.0);
+});
 
 it('prices per-hour work by the recorded hours', function () {
     $cost = (new PerHourStrategy)->calculate(
@@ -70,7 +95,8 @@ it('returns zero for an unknown tier key', function () {
 });
 
 it('resolves each strategy from the enum', function () {
-    expect(PricingStrategy::PerHour->calculator())->toBeInstanceOf(PerHourStrategy::class)
+    expect(PricingStrategy::FlatRate->calculator())->toBeInstanceOf(FlatRateStrategy::class)
+        ->and(PricingStrategy::PerHour->calculator())->toBeInstanceOf(PerHourStrategy::class)
         ->and(PricingStrategy::PerPage->calculator())->toBeInstanceOf(PerPageStrategy::class)
         ->and(PricingStrategy::Tiered->calculator())->toBeInstanceOf(TieredStrategy::class)
         ->and(PricingStrategy::Hybrid->calculator())->toBeInstanceOf(HybridStrategy::class);
@@ -85,6 +111,14 @@ it('suggests cover and inner page invoice rows for book layout', function () {
     expect($rows)->toBe([
         ['label' => 'Cover Pages', 'quantity' => 0.0, 'unit_price_npr' => 500.0],
         ['label' => 'Inner Pages', 'quantity' => 0.0, 'unit_price_npr' => 200.0],
+    ]);
+});
+
+it('suggests a single base fee invoice row for a flat rate service', function () {
+    $rows = (new FlatRateStrategy)->lineItemSuggestions(['base_fee_npr' => 25000]);
+
+    expect($rows)->toBe([
+        ['label' => 'Base Fee', 'quantity' => 1.0, 'unit_price_npr' => 25000.0],
     ]);
 });
 

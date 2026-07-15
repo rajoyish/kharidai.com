@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Order;
+use App\Models\ServiceEngagement;
 use App\Observers\OrderObserver;
+use App\Observers\ServiceEngagementObserver;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\LazyLoadingViolationException;
@@ -31,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Order::observe(OrderObserver::class);
+        ServiceEngagement::observe(ServiceEngagementObserver::class);
 
         $this->configureDefaults();
         $this->embedLogoInOutgoingMail();

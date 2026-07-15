@@ -1,14 +1,17 @@
 import { Link, router, useForm } from '@inertiajs/react';
 import { Check, ExternalLink, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { show as showAdminOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import {
     assignOrder,
     complete,
     index as servicesIndex,
+    overrideStatus,
+    reassignClient,
     recordAdvance,
     saveInvoice,
+    saveOfflineFinancials,
     signContract,
     updatePaymentStatus,
     updateStatus,
@@ -20,6 +23,14 @@ import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -64,6 +75,12 @@ type Engagement = {
         } | null;
     } | null;
     advance_required_npr: number;
+    has_order: boolean;
+    offline_customer_paid_npr: number | null;
+    offline_purchase_cost_npr: number | null;
+    offline_profit_npr: number;
+    offline_tithe_npr: number;
+    has_offline_financials: boolean;
 };
 
 /** A status this engagement may move to; blocked ones carry the reason why. */
@@ -73,16 +90,41 @@ type StatusOption = {
     blocked_reason: string | null;
 };
 
+/** Every status, for the guard-bypassing manual override control. */
+type StatusChoice = {
+    value: string;
+    label: string;
+};
+
+type Client = { id: number; name: string; email: string };
+type ClientOption = { value: number; label: string; email: string };
+
+/** Match a client by name or email, since duplicate names are common. */
+function matchesClientQuery(option: ClientOption, query: string): boolean {
+    const needle = query.trim().toLowerCase();
+
+    return (
+        option.label.toLowerCase().includes(needle) ||
+        option.email.toLowerCase().includes(needle)
+    );
+}
+
 const num = (value: number | string): number => Number(value) || 0;
+
+const TITHE_RATE = 0.1;
 
 export default function ServiceInvoice({
     engagement,
     lineItemSuggestions,
     statusOptions,
+    allStatuses,
+    clients,
 }: {
     engagement: Engagement;
     lineItemSuggestions: LineItem[];
     statusOptions: StatusOption[];
+    allStatuses: StatusChoice[];
+    clients: Client[];
 }) {
     // Prefill from a previously saved invoice, otherwise seed the editable rows
     // from the service's pricing strategy so the admin starts with the right
@@ -237,6 +279,96 @@ export default function ServiceInvoice({
     const canComplete = takeableStatuses.some(
         (option) => option.value === 'completed',
     );
+
+    // Manual status override: sets any status directly, bypassing the lifecycle
+    // guards. Kept separate from the guarded dropdown above so a normal admin
+    // never reaches for it by accident.
+    const [overrideTarget, setOverrideTarget] = useState<string>('');
+    const [overriding, setOverriding] = useState(false);
+
+    const submitOverride = () => {
+        if (!overrideTarget || overrideTarget === engagement.status) {
+            return;
+        }
+
+        setOverriding(true);
+        router.patch(
+            overrideStatus.url({ serviceEngagement: engagement.id }),
+            { status: overrideTarget },
+            {
+                preserveScroll: true,
+                onSuccess: () => setOverrideTarget(''),
+                onFinish: () => setOverriding(false),
+            },
+        );
+    };
+
+    // Client reassignment. A searchable combobox keeps it usable once the store
+    // has hundreds of registered users.
+    const clientOptions = useMemo<ClientOption[]>(
+        () =>
+            clients.map((client) => ({
+                value: client.id,
+                label: client.name,
+                email: client.email,
+            })),
+        [clients],
+    );
+
+    const [selectedClient, setSelectedClient] = useState<ClientOption | null>(
+        () =>
+            clientOptions.find(
+                (option) => option.value === engagement.user.id,
+            ) ?? null,
+    );
+    const [reassigning, setReassigning] = useState(false);
+
+    const submitReassign = () => {
+        if (!selectedClient || selectedClient.value === engagement.user.id) {
+            return;
+        }
+
+        setReassigning(true);
+        router.patch(
+            reassignClient.url({ serviceEngagement: engagement.id }),
+            { user_id: selectedClient.value },
+            {
+                preserveScroll: true,
+                onFinish: () => setReassigning(false),
+            },
+        );
+    };
+
+    // Offline profit tracking for an engagement with no order. The profit and
+    // tithe are previewed live from the two inputs.
+    const offlineForm = useForm({
+        offline_customer_paid_npr: engagement.offline_customer_paid_npr
+            ? String(engagement.offline_customer_paid_npr)
+            : '',
+        offline_purchase_cost_npr: engagement.offline_purchase_cost_npr
+            ? String(engagement.offline_purchase_cost_npr)
+            : '',
+    });
+
+    const offlineProfit =
+        num(offlineForm.data.offline_customer_paid_npr) -
+        num(offlineForm.data.offline_purchase_cost_npr);
+    const offlineTithe = offlineProfit > 0 ? offlineProfit * TITHE_RATE : 0;
+
+    const submitOfflineFinancials = (e: React.FormEvent) => {
+        e.preventDefault();
+        offlineForm.transform((data) => ({
+            offline_customer_paid_npr: data.offline_customer_paid_npr || null,
+            offline_purchase_cost_npr: data.offline_purchase_cost_npr || null,
+        }));
+        offlineForm.patch(
+            saveOfflineFinancials.url({ serviceEngagement: engagement.id }),
+            {
+                preserveScroll: true,
+                onSuccess: () => offlineForm.setDefaults(),
+            },
+        );
+    };
 
     return (
         <>
@@ -416,6 +548,127 @@ export default function ServiceInvoice({
                             </Button>
                         </div>
                     )}
+
+                    <div className="grid gap-2 rounded-md border border-dashed border-amber-300 bg-amber-50/60 p-3 dark:border-amber-900/60 dark:bg-amber-950/20">
+                        <div>
+                            <p className="text-sm font-medium">
+                                Manual status override
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                Force any status, skipping the lifecycle gates.
+                                Use for offline engagements that never went
+                                through the standard funnel.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <Select
+                                value={overrideTarget}
+                                onValueChange={setOverrideTarget}
+                            >
+                                <SelectTrigger className="sm:w-72">
+                                    <SelectValue placeholder="Select any status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {allStatuses.map((option) => (
+                                        <SelectItem
+                                            key={option.value}
+                                            value={option.value}
+                                            disabled={
+                                                option.value ===
+                                                engagement.status
+                                            }
+                                        >
+                                            {option.label}
+                                            {option.value ===
+                                                engagement.status && (
+                                                <span className="text-muted-foreground">
+                                                    {' '}
+                                                    — current
+                                                </span>
+                                            )}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={
+                                    overriding ||
+                                    !overrideTarget ||
+                                    overrideTarget === engagement.status
+                                }
+                                onClick={submitOverride}
+                            >
+                                Override status
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-6 grid max-w-3xl gap-4 rounded-xl border bg-card p-6">
+                    <div>
+                        <h2 className="text-base font-semibold">Client</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Who this engagement is for. Reassigning moves any
+                            linked order to the new client too.
+                        </p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                        <Combobox
+                            items={clientOptions}
+                            value={selectedClient}
+                            onValueChange={(option: ClientOption | null) =>
+                                setSelectedClient(option)
+                            }
+                            itemToStringLabel={(option: ClientOption) =>
+                                option.label
+                            }
+                            isItemEqualToValue={(
+                                a: ClientOption,
+                                b: ClientOption,
+                            ) => a.value === b.value}
+                            filter={matchesClientQuery}
+                        >
+                            <ComboboxInput
+                                className="w-full sm:w-72"
+                                placeholder="Search clients..."
+                                showClear={selectedClient !== null}
+                            />
+                            <ComboboxContent>
+                                <ComboboxEmpty>No clients found.</ComboboxEmpty>
+                                <ComboboxList>
+                                    {(option: ClientOption) => (
+                                        <ComboboxItem
+                                            key={option.value}
+                                            value={option}
+                                        >
+                                            <span className="flex min-w-0 flex-col">
+                                                <span className="truncate">
+                                                    {option.label}
+                                                </span>
+                                                <span className="truncate text-xs text-muted-foreground">
+                                                    {option.email}
+                                                </span>
+                                            </span>
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={
+                                reassigning ||
+                                !selectedClient ||
+                                selectedClient.value === engagement.user.id
+                            }
+                            onClick={submitReassign}
+                        >
+                            Reassign client
+                        </Button>
+                    </div>
                 </div>
 
                 <form
@@ -647,6 +900,131 @@ export default function ServiceInvoice({
                         )}
                     </div>
                 </form>
+
+                {!engagement.has_order && (
+                    <form
+                        onSubmit={submitOfflineFinancials}
+                        className="mt-6 grid max-w-3xl gap-4 rounded-xl border bg-card p-6"
+                    >
+                        <div>
+                            <h2 className="text-base font-semibold">
+                                Internal Profit &amp; Tithe
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                For offline payments taken outside a standard
+                                order. Record what the customer paid and your
+                                purchase cost; the profit and its 10% tithe feed
+                                the Monthly Tithe once this engagement is marked
+                                Paid.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-1">
+                                <Label htmlFor="offline_customer_paid_npr">
+                                    Customer Paid (Rs)
+                                </Label>
+                                <Input
+                                    id="offline_customer_paid_npr"
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    value={
+                                        offlineForm.data
+                                            .offline_customer_paid_npr
+                                    }
+                                    onChange={(e) =>
+                                        offlineForm.setData(
+                                            'offline_customer_paid_npr',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. 17000"
+                                />
+                                <InputError
+                                    message={
+                                        offlineForm.errors
+                                            .offline_customer_paid_npr
+                                    }
+                                />
+                            </div>
+                            <div className="grid gap-1">
+                                <Label htmlFor="offline_purchase_cost_npr">
+                                    Admin Purchase Cost (Rs)
+                                </Label>
+                                <Input
+                                    id="offline_purchase_cost_npr"
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    value={
+                                        offlineForm.data
+                                            .offline_purchase_cost_npr
+                                    }
+                                    onChange={(e) =>
+                                        offlineForm.setData(
+                                            'offline_purchase_cost_npr',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. 9040"
+                                />
+                                <InputError
+                                    message={
+                                        offlineForm.errors
+                                            .offline_purchase_cost_npr
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-3 border-t pt-4 sm:ml-auto sm:w-72">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                    Profit
+                                </span>
+                                <span className="font-medium tabular-nums">
+                                    {formatNpr(offlineProfit)}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-base font-semibold">
+                                <span>Tithe (10%)</span>
+                                <span className="tabular-nums">
+                                    {formatNpr(offlineTithe)}
+                                </span>
+                            </div>
+                        </div>
+
+                        {!paid &&
+                            offlineForm.data.offline_customer_paid_npr && (
+                                <p className="text-xs text-amber-600 dark:text-amber-500">
+                                    Flip the Payment Status toggle above to Paid
+                                    so this profit counts toward the Monthly
+                                    Tithe.
+                                </p>
+                            )}
+
+                        <div className="flex items-center gap-3">
+                            <Button
+                                type="submit"
+                                disabled={
+                                    offlineForm.processing ||
+                                    !offlineForm.isDirty
+                                }
+                            >
+                                {offlineForm.processing
+                                    ? 'Saving…'
+                                    : 'Save profit details'}
+                            </Button>
+                            {offlineForm.recentlySuccessful &&
+                                !offlineForm.isDirty && (
+                                    <span className="flex items-center gap-1 text-sm text-emerald-600">
+                                        <Check className="h-4 w-4" /> Saved
+                                    </span>
+                                )}
+                        </div>
+                    </form>
+                )}
 
                 <div className="mt-6 grid max-w-3xl gap-4 rounded-xl border bg-card p-6">
                     <div>
