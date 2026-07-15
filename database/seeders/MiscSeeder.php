@@ -29,7 +29,9 @@ class MiscSeeder extends Seeder
     {
         $users = User::all();
         $products = Product::with('variants')->get();
-        $orders = Order::all();
+        // `items` is read per order below (step 4); eager load it so the loop
+        // doesn't trip the global lazy-loading guard with an N+1.
+        $orders = Order::with('items')->get();
 
         if ($users->isEmpty() || $products->isEmpty() || $orders->isEmpty()) {
             return;

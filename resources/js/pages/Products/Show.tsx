@@ -1,4 +1,6 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
+import { BadgeCheck, Clock, RefreshCw, Truck, Weight } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -86,6 +88,104 @@ type Product = {
         requires_brief: boolean;
     } | null;
 };
+
+type ProductTypeStat = {
+    icon: LucideIcon;
+    label: string;
+    value: string;
+};
+
+/**
+ * The tinted "Service Item" / "Physical Item" detail card. Rendered twice — in
+ * the mobile header and in the desktop column — so the stats and styling live
+ * in one place. Renders nothing for product types without extra details.
+ */
+function ProductTypeDetails({
+    product,
+    className,
+}: {
+    product: Product;
+    className?: string;
+}) {
+    let title: string;
+    const stats: ProductTypeStat[] = [];
+
+    if (product.type === 'service' && product.service_detail) {
+        title = 'Service Item';
+
+        const { delivery_days: deliveryDays, revisions } =
+            product.service_detail;
+
+        if (deliveryDays) {
+            stats.push({
+                icon: Clock,
+                label: 'Delivery time',
+                value: `Within ${deliveryDays} ${deliveryDays === 1 ? 'day' : 'days'}`,
+            });
+        }
+
+        if (revisions !== null) {
+            stats.push({
+                icon: RefreshCw,
+                label: 'Revisions',
+                value: `${revisions} included`,
+            });
+        }
+    } else if (product.type === 'physical' && product.physical_detail) {
+        title = 'Physical Item';
+
+        const { weight_kg: weightKg, free_shipping: freeShipping } =
+            product.physical_detail;
+
+        if (weightKg !== null) {
+            stats.push({
+                icon: Weight,
+                label: 'Weight',
+                value: `${weightKg} kg`,
+            });
+        }
+
+        if (freeShipping) {
+            stats.push({ icon: Truck, label: 'Shipping', value: 'Free' });
+        }
+    } else {
+        return null;
+    }
+
+    return (
+        <div className={className}>
+            <div className="mb-4 flex items-center gap-2">
+                <BadgeCheck
+                    className="size-4 text-primary"
+                    aria-hidden="true"
+                />
+                <p className="text-xs font-semibold tracking-widest text-foreground uppercase">
+                    {title}
+                </p>
+            </div>
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {stats.map(({ icon: Icon, label, value }) => (
+                    <div
+                        key={label}
+                        className="flex items-center gap-3 rounded-lg border border-primary/10 bg-white/70 p-3"
+                    >
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <Icon className="size-5" aria-hidden="true" />
+                        </span>
+                        <div>
+                            <dt className="text-xs font-medium text-muted-foreground">
+                                {label}
+                            </dt>
+                            <dd className="text-sm font-semibold text-foreground">
+                                {value}
+                            </dd>
+                        </div>
+                    </div>
+                ))}
+            </dl>
+        </div>
+    );
+}
 
 export default function Show({
     product,
@@ -257,6 +357,11 @@ export default function Show({
                                         )}
                                     </div>
                                 )}
+
+                            <ProductTypeDetails
+                                product={product}
+                                className="mt-6"
+                            />
                         </div>
 
                         {/* Main Image */}
@@ -309,11 +414,14 @@ export default function Show({
                                     <h3 className="text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Select Variant
                                     </h3>
-                                    {showPrice && selectedVariant?.price_npr && (
-                                        <VariantPrice
-                                            value={selectedVariant.price_npr}
-                                        />
-                                    )}
+                                    {showPrice &&
+                                        selectedVariant?.price_npr && (
+                                            <VariantPrice
+                                                value={
+                                                    selectedVariant.price_npr
+                                                }
+                                            />
+                                        )}
                                 </div>
                                 <RadioGroup
                                     value={selectedVariant?.id.toString()}
@@ -458,59 +566,10 @@ export default function Show({
                                     </div>
                                 )}
 
-                            {product.type === 'physical' &&
-                                product.physical_detail && (
-                                    <div className="mb-6 rounded-md border bg-slate-50 p-4 text-sm text-slate-700">
-                                        <p>
-                                            <strong>Physical Item</strong>
-                                        </p>
-                                        {product.physical_detail.weight_kg !==
-                                            null && (
-                                            <p>
-                                                Weight:{' '}
-                                                {
-                                                    product.physical_detail
-                                                        .weight_kg
-                                                }{' '}
-                                                kg
-                                            </p>
-                                        )}
-                                        {product.physical_detail
-                                            .free_shipping && (
-                                            <p>Free shipping.</p>
-                                        )}
-                                    </div>
-                                )}
-
-                            {product.type === 'service' &&
-                                product.service_detail && (
-                                    <div className="mb-6 rounded-md border border-blue-100 bg-blue-50/50 p-4 text-sm text-slate-700">
-                                        <p>
-                                            <strong>Service Item</strong>
-                                        </p>
-                                        {product.service_detail
-                                            .delivery_days && (
-                                            <p>
-                                                Delivery within{' '}
-                                                {
-                                                    product.service_detail
-                                                        .delivery_days
-                                                }{' '}
-                                                days
-                                            </p>
-                                        )}
-                                        {product.service_detail.revisions !==
-                                            null && (
-                                            <p>
-                                                Revisions included:{' '}
-                                                {
-                                                    product.service_detail
-                                                        .revisions
-                                                }
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
+                            <ProductTypeDetails
+                                product={product}
+                                className="mb-6"
+                            />
                         </div>
 
                         {/* Product Gallery (Below Price) */}
