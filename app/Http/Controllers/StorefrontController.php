@@ -208,6 +208,14 @@ class StorefrontController extends Controller
 
         $product->load($relations);
 
+        // The members-only hidden description never serializes by default (the
+        // model marks it #[Hidden]), so guests, bots, and SEO scrapers cannot
+        // read it from the Inertia payload or the rendered HTML source. Reveal
+        // it only once the viewer is authenticated.
+        if (auth()->check()) {
+            $product->makeVisible('hidden_description');
+        }
+
         // A variant with `show_pricing` off is quoted on request: the storefront
         // renders no price for it, but the row still travels to the browser for
         // its name and options. Withhold the amount at serialization rather than

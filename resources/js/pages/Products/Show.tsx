@@ -63,6 +63,12 @@ type Product = {
     id: number;
     title: string;
     description: string | null;
+    /**
+     * Members-only content. Absent for guests — the server strips it from the
+     * payload entirely, so it can never leak to bots or SEO scrapers. Present
+     * (possibly null) only for authenticated viewers.
+     */
+    hidden_description?: string | null;
     image: string | null;
     image_alt: string | null;
     type: string;
@@ -604,6 +610,14 @@ export default function Show({
                         )}
 
                         <ProductDescription description={product.description} />
+
+                        {/* Members-only description — the guard also keeps the
+                            wrapper out of the DOM when the field is empty. */}
+                        {product.hidden_description && (
+                            <ProductDescription
+                                description={product.hidden_description}
+                            />
+                        )}
                     </div>
                 </div>
             </main>

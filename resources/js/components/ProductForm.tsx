@@ -64,6 +64,7 @@ export type Product = {
     title: string;
     slug?: string;
     description: string;
+    hidden_description?: string | null;
     image?: string;
     image_alt?: string | null;
     seo_title?: string | null;
@@ -176,6 +177,7 @@ export function ProductForm({
         type: product?.type || 'digital',
         title: product?.title || '',
         description: product?.description || '',
+        hidden_description: product?.hidden_description || '',
         image: null as File | null,
         image_alt: product?.image_alt || '',
         seo_title: product?.seo_title || '',
@@ -665,6 +667,40 @@ export function ProductForm({
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Members-only description, a digital-product
+                                    perk — the backend discards it for other
+                                    types, so only show it for digital. */}
+                                {data.type === 'digital' && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="hidden_description">
+                                            Hidden Description
+                                        </Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Only signed-in customers see this on
+                                            the product page. Guests, bots, and
+                                            search engines never receive it.
+                                        </p>
+                                        <NovelEditor
+                                            initialValue={
+                                                data.hidden_description
+                                            }
+                                            onChange={(html) =>
+                                                setData(
+                                                    'hidden_description',
+                                                    html,
+                                                )
+                                            }
+                                            className="min-h-50"
+                                            contentClassName="min-h-25"
+                                        />
+                                        {errors.hidden_description && (
+                                            <div className="text-sm font-medium text-destructive">
+                                                {errors.hidden_description}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Product Gallery */}
                                 <div className="flex flex-col gap-2">

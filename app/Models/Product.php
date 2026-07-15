@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ProductType;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,7 @@ use Illuminate\Support\Str;
  * @property ProductType $type
  * @property string $title
  * @property string|null $description
+ * @property string|null $hidden_description
  * @property string|null $image
  * @property string|null $image_alt
  * @property string|null $seo_title
@@ -29,7 +31,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $updated_at
  * @property string|null $slug
  */
-#[Fillable(['type', 'title', 'slug', 'description', 'image', 'image_alt', 'seo_title', 'seo_description', 'in_stock', 'is_visible'])]
+#[Fillable(['type', 'title', 'slug', 'description', 'hidden_description', 'image', 'image_alt', 'seo_title', 'seo_description', 'in_stock', 'is_visible'])]
+#[Hidden(['hidden_description'])] // members-only content: never serializes to guests; revealed via makeVisible() for authenticated viewers and the admin form
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
