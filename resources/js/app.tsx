@@ -3,8 +3,13 @@ import { createRoot, hydrateRoot } from 'react-dom/client';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
+import { registerCsrfPriming } from '@/lib/csrf';
 import { resolveLayout } from '@/lib/resolve-layout';
 import './echo';
+
+// Before createInertiaApp, so the interceptor is in place ahead of any request
+// the app can make.
+registerCsrfPriming();
 
 createInertiaApp({
     layout: resolveLayout,
@@ -35,6 +40,10 @@ createInertiaApp({
     },
     progress: {
         color: '#4B5563',
+        // Inertia waits 250ms before showing the bar, which is sensible when the
+        // server answers quickly. It does not here: a click has a full quarter
+        // second where nothing acknowledges it, which reads as a dead tap.
+        delay: 100,
     },
 });
 

@@ -171,6 +171,53 @@ Two things that look like faults and are not:
   two minutes, which reached 34 MB in one incident. Truncate with
   `: > storage/logs/ssr.log` after fixing the cause.
 
+## Edge-caching guest pages
+
+The origin renders a full SSR page in ~0.4s, but the hop between the CDN edge and
+this host has been measured adding 3-4 seconds on top, worsening under
+concurrency. `CacheGuestPagesAtEdge` lets the CDN answer anonymous storefront
+requests so most visitors never make that trip.
+
+**It is off by default and must stay off until the CDN rule exists.**
+`EDGE_CACHE_GUEST_PAGES=true` alone, with no matching rule, is how one shopper
+ends up looking at another shopper's page.
+
+The middleware only marks a response public when the request is a guest GET on a
+route in its `CACHEABLE_ROUTES` list, carries no session cookie, and is not an
+Inertia XHR. It then strips `Set-Cookie`, because a CDN told to cache a body
+stores the cookies with it and hands the same session to everyone who asks.
+
+It is registered with `web(prepend:)`, not `append:`. An appended middleware is
+the innermost one, so its work on the way out runs *before*
+`AddQueuedCookiesToResponse` puts the cookies back.
+
+The Cloudflare Cache Rule to pair with it:
+
+```
+If   (starts_with(http.request.uri.path, "/products/") or
+      starts_with(http.request.uri.path, "/categories/") or
+      http.request.uri.path in {"/" "/digital-products" "/physical-products" "/services" "/blog"})
+     and not http.request.headers.cookie contains "kharidai-session"
+     and http.request.method eq "GET"
+Then Cache eligibility: Eligible for cache
+     Edge TTL: Use cache-control header from origin
+     Browser TTL: Respect origin
+```
+
+The cookie condition is the safety net: even if the origin ever marks something
+public by mistake, a request carrying a session bypasses the cache entirely.
+
+Nothing purges the edge when an admin edits a product, so `EDGE_CACHE_TTL`
+doubles as the worst-case delay before an edit is visible to a logged-out
+visitor.
+
+**CSRF depends on the priming route.** A cached page carries no `XSRF-TOKEN`, so
+a first-time visitor's first write would be rejected with a 419.
+`resources/js/lib/csrf.ts` registers an `http.onRequest` interceptor that fetches
+`GET /csrf-cookie` when the cookie is missing and sets the header from it.
+Removing either half breaks login and add-to-cart for every visitor who arrived
+on a cached page, and only for them, which makes it easy to miss.
+
 ## The hydration invariant
 
 **`resources/js/ssr.tsx` and `resources/js/app.tsx` must render the same tree.**

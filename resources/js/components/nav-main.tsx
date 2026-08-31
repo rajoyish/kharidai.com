@@ -7,6 +7,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import type { NavItem } from '@/types';
 
 export function NavMain({
@@ -29,7 +30,7 @@ export function NavMain({
                             isActive={isCurrentUrl(item.href)}
                             tooltip={{ children: item.title }}
                         >
-                            <Link href={item.href} prefetch>
+                            <Link href={item.href} prefetch={LINK_PREFETCH}>
                                 {item.icon && <item.icon />}
                                 <span>{item.title}</span>
                             </Link>

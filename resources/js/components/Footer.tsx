@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import AppLogo from '@/components/app-logo';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import { home } from '@/routes';
 import { index as blogIndex } from '@/routes/blog';
 import { index as digitalProducts } from '@/routes/digital-products';
@@ -58,7 +59,11 @@ export function Footer() {
                 <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Column 1: Brand / Logo */}
                     <div className="col-span-1 flex flex-col items-start">
-                        <Link href={home()} prefetch className="mb-6">
+                        <Link
+                            href={home()}
+                            prefetch={LINK_PREFETCH}
+                            className="mb-6"
+                        >
                             <AppLogo className="h-10 w-auto" />
                         </Link>
                         <p className="max-w-xs text-sm leading-relaxed text-primary-foreground/70">
@@ -78,7 +83,7 @@ export function Footer() {
                                 <li key={link.label}>
                                     <Link
                                         href={link.href}
-                                        prefetch
+                                        prefetch={LINK_PREFETCH}
                                         className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
                                     >
                                         {link.label}
@@ -131,7 +136,7 @@ export function Footer() {
                                     <li key={page.slug}>
                                         <Link
                                             href={showPage(page.slug)}
-                                            prefetch
+                                            prefetch={LINK_PREFETCH}
                                             className="text-sm font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground"
                                         >
                                             {page.title}

@@ -31,6 +31,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import { home } from '@/routes';
 import { index as servicesIndex } from '@/routes/account/services';
 import { dashboard as adminDashboard } from '@/routes/admin';
@@ -173,7 +174,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={home()} prefetch>
+                            <Link href={home()} prefetch={LINK_PREFETCH}>
                                 <div className="flex items-center justify-center">
                                     {state === 'collapsed' ? (
                                         <AppLogoIcon className="size-6 text-primary" />

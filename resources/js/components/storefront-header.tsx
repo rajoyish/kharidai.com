@@ -32,6 +32,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import { home } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as blogIndex } from '@/routes/blog';
@@ -165,7 +166,7 @@ export function StorefrontHeader({
             <div className="container mx-auto flex h-16 items-center gap-4 px-4 md:gap-6 md:px-6">
                 <Link
                     href={home()}
-                    prefetch
+                    prefetch={LINK_PREFETCH}
                     className="flex shrink-0 items-center gap-2"
                 >
                     <AppLogo className="h-8 w-auto md:h-10" />
@@ -181,7 +182,7 @@ export function StorefrontHeader({
                         <NavScroller>
                             <Link
                                 href={home()}
-                                prefetch
+                                prefetch={LINK_PREFETCH}
                                 aria-current={
                                     isCurrent('/') ? 'page' : undefined
                                 }
@@ -197,7 +198,7 @@ export function StorefrontHeader({
                             {hasBlogPosts && (
                                 <Link
                                     href={blogIndex()}
-                                    prefetch
+                                    prefetch={LINK_PREFETCH}
                                     aria-current={
                                         isCurrent(blogIndex().url)
                                             ? 'page'
@@ -237,7 +238,7 @@ export function StorefrontHeader({
                     {auth.user ? (
                         <Link
                             href={accountHref}
-                            prefetch
+                            prefetch={LINK_PREFETCH}
                             className={DESKTOP_ACCOUNT_CLASSES}
                         >
                             <User className="h-5 w-5 shrink-0" aria-hidden />
@@ -259,7 +260,7 @@ export function StorefrontHeader({
                     )}
                     <Link
                         href={cartIndex()}
-                        prefetch
+                        prefetch={LINK_PREFETCH}
                         className={`relative flex items-center gap-2 rounded-md text-sm font-semibold transition-colors hover:text-primary ${FOCUS_CLASSES}`}
                     >
                         <div className="relative">
@@ -308,7 +309,7 @@ export function StorefrontHeader({
                                     >
                                         <Link
                                             href={home()}
-                                            prefetch
+                                            prefetch={LINK_PREFETCH}
                                             aria-current={
                                                 isCurrent('/')
                                                     ? 'page'
@@ -327,7 +328,7 @@ export function StorefrontHeader({
                                         {hasBlogPosts && (
                                             <Link
                                                 href={blogIndex()}
-                                                prefetch
+                                                prefetch={LINK_PREFETCH}
                                                 aria-current={
                                                     isCurrent(blogIndex().url)
                                                         ? 'page'
@@ -355,7 +356,7 @@ export function StorefrontHeader({
                                     {auth.user ? (
                                         <Link
                                             href={accountHref}
-                                            prefetch
+                                            prefetch={LINK_PREFETCH}
                                             className={MOBILE_ACCOUNT_CLASSES}
                                         >
                                             <User
@@ -392,7 +393,7 @@ export function StorefrontHeader({
                                     )}
                                     <Link
                                         href={cartIndex()}
-                                        prefetch
+                                        prefetch={LINK_PREFETCH}
                                         className={`relative flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary ${FOCUS_CLASSES}`}
                                     >
                                         <div className="relative">
@@ -489,7 +490,7 @@ function GroupDropdown({ group }: { group: StorefrontNavigationGroup }) {
                     <DropdownMenuItem asChild className={DROPDOWN_ITEM_CLASSES}>
                         <Link
                             href={groupHref}
-                            prefetch
+                            prefetch={LINK_PREFETCH}
                             className="mb-1 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm font-semibold text-primary no-underline transition-colors outline-none hover:bg-primary/10 data-highlighted:bg-primary/10"
                         >
                             View all {group.label}
@@ -507,7 +508,7 @@ function GroupDropdown({ group }: { group: StorefrontNavigationGroup }) {
                             >
                                 <Link
                                     href={showCategory(category)}
-                                    prefetch
+                                    prefetch={LINK_PREFETCH}
                                     className={DROPDOWN_LINK_CLASSES}
                                 >
                                     {category.name}
@@ -634,7 +635,7 @@ function MobileNavigationGroup({
             {groupHref && (
                 <Link
                     href={groupHref}
-                    prefetch
+                    prefetch={LINK_PREFETCH}
                     className="mx-1 flex items-center justify-between rounded-lg bg-primary/5 px-3 py-2 text-base font-semibold text-primary transition-colors hover:bg-primary/10"
                 >
                     View all {group.label}
@@ -646,7 +647,7 @@ function MobileNavigationGroup({
                     <div key={category.id} className="flex flex-col">
                         <Link
                             href={showCategory(category)}
-                            prefetch
+                            prefetch={LINK_PREFETCH}
                             className={MOBILE_LINK_CLASSES}
                         >
                             {category.name}
