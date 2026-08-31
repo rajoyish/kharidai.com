@@ -15,6 +15,7 @@ import type { ComponentType } from 'react';
 import AppLogo from '@/components/app-logo';
 import AppearanceTabs from '@/components/appearance-tabs';
 import { AppearanceToggle } from '@/components/appearance-toggle';
+import { LoginDialog } from '@/components/login-dialog';
 import { NavScroller } from '@/components/nav-scroller';
 import { StorefrontNavLink } from '@/components/storefront-nav-link';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { home, login } from '@/routes';
+import { home } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as blogIndex } from '@/routes/blog';
 import { index as cartIndex } from '@/routes/cart';
@@ -85,6 +86,10 @@ const FOCUS_CLASSES =
 const DESKTOP_LINK_CLASSES = `shrink-0 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors hover:text-primary aria-[current=page]:text-primary ${FOCUS_CLASSES}`;
 
 const DESKTOP_TRIGGER_CLASSES = `group flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary ${FOCUS_CLASSES}`;
+
+const DESKTOP_ACCOUNT_CLASSES = `flex items-center gap-2 rounded-md text-sm font-semibold transition-colors hover:text-primary ${FOCUS_CLASSES}`;
+
+const MOBILE_ACCOUNT_CLASSES = `flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary ${FOCUS_CLASSES}`;
 
 const MOBILE_LINK_CLASSES = `rounded-lg px-2 py-2 text-base font-semibold transition-colors hover:bg-primary/10 hover:text-primary aria-[current=page]:text-primary ${FOCUS_CLASSES}`;
 
@@ -142,14 +147,14 @@ export function StorefrontHeader({
                   children: [],
               }));
 
-    const accountHref = auth.user
-        ? auth.user.is_admin
-            ? adminDashboard()
-            : ordersIndex()
-        : login();
-    const accountLabel = auth.user?.name ?? 'Account';
+    // Signed in, the account control is a link to the visitor's own area.
+    // Signed out it opens the login modal instead of navigating to /login, so
+    // the page they were on stays put behind the dialog.
+    const accountHref = auth.user?.is_admin ? adminDashboard() : ordersIndex();
+    const accountLabel = auth.user?.name ?? 'Login';
 
     const [isOpen, setIsOpen] = useState(false);
+    const [isLoginOpen, setIsLoginOpen] = useState(false);
 
     useEffect(() => {
         return router.on('navigate', () => setIsOpen(false));
@@ -229,16 +234,29 @@ export function StorefrontHeader({
                 {/* User Actions (Right) Desktop */}
                 <div className="hidden shrink-0 items-center gap-6 md:flex">
                     <AppearanceToggle />
-                    <Link
-                        href={accountHref}
-                        prefetch
-                        className={`flex items-center gap-2 rounded-md text-sm font-semibold transition-colors hover:text-primary ${FOCUS_CLASSES}`}
-                    >
-                        <User className="h-5 w-5 shrink-0" aria-hidden />
-                        <span className="max-w-40 truncate">
-                            {accountLabel}
-                        </span>
-                    </Link>
+                    {auth.user ? (
+                        <Link
+                            href={accountHref}
+                            prefetch
+                            className={DESKTOP_ACCOUNT_CLASSES}
+                        >
+                            <User className="h-5 w-5 shrink-0" aria-hidden />
+                            <span className="max-w-40 truncate">
+                                {accountLabel}
+                            </span>
+                        </Link>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setIsLoginOpen(true)}
+                            className={DESKTOP_ACCOUNT_CLASSES}
+                        >
+                            <User className="h-5 w-5 shrink-0" aria-hidden />
+                            <span className="max-w-40 truncate">
+                                {accountLabel}
+                            </span>
+                        </button>
+                    )}
                     <Link
                         href={cartIndex()}
                         prefetch
@@ -334,19 +352,44 @@ export function StorefrontHeader({
                                     </nav>
                                 )}
                                 <div className="flex flex-col gap-1 border-t pt-6">
-                                    <Link
-                                        href={accountHref}
-                                        prefetch
-                                        className={`flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary ${FOCUS_CLASSES}`}
-                                    >
-                                        <User
-                                            className="h-5 w-5 shrink-0"
-                                            aria-hidden
-                                        />
-                                        <span className="truncate">
-                                            {accountLabel}
-                                        </span>
-                                    </Link>
+                                    {auth.user ? (
+                                        <Link
+                                            href={accountHref}
+                                            prefetch
+                                            className={MOBILE_ACCOUNT_CLASSES}
+                                        >
+                                            <User
+                                                className="h-5 w-5 shrink-0"
+                                                aria-hidden
+                                            />
+                                            <span className="truncate">
+                                                {accountLabel}
+                                            </span>
+                                        </Link>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            // The drawer deliberately stays
+                                            // open underneath. Closing it in
+                                            // the same tick lets its focus
+                                            // scope restore focus to the menu
+                                            // button once its exit animation
+                                            // ends — after the dialog has
+                                            // already taken focus. Stacked,
+                                            // Esc closes the dialog first and
+                                            // focus returns here.
+                                            onClick={() => setIsLoginOpen(true)}
+                                            className={MOBILE_ACCOUNT_CLASSES}
+                                        >
+                                            <User
+                                                className="h-5 w-5 shrink-0"
+                                                aria-hidden
+                                            />
+                                            <span className="truncate">
+                                                {accountLabel}
+                                            </span>
+                                        </button>
+                                    )}
                                     <Link
                                         href={cartIndex()}
                                         prefetch
@@ -387,6 +430,8 @@ export function StorefrontHeader({
                     </Sheet>
                 </div>
             </div>
+
+            <LoginDialog open={isLoginOpen} onOpenChange={setIsLoginOpen} />
         </header>
     );
 }
