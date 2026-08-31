@@ -32,7 +32,7 @@ it('can add an item to the cart', function () {
             'quantity' => 2,
         ]);
 
-    $response->assertRedirect(route('products.show', $variant->product));
+    $response->assertRedirect(route('cart.index'));
     $this->assertDatabaseHas('cart_items', [
         'product_variant_id' => $variant->id,
         'quantity' => 2,

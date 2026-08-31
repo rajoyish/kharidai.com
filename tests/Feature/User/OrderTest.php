@@ -229,3 +229,23 @@ it('can ask for receipt reupload', function () {
     Event::assertDispatched(OrderMessageCreated::class);
     Notification::assertSentTo($this->admin, NewMessageNotification::class);
 });
+
+it('exposes the amounts the scan-to-pay QR needs on the order details page', function () {
+    // The order page renders the same QR panel as the checkout payment page,
+    // so it needs the split between what is paid now and what is collected on
+    // delivery.
+    $order = Order::factory()->create([
+        'user_id' => $this->user->id,
+        'amount_due_now' => 250,
+        'balance_due' => 1750,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('/orders/'.$order->id)
+        ->assertInertia(fn ($page) => $page
+            ->component('User/Orders/Show')
+            ->where('order.amount_due_now', 250)
+            ->where('order.balance_due', 1750)
+            ->where('order.payment_receipt', null)
+        );
+});

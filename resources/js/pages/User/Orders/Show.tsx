@@ -29,6 +29,8 @@ type Order = {
     /** Invoice-aware total: service invoices supersede checkout estimates. */
     display_total_npr: number;
     currency: string;
+    amount_due_now: number;
+    balance_due: number;
     status: string;
     created_at: string;
     can_reupload_receipt: boolean;
@@ -103,6 +105,21 @@ export default function OrderShow({ order }: { order: Order }) {
                 .reduce((sum, invoice) => sum + invoice.due_npr, 0),
         0,
     );
+
+    // Mirrors the checkout QR page: an outstanding invoice supersedes the
+    // checkout-time figures and is settled in full, so nothing is left on
+    // delivery.
+    const qrAmountDue =
+        unpaidInvoicesTotal > 0 ? unpaidInvoicesTotal : order.amount_due_now;
+    const qrBalanceDue = unpaidInvoicesTotal > 0 ? 0 : order.balance_due;
+
+    // The scan-to-pay QR sits above the receipt block only while payment is
+    // still owed. Once a receipt is uploaded there is nothing left to scan, and
+    // an agreed service invoice already carries its own QR panel above.
+    const showPaymentQr =
+        !order.payment_receipt &&
+        awaitingPaymentDue <= 0 &&
+        (order.status === 'pending' || unpaidInvoicesTotal > 0);
 
     const [agreeingInvoiceId, setAgreeingInvoiceId] = useState<number | null>(
         null,
@@ -646,6 +663,23 @@ export default function OrderShow({ order }: { order: Order }) {
                                         </Button>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {showPaymentQr && (
+                            <div className="mt-6 rounded-xl border bg-card p-6">
+                                <PaymentQrPanel
+                                    amountLabel={formatNpr(qrAmountDue)}
+                                >
+                                    {qrBalanceDue > 0 && (
+                                        <p className="mt-1 text-center text-sm text-muted-foreground">
+                                            Pay {formatNpr(qrAmountDue)} now
+                                            (shipping). Remaining{' '}
+                                            {formatNpr(qrBalanceDue)} is
+                                            collected on delivery.
+                                        </p>
+                                    )}
+                                </PaymentQrPanel>
                             </div>
                         )}
 

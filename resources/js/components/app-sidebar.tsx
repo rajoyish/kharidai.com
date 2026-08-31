@@ -4,6 +4,7 @@ import {
     Briefcase,
     CalendarDays,
     ClipboardList,
+    CreditCard,
     FileText,
     HandCoins,
     LayoutDashboard,
@@ -38,6 +39,7 @@ import { index as adminMenusIndex } from '@/routes/admin/menus';
 import { index as adminNotificationsIndex } from '@/routes/admin/notifications';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
 import { index as adminPagesIndex } from '@/routes/admin/pages';
+import { index as adminPaymentMethodsIndex } from '@/routes/admin/payment-methods';
 import { index as adminPostsIndex } from '@/routes/admin/posts';
 import { index as adminProductsIndex } from '@/routes/admin/products';
 import { index as adminServicesIndex } from '@/routes/admin/services';
@@ -141,6 +143,11 @@ const adminNavItems: NavItem[] = [
         title: 'Shipping',
         href: adminShippingIndex(),
         icon: Truck,
+    },
+    {
+        title: 'Payment Methods',
+        href: adminPaymentMethodsIndex(),
+        icon: CreditCard,
     },
     {
         title: 'Services',

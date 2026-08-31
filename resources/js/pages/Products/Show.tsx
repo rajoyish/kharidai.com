@@ -312,9 +312,6 @@ export default function Show({
         }
 
         post(addToCart.url(), {
-            only: ['cartCount', 'errors'],
-            preserveScroll: true,
-            preserveState: true,
             onSuccess: () => {
                 toast.success('Added to cart');
             },
