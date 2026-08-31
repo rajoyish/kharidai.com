@@ -58,6 +58,7 @@ type Engagement = {
     tax_rate: number;
     advance_paid_npr: number;
     project_completion_date: string | null;
+    invoice_paid_at: string | null;
     payment_status: string;
     is_paid: boolean;
     invoice_ready: boolean;
@@ -159,6 +160,7 @@ export default function ServiceInvoice({
             ? String(engagement.advance_paid_npr)
             : '',
         project_completion_date: engagement.project_completion_date ?? '',
+        invoice_paid_at: engagement.invoice_paid_at ?? '',
     });
 
     const updateLineItem = (
@@ -212,6 +214,14 @@ export default function ServiceInvoice({
     const togglePaid = (next: boolean) => {
         setPaid(next);
         setUpdatingPayment(true);
+
+        // A due invoice holds no settlement date; the server drops it too, so
+        // rebase the default as well and the form stays clean.
+        if (!next) {
+            setData('invoice_paid_at', '');
+            setDefaults('invoice_paid_at', '');
+        }
+
         router.patch(
             updatePaymentStatus.url({ serviceEngagement: engagement.id }),
             { is_paid: next },
@@ -871,22 +881,51 @@ export default function ServiceInvoice({
                         </div>
                     </div>
 
-                    <div className="grid gap-1 border-t pt-4 sm:max-w-xs">
-                        <Label htmlFor="project_completion_date">
-                            Project Completion Date
-                        </Label>
-                        <Input
-                            id="project_completion_date"
-                            type="date"
-                            value={data.project_completion_date}
-                            onChange={(e) =>
-                                setData(
-                                    'project_completion_date',
-                                    e.target.value,
-                                )
-                            }
-                        />
-                        <InputError message={errors.project_completion_date} />
+                    <div className="grid items-start gap-4 border-t pt-4 sm:max-w-xl sm:grid-cols-2">
+                        <div className="grid gap-1">
+                            <Label htmlFor="project_completion_date">
+                                Project Completion Date
+                            </Label>
+                            <Input
+                                id="project_completion_date"
+                                type="date"
+                                value={data.project_completion_date}
+                                onChange={(e) =>
+                                    setData(
+                                        'project_completion_date',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                            <InputError
+                                message={errors.project_completion_date}
+                            />
+                        </div>
+                        <div className="grid gap-1">
+                            <Label
+                                htmlFor="invoice_paid_at"
+                                className={
+                                    paid ? undefined : 'text-muted-foreground'
+                                }
+                            >
+                                Invoice Paid Date
+                            </Label>
+                            <Input
+                                id="invoice_paid_at"
+                                type="date"
+                                disabled={!paid}
+                                value={data.invoice_paid_at}
+                                onChange={(e) =>
+                                    setData('invoice_paid_at', e.target.value)
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                {paid
+                                    ? 'The month this service is tithed in.'
+                                    : 'Available once the payment status is Paid.'}
+                            </p>
+                            <InputError message={errors.invoice_paid_at} />
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">

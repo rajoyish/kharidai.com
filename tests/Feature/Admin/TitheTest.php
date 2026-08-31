@@ -4,6 +4,7 @@ use App\Actions\Tithes\CalculateMonthlyProfitAction;
 use App\Actions\Tithes\SyncMonthlyTitheAction;
 use App\Enums\ProductType;
 use App\Models\MonthlyTithe;
+use App\Models\MonthlyTitheItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -23,10 +24,9 @@ beforeEach(function () {
 });
 
 /**
- * A tithe only exists off the back of a completed order's profit, so seed the order
- * that earns it and let the sync action derive the row.
+ * One completed order in the given month, earning `price - purchase_price` profit.
  */
-function seedTitheFor(User $user, int $year, int $month): MonthlyTithe
+function completedOrderIn(User $user, int $year, int $month, ProductVariant $variant, int $price, int $purchasePrice): Order
 {
     $order = Order::factory()->create([
         'user_id' => $user->id,
@@ -36,12 +36,55 @@ function seedTitheFor(User $user, int $year, int $month): MonthlyTithe
 
     OrderItem::create([
         'order_id' => $order->id,
-        'product_variant_id' => ProductVariant::factory()->create()->id,
-        'price' => 1000,
-        'purchase_price' => 400,
+        'product_variant_id' => $variant->id,
+        'price' => $price,
+        'purchase_price' => $purchasePrice,
         'quantity' => 1,
     ]);
 
+    return $order;
+}
+
+/**
+ * A tithe only exists off the back of a completed order's profit, so seed the order
+ * that earns it and let the sync action derive the row.
+ */
+function seedTitheFor(User $user, int $year, int $month): MonthlyTithe
+{
+    completedOrderIn($user, $year, $month, ProductVariant::factory()->create(), 1000, 400);
+
+    return syncTithe($year, $month);
+}
+
+/**
+ * Seed several completed orders into one month, each for a different product, so
+ * the month holds several entries that settle independently. The nth order earns
+ * 600 * n profit and owes 60 * n in tithe.
+ *
+ * @return list<Order>
+ */
+function seedOrdersForMonth(User $user, int $year, int $month, int $count): array
+{
+    $orders = [];
+
+    for ($index = 1; $index <= $count; $index++) {
+        $orders[] = completedOrderIn(
+            $user,
+            $year,
+            $month,
+            ProductVariant::factory()->create(),
+            1000 * $index,
+            400 * $index,
+        );
+    }
+
+    syncTithe($year, $month);
+
+    return $orders;
+}
+
+function syncTithe(int $year, int $month): MonthlyTithe
+{
     app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create($year, $month, 1));
 
     return MonthlyTithe::query()
@@ -149,7 +192,33 @@ it('removes a monthly tithe when the last completed order for that month is reve
     ]);
 });
 
-it('breaks a month down per product, tithing ten percent of each product profit', function () {
+it('lists one entry per completed order, tithing ten percent of its profit', function () {
+    [$smaller, $larger] = seedOrdersForMonth($this->user, 2026, 7, 2);
+
+    $response = $this->actingAs($this->admin)->get(route('admin.tithes.index', ['year' => 2026]));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Admin/Tithes/Index')
+        ->has('tithes', 1)
+        ->where('tithes.0.label', 'July 2026')
+        ->has('tithes.0.entries', 2)
+        // Entries are ordered by profit, largest first.
+        ->where('tithes.0.entries.0.source_type', 'order')
+        ->where('tithes.0.entries.0.source_id', $larger->id)
+        ->where('tithes.0.entries.0.reference', $larger->order_number)
+        ->where('tithes.0.entries.0.profit', 1200)
+        ->where('tithes.0.entries.0.tithe', 120)
+        ->where('tithes.0.entries.1.source_id', $smaller->id)
+        ->where('tithes.0.entries.1.reference', $smaller->order_number)
+        ->where('tithes.0.entries.1.profit', 600)
+        ->where('tithes.0.entries.1.tithe', 60)
+        ->where('tithes.0.total_profit', 1800)
+        ->where('tithes.0.total_amount', 180)
+    );
+});
+
+it('keeps a multi-product order as one entry labelled with every product it sold', function () {
     $order = Order::factory()->create([
         'user_id' => $this->user->id,
         'status' => 'completed',
@@ -174,28 +243,76 @@ it('breaks a month down per product, tithing ten percent of each product profit'
         'quantity' => 2,
     ]);
 
-    app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, 7, 1));
+    syncTithe(2026, 7);
 
-    $response = $this->actingAs($this->admin)->get(route('admin.tithes.index', ['year' => 2026]));
-
-    $response->assertSuccessful();
-    $response->assertInertia(fn (Assert $page) => $page
-        ->component('Admin/Tithes/Index')
-        ->has('tithes', 1)
-        ->where('tithes.0.label', 'July 2026')
-        ->has('tithes.0.products', 2)
-        ->where('tithes.0.products.0.name', 'Product A')
-        ->where('tithes.0.products.0.profit', 8000)
-        ->where('tithes.0.products.0.tithe', 800)
-        ->where('tithes.0.products.1.name', 'Product B')
-        ->where('tithes.0.products.1.profit', 5000)
-        ->where('tithes.0.products.1.tithe', 500)
-        ->where('tithes.0.total_profit', 13000)
-        ->where('tithes.0.total_amount', 1300)
-    );
+    // 8,000 from Product A plus 5,000 from Product B was one payment, so it settles once.
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('tithes.0.entries', 1)
+            ->where('tithes.0.entries.0.label', 'Product A, Product B')
+            ->where('tithes.0.entries.0.reference', $order->order_number)
+            ->where('tithes.0.entries.0.profit', 13000)
+            ->where('tithes.0.entries.0.tithe', 1300)
+            ->where('tithes.0.total_amount', 1300)
+        );
 });
 
-it('separates the per-product breakdown by month', function () {
+it('lists an offline service as its own entry pointing at the engagement', function () {
+    $product = Product::factory()->create(['title' => 'Domain Renewal', 'type' => ProductType::Service]);
+
+    $engagement = ServiceEngagement::factory()->offlineTithed()->create([
+        'user_id' => $this->user->id,
+        'product_id' => $product->id,
+        'project_name' => 'ACME domain',
+        'invoice_paid_at' => '2026-07-15',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('tithes.0.entries', 1)
+            ->where('tithes.0.entries.0.source_type', 'service')
+            ->where('tithes.0.entries.0.source_id', $engagement->id)
+            ->where('tithes.0.entries.0.label', 'Domain Renewal')
+            ->where('tithes.0.entries.0.reference', 'ACME domain')
+            ->where('tithes.0.entries.0.profit', 7960)
+            ->where('tithes.0.entries.0.tithe', 796)
+        );
+});
+
+it('keeps an order and an offline service for the same product as separate entries', function () {
+    $product = Product::factory()->create(['title' => 'Domain Renewal', 'type' => ProductType::Service]);
+
+    $order = completedOrderIn(
+        $this->user,
+        2026,
+        7,
+        ProductVariant::factory()->for($product)->create(),
+        1000,
+        400,
+    );
+
+    $engagement = ServiceEngagement::factory()->offlineTithed()->create([
+        'user_id' => $this->user->id,
+        'product_id' => $product->id,
+        'invoice_paid_at' => '2026-07-15',
+    ]);
+
+    syncTithe(2026, 7);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('tithes.0.entries', 2)
+            ->where('tithes.0.entries.0.source_type', 'service')
+            ->where('tithes.0.entries.0.source_id', $engagement->id)
+            ->where('tithes.0.entries.1.source_type', 'order')
+            ->where('tithes.0.entries.1.source_id', $order->id)
+        );
+});
+
+it('separates the monthly breakdown by month', function () {
     $product = Product::factory()->create(['title' => 'Recurring Product']);
     $variant = ProductVariant::factory()->for($product)->create();
 
@@ -215,18 +332,18 @@ it('separates the per-product breakdown by month', function () {
         ]);
     }
 
-    app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, 7, 1));
-    app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, 8, 1));
+    syncTithe(2026, 7);
+    syncTithe(2026, 8);
 
     $this->actingAs($this->admin)
         ->get(route('admin.tithes.index', ['year' => 2026]))
         ->assertInertia(fn (Assert $page) => $page
             ->has('tithes', 2)
             ->where('tithes.0.label', 'August 2026')
-            ->where('tithes.0.products.0.profit', 1000)
+            ->where('tithes.0.entries.0.profit', 1000)
             ->where('tithes.0.total_amount', 100)
             ->where('tithes.1.label', 'July 2026')
-            ->where('tithes.1.products.0.profit', 500)
+            ->where('tithes.1.entries.0.profit', 500)
             ->where('tithes.1.total_amount', 50)
         );
 });
@@ -262,14 +379,15 @@ it('tithes service profit on the invoiced grand total rather than the estimate',
         ],
     ]);
 
-    app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, 7, 1));
+    syncTithe(2026, 7);
 
     // Grand total 8,500 less the 1,500 engagement cost leaves 7,000 profit.
     $this->actingAs($this->admin)
         ->get(route('admin.tithes.index', ['year' => 2026]))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('tithes.0.products.0.name', 'Consulting')
-            ->where('tithes.0.products.0.profit', 7000)
+            ->where('tithes.0.entries.0.label', 'Consulting')
+            ->where('tithes.0.entries.0.reference', $order->order_number)
+            ->where('tithes.0.entries.0.profit', 7000)
             ->where('tithes.0.total_amount', 700)
         );
 
@@ -397,26 +515,229 @@ it('allows admins to view and toggle monthly tithes', function () {
         ->paid_at->toBeNull();
 });
 
+it('settles one order without touching another in the same month', function () {
+    [$smaller, $larger] = seedOrdersForMonth($this->user, 2026, 7, 2);
+    $monthlyTithe = MonthlyTithe::query()->where('year', 2026)->where('month', 7)->sole();
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->id]))
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('monthly_tithe_items', [
+        'monthly_tithe_id' => $monthlyTithe->id,
+        'order_id' => $smaller->id,
+        'is_paid' => true,
+    ]);
+    $this->assertDatabaseHas('monthly_tithe_items', [
+        'monthly_tithe_id' => $monthlyTithe->id,
+        'order_id' => $larger->id,
+        'is_paid' => false,
+    ]);
+
+    expect($monthlyTithe->fresh())
+        ->is_paid->toBeFalse()
+        ->paid_at->toBeNull();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('tithes.0.payment_status', 'partial')
+            ->where('tithes.0.paid_amount', 60)
+            ->where('tithes.0.outstanding_amount', 120)
+            ->where('tithes.0.entries.0.source_id', $larger->id)
+            ->where('tithes.0.entries.0.is_paid', false)
+            ->where('tithes.0.entries.1.source_id', $smaller->id)
+            ->where('tithes.0.entries.1.is_paid', true)
+        );
+});
+
+it('settles two orders of the same product independently', function () {
+    $variant = ProductVariant::factory()->create();
+
+    $first = completedOrderIn($this->user, 2026, 7, $variant, 1000, 400);
+    $second = completedOrderIn($this->user, 2026, 7, $variant, 2000, 800);
+    $monthlyTithe = syncTithe(2026, 7);
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $first->id]))
+        ->assertRedirect();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('tithes.0.entries', 2)
+            ->where('tithes.0.entries.0.source_id', $second->id)
+            ->where('tithes.0.entries.0.is_paid', false)
+            ->where('tithes.0.entries.1.source_id', $first->id)
+            ->where('tithes.0.entries.1.is_paid', true)
+            ->where('tithes.0.payment_status', 'partial')
+        );
+});
+
+it('settles an offline service without touching an order in the same month', function () {
+    $order = completedOrderIn($this->user, 2026, 7, ProductVariant::factory()->create(), 1000, 400);
+
+    $engagement = ServiceEngagement::factory()->offlineTithed()->create([
+        'user_id' => $this->user->id,
+        'invoice_paid_at' => '2026-07-15',
+    ]);
+
+    $monthlyTithe = syncTithe(2026, 7);
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.services.toggle-status', [$monthlyTithe->id, $engagement->id]))
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('monthly_tithe_items', [
+        'monthly_tithe_id' => $monthlyTithe->id,
+        'service_engagement_id' => $engagement->id,
+        'order_id' => null,
+        'is_paid' => true,
+    ]);
+    $this->assertDatabaseHas('monthly_tithe_items', [
+        'monthly_tithe_id' => $monthlyTithe->id,
+        'order_id' => $order->id,
+        'service_engagement_id' => null,
+        'is_paid' => false,
+    ]);
+
+    expect($monthlyTithe->fresh()->is_paid)->toBeFalse();
+
+    // 796 of the 856 owed is settled; the 60 from the order is still outstanding.
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('tithes.0.payment_status', 'partial')
+            ->where('tithes.0.paid_amount', 796)
+            ->where('tithes.0.outstanding_amount', 60)
+        );
+});
+
+it('settles the month automatically once every entry is paid', function () {
+    [$smaller, $larger] = seedOrdersForMonth($this->user, 2026, 7, 2);
+    $monthlyTithe = MonthlyTithe::query()->where('year', 2026)->where('month', 7)->sole();
+
+    foreach ([$smaller, $larger] as $order) {
+        $this->actingAs($this->admin)
+            ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $order->id]))
+            ->assertRedirect();
+    }
+
+    expect($monthlyTithe->fresh())
+        ->is_paid->toBeTrue()
+        ->paid_at->not->toBeNull();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('tithes.0.payment_status', 'paid')
+            ->where('tithes.0.paid_amount', 180)
+            ->where('tithes.0.outstanding_amount', 0)
+        );
+});
+
+it('settles every entry when the month is marked paid in bulk', function () {
+    [$smaller, $larger] = seedOrdersForMonth($this->user, 2026, 7, 2);
+    $monthlyTithe = MonthlyTithe::query()->where('year', 2026)->where('month', 7)->sole();
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.toggle-status', $monthlyTithe))
+        ->assertRedirect();
+
+    expect($monthlyTithe->fresh()->is_paid)->toBeTrue()
+        ->and(MonthlyTitheItem::query()->where('is_paid', true)->pluck('order_id')->sort()->values()->all())
+        ->toBe(collect([$smaller->id, $larger->id])->sort()->values()->all());
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.toggle-status', $monthlyTithe))
+        ->assertRedirect();
+
+    expect($monthlyTithe->fresh())
+        ->is_paid->toBeFalse()
+        ->paid_at->toBeNull()
+        ->and(MonthlyTitheItem::query()->where('is_paid', true)->count())->toBe(0);
+});
+
+it('returns the month to unpaid when a single entry is unsettled after a bulk payment', function () {
+    [$smaller] = seedOrdersForMonth($this->user, 2026, 7, 2);
+    $monthlyTithe = MonthlyTithe::query()->where('year', 2026)->where('month', 7)->sole();
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.toggle-status', $monthlyTithe))
+        ->assertRedirect();
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->id]))
+        ->assertRedirect();
+
+    expect($monthlyTithe->fresh()->is_paid)->toBeFalse();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('tithes.0.payment_status', 'partial')
+            ->where('tithes.0.paid_amount', 120)
+            ->where('tithes.0.outstanding_amount', 60)
+        );
+});
+
+it('treats a month settled before entry tracking existed as fully paid', function () {
+    [$smaller] = seedOrdersForMonth($this->user, 2026, 7, 2);
+    $monthlyTithe = MonthlyTithe::query()->where('year', 2026)->where('month', 7)->sole();
+
+    // Legacy state: the month was settled in bulk, so it carries no entry records.
+    $monthlyTithe->update(['is_paid' => true, 'paid_at' => now()]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('tithes.0.payment_status', 'paid')
+            ->where('tithes.0.paid_amount', 180)
+        );
+
+    // Unsettling one entry must backfill the rest as paid rather than wipe them.
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->id]))
+        ->assertRedirect();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.tithes.index', ['year' => 2026]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('tithes.0.payment_status', 'partial')
+            ->where('tithes.0.paid_amount', 120)
+            ->where('tithes.0.outstanding_amount', 60)
+        );
+});
+
+it('rejects settling an order that earned no profit in the month', function () {
+    $monthlyTithe = seedTitheFor($this->user, 2026, 7);
+    $unrelatedOrder = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $unrelatedOrder->id]))
+        ->assertNotFound();
+
+    $this->assertDatabaseCount('monthly_tithe_items', 0);
+});
+
+it('rejects settling a service that earned no profit in the month', function () {
+    $monthlyTithe = seedTitheFor($this->user, 2026, 7);
+    $unrelatedEngagement = ServiceEngagement::factory()->create(['user_id' => $this->user->id]);
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.tithes.services.toggle-status', [$monthlyTithe->id, $unrelatedEngagement->id]))
+        ->assertNotFound();
+
+    $this->assertDatabaseCount('monthly_tithe_items', 0);
+});
+
 it('costs the same number of queries however many months of tithes exist', function () {
     $variant = ProductVariant::factory()->create();
 
     $seedMonths = function (array $months) use ($variant): void {
         foreach ($months as $month) {
-            $order = Order::factory()->create([
-                'user_id' => $this->user->id,
-                'status' => 'completed',
-                'created_at' => "2026-{$month}-10 10:00:00",
-            ]);
-
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_variant_id' => $variant->id,
-                'price' => 1000,
-                'purchase_price' => 400,
-                'quantity' => 1,
-            ]);
-
-            app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, (int) $month, 1));
+            completedOrderIn($this->user, 2026, (int) $month, $variant, 1000, 400);
+            syncTithe(2026, (int) $month);
         }
     };
 
@@ -443,6 +764,8 @@ it('costs the same number of queries however many months of tithes exist', funct
 
 it('prevents non-admins from accessing tithe management', function () {
     $monthlyTithe = MonthlyTithe::factory()->create();
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+    $engagement = ServiceEngagement::factory()->create(['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
         ->get(route('admin.tithes.index', ['year' => 2026]))
@@ -450,6 +773,14 @@ it('prevents non-admins from accessing tithe management', function () {
 
     $this->actingAs($this->user)
         ->patch(route('admin.tithes.toggle-status', $monthlyTithe))
+        ->assertForbidden();
+
+    $this->actingAs($this->user)
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $order->id]))
+        ->assertForbidden();
+
+    $this->actingAs($this->user)
+        ->patch(route('admin.tithes.services.toggle-status', [$monthlyTithe->id, $engagement->id]))
         ->assertForbidden();
 });
 
@@ -494,7 +825,7 @@ it('reports dashboard tithe stats from the profit of completed orders', function
         'quantity' => 1,
     ]);
 
-    app(SyncMonthlyTitheAction::class)->execute(CarbonImmutable::create(2026, 7, 1));
+    syncTithe(2026, 7);
 
     $this->actingAs($this->admin)
         ->get(route('admin.dashboard'))

@@ -37,6 +37,7 @@ class ServiceEngagementFactory extends Factory
             'advance_paid_npr' => 0,
             'advance_paid_at' => null,
             'project_completion_date' => null,
+            'invoice_paid_at' => null,
             'measurement' => null,
             'project_name' => $this->faker->words(3, true),
             'line_items' => null,
@@ -116,7 +117,9 @@ class ServiceEngagementFactory extends Factory
 
     /**
      * An offline engagement whose manually recorded, settled profit feeds the
-     * Monthly Tithe: no order, both offline figures set, marked paid.
+     * Monthly Tithe: no order, both offline figures set, marked paid. Set
+     * `invoice_paid_at` as well to choose the month the profit is tithed in;
+     * without it the engagement is left out of the tithe entirely.
      */
     public function offlineTithed(float $customerPaidNpr = 17000, float $purchaseCostNpr = 9040): static
     {

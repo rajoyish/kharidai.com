@@ -130,6 +130,101 @@ it('overrides the payment status when the admin marks it due', function () {
     expect($engagement->refresh()->paymentStatus())->toBe('due');
 });
 
+it('records the invoice paid date once the invoice is settled', function () {
+    $engagement = bookLayoutEngagement();
+
+    $this->actingAs($this->admin)
+        ->patch("/admin/services/{$engagement->id}/invoice", [
+            'line_items' => [
+                ['label' => 'Cover Pages', 'quantity' => 4, 'unit_price_npr' => 500],
+            ],
+            'tax_rate' => 0,
+            // The advance clears the 2,000 grand total, so the invoice reads as paid.
+            'advance_paid_npr' => 2000,
+            'invoice_paid_at' => '2026-08-20',
+        ])
+        ->assertRedirect();
+
+    $engagement->refresh();
+
+    expect($engagement->paymentStatus())->toBe('paid')
+        ->and($engagement->invoice_paid_at->format('Y-m-d'))->toBe('2026-08-20');
+});
+
+it('refuses an invoice paid date while the invoice is still due', function () {
+    $engagement = bookLayoutEngagement();
+
+    $this->actingAs($this->admin)
+        ->patch("/admin/services/{$engagement->id}/invoice", [
+            'line_items' => [
+                ['label' => 'Cover Pages', 'quantity' => 4, 'unit_price_npr' => 500],
+            ],
+            'tax_rate' => 0,
+            'advance_paid_npr' => 0,
+            'invoice_paid_at' => '2026-08-20',
+        ])
+        ->assertRedirect();
+
+    $engagement->refresh();
+
+    expect($engagement->paymentStatus())->toBe('due')
+        ->and($engagement->invoice_paid_at)->toBeNull();
+});
+
+it('clears the invoice paid date when the admin reverts the status to due', function () {
+    $engagement = bookLayoutEngagement();
+    $engagement->update([
+        'agreed_price_npr' => 36160,
+        'advance_paid_npr' => 36160,
+        'invoice_paid_at' => '2026-08-20',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->patch("/admin/services/{$engagement->id}/payment-status", ['is_paid' => false])
+        ->assertRedirect();
+
+    $engagement->refresh();
+
+    expect($engagement->paymentStatus())->toBe('due')
+        ->and($engagement->invoice_paid_at)->toBeNull();
+});
+
+it('keeps the invoice paid date when the admin marks the invoice paid', function () {
+    $engagement = bookLayoutEngagement();
+    $engagement->update(['agreed_price_npr' => 36160, 'invoice_paid_at' => '2026-08-20']);
+
+    $this->actingAs($this->admin)
+        ->patch("/admin/services/{$engagement->id}/payment-status", ['is_paid' => true])
+        ->assertRedirect();
+
+    expect($engagement->refresh()->invoice_paid_at->format('Y-m-d'))->toBe('2026-08-20');
+});
+
+it('exposes the invoice paid date on the services index and detail pages', function () {
+    $engagement = bookLayoutEngagement();
+
+    // Nothing settled yet, so the column has no date to render.
+    $this->actingAs($this->admin)
+        ->get('/admin/services')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('engagements.0.invoice_paid_at', null)
+        );
+
+    $engagement->update(['invoice_paid_at' => '2026-08-20']);
+
+    $this->actingAs($this->admin)
+        ->get('/admin/services')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('engagements.0.invoice_paid_at', '8/20/2026')
+        );
+
+    $this->actingAs($this->admin)
+        ->get("/admin/services/{$engagement->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('engagement.invoice_paid_at', '2026-08-20')
+        );
+});
+
 it('deletes a service engagement', function () {
     $engagement = bookLayoutEngagement();
 

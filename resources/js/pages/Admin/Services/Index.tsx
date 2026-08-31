@@ -34,6 +34,7 @@ type Engagement = {
     project_name: string | null;
     payment_status: string;
     project_completion_date: string | null;
+    invoice_paid_at: string | null;
     total_npr: number;
     due_npr: number;
     user: { id: number; name: string; email: string } | null;
@@ -102,6 +103,7 @@ export default function ServicesIndex({
                             <TableHead>Service Status</TableHead>
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Completion Date</TableHead>
+                            <TableHead>Invoice Paid Date</TableHead>
                             <TableHead className="text-right">
                                 Total Amount
                             </TableHead>
@@ -181,6 +183,9 @@ export default function ServicesIndex({
                                 <TableCell className="text-muted-foreground">
                                     {engagement.project_completion_date ?? '—'}
                                 </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {engagement.invoice_paid_at ?? '—'}
+                                </TableCell>
                                 <TableCell className="text-right tabular-nums">
                                     {formatNpr(engagement.total_npr)}
                                 </TableCell>
@@ -225,7 +230,7 @@ export default function ServicesIndex({
                         {engagements.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={9}
+                                    colSpan={10}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     {filters?.search

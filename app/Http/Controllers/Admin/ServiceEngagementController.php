@@ -52,6 +52,7 @@ class ServiceEngagementController extends Controller
                 'project_name' => $engagement->project_name,
                 'payment_status' => $engagement->paymentStatus(),
                 'project_completion_date' => $engagement->project_completion_date?->format('n/j/Y'),
+                'invoice_paid_at' => $engagement->invoice_paid_at?->format('n/j/Y'),
                 'total_npr' => (float) ($engagement->agreed_price_npr ?? 0),
                 'due_npr' => $engagement->outstandingNpr(),
                 'user' => $engagement->user->only('id', 'name', 'email'),
@@ -156,6 +157,7 @@ class ServiceEngagementController extends Controller
                 'tax_rate' => (float) $serviceEngagement->tax_rate,
                 'advance_paid_npr' => $serviceEngagement->advance_paid_npr,
                 'project_completion_date' => $serviceEngagement->project_completion_date?->format('Y-m-d'),
+                'invoice_paid_at' => $serviceEngagement->invoice_paid_at?->format('Y-m-d'),
                 'subtotal_npr' => $serviceEngagement->subtotalNpr(),
                 'tax_npr' => $serviceEngagement->taxNpr(),
                 'grand_total_npr' => $serviceEngagement->grandTotalNpr(),
@@ -294,6 +296,7 @@ class ServiceEngagementController extends Controller
             'tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'advance_paid_npr' => ['nullable', 'numeric', 'min:0'],
             'project_completion_date' => ['nullable', 'date'],
+            'invoice_paid_at' => ['nullable', 'date'],
         ]);
 
         /** @var array<int, array<string, mixed>> $rawItems */
@@ -316,11 +319,20 @@ class ServiceEngagementController extends Controller
             'tax_rate' => $validated['tax_rate'],
             'advance_paid_npr' => $validated['advance_paid_npr'] ?? 0,
             'project_completion_date' => $validated['project_completion_date'] ?? null,
+            'invoice_paid_at' => $validated['invoice_paid_at'] ?? null,
         ]);
 
         // Subtotal and grand total derive from the freshly filled line items/tax.
         $serviceEngagement->calculated_cost_npr = $serviceEngagement->subtotalNpr();
         $serviceEngagement->agreed_price_npr = $serviceEngagement->grandTotalNpr();
+
+        // An invoice that is still due has not been settled, so it can hold no
+        // settlement date. Checked against the freshly filled totals, since those
+        // are what the derived payment status is read from.
+        if ($serviceEngagement->paymentStatus() !== 'paid') {
+            $serviceEngagement->invoice_paid_at = null;
+        }
+
         $serviceEngagement->save();
 
         return redirect()->route('admin.services.show', $serviceEngagement)->with('success', 'Invoice brief saved.');
@@ -397,7 +409,12 @@ class ServiceEngagementController extends Controller
             'is_paid' => ['required', 'boolean'],
         ]);
 
-        $serviceEngagement->update(['is_paid' => $validated['is_paid']]);
+        $serviceEngagement->update([
+            'is_paid' => $validated['is_paid'],
+            // Reverting to due discards the settlement date along with it, so the
+            // engagement stops being tithed against a month it was never paid in.
+            'invoice_paid_at' => $validated['is_paid'] ? $serviceEngagement->invoice_paid_at : null,
+        ]);
 
         return redirect()->back()->with('success', $validated['is_paid'] ? 'Marked as paid.' : 'Marked as due.');
     }
