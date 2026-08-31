@@ -50,9 +50,19 @@ class HandleInertiaRequests extends Middleware
 
         $user = $request->user();
 
-        $cart = $user
-            ? Cart::where('user_id', $user->id)->withSum('items', 'quantity')->first()
-            : null;
+        // Wrapped in a closure so partial reloads that do not ask for the badge
+        // never pay for the query. Every authenticated request goes through here,
+        // so on a slow database that one round trip is worth skipping.
+        $cartCount = $user === null
+            ? 0
+            : function () use ($user): int {
+                $cart = Cart::query()
+                    ->where('user_id', $user->id)
+                    ->withSum('items', 'quantity')
+                    ->first();
+
+                return (int) ($cart?->getAttribute('items_sum_quantity') ?? 0);
+            };
 
         $shared = [
             ...parent::share($request),
@@ -60,7 +70,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? $user->only('id', 'name', 'email', 'avatar', 'is_admin') : null,
             ],
-            'cartCount' => (int) ($cart?->getAttribute('items_sum_quantity') ?? 0),
+            'cartCount' => $cartCount,
             // Drives the banner prompting users for a WhatsApp-reachable
             // number. Guests are never prompted, and dismissal is remembered
             // for the current login only.

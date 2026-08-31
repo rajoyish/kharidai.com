@@ -106,6 +106,57 @@ it('keeps different option choices of the same variant as separate lines', funct
     expect(CartItem::query()->where('product_variant_id', $variant->id)->count())->toBe(2);
 });
 
+it('ships only the cart fields the page renders', function () {
+    $user = User::factory()->create();
+    $cart = Cart::factory()->create(['user_id' => $user->id]);
+    $variant = ProductVariant::factory()->create(['purchase_price_npr' => 1234]);
+    CartItem::factory()->create([
+        'cart_id' => $cart->id,
+        'product_variant_id' => $variant->id,
+    ]);
+
+    $response = $this->actingAs($user)->get('/cart');
+
+    $response->assertInertia(fn (Assert $page) => $page
+        ->has('cart.items.0', fn (Assert $item) => $item
+            ->hasAll(['id', 'quantity', 'selected_options', 'product_variant'])
+            ->has('product_variant', fn (Assert $variantProp) => $variantProp
+                ->hasAll(['id', 'name', 'price_npr', 'product'])
+                ->has('product', fn (Assert $product) => $product
+                    ->hasAll(['id', 'title', 'image']),
+                ),
+            ),
+        ),
+    );
+});
+
+it('serves a quantity change as a partial reload of just the cart props', function () {
+    $user = User::factory()->create();
+    $cart = Cart::factory()->create(['user_id' => $user->id]);
+    CartItem::factory()->create(['cart_id' => $cart->id, 'quantity' => 1]);
+
+    $version = $this->actingAs($user)
+        ->withHeader('X-Inertia', 'true')
+        ->get('/cart')
+        ->headers->get('x-inertia-version');
+
+    $response = $this->actingAs($user)
+        ->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $version,
+            'X-Inertia-Partial-Component' => 'Cart/Index',
+            'X-Inertia-Partial-Data' => 'cart,canCheckoutDirectly,cartCount',
+        ])
+        ->get('/cart');
+
+    $response->assertOk();
+    $response->assertJsonPath('component', 'Cart/Index');
+    $response->assertJsonStructure(['props' => ['cart', 'canCheckoutDirectly', 'cartCount']]);
+    // The expensive shared props are closures, so a partial reload never runs them.
+    $response->assertJsonMissingPath('props.paymentMethods');
+    $response->assertJsonMissingPath('props.storefront');
+});
+
 it('can update a cart item quantity', function () {
     $user = User::factory()->create();
     $cart = Cart::factory()->create(['user_id' => $user->id]);

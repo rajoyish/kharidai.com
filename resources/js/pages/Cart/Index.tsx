@@ -1,6 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { process as processCheckout } from '@/actions/App/Http/Controllers/CheckoutController';
 import { FloatingContactActions } from '@/components/floating-contact-actions';
 import { SeoHead } from '@/components/seo-head';
@@ -28,7 +28,6 @@ type ProductVariant = {
 
 type CartItem = {
     id: number;
-    product_variant_id: number;
     quantity: number;
     selected_options: { color?: string; size?: string } | null;
     product_variant: ProductVariant;
@@ -39,6 +38,12 @@ type Cart = {
     items: CartItem[];
 };
 
+/**
+ * The only props a quantity change can alter. Asking for them by name keeps the
+ * server from rebuilding the rest of the page's props on every click.
+ */
+const QUANTITY_PROPS = ['cart', 'canCheckoutDirectly', 'cartCount'];
+
 export default function CartIndex({
     cart,
     canCheckoutDirectly,
@@ -47,6 +52,75 @@ export default function CartIndex({
     canCheckoutDirectly: boolean;
 }) {
     const [placing, setPlacing] = useState(false);
+    const [removing, setRemoving] = useState<number[]>([]);
+
+    // Quantities the shopper has clicked but the server has not confirmed yet.
+    // The buttons read from here so the number, the line total and the subtotal
+    // move on the click rather than after the round trip.
+    const [draftQuantities, setDraftQuantities] = useState<
+        Record<number, number>
+    >({});
+
+    // One request per item at a time. Clicks that land while a request is in
+    // flight collapse into a single follow-up carrying the latest value, so
+    // holding down "+" costs two requests instead of one per press.
+    const inFlight = useRef<Set<number>>(new Set());
+    const queued = useRef<Map<number, number>>(new Map());
+
+    const quantityOf = (item: CartItem) =>
+        draftQuantities[item.id] ?? item.quantity;
+
+    const settleDraft = (itemId: number) => {
+        setDraftQuantities((current) => {
+            if (!(itemId in current)) {
+                return current;
+            }
+
+            const next = { ...current };
+            delete next[itemId];
+
+            return next;
+        });
+    };
+
+    const syncQuantity = (item: CartItem, quantity: number) => {
+        if (inFlight.current.has(item.id)) {
+            queued.current.set(item.id, quantity);
+
+            return;
+        }
+
+        inFlight.current.add(item.id);
+
+        router.put(
+            updateCartItem.url(item),
+            { quantity },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                replace: true,
+                only: QUANTITY_PROPS,
+                onFinish: () => {
+                    inFlight.current.delete(item.id);
+
+                    const pending = queued.current.get(item.id);
+
+                    if (pending !== undefined) {
+                        queued.current.delete(item.id);
+                        syncQuantity(item, pending);
+
+                        return;
+                    }
+
+                    // Nothing newer is waiting, so the props now carry the
+                    // settled quantity and the draft has nothing left to say.
+                    // Dropping it here also reverts the number if the request
+                    // failed, rather than leaving a lie on screen.
+                    settleDraft(item.id);
+                },
+            },
+        );
+    };
 
     const handlePlaceOrder = () => {
         router.post(
@@ -64,22 +138,33 @@ export default function CartIndex({
             return;
         }
 
-        router.put(
-            updateCartItem.url(item),
-            { quantity: newQuantity },
-            { preserveScroll: true },
-        );
+        setDraftQuantities((current) => ({
+            ...current,
+            [item.id]: newQuantity,
+        }));
+
+        syncQuantity(item, newQuantity);
     };
 
     const handleRemove = (item: CartItem) => {
+        setRemoving((current) => [...current, item.id]);
+
         router.delete(removeCartItem.url(item), {
             preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            only: QUANTITY_PROPS,
+            onFinish: () =>
+                setRemoving((current) =>
+                    current.filter((id) => id !== item.id),
+                ),
         });
     };
 
     const totalNpr = (cart?.items || []).reduce((total, item) => {
         return (
-            total + parseFloat(item.product_variant.price_npr) * item.quantity
+            total +
+            parseFloat(item.product_variant.price_npr) * quantityOf(item)
         );
     }, 0);
 
@@ -111,7 +196,11 @@ export default function CartIndex({
                                 {cart.items.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="flex gap-4 rounded-lg border bg-card p-4 text-card-foreground"
+                                        className={`flex gap-4 rounded-lg border bg-card p-4 text-card-foreground ${
+                                            removing.includes(item.id)
+                                                ? 'pointer-events-none opacity-50'
+                                                : ''
+                                        }`}
                                     >
                                         <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded bg-muted">
                                             {item.product_variant.product
@@ -191,29 +280,36 @@ export default function CartIndex({
                                             <div className="mt-4 flex items-center justify-between">
                                                 <div className="flex items-center gap-3 rounded-md border bg-background px-2 py-1">
                                                     <button
+                                                        type="button"
+                                                        aria-label="Decrease quantity"
                                                         onClick={() =>
                                                             handleUpdateQuantity(
                                                                 item,
-                                                                item.quantity -
-                                                                    1,
+                                                                quantityOf(
+                                                                    item,
+                                                                ) - 1,
                                                             )
                                                         }
                                                         className="text-muted-foreground hover:text-foreground disabled:opacity-50"
                                                         disabled={
-                                                            item.quantity <= 1
+                                                            quantityOf(item) <=
+                                                            1
                                                         }
                                                     >
                                                         <Minus className="h-4 w-4" />
                                                     </button>
                                                     <span className="w-6 text-center text-sm font-medium">
-                                                        {item.quantity}
+                                                        {quantityOf(item)}
                                                     </span>
                                                     <button
+                                                        type="button"
+                                                        aria-label="Increase quantity"
                                                         onClick={() =>
                                                             handleUpdateQuantity(
                                                                 item,
-                                                                item.quantity +
-                                                                    1,
+                                                                quantityOf(
+                                                                    item,
+                                                                ) + 1,
                                                             )
                                                         }
                                                         className="text-muted-foreground hover:text-foreground"
@@ -225,6 +321,9 @@ export default function CartIndex({
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
+                                                    disabled={removing.includes(
+                                                        item.id,
+                                                    )}
                                                     onClick={() =>
                                                         handleRemove(item)
                                                     }

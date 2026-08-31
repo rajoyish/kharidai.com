@@ -16,14 +16,39 @@ class CartController extends Controller
     public function index(Request $request): Response
     {
         $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
-        $cart->load('items.productVariant.product');
+
+        // Only the columns the page and the free-service check read. The full
+        // rows drag along product descriptions and the variant's purchase price,
+        // which are dead weight in a payload the shopper waits on.
+        $cart->load([
+            'items:id,cart_id,product_variant_id,quantity,selected_options',
+            'items.productVariant:id,product_id,name,price_npr',
+            'items.productVariant.product:id,type,title,image',
+        ]);
 
         // A cart of only free services (zero price) needs neither shipping
         // details nor a payment step, so it can be placed straight from the cart
         // without the checkout page.
 
         return Inertia::render('Cart/Index', [
-            'cart' => $cart,
+            'cart' => [
+                'id' => $cart->id,
+                'items' => $cart->items->map(fn (CartItem $item): array => [
+                    'id' => $item->id,
+                    'quantity' => $item->quantity,
+                    'selected_options' => $item->selected_options,
+                    'product_variant' => [
+                        'id' => $item->productVariant->id,
+                        'name' => $item->productVariant->name,
+                        'price_npr' => $item->productVariant->price_npr,
+                        'product' => [
+                            'id' => $item->productVariant->product->id,
+                            'title' => $item->productVariant->product->title,
+                            'image' => $item->productVariant->product->image,
+                        ],
+                    ],
+                ])->all(),
+            ],
             'canCheckoutDirectly' => $cart->isFreeServiceOrder(),
         ]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\LogSsrRenderFailure;
 use App\Models\Order;
 use App\Models\ServiceEngagement;
 use App\Observers\OrderObserver;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Ssr\SsrRenderFailed;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,6 +39,11 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureDefaults();
         $this->embedLogoInOutgoingMail();
+
+        // Registered here rather than left to event discovery so it survives
+        // `event:cache` and stays obvious: without a listener Inertia's SSR
+        // failures go nowhere and the site quietly serves an empty root.
+        Event::listen(SsrRenderFailed::class, LogSsrRenderFailure::class);
     }
 
     /**
