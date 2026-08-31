@@ -12,15 +12,19 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as SupportCollection;
 
 /**
- * Breaks a calendar month's profit down per product, and levies the tithe on that
- * profit. Two sources contribute: completed orders (revenue minus cost of goods)
- * and offline service engagements that record their profit manually because they
- * never pass through an order. Revenue never enters into it: a product only owes a
- * tithe on what it actually earned after its cost.
+ * Breaks a calendar month's profit down into the individual records that earned
+ * it, and levies the tithe on each. Two sources contribute: completed orders
+ * (revenue minus cost of goods) and offline service engagements that record their
+ * profit manually because they never pass through an order. Revenue never enters
+ * into it: a record only owes a tithe on what it actually earned after its cost.
  *
- * @phpstan-type ProductBreakdown array{product_id: int, name: string, type: string, profit: float, tithe: float}
- * @phpstan-type MonthBreakdown array{products: list<ProductBreakdown>, total_profit: float, total_tithe: float}
- * @phpstan-type ProfitRow array{product_id: int, name: string, type: string, profit: float}
+ * One entry is one settleable thing. A completed order is one entry however many
+ * line items it holds, because it was one payment. An offline engagement is one
+ * entry of its own. Nothing is merged across records, so settling one entry can
+ * never move another.
+ *
+ * @phpstan-type TitheEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float}
+ * @phpstan-type MonthBreakdown array{entries: list<TitheEntry>, total_profit: float, total_tithe: float}
  */
 class CalculateMonthlyProfitAction
 {
@@ -30,11 +34,21 @@ class CalculateMonthlyProfitAction
     public const TITHE_RATE = 0.10;
 
     /**
+     * Entries earned by a completed order.
+     */
+    public const SOURCE_ORDER = 'order';
+
+    /**
+     * Entries earned by an offline service engagement.
+     */
+    public const SOURCE_SERVICE = 'service';
+
+    /**
      * @return MonthBreakdown
      */
     public function execute(int $year, int $month): array
     {
-        $orderRows = $this->orderProfitRows(
+        $orderEntries = $this->orderEntries(
             $this->completedItemsQuery()
                 ->whereHas('order', fn (Builder $query) => $query
                     ->whereYear('created_at', $year)
@@ -43,13 +57,13 @@ class CalculateMonthlyProfitAction
                 ->get(),
         );
 
-        $offlineRows = $this->offlineProfitRows(
+        $offlineEntries = $this->offlineEntries(
             $this->offlineEngagements()->filter(
                 fn (ServiceEngagement $engagement): bool => $this->fallsIn($engagement, $year, $month),
             ),
         );
 
-        return $this->breakdown($orderRows->merge($offlineRows));
+        return $this->breakdown($orderEntries->merge($offlineEntries));
     }
 
     /**
@@ -62,24 +76,24 @@ class CalculateMonthlyProfitAction
      */
     public function executeForYear(int $year): array
     {
-        $orderRowsByMonth = $this->completedItemsQuery()
+        $orderEntriesByMonth = $this->completedItemsQuery()
             ->whereHas('order', fn (Builder $query) => $query->whereYear('created_at', $year))
             ->get()
             ->groupBy(fn (OrderItem $item): string => $this->monthKeyFor($item->order->created_at))
-            ->map(fn (Collection $items): SupportCollection => $this->orderProfitRows($items));
+            ->map(fn (Collection $items): SupportCollection => $this->orderEntries($items));
 
-        $offlineRowsByMonth = $this->offlineEngagements()
+        $offlineEntriesByMonth = $this->offlineEngagements()
             ->filter(fn (ServiceEngagement $engagement): bool => (int) $engagement->offlineTitheDate()?->year === $year)
             ->groupBy(fn (ServiceEngagement $engagement): string => $this->monthKeyFor($engagement->offlineTitheDate()))
-            ->map(fn (Collection $engagements): SupportCollection => $this->offlineProfitRows($engagements));
+            ->map(fn (Collection $engagements): SupportCollection => $this->offlineEntries($engagements));
 
-        $breakdowns = $orderRowsByMonth->keys()
-            ->merge($offlineRowsByMonth->keys())
+        $breakdowns = $orderEntriesByMonth->keys()
+            ->merge($offlineEntriesByMonth->keys())
             ->unique()
             ->mapWithKeys(fn (string $key): array => [
                 $key => $this->breakdown(
-                    collect($orderRowsByMonth->get($key, collect()))
-                        ->merge($offlineRowsByMonth->get($key, collect())),
+                    collect($orderEntriesByMonth->get($key, collect()))
+                        ->merge($offlineEntriesByMonth->get($key, collect())),
                 ),
             ])
             ->all();
@@ -95,6 +109,14 @@ class CalculateMonthlyProfitAction
     public function monthKey(int $year, int $month): string
     {
         return sprintf('%04d-%02d', $year, $month);
+    }
+
+    /**
+     * The key one entry is settled under, unique within its month.
+     */
+    public function entryKey(string $sourceType, int $sourceId): string
+    {
+        return $sourceType.':'.$sourceId;
     }
 
     /**
@@ -120,52 +142,35 @@ class CalculateMonthlyProfitAction
     }
 
     /**
-     * Aggregate per-product profit rows from every source into the month's
-     * breakdown, summing the rows that share a product and levying the tithe.
+     * Order the month's entries by profit, largest first, and total them.
      *
-     * @param  SupportCollection<int, ProfitRow>  $rows
+     * @param  SupportCollection<int, TitheEntry>  $entries
      * @return MonthBreakdown
      */
-    private function breakdown(SupportCollection $rows): array
+    private function breakdown(SupportCollection $entries): array
     {
-        $products = $rows
-            ->groupBy('product_id')
-            ->map(function (SupportCollection $group): array {
-                /** @var ProfitRow $first */
-                $first = $group->first();
-                $profit = round($group->sum('profit'), 2);
+        $entries = $entries->values()->all();
 
-                return [
-                    'product_id' => $first['product_id'],
-                    'name' => $first['name'],
-                    'type' => $first['type'],
-                    'profit' => $profit,
-                    'tithe' => round($profit * self::TITHE_RATE, 2),
-                ];
-            })
-            ->values()
-            ->all();
-
-        usort($products, fn (array $a, array $b): int => $b['profit'] <=> $a['profit']);
+        usort($entries, fn (array $a, array $b): int => $b['profit'] <=> $a['profit']);
 
         return [
-            'products' => $products,
-            'total_profit' => round(array_sum(array_column($products, 'profit')), 2),
-            'total_tithe' => round(array_sum(array_column($products, 'tithe')), 2),
+            'entries' => $entries,
+            'total_profit' => round(array_sum(array_column($entries, 'profit')), 2),
+            'total_tithe' => round(array_sum(array_column($entries, 'tithe')), 2),
         ];
     }
 
     /**
-     * One profit row per product across the given completed-order items.
+     * One entry per completed order across the given items.
      *
      * @param  Collection<int, OrderItem>  $items
-     * @return SupportCollection<int, ProfitRow>
+     * @return SupportCollection<int, TitheEntry>
      */
-    private function orderProfitRows(Collection $items): SupportCollection
+    private function orderEntries(Collection $items): SupportCollection
     {
         return $items
-            ->groupBy('productVariant.product_id')
-            ->map(fn (Collection $productItems): array => $this->orderProfitRow($productItems))
+            ->groupBy('order_id')
+            ->map(fn (Collection $orderItems): array => $this->orderEntry($orderItems))
             ->values()
             // Grouping an Eloquent collection yields another Eloquent collection,
             // whose merge() expects models; drop to a plain collection of arrays.
@@ -173,61 +178,80 @@ class CalculateMonthlyProfitAction
     }
 
     /**
-     * The profit row for one product's completed-order items.
+     * The entry for one completed order, earning the profit of all its items.
      *
-     * @param  Collection<int, OrderItem>  $productItems
-     * @return ProfitRow
+     * @param  Collection<int, OrderItem>  $orderItems
+     * @return TitheEntry
      */
-    private function orderProfitRow(Collection $productItems): array
+    private function orderEntry(Collection $orderItems): array
     {
-        $product = $productItems->firstOrFail()->productVariant->product;
+        $order = $orderItems->firstOrFail()->order;
+        $profit = round($orderItems->sum(fn (OrderItem $item): float => $item->profitNpr()), 2);
 
         return [
-            'product_id' => $product->id,
-            'name' => $product->title,
-            'type' => $product->type->value,
-            'profit' => round($productItems->sum(fn (OrderItem $item): float => $item->profitNpr()), 2),
+            'source_type' => self::SOURCE_ORDER,
+            'source_id' => $order->id,
+            'label' => $this->orderLabel($orderItems),
+            'reference' => $order->order_number,
+            'profit' => $profit,
+            'tithe' => round($profit * self::TITHE_RATE, 2),
         ];
     }
 
     /**
-     * One profit row per product across the given offline engagements.
+     * What an order sold, as a comma-separated list of distinct product titles.
+     *
+     * @param  Collection<int, OrderItem>  $orderItems
+     */
+    private function orderLabel(Collection $orderItems): string
+    {
+        $titles = $orderItems
+            ->map(fn (OrderItem $item): ?string => $item->productVariant?->product?->title)
+            ->filter()
+            ->unique()
+            ->values();
+
+        return $titles->isEmpty() ? 'Order' : $titles->implode(', ');
+    }
+
+    /**
+     * One entry per offline engagement.
      *
      * @param  Collection<int, ServiceEngagement>  $engagements
-     * @return SupportCollection<int, ProfitRow>
+     * @return SupportCollection<int, TitheEntry>
      */
-    private function offlineProfitRows(Collection $engagements): SupportCollection
+    private function offlineEntries(Collection $engagements): SupportCollection
     {
         return $engagements
-            ->groupBy('product_id')
-            ->map(fn (Collection $group): array => $this->offlineProfitRow($group))
+            ->map(fn (ServiceEngagement $engagement): array => $this->offlineEntry($engagement))
             ->values()
             ->toBase();
     }
 
     /**
-     * The profit row for one product's offline engagements.
+     * The entry for one offline engagement, earning its manually tracked profit.
      *
-     * @param  Collection<int, ServiceEngagement>  $group
-     * @return ProfitRow
+     * @return TitheEntry
      */
-    private function offlineProfitRow(Collection $group): array
+    private function offlineEntry(ServiceEngagement $engagement): array
     {
-        $product = $group->firstOrFail()->product;
+        $profit = round($engagement->offlineProfitNpr(), 2);
 
         return [
-            'product_id' => $product->id,
-            'name' => $product->title,
-            'type' => $product->type->value,
-            'profit' => round($group->sum(fn (ServiceEngagement $engagement): float => $engagement->offlineProfitNpr()), 2),
+            'source_type' => self::SOURCE_SERVICE,
+            'source_id' => $engagement->id,
+            'label' => $engagement->product?->title ?? $engagement->project_name ?? 'Offline service',
+            'reference' => $engagement->project_name ?? 'Service #'.$engagement->id,
+            'profit' => $profit,
+            'tithe' => round($profit * self::TITHE_RATE, 2),
         ];
     }
 
     /**
      * Every engagement that tracks its profit offline. Loaded whole because the
-     * tithe month is derived from a coalesced date (completion date, else created
-     * date) that no single indexed column can be filtered on across drivers; the
-     * set is small since offline tracking is a deliberate, manual exception.
+     * tithe month is derived from a date no single indexed column can be filtered
+     * on across drivers; the set is small since offline tracking is a deliberate,
+     * manual exception.
      *
      * @return Collection<int, ServiceEngagement>
      */
@@ -261,7 +285,8 @@ class CalculateMonthlyProfitAction
                 ->where('status', 'completed')
                 ->whereNotNull('created_at'),
             )
-            ->with(['order:id,status,created_at', 'serviceEngagements', 'productVariant.product']);
+            ->orderBy('id')
+            ->with(['order:id,order_number,status,created_at', 'serviceEngagements', 'productVariant.product']);
     }
 
     private function monthKeyFor(CarbonInterface $createdAt): string

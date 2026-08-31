@@ -106,6 +106,7 @@ it('registers offline profit and its tithe into the monthly tithe once paid', fu
         'order_item_id' => null,
         'is_paid' => true,
         'project_completion_date' => '2026-07-15',
+        'invoice_paid_at' => '2026-07-15',
         'offline_customer_paid_npr' => null,
         'offline_purchase_cost_npr' => null,
     ]);
@@ -135,7 +136,7 @@ it('registers offline profit and its tithe into the monthly tithe once paid', fu
 it('excludes offline profit that has not been marked paid', function () {
     ServiceEngagement::factory()->offlineTithed()->create([
         'is_paid' => false,
-        'project_completion_date' => '2026-07-15',
+        'invoice_paid_at' => '2026-07-15',
     ]);
 
     expect(monthProfit(2026, 7)['total_profit'])->toBe(0.0);
@@ -154,7 +155,7 @@ it('excludes offline profit once the engagement is billed through an order', fun
 
     ServiceEngagement::factory()->offlineTithed()->create([
         'order_item_id' => $item->id,
-        'project_completion_date' => '2026-07-15',
+        'invoice_paid_at' => '2026-07-15',
     ]);
 
     // Order is not completed and the offline figures no longer count, so nothing
@@ -162,12 +163,53 @@ it('excludes offline profit once the engagement is billed through an order', fun
     expect(monthProfit(2026, 7)['total_profit'])->toBe(0.0);
 });
 
-it('attributes offline profit to the completion month, not the created month', function () {
+it('attributes offline profit to the month the invoice was paid, not the month it was completed', function () {
     ServiceEngagement::factory()->offlineTithed()->create([
         'project_completion_date' => '2026-03-20',
+        'invoice_paid_at' => '2026-05-04',
     ]);
 
-    expect(monthProfit(2026, 3)['total_profit'])->toBe(7960.0);
+    expect(monthProfit(2026, 3)['total_profit'])->toBe(0.0)
+        ->and(monthProfit(2026, 5)['total_profit'])->toBe(7960.0);
+});
+
+it('leaves an offline engagement out of the tithe until an invoice paid date is recorded', function () {
+    $engagement = ServiceEngagement::factory()->offlineTithed()->create([
+        'project_completion_date' => '2026-03-20',
+        'invoice_paid_at' => null,
+    ]);
+
+    expect(monthProfit(2026, 3)['total_profit'])->toBe(0.0)
+        ->and(MonthlyTithe::query()->where('year', 2026)->where('month', 3)->exists())->toBeFalse();
+
+    $engagement->update(['invoice_paid_at' => '2026-03-20']);
+
+    expect(monthProfit(2026, 3)['total_profit'])->toBe(7960.0)
+        ->and(MonthlyTithe::query()->where('year', 2026)->where('month', 3)->sole()->total_amount)->toBe(796.0);
+});
+
+it('registers the tithe for an offline engagement created with its figures already filled in', function () {
+    ServiceEngagement::factory()->offlineTithed()->create([
+        'invoice_paid_at' => '2026-03-20',
+    ]);
+
+    expect(monthProfit(2026, 3)['total_profit'])->toBe(7960.0)
+        ->and(MonthlyTithe::query()->where('year', 2026)->where('month', 3)->sole()->total_amount)->toBe(796.0);
+});
+
+it('moves the tithe out of the old month when the invoice paid date changes', function () {
+    $engagement = ServiceEngagement::factory()->offlineTithed()->create([
+        'invoice_paid_at' => '2026-03-20',
+    ]);
+
+    expect(MonthlyTithe::query()->where('year', 2026)->where('month', 3)->exists())->toBeTrue();
+
+    $engagement->update(['invoice_paid_at' => '2026-05-04']);
+
+    expect(monthProfit(2026, 3)['total_profit'])->toBe(0.0)
+        ->and(monthProfit(2026, 5)['total_profit'])->toBe(7960.0)
+        ->and(MonthlyTithe::query()->where('year', 2026)->where('month', 3)->exists())->toBeFalse()
+        ->and(MonthlyTithe::query()->where('year', 2026)->where('month', 5)->sole()->total_amount)->toBe(796.0);
 });
 
 it('sums completed-order and offline profit within the same month', function () {
@@ -184,7 +226,7 @@ it('sums completed-order and offline profit within the same month', function () 
     ]);
 
     ServiceEngagement::factory()->offlineTithed()->create([
-        'project_completion_date' => '2026-07-15',
+        'invoice_paid_at' => '2026-07-15',
     ]);
 
     $breakdown = monthProfit(2026, 7);
@@ -196,7 +238,7 @@ it('sums completed-order and offline profit within the same month', function () 
 
 it('clears an offline profit contribution when the figures are removed', function () {
     $engagement = ServiceEngagement::factory()->offlineTithed()->create([
-        'project_completion_date' => '2026-07-15',
+        'invoice_paid_at' => '2026-07-15',
     ]);
 
     expect(monthProfit(2026, 7)['total_profit'])->toBe(7960.0);

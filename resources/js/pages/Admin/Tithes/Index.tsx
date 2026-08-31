@@ -1,5 +1,5 @@
-import { router } from '@inertiajs/react';
-import { CalendarOff } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import { CalendarOff, Circle, CircleCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PagePanel } from '@/components/page-panel';
@@ -7,6 +7,7 @@ import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
     TableBody,
@@ -18,15 +19,29 @@ import {
 } from '@/components/ui/table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { formatNpr } from '@/lib/currency';
+import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/admin';
+import { show as showOrder } from '@/routes/admin/orders';
+import { show as showService } from '@/routes/admin/services';
 import { index as adminTithesIndex, toggleStatus } from '@/routes/admin/tithes';
+import { toggleStatus as toggleOrderStatus } from '@/routes/admin/tithes/orders';
+import { toggleStatus as toggleServiceStatus } from '@/routes/admin/tithes/services';
 
-type TitheProduct = {
-    product_id: number | null;
-    name: string;
-    type: string;
+type PaymentStatus = 'paid' | 'partial' | 'unpaid';
+
+/**
+ * One settleable record: a completed order, or an offline service engagement.
+ * Never a group of either, so its toggle moves nothing else on the page.
+ */
+type TitheEntry = {
+    source_type: 'order' | 'service';
+    source_id: number;
+    label: string;
+    reference: string;
     profit: number;
     tithe: number;
+    is_paid: boolean;
+    paid_at: string | null;
 };
 
 type Tithe = {
@@ -34,27 +49,106 @@ type Tithe = {
     month: number;
     year: number;
     label: string;
-    products: TitheProduct[];
+    entries: TitheEntry[];
     total_amount: number;
     total_profit: number;
+    paid_amount: number;
+    outstanding_amount: number;
+    payment_status: PaymentStatus;
     is_paid: boolean;
     paid_at: string | null;
 };
+
+/** Which control, if any, is waiting on the server. Null entryKey is the month. */
+type Processing = { titheId: number; entryKey: string | null };
 
 const breadcrumbs = [
     { title: 'Admin Dashboard', href: dashboard().url },
     { title: 'Tithes', href: adminTithesIndex().url },
 ];
 
+const statusLabels: Record<PaymentStatus, string> = {
+    paid: 'Paid',
+    partial: 'Partially Paid',
+    unpaid: 'Unpaid',
+};
+
+const statusClasses: Record<PaymentStatus, string> = {
+    paid: 'border-transparent bg-success-surface text-success',
+    partial: 'border-transparent bg-info-surface text-info',
+    unpaid: 'border-transparent bg-warning-surface text-warning',
+};
+
+function entryKey(entry: TitheEntry): string {
+    return `${entry.source_type}:${entry.source_id}`;
+}
+
+function entryHref(entry: TitheEntry): string {
+    return entry.source_type === 'order'
+        ? showOrder(entry.source_id).url
+        : showService(entry.source_id).url;
+}
+
+function toMoney(value: number): number {
+    return Math.round(value * 100) / 100;
+}
+
+/**
+ * Re-derive a month's totals and status from its entries, so an optimistic change
+ * moves the summaries with it instead of waiting for the server.
+ */
+function recalculate(tithe: Tithe): Tithe {
+    const paidEntries = tithe.entries.filter((entry) => entry.is_paid);
+    const paidAmount = toMoney(
+        paidEntries.reduce((carry, entry) => carry + entry.tithe, 0),
+    );
+    const isPaid =
+        tithe.entries.length > 0 && paidEntries.length === tithe.entries.length;
+
+    return {
+        ...tithe,
+        paid_amount: paidAmount,
+        outstanding_amount: toMoney(tithe.total_amount - paidAmount),
+        payment_status: isPaid
+            ? 'paid'
+            : paidEntries.length > 0
+              ? 'partial'
+              : 'unpaid',
+        is_paid: isPaid,
+        paid_at: isPaid ? (tithe.paid_at ?? new Date().toISOString()) : null,
+    };
+}
+
+/** Passing a null key settles the whole month; otherwise only that one entry. */
+function applyPaid(
+    tithes: Tithe[],
+    titheId: number,
+    isPaid: boolean,
+    key: string | null,
+): Tithe[] {
+    const paidAt = isPaid ? new Date().toISOString() : null;
+
+    return tithes.map((tithe) =>
+        tithe.id === titheId
+            ? recalculate({
+                  ...tithe,
+                  entries: tithe.entries.map((entry) =>
+                      key === null || entryKey(entry) === key
+                          ? { ...entry, is_paid: isPaid, paid_at: paidAt }
+                          : entry,
+                  ),
+              })
+            : tithe,
+    );
+}
+
 function YearSummary({ year, tithes }: { year: number; tithes: Tithe[] }) {
     const totals = useMemo(() => {
         return tithes.reduce(
             (carry, tithe) => ({
                 payable: carry.payable + tithe.total_amount,
-                paid: carry.paid + (tithe.is_paid ? tithe.total_amount : 0),
-                outstanding:
-                    carry.outstanding +
-                    (tithe.is_paid ? 0 : tithe.total_amount),
+                paid: carry.paid + tithe.paid_amount,
+                outstanding: carry.outstanding + tithe.outstanding_amount,
             }),
             { payable: 0, paid: 0, outstanding: 0 },
         );
@@ -110,24 +204,71 @@ function EmptySearch() {
             </div>
             <h2 className="mt-4 text-lg font-semibold">No matching tithes</h2>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                No month or product in this year matches your search. Clear it
-                to see every tithe again.
+                No month, order or service in this year matches your search.
+                Clear it to see every tithe again.
             </p>
         </div>
     );
 }
 
-function MonthlyTitheSummary({
-    tithe,
+function EntryStatusButton({
+    entry,
     isUpdating,
     isDisabled,
-    onToggleStatus,
+    onToggle,
 }: {
-    tithe: Tithe;
+    entry: TitheEntry;
     isUpdating: boolean;
     isDisabled: boolean;
-    onToggleStatus: (tithe: Tithe) => void;
+    onToggle: () => void;
 }) {
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            disabled={isDisabled}
+            onClick={onToggle}
+            aria-pressed={entry.is_paid}
+            aria-label={`Mark ${entry.reference} tithe as ${entry.is_paid ? 'unpaid' : 'paid'}`}
+            title={
+                entry.is_paid && entry.paid_at
+                    ? `Paid on ${new Date(entry.paid_at).toLocaleDateString()}`
+                    : undefined
+            }
+            className={cn(
+                'h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium',
+                entry.is_paid
+                    ? 'bg-success-surface text-success hover:bg-success-surface/70 hover:text-success'
+                    : 'bg-warning-surface text-warning hover:bg-warning-surface/70 hover:text-warning',
+            )}
+        >
+            {isUpdating ? (
+                <Spinner className="size-3.5" />
+            ) : entry.is_paid ? (
+                <CircleCheck className="size-3.5" />
+            ) : (
+                <Circle className="size-3.5" />
+            )}
+            {entry.is_paid ? 'Paid' : 'Unpaid'}
+        </Button>
+    );
+}
+
+function MonthlyTitheSummary({
+    tithe,
+    processing,
+    onToggleStatus,
+    onToggleEntryStatus,
+}: {
+    tithe: Tithe;
+    processing: Processing | null;
+    onToggleStatus: (tithe: Tithe) => void;
+    onToggleEntryStatus: (tithe: Tithe, entry: TitheEntry) => void;
+}) {
+    // One request at a time per month keeps its running totals unambiguous.
+    const isBusy = processing?.titheId === tithe.id;
+    const isMonthUpdating = isBusy && processing.entryKey === null;
+
     return (
         <section className="rounded-xl border bg-card p-4 shadow-sm sm:p-6">
             <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -138,15 +279,18 @@ function MonthlyTitheSummary({
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                         <Badge
                             variant="outline"
-                            className={
-                                tithe.is_paid
-                                    ? 'border-transparent bg-success-surface text-success'
-                                    : 'border-transparent bg-warning-surface text-warning'
-                            }
+                            className={statusClasses[tithe.payment_status]}
                         >
-                            {tithe.is_paid ? 'Paid' : 'Unpaid'}
+                            {statusLabels[tithe.payment_status]}
                         </Badge>
-                        {tithe.paid_at && (
+                        {tithe.payment_status === 'partial' && (
+                            <span className="text-xs text-muted-foreground">
+                                {formatNpr(tithe.paid_amount)} paid ·{' '}
+                                {formatNpr(tithe.outstanding_amount)}{' '}
+                                outstanding
+                            </span>
+                        )}
+                        {tithe.payment_status === 'paid' && tithe.paid_at && (
                             <span className="text-xs text-muted-foreground">
                                 Paid on{' '}
                                 {new Date(tithe.paid_at).toLocaleDateString()}
@@ -158,14 +302,14 @@ function MonthlyTitheSummary({
                 <Button
                     variant={tithe.is_paid ? 'outline' : 'default'}
                     size="sm"
-                    disabled={isDisabled}
+                    disabled={isBusy}
                     onClick={() => onToggleStatus(tithe)}
                 >
-                    {isUpdating
+                    {isMonthUpdating
                         ? 'Updating...'
                         : tithe.is_paid
                           ? 'Mark Unpaid'
-                          : 'Mark Paid'}
+                          : 'Mark All Paid'}
                 </Button>
             </header>
 
@@ -173,49 +317,89 @@ function MonthlyTitheSummary({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Product</TableHead>
+                            <TableHead>Item</TableHead>
+                            <TableHead>Reference</TableHead>
                             <TableHead className="text-right">Profit</TableHead>
                             <TableHead className="text-right">Tithe</TableHead>
+                            <TableHead className="text-right">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {tithe.products.map((product) => (
-                            <TableRow
-                                key={`${tithe.id}-${product.product_id ?? product.name}`}
-                            >
+                        {tithe.entries.map((entry) => (
+                            <TableRow key={entryKey(entry)}>
                                 <TableCell className="font-medium">
-                                    {product.name}
+                                    {entry.label}
+                                </TableCell>
+                                <TableCell>
+                                    <Link
+                                        href={entryHref(entry)}
+                                        className="font-medium text-primary hover:underline"
+                                    >
+                                        {entry.reference}
+                                    </Link>
+                                    {entry.source_type === 'service' && (
+                                        <span className="ml-2 text-xs text-muted-foreground">
+                                            Offline
+                                        </span>
+                                    )}
                                 </TableCell>
                                 <TableCell className="text-right tabular-nums">
-                                    {formatNpr(product.profit)}
+                                    {formatNpr(entry.profit)}
                                 </TableCell>
                                 <TableCell className="text-right font-semibold text-green-600 tabular-nums dark:text-green-400">
-                                    {formatNpr(product.tithe)}
+                                    {formatNpr(entry.tithe)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <EntryStatusButton
+                                        entry={entry}
+                                        isUpdating={
+                                            isBusy &&
+                                            processing.entryKey ===
+                                                entryKey(entry)
+                                        }
+                                        isDisabled={isBusy}
+                                        onToggle={() =>
+                                            onToggleEntryStatus(tithe, entry)
+                                        }
+                                    />
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {tithe.products.length === 0 && (
+                        {tithe.entries.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={3}
+                                    colSpan={5}
                                     className="h-16 text-center text-muted-foreground"
                                 >
-                                    No completed orders contributed profit this
-                                    month.
+                                    Nothing contributed profit this month.
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                     <TableFooter>
                         <TableRow>
-                            <TableCell className="font-bold">
+                            <TableCell className="font-bold" colSpan={3}>
                                 Total Tithes Payable ({tithe.label})
                             </TableCell>
-                            <TableCell />
                             <TableCell className="text-right font-bold tabular-nums">
                                 {formatNpr(tithe.total_amount)}
                             </TableCell>
+                            <TableCell />
                         </TableRow>
+                        {tithe.payment_status === 'partial' && (
+                            <TableRow>
+                                <TableCell
+                                    className="font-medium text-muted-foreground"
+                                    colSpan={3}
+                                >
+                                    Remaining Balance ({tithe.label})
+                                </TableCell>
+                                <TableCell className="text-right font-semibold tabular-nums">
+                                    {formatNpr(tithe.outstanding_amount)}
+                                </TableCell>
+                                <TableCell />
+                            </TableRow>
+                        )}
                     </TableFooter>
                 </Table>
             </div>
@@ -232,7 +416,7 @@ export default function AdminTithesIndex({
     years: number[];
     filters: { year: number; search?: string };
 }) {
-    const [processingId, setProcessingId] = useState<number | null>(null);
+    const [processing, setProcessing] = useState<Processing | null>(null);
 
     const handleYearChange = (year: string) => {
         const selected = Number(year);
@@ -258,16 +442,63 @@ export default function AdminTithesIndex({
     };
 
     const handleToggleStatus = (tithe: Tithe) => {
+        const isPaid = !tithe.is_paid;
+
         router.visit(toggleStatus(tithe.id), {
             preserveScroll: true,
+            optimistic: (props) => ({
+                tithes: applyPaid(
+                    props.tithes as Tithe[],
+                    tithe.id,
+                    isPaid,
+                    null,
+                ),
+            }),
             onStart: () => {
-                setProcessingId(tithe.id);
+                setProcessing({ titheId: tithe.id, entryKey: null });
             },
             onError: () => {
                 toast.error('Unable to update tithe status.');
             },
             onFinish: () => {
-                setProcessingId(null);
+                setProcessing(null);
+            },
+        });
+    };
+
+    const handleToggleEntryStatus = (tithe: Tithe, entry: TitheEntry) => {
+        const isPaid = !entry.is_paid;
+        const key = entryKey(entry);
+
+        const route =
+            entry.source_type === 'order'
+                ? toggleOrderStatus({
+                      monthlyTithe: tithe.id,
+                      order: entry.source_id,
+                  })
+                : toggleServiceStatus({
+                      monthlyTithe: tithe.id,
+                      serviceEngagement: entry.source_id,
+                  });
+
+        router.visit(route, {
+            preserveScroll: true,
+            optimistic: (props) => ({
+                tithes: applyPaid(
+                    props.tithes as Tithe[],
+                    tithe.id,
+                    isPaid,
+                    key,
+                ),
+            }),
+            onStart: () => {
+                setProcessing({ titheId: tithe.id, entryKey: key });
+            },
+            onError: () => {
+                toast.error(`Unable to update ${entry.reference} tithe.`);
+            },
+            onFinish: () => {
+                setProcessing(null);
             },
         });
     };
@@ -278,14 +509,14 @@ export default function AdminTithesIndex({
 
             <PagePanel
                 title="Tithes"
-                description="Review monthly tithes owed on completed-order profit."
+                description="Review monthly tithes owed on completed-order and offline service profit."
                 variant="transparent"
                 actions={
                     <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
                         <SearchFilter
                             href={adminTithesIndex().url}
                             currentSearch={filters.search ?? ''}
-                            placeholder="Search month or product..."
+                            placeholder="Search month, order or service..."
                             params={{ year: filters.year }}
                             only={['tithes', 'years', 'filters']}
                         />
@@ -323,9 +554,9 @@ export default function AdminTithesIndex({
                             <MonthlyTitheSummary
                                 key={tithe.id}
                                 tithe={tithe}
-                                isUpdating={processingId === tithe.id}
-                                isDisabled={processingId !== null}
+                                processing={processing}
                                 onToggleStatus={handleToggleStatus}
+                                onToggleEntryStatus={handleToggleEntryStatus}
                             />
                         ))}
                     </div>

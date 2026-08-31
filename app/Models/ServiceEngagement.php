@@ -38,6 +38,7 @@ use Illuminate\Support\Carbon;
  * @property float $advance_paid_npr
  * @property Carbon|null $advance_paid_at
  * @property Carbon|null $project_completion_date
+ * @property Carbon|null $invoice_paid_at
  * @property array<string, mixed>|null $measurement
  * @property list<array{label: string, quantity: float, unit_price_npr: float}>|null $line_items
  * @property float $tax_rate
@@ -74,6 +75,7 @@ use Illuminate\Support\Carbon;
     'advance_paid_npr',
     'advance_paid_at',
     'project_completion_date',
+    'invoice_paid_at',
     'measurement',
     'line_items',
     'tax_rate',
@@ -116,6 +118,7 @@ class ServiceEngagement extends Model
             'contract_signed_at' => 'datetime',
             'advance_paid_at' => 'datetime',
             'project_completion_date' => 'date',
+            'invoice_paid_at' => 'date',
         ];
     }
 
@@ -173,10 +176,12 @@ class ServiceEngagement extends Model
 
     /**
      * Engagements whose offline profit should feed the Monthly Tithe: a settled
-     * (paid) engagement with a recorded offline customer payment and a product to
-     * attribute the profit to, that is not billed through a standard Order. The
-     * order_item_id guard is what keeps its profit from being counted twice — an
-     * order-linked engagement earns its tithe through the completed order instead.
+     * (paid) engagement with a recorded offline customer payment, a recorded
+     * settlement date and a product to attribute the profit to, that is not billed
+     * through a standard Order. The order_item_id guard is what keeps its profit
+     * from being counted twice — an order-linked engagement earns its tithe through
+     * the completed order instead. Without an invoice paid date there is no month to
+     * attribute the profit to, so the engagement is left out until one is recorded.
      *
      * @param  Builder<ServiceEngagement>  $query
      * @return Builder<ServiceEngagement>
@@ -186,6 +191,7 @@ class ServiceEngagement extends Model
         return $query->whereNull('order_item_id')
             ->whereNotNull('product_id')
             ->whereNotNull('offline_customer_paid_npr')
+            ->whereNotNull('invoice_paid_at')
             ->where('is_paid', true);
     }
 
@@ -356,11 +362,12 @@ class ServiceEngagement extends Model
 
     /**
      * The date an offline engagement's profit is attributed to when bucketing it
-     * into a tithe month: the recorded completion date, falling back to when the
-     * engagement was created.
+     * into a tithe month: strictly the date the invoice was settled. Neither the
+     * completion date nor the creation date stands in for it — money is tithed in
+     * the month it is received.
      */
     public function offlineTitheDate(): ?CarbonInterface
     {
-        return $this->project_completion_date ?? $this->created_at;
+        return $this->invoice_paid_at;
     }
 }

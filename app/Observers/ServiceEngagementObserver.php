@@ -20,7 +20,7 @@ class ServiceEngagementObserver
         'offline_customer_paid_npr',
         'offline_purchase_cost_npr',
         'is_paid',
-        'project_completion_date',
+        'invoice_paid_at',
         'order_item_id',
         'product_id',
     ];
@@ -34,20 +34,25 @@ class ServiceEngagementObserver
      */
     public function saved(ServiceEngagement $serviceEngagement): void
     {
-        if (! $serviceEngagement->wasChanged(self::TITHE_RELEVANT_FIELDS)) {
+        // An insert reports no changed attributes — the row did not change, it came
+        // into being — so a freshly created engagement must be synced on its own
+        // merit. Without this an engagement created with its offline figures already
+        // filled in would keep its profit out of the tithe until some later edit.
+        if (! $serviceEngagement->wasRecentlyCreated && ! $serviceEngagement->wasChanged(self::TITHE_RELEVANT_FIELDS)) {
             return;
         }
 
         $months = [];
         $this->collectMonth($months, $serviceEngagement->offlineTitheDate());
 
-        // A moved completion date leaves the old month holding stale profit, so it
+        // A moved settlement date leaves the old month holding stale profit, so it
         // must be recomputed too — not just the month the engagement now lands in.
-        if ($serviceEngagement->wasChanged('project_completion_date')) {
-            $original = $serviceEngagement->getOriginal('project_completion_date');
-            $this->collectMonth($months, $original !== null
-                ? CarbonImmutable::parse($original)
-                : $serviceEngagement->created_at);
+        if ($serviceEngagement->wasChanged('invoice_paid_at')) {
+            $original = $serviceEngagement->getOriginal('invoice_paid_at');
+
+            if ($original !== null) {
+                $this->collectMonth($months, CarbonImmutable::parse($original));
+            }
         }
 
         $this->syncMonths($months);

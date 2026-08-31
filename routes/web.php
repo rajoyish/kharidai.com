@@ -153,6 +153,8 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::get('tithes', [TitheController::class, 'index'])->name('tithes.index');
     Route::patch('tithes/{monthlyTithe}/toggle-status', [TitheController::class, 'toggleStatus'])->name('tithes.toggle-status');
+    Route::patch('tithes/{monthlyTithe}/orders/{order}/toggle-status', [TitheController::class, 'toggleOrderStatus'])->name('tithes.orders.toggle-status');
+    Route::patch('tithes/{monthlyTithe}/services/{serviceEngagement}/toggle-status', [TitheController::class, 'toggleServiceStatus'])->name('tithes.services.toggle-status');
 
     Route::get('notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
     Route::patch('notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
