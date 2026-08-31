@@ -11,11 +11,12 @@
     "nightwatch": false,
     "sail": false,
     "skills": [
+        "infer-conventions",
         "fortify-development",
         "laravel-best-practices",
+        "testing-best-practices",
         "socialite-development",
         "wayfinder-development",
-        "pest-testing",
         "inertia-react-development",
         "echo-development",
         "tailwindcss-development"
