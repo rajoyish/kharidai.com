@@ -9,6 +9,7 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\MenuItem;
 use App\Models\Page;
+use App\Models\PaymentMethod;
 use App\Models\Post;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -67,6 +68,10 @@ class HandleInertiaRequests extends Middleware
                 && blank($user->mobile_number)
                 && ! $request->session()->get(MobileNumberController::DISMISSED_SESSION_KEY, false),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // The QR payment panel appears on several pages and will appear on
+            // more, so which providers are in service is shared everywhere
+            // rather than wired up per page.
+            'paymentMethods' => fn (): array => PaymentMethod::shared(),
             'seo' => [
                 'name' => $siteName,
                 'title' => $siteName,

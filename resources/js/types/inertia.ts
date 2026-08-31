@@ -22,10 +22,21 @@ export type SeoData = {
     jsonLd?: Record<string, unknown>[];
 };
 
+export type PaymentMethod = {
+    key: string;
+    label: string;
+    is_enabled: boolean;
+};
+
 export type SharedData = {
     name: string;
     auth: Auth;
     cartCount: number;
+    /**
+     * Payment providers in display order, with the admin's in-service switch.
+     * Shared on every page so the QR panel works wherever it is mounted.
+     */
+    paymentMethods: PaymentMethod[];
     requiresMobileNumber: boolean;
     sidebarOpen: boolean;
     seo: SeoData;
