@@ -1,5 +1,13 @@
 import { useForm, router } from '@inertiajs/react';
-import { Check, Pencil, Trash2, Upload, X } from 'lucide-react';
+import {
+    Check,
+    CheckCircle2,
+    Clock,
+    Pencil,
+    Trash2,
+    Upload,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -123,6 +131,8 @@ export default function AdminOrderShow({
     order: Order;
     shipmentStatuses: string[];
 }) {
+    const isCompleted = order.status === 'completed';
+
     const {
         data: statusData,
         setData: setStatusData,
@@ -560,23 +570,32 @@ export default function AdminOrderShow({
                                             {formatNpr(order.items_total)}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">
-                                            Shipping
-                                        </span>
-                                        <span>
-                                            {formatNpr(order.shipping_total)}
-                                        </span>
-                                    </div>
+                                    {Number(order.shipping_total) > 0 && (
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">
+                                                Shipping
+                                            </span>
+                                            <span>
+                                                {formatNpr(
+                                                    order.shipping_total,
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between border-t pt-1 font-semibold">
                                         <span>Total</span>
                                         <span>
                                             {formatNpr(order.total_amount)}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">
-                                            Paid / due now
+                                    <div className="flex items-center justify-between font-semibold">
+                                        <span className="flex items-center gap-1.5">
+                                            {isCompleted ? (
+                                                <CheckCircle2 className="size-4 shrink-0 text-green-600 dark:text-green-400" />
+                                            ) : (
+                                                <Clock className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                            )}
+                                            {isCompleted ? 'Paid' : 'Due now'}
                                         </span>
                                         <span>
                                             {formatNpr(order.amount_due_now)}
