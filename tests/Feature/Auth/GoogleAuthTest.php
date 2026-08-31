@@ -79,3 +79,47 @@ it('handles exceptions during google callback gracefully', function () {
 
     $response->assertRedirect(route('login'));
 });
+
+it('returns the visitor to the page the login modal was opened from', function () {
+    $abstractUser = new Laravel\Socialite\Two\User;
+    $abstractUser->map([
+        'id' => '1234567890',
+        'name' => 'Google User',
+        'email' => 'google@example.com',
+        'avatar' => 'https://example.com/avatar.jpg',
+    ]);
+
+    $provider = Mockery::mock('Laravel\Socialite\Contracts\Provider');
+    $provider->shouldReceive('redirect')->andReturn(redirect('https://accounts.google.com/o/oauth2/auth'));
+    $provider->shouldReceive('user')->andReturn($abstractUser);
+
+    Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+    $this->get('/auth/google?redirect_to=/physical-products');
+
+    $this->get('/auth/google/callback')->assertRedirect('/physical-products');
+});
+
+it('ignores a return target that points off site', function (string $target) {
+    $abstractUser = new Laravel\Socialite\Two\User;
+    $abstractUser->map([
+        'id' => '1234567890',
+        'name' => 'Google User',
+        'email' => 'google@example.com',
+        'avatar' => 'https://example.com/avatar.jpg',
+    ]);
+
+    $provider = Mockery::mock('Laravel\Socialite\Contracts\Provider');
+    $provider->shouldReceive('redirect')->andReturn(redirect('https://accounts.google.com/o/oauth2/auth'));
+    $provider->shouldReceive('user')->andReturn($abstractUser);
+
+    Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+    $this->get('/auth/google?redirect_to='.urlencode($target));
+
+    $this->get('/auth/google/callback')->assertRedirect(config('fortify.home', '/dashboard'));
+})->with([
+    'absolute url' => 'https://evil.test/steal',
+    'protocol relative' => '//evil.test/steal',
+    'backslash protocol relative' => '/\\evil.test/steal',
+]);
