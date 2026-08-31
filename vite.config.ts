@@ -11,11 +11,19 @@ export default defineConfig({
         dedupe: ['react', 'react-dom'],
     },
     ssr: {
-        // The admin editor (`novel`) reaches `react-tweet`, which imports a CSS
-        // module. Left external, Node would try to `import` that .css at runtime
-        // and die with ERR_UNKNOWN_FILE_EXTENSION, taking the SSR server with it.
-        // Bundling it through Vite lets Vite handle the stylesheet instead.
-        noExternal: ['novel', 'react-tweet'],
+        // Bundle every dependency into `bootstrap/ssr/ssr.js`. Nothing is ever
+        // built or installed on the shared host and the deploy does not ship
+        // `node_modules`, so an externalised import is a package Node cannot
+        // resolve at runtime: the process exits with ERR_MODULE_NOT_FOUND,
+        // Inertia catches the connection failure and every page silently falls
+        // back to client-side rendering. Vite externalises anything listed in
+        // `dependencies` by default, so leaving this off means each new frontend
+        // package is one more chance to break SSR without a failing build.
+        //
+        // It also settles the `novel` -> `react-tweet` case: that package
+        // imports a CSS module, which Node would refuse to `import` with
+        // ERR_UNKNOWN_FILE_EXTENSION. Bundled, Vite handles the stylesheet.
+        noExternal: true,
     },
     plugins: [
         laravel({
