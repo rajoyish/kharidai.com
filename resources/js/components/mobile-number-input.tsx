@@ -85,7 +85,7 @@ export function MobileNumberInput({
                         <span
                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                 validation.carrier === 'NTC'
-                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                    ? 'bg-info-surface text-info dark:bg-blue-900 dark:text-blue-200'
                                     : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
                             }`}
                         >

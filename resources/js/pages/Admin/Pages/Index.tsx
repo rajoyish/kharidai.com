@@ -144,7 +144,7 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
                                     className={PAGE_STATUS_COLUMN_CLASSES}
                                 >
                                     <span
-                                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap uppercase ${page.is_published ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}
+                                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap uppercase ${page.is_published ? 'bg-success-surface text-success' : 'bg-warning-surface text-warning'}`}
                                     >
                                         {page.is_published
                                             ? 'Published'
@@ -203,7 +203,7 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                                        className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                                         disabled={deletingPageId === page.id}
                                         onClick={() => setPageToDelete(page)}
                                     >

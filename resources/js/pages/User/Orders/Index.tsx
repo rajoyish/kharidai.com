@@ -4,6 +4,7 @@ import { Eye, MessageCircle, Upload } from 'lucide-react';
 import { CopyableOrderNumber } from '@/components/copy-button';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import { OrderStatusBadge } from '@/components/status-badge';
 import { TruncatedText } from '@/components/truncated-text';
 import { Button } from '@/components/ui/button';
 import {
@@ -104,33 +105,13 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     {formatNpr(order.display_total_npr)}
                                 </TableCell>
                                 <TableCell>
-                                    <span
-                                        className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
-                                            order.status === 'completed'
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                : order.status === 'delivering'
-                                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                        }`}
-                                    >
-                                        {order.status}
-                                    </span>
+                                    <OrderStatusBadge status={order.status} />
                                 </TableCell>
                                 <TableCell>
                                     {order.shipment ? (
-                                        <span
-                                            className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
-                                                order.shipment.status ===
-                                                'delivered'
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                    : order.shipment.status ===
-                                                        'shipped'
-                                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                            }`}
-                                        >
-                                            {order.shipment.status}
-                                        </span>
+                                        <OrderStatusBadge
+                                            status={order.shipment.status}
+                                        />
                                     ) : (
                                         <span className="text-xs text-muted-foreground">
                                             -

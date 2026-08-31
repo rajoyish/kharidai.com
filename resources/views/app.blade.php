@@ -113,14 +113,16 @@
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- The page background, ahead of the stylesheet, so the very first paint is
+             already the right theme. These two values mirror `--background` in
+             app.css and have to be changed with it. --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                background-color: oklch(0.985 0.002 250);
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: oklch(0.16 0.006 250);
             }
         </style>
 

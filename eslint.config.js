@@ -108,6 +108,13 @@ export default [
             'node_modules',
             'public',
             'bootstrap/ssr',
+            // Vendored agent-skill bundles (installed by `npx impeccable
+            // install`). Four copies of the same third-party scripts, and not
+            // ours to lint.
+            '.agents',
+            '.claude',
+            '.github',
+            '.kiro',
             'tailwind.config.js',
             'vite.config.ts',
             'resources/js/actions/**',

@@ -114,7 +114,7 @@ export default function VariantsIndex({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                         onClick={() =>
                                             setVariantToDelete(variant)
                                         }

@@ -19,8 +19,7 @@ export type EngagementStatusValue =
  * a different question and is shown alongside it.
  */
 const STATUS_STYLES: Record<EngagementStatusValue, string> = {
-    pending_contract:
-        'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
+    pending_contract: 'bg-muted text-foreground',
     awaiting_advance:
         'bg-amber-100 text-amber-900 dark:bg-amber-900/50 dark:text-amber-100',
     in_progress:

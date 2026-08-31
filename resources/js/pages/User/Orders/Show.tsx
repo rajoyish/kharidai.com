@@ -17,6 +17,10 @@ import { PaymentQrPanel } from '@/components/payment-qr-panel';
 import { SeoHead } from '@/components/seo-head';
 import { ServiceInvoiceCard } from '@/components/service-invoice-card';
 import type { ServiceInvoice } from '@/components/service-invoice-card';
+import {
+    ApprovalStatusBadge,
+    OrderStatusBadge,
+} from '@/components/status-badge';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { VariantOptionBadges } from '@/components/variant-option-badges';
@@ -192,29 +196,16 @@ export default function OrderShow({ order }: { order: Order }) {
                 description={`Placed on ${new Date(order.created_at).toLocaleString()}`}
                 actions={
                     <div className="flex items-center gap-3">
-                        <span
-                            className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize ${
-                                order.status === 'completed'
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                    : order.status === 'delivering'
-                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                            }`}
-                        >
-                            {order.status}
-                        </span>
+                        <OrderStatusBadge
+                            status={order.status}
+                            className="px-4 py-1.5 text-sm"
+                        />
                         {order.shipment && (
-                            <span
-                                className={`rounded-full border px-4 py-1.5 text-sm font-semibold capitalize ${
-                                    order.shipment.status === 'delivered'
-                                        ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300'
-                                        : order.shipment.status === 'shipped'
-                                          ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300'
-                                          : 'border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-300'
-                                }`}
-                            >
-                                Shipment: {order.shipment.status}
-                            </span>
+                            <OrderStatusBadge
+                                status={order.shipment.status}
+                                label={`Shipment: ${order.shipment.status}`}
+                                className="px-4 py-1.5 text-sm"
+                            />
                         )}
                     </div>
                 }
@@ -587,19 +578,9 @@ export default function OrderShow({ order }: { order: Order }) {
                                     <span className="text-sm font-medium text-muted-foreground">
                                         Status:
                                     </span>
-                                    <span
-                                        className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                            order.payment_receipt.status ===
-                                            'approved'
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-                                                : order.payment_receipt
-                                                        .status === 'rejected'
-                                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
-                                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
-                                        }`}
-                                    >
-                                        {order.payment_receipt.status}
-                                    </span>
+                                    <ApprovalStatusBadge
+                                        status={order.payment_receipt.status}
+                                    />
                                 </div>
                                 {unpaidInvoicesTotal > 0 ? (
                                     <div className="mt-4 border-t pt-4">

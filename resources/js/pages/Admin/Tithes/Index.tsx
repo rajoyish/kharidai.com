@@ -140,8 +140,8 @@ function MonthlyTitheSummary({
                             variant="outline"
                             className={
                                 tithe.is_paid
-                                    ? 'border-green-200 bg-green-100 text-green-800 dark:border-green-900 dark:bg-green-900/40 dark:text-green-300'
-                                    : 'border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-900 dark:bg-amber-900/40 dark:text-amber-300'
+                                    ? 'border-transparent bg-success-surface text-success'
+                                    : 'border-transparent bg-warning-surface text-warning'
                             }
                         >
                             {tithe.is_paid ? 'Paid' : 'Unpaid'}

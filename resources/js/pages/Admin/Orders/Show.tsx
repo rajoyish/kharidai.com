@@ -250,7 +250,7 @@ export default function AdminOrderShow({
                     <div className="flex items-center gap-2">
                         <Button
                             variant="outline"
-                            className="border-red-200 text-red-600 hover:bg-red-50"
+                            className="border-destructive/40 text-destructive hover:bg-destructive/10"
                             disabled={deletingOrder}
                             onClick={() => setIsDeleteOrderDialogOpen(true)}
                         >
@@ -336,7 +336,7 @@ export default function AdminOrderShow({
                                                 Price: {formatNpr(item.price)}
                                             </p>
                                             {order.status === 'completed' && (
-                                                <div className="mt-2 rounded border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-800">
+                                                <div className="mt-2 rounded border border-success/30 bg-success-surface px-3 py-2 text-sm text-success">
                                                     <div className="flex justify-between">
                                                         <span>
                                                             Purchase Price:
@@ -485,7 +485,7 @@ export default function AdminOrderShow({
                                                                         cred.id,
                                                                     )
                                                                 }
-                                                                className="flex items-center gap-1 text-red-500 hover:text-red-600"
+                                                                className="flex items-center gap-1 text-destructive hover:text-destructive"
                                                             >
                                                                 <Trash2 className="h-3 w-3" />{' '}
                                                                 Delete
@@ -696,12 +696,12 @@ export default function AdminOrderShow({
                                             className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
                                                 order.payment_receipt.status ===
                                                 'approved'
-                                                    ? 'bg-green-100 text-green-800'
+                                                    ? 'bg-success-surface text-success'
                                                     : order.payment_receipt
                                                             .status ===
                                                         'rejected'
-                                                      ? 'bg-red-100 text-red-800'
-                                                      : 'bg-amber-100 text-amber-800'
+                                                      ? 'bg-danger-surface text-danger'
+                                                      : 'bg-warning-surface text-warning'
                                             }`}
                                         >
                                             {order.payment_receipt.status}
@@ -712,7 +712,7 @@ export default function AdminOrderShow({
                                         <div className="flex gap-2 border-t pt-2">
                                             <Button
                                                 variant="outline"
-                                                className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
+                                                className="flex-1 border-success/40 text-success hover:bg-success/10"
                                                 onClick={() =>
                                                     handleReceiptAction(
                                                         'approved',
@@ -725,7 +725,7 @@ export default function AdminOrderShow({
                                             </Button>
                                             <Button
                                                 variant="outline"
-                                                className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                                                className="flex-1 border-destructive/40 text-destructive hover:bg-destructive/10"
                                                 onClick={() =>
                                                     handleReceiptAction(
                                                         'rejected',

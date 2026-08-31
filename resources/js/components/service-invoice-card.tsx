@@ -1,4 +1,5 @@
 import { EngagementStatusBadge } from '@/components/engagement-status-badge';
+import { PaymentStatusBadge } from '@/components/status-badge';
 import { formatNpr } from '@/lib/currency';
 
 export type ServiceInvoice = {
@@ -32,11 +33,6 @@ export function ServiceInvoiceCard({
 }: ServiceInvoiceCardProps) {
     const hasInvoice = invoice.line_items.length > 0;
 
-    const paymentClass =
-        invoice.payment_status === 'paid'
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200';
-
     return (
         <div
             className={`mt-3 w-full rounded-lg border bg-card p-4 sm:p-5 ${className}`}
@@ -51,11 +47,9 @@ export function ServiceInvoiceCard({
                         label={invoice.status_label}
                     />
                     {hasInvoice && (
-                        <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${paymentClass}`}
-                        >
-                            {invoice.payment_status === 'paid' ? 'Paid' : 'Due'}
-                        </span>
+                        <PaymentStatusBadge
+                            paid={invoice.payment_status === 'paid'}
+                        />
                     )}
                 </div>
             </div>

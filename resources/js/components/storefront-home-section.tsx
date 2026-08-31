@@ -61,7 +61,7 @@ export function StorefrontHomeSection({
             aria-labelledby={`${section.type}-heading`}
             className="scroll-mt-24"
         >
-            <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-6">
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
                 <div className="flex items-start gap-4">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                         <Icon className="h-6 w-6" />
@@ -69,11 +69,11 @@ export function StorefrontHomeSection({
                     <div>
                         <h2
                             id={`${section.type}-heading`}
-                            className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl"
+                            className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl"
                         >
                             {section.label}
                         </h2>
-                        <p className="mt-1 max-w-md text-sm text-slate-500">
+                        <p className="mt-1 max-w-md text-sm text-muted-foreground">
                             {section.tagline}
                         </p>
                     </div>
@@ -81,7 +81,7 @@ export function StorefrontHomeSection({
                 <Link
                     href={href}
                     prefetch
-                    className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover"
                 >
                     View all
                     <ArrowRight className="h-4 w-4" />
@@ -98,13 +98,13 @@ export function StorefrontHomeSection({
                                 key={category.id}
                                 href={showCategory(category)}
                                 prefetch
-                                className="group flex flex-col rounded-3xl border border-slate-200/80 bg-white/90 p-6 shadow-[0_1.125rem_2.8125rem_-1.75rem_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_1.5625rem_3.75rem_-1.875rem_rgba(17,118,188,0.35)]"
+                                className="group flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
                             >
                                 <div className="flex items-center justify-between gap-3">
-                                    <h3 className="text-xl font-semibold tracking-tight text-slate-950">
+                                    <h3 className="text-xl font-semibold tracking-tight text-foreground">
                                         {category.name}
                                     </h3>
-                                    <span className="inline-flex shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                                    <span className="inline-flex shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                                         {count} {count === 1 ? 'item' : 'items'}
                                     </span>
                                 </div>
@@ -115,7 +115,7 @@ export function StorefrontHomeSection({
                                             <span
                                                 key={product.id}
                                                 title={product.title}
-                                                className="max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600"
+                                                className="max-w-full truncate rounded-full border border-border bg-muted px-3 py-1 text-sm text-muted-foreground"
                                             >
                                                 {product.title}
                                             </span>

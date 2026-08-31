@@ -83,19 +83,19 @@ export default function Welcome({
             <PinnedPanels>
                 <div
                     data-panel
-                    className="relative overflow-hidden bg-linear-to-br from-primary/10 via-white to-accent/10 pb-32"
+                    className="relative overflow-hidden hero-aurora pb-32"
                 >
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_0.0625rem,transparent_0.0625rem),linear-gradient(to_bottom,#80808012_0.0625rem,transparent_0.0625rem)] [mask-image:linear-gradient(to_bottom,white,transparent)] bg-[size:1.5rem_1.5rem]" />
+                    <div className="pointer-events-none absolute inset-0 hero-grid" />
 
                     <div data-panel-inner>
                         <div className="relative z-10 container mx-auto mt-20 max-w-4xl px-4 text-center">
-                            <MaskedLinesHeading className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-[#1A1A1A] md:text-7xl">
+                            <MaskedLinesHeading className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-foreground md:text-7xl">
                                 Premium tools &
                                 <br />
                                 goods in one place
                                 <span className="text-accent">.</span>
                             </MaskedLinesHeading>
-                            <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl">
+                            <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
                                 From cutting-edge AI subscriptions and
                                 productivity software to curated fashion and
                                 expert freelance services in Nepal. Experience
@@ -105,7 +105,7 @@ export default function Welcome({
                             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                                 <button
                                     onClick={scrollToShop}
-                                    className="cursor-pointer rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-primary hover:shadow-xl"
+                                    className="cursor-pointer rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-accent-foreground shadow-md transition-[transform,background-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                                 >
                                     Start Here
                                 </button>
@@ -143,7 +143,7 @@ export default function Welcome({
                         </div>
 
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
+                            <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <CloudDownload className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -156,7 +156,7 @@ export default function Welcome({
                                     seconds.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
+                            <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Star className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -168,7 +168,7 @@ export default function Welcome({
                                     platforms at unbeatable local rates.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
+                            <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -right-12 -bottom-12 h-40 w-40 rounded-full bg-accent/20 blur-2xl transition-colors group-hover:bg-accent/30" />
                                 <Briefcase className="relative z-10 mb-4 h-8 w-8 text-accent" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -180,7 +180,7 @@ export default function Welcome({
                                     freelance work with secure payments.
                                 </p>
                             </div>
-                            <div className="group relative overflow-hidden rounded-4xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
+                            <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/3 p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/6">
                                 <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-2xl transition-colors group-hover:bg-primary/30" />
                                 <Truck className="relative z-10 mb-4 h-8 w-8 text-primary" />
                                 <h3 className="relative z-10 mb-3 text-2xl text-white">
@@ -197,17 +197,17 @@ export default function Welcome({
                 </div>
             </PinnedPanels>
 
-            <div className="relative z-20 bg-white">
+            <div className="relative z-20 bg-background">
                 <main
                     ref={shopRef}
                     id="shop"
                     className="container mx-auto max-w-7xl flex-1 px-4 py-24"
                 >
                     <div className="mb-12 text-center">
-                        <h2 className="mb-4 text-3xl text-[#1A1A1A]">
+                        <h2 className="mb-4 text-3xl text-foreground">
                             Explore Nepal's diverse catalog
                         </h2>
-                        <p className="text-gray-500">
+                        <p className="text-muted-foreground">
                             Find exactly what you're looking for across
                             software, services, and physical goods.
                         </p>
@@ -217,7 +217,7 @@ export default function Welcome({
                         href={home().url}
                         only={SEARCH_ONLY}
                         currentSearch={filters.search ?? ''}
-                        className="mb-16 flex flex-col items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_0.5rem_1.875rem_rgba(0,0,0,0.04)] sm:flex-row"
+                        className="mb-16 flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm sm:flex-row"
                     />
 
                     {hasResults ? (
@@ -231,12 +231,12 @@ export default function Welcome({
                             ))}
                         </div>
                     ) : (
-                        <div className="mt-8 rounded-2xl border border-gray-100 bg-gray-50 p-12 text-center">
-                            <Search className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-                            <h3 className="mb-2 text-xl text-gray-900">
+                        <div className="mt-8 rounded-2xl border border-border bg-muted p-12 text-center">
+                            <Search className="mx-auto mb-4 h-16 w-16 text-muted-foreground/60" />
+                            <h3 className="mb-2 text-xl text-foreground">
                                 No products found
                             </h3>
-                            <p className="text-gray-500">
+                            <p className="text-muted-foreground">
                                 We couldn&apos;t find any categories or products
                                 matching your search.
                             </p>
@@ -249,7 +249,7 @@ export default function Welcome({
 }
 
 Welcome.layout = (page: React.ReactNode) => (
-    <StorefrontLayout className="flex min-h-screen flex-col bg-[#FAFAFA] text-foreground">
+    <StorefrontLayout className="flex min-h-screen flex-col bg-background text-foreground">
         {page}
     </StorefrontLayout>
 );

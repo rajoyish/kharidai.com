@@ -606,7 +606,7 @@ function CategoryRow({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
+                        className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-red-950/40"
                         aria-label={`Delete ${node.name}`}
                         disabled={deletingCategoryId === node.id}
                         onClick={() => onDelete(node)}
