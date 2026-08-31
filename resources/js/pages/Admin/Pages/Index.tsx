@@ -58,9 +58,7 @@ export default function PagesIndex({ pages }: { pages: CmsPageRow[] }) {
 
         const query = searchQuery.toLowerCase();
 
-        return pages.filter((page) =>
-            page.title.toLowerCase().includes(query),
-        );
+        return pages.filter((page) => page.title.toLowerCase().includes(query));
     }, [pages, searchQuery, isSearching]);
 
     const handleDelete = (page: CmsPageRow) => {

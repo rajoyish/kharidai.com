@@ -81,9 +81,7 @@ export function ServiceConfigFields({ data, setData, errors }: any) {
                 <div className="grid gap-4 border-l-2 border-primary/20 py-2 pl-4">
                     {showFlatRate && (
                         <div className="grid gap-2">
-                            <Label htmlFor="base_fee_npr">
-                                Base Fee (NPR)
-                            </Label>
+                            <Label htmlFor="base_fee_npr">Base Fee (NPR)</Label>
                             <Input
                                 id="base_fee_npr"
                                 type="number"

@@ -64,10 +64,7 @@ export type StorefrontNavigationCategory = {
 };
 
 export type StorefrontNavigationGroupType =
-    | 'digital'
-    | 'physical'
-    | 'service'
-    | 'more';
+    'digital' | 'physical' | 'service' | 'more';
 
 export type StorefrontNavigationGroup = {
     type: StorefrontNavigationGroupType;
