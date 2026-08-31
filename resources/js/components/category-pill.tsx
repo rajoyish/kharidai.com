@@ -5,6 +5,7 @@ import type { VariantProps } from 'class-variance-authority';
 
 import { CountBadge } from '@/components/count-badge';
 import { TruncatedText } from '@/components/truncated-text';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 
 const pillVariants = cva(
@@ -45,7 +46,7 @@ type CategoryPillProps = VariantProps<typeof pillVariants> & {
     count?: number | null;
     /** Inertia destination; renders a `<Link>` when set, otherwise a static `<span>`. */
     href?: InertiaLinkProps['href'];
-    /** Prefetch the destination on hover — forwarded to Inertia's `<Link>`. */
+    /** Prefetch the destination, using the app's shared link strategy. */
     prefetch?: boolean;
     className?: string;
 };
@@ -84,7 +85,11 @@ export function CategoryPill({
 
     if (href) {
         return (
-            <Link href={href} prefetch={prefetch} className={classes}>
+            <Link
+                href={href}
+                prefetch={prefetch ? LINK_PREFETCH : false}
+                className={classes}
+            >
                 {content}
             </Link>
         );

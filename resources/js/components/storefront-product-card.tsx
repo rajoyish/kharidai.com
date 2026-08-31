@@ -4,6 +4,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { TruncatedText } from '@/components/truncated-text';
 import { Badge } from '@/components/ui/badge';
 import { formatNpr } from '@/lib/currency';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import { show as showProduct } from '@/routes/products';
 import type { StorefrontProduct } from '@/types';
 
@@ -29,7 +30,7 @@ export function StorefrontProductCard({
     return (
         <Link
             href={showProduct(product)}
-            prefetch
+            prefetch={LINK_PREFETCH}
             className="group block rounded-2xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
         >
             <div className="mb-5 aspect-[4/3] overflow-hidden rounded-xl bg-muted">

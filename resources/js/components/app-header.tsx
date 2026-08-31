@@ -27,6 +27,7 @@ import {
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/admin';
 import type { BreadcrumbItem, NavItem } from '@/types';
@@ -101,7 +102,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
 
                     <Link
                         href={dashboard()}
-                        prefetch
+                        prefetch={LINK_PREFETCH}
                         className="flex items-center space-x-2"
                     >
                         <AppLogo className="h-8 w-auto" />

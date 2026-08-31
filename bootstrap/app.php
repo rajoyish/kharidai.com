@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CacheGuestPagesAtEdge;
 use App\Http\Middleware\EnsureUserIsNotBanned;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -30,6 +31,14 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             UpdateLastActiveAt::class,
+        ]);
+
+        // Prepended, not appended: an appended middleware is the innermost one,
+        // so its work on the way out happens before AddQueuedCookiesToResponse
+        // puts the cookies back. Outermost is the only position from which the
+        // finished response can be stripped.
+        $middleware->web(prepend: [
+            CacheGuestPagesAtEdge::class,
         ]);
 
         $middleware->alias([

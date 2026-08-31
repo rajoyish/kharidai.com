@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ComponentProps, ReactNode } from 'react';
 
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import type { MenuLink } from '@/types/storefront';
 
 /**
@@ -52,7 +53,12 @@ export function StorefrontNavLink({
     }
 
     return (
-        <Link {...props} href={href} prefetch className={className}>
+        <Link
+            {...props}
+            href={href}
+            prefetch={LINK_PREFETCH}
+            className={className}
+        >
             {label}
         </Link>
     );

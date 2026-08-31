@@ -46,6 +46,16 @@ Route::get('/blog/{post}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 
+/*
+| Hands a guest a session and an XSRF-TOKEN cookie on demand.
+|
+| An edge-cached page is served with its Set-Cookie stripped, so a first-time
+| visitor holds no CSRF token and their first write would be rejected with a 419.
+| The client primes the token through here before any such request. Never
+| cacheable: the whole point is the cookie it sets.
+*/
+Route::get('/csrf-cookie', fn () => response()->noContent())->name('csrf-cookie');
+
 Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::get('cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('cart', [CartController::class, 'add'])->name('cart.add');

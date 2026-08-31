@@ -4,31 +4,48 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        {{-- Google tag (gtag.js). Production only, so local and test traffic stays out of the property. --}}
+        {{-- Analytics. Production only, so local and test traffic stays out of the
+             property.
+
+             Both tags are injected after `load` rather than parsed in the head.
+             gtag.js alone is ~167KB, larger than this app's own bundle, and two
+             third-party origins competing with the app for bandwidth during first
+             paint is the difference the shopper actually feels. The queue shims are
+             defined immediately, so `gtag()` and `fbq()` are callable from the moment
+             the page runs and every call still lands once the real script arrives. --}}
         @production
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-1K0F7REGRV"></script>
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-
             gtag('config', 'G-1K0F7REGRV');
-        </script>
 
-        {{-- Meta Pixel Code --}}
-        <script>
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
             n.callMethod.apply(n,arguments):n.queue.push(arguments)};
             if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
+            n.queue=[]}(window, document,'script');
             fbq('init', '2087629375156375');
             fbq('track', 'PageView');
+
+            (function () {
+                function load() {
+                    ['https://www.googletagmanager.com/gtag/js?id=G-1K0F7REGRV',
+                     'https://connect.facebook.net/en_US/fbevents.js'].forEach(function (src) {
+                        var tag = document.createElement('script');
+                        tag.async = true;
+                        tag.src = src;
+                        document.head.appendChild(tag);
+                    });
+                }
+
+                if (document.readyState === 'complete') {
+                    load();
+                } else {
+                    window.addEventListener('load', load, { once: true });
+                }
+            })();
         </script>
-        {{-- End Meta Pixel Code --}}
         @endproduction
 
         @php($siteName = config('app.name', 'Laravel'))
@@ -141,12 +158,18 @@
             }
         </script>
 
+        {{-- One stylesheet, not two: each is render-blocking, and the second bought
+             a whole extra round trip on an origin the browser has to resolve and
+             negotiate TLS with before it can paint.
+
+             The italic axis is dropped from every family. It doubles what Google
+             serves, and `italic` appears only on a handful of admin labels, where
+             the browser's synthesised oblique is indistinguishable. The families
+             here are the ones app.css actually names: Geist (--font-sans), TikTok
+             Sans (--font-heading) and JetBrains Mono (--font-mono). --}}
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Geist:ital,wght@0,100..900;1,100..900&family=TikTok+Sans:opsz,wght@12..36,300..900&display=swap" rel="stylesheet">
-
-        @fonts
+        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=TikTok+Sans:opsz,wght@12..36,300..900&family=JetBrains+Mono:wght@400..600&display=swap" rel="stylesheet">
 
         @php($echoConfig = config('broadcasting.connections.pusher.frontend'))
 

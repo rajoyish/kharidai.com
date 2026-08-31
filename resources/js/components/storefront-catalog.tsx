@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowRight, PackageOpen } from 'lucide-react';
 
 import { StorefrontProductCard } from '@/components/storefront-product-card';
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import { collectCategoryProducts } from '@/lib/storefront-products';
 import { home } from '@/routes';
 import { show as showCategory } from '@/routes/categories';
@@ -74,7 +75,7 @@ export function StorefrontCatalog({
                             </div>
                             <Link
                                 href={showCategory(category)}
-                                prefetch
+                                prefetch={LINK_PREFETCH}
                                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-primary-text transition-colors hover:border-primary/30 hover:bg-primary/5"
                             >
                                 View category

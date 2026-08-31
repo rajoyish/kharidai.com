@@ -3,6 +3,7 @@ import type { InertiaLinkProps } from '@inertiajs/react';
 import { ArrowRight, Cpu, Package, Wrench } from 'lucide-react';
 import type { ComponentType } from 'react';
 
+import { LINK_PREFETCH } from '@/lib/prefetch';
 import {
     collectAllProducts,
     collectCategoryProducts,
@@ -80,7 +81,7 @@ export function StorefrontHomeSection({
                 </div>
                 <Link
                     href={href}
-                    prefetch
+                    prefetch={LINK_PREFETCH}
                     className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-colors duration-200 hover:bg-accent-hover"
                 >
                     View all
@@ -97,7 +98,7 @@ export function StorefrontHomeSection({
                             <Link
                                 key={category.id}
                                 href={showCategory(category)}
-                                prefetch
+                                prefetch={LINK_PREFETCH}
                                 className="group flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
                             >
                                 <div className="flex items-center justify-between gap-3">
