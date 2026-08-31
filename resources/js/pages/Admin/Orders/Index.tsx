@@ -7,6 +7,10 @@ import { CopyableOrderNumber } from '@/components/copy-button';
 import { PagePanel } from '@/components/page-panel';
 import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
+import {
+    ApprovalStatusBadge,
+    OrderStatusBadge,
+} from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -361,7 +365,7 @@ function OrderTable({
                         <TableCell className="font-bold">
                             {formatNpr(order.total_amount)}
                         </TableCell>
-                        <TableCell className="font-medium text-green-600">
+                        <TableCell className="font-medium text-success">
                             {order.status === 'completed' ? (
                                 <>{formatNpr(order.profit ?? 0)}</>
                             ) : (
@@ -369,33 +373,13 @@ function OrderTable({
                             )}
                         </TableCell>
                         <TableCell>
-                            <span
-                                className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
-                                    order.status === 'completed'
-                                        ? 'bg-green-100 text-green-800'
-                                        : order.status === 'delivering'
-                                          ? 'bg-blue-100 text-blue-800'
-                                          : 'bg-yellow-100 text-yellow-800'
-                                }`}
-                            >
-                                {order.status}
-                            </span>
+                            <OrderStatusBadge status={order.status} />
                         </TableCell>
                         <TableCell>
                             {order.payment_receipt ? (
-                                <span
-                                    className={`rounded-md px-2 py-1 text-xs ${
-                                        order.payment_receipt.status ===
-                                        'approved'
-                                            ? 'border border-green-200 bg-green-100/50 text-green-700'
-                                            : order.payment_receipt.status ===
-                                                'rejected'
-                                              ? 'border border-red-200 bg-red-100/50 text-red-700'
-                                              : 'border border-amber-200 bg-amber-100/50 text-amber-700'
-                                    }`}
-                                >
-                                    {order.payment_receipt.status}
-                                </span>
+                                <ApprovalStatusBadge
+                                    status={order.payment_receipt.status}
+                                />
                             ) : (
                                 <span className="text-xs text-muted-foreground italic">
                                     Missing
@@ -412,7 +396,7 @@ function OrderTable({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 disabled={deletingOrderId === order.id}
                                 onClick={() => onRequestDelete(order)}
                             >

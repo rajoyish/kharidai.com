@@ -148,7 +148,7 @@ export default function UsersIndex({
                                             Banned
                                         </span>
                                     ) : (
-                                        <span className="inline-flex items-center rounded-full border border-transparent bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100/80 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none">
+                                        <span className="inline-flex items-center rounded-full border border-transparent bg-success-surface px-2.5 py-0.5 text-xs font-semibold text-success">
                                             Active
                                         </span>
                                     )}
@@ -161,7 +161,7 @@ export default function UsersIndex({
                                         size="sm"
                                         className={
                                             !user.banned_at
-                                                ? 'text-amber-600 hover:bg-amber-50 hover:text-amber-700'
+                                                ? 'text-warning hover:bg-warning/10 hover:text-warning'
                                                 : ''
                                         }
                                         onClick={() => handleBan(user)}
@@ -171,7 +171,7 @@ export default function UsersIndex({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                         onClick={() => setUserToDelete(user)}
                                     >
                                         Delete

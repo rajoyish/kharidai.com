@@ -549,7 +549,7 @@ export default function ServiceInvoice({
                         </div>
                     )}
 
-                    <div className="grid gap-2 rounded-md border border-dashed border-amber-300 bg-amber-50/60 p-3 dark:border-amber-900/60 dark:bg-amber-950/20">
+                    <div className="grid gap-2 rounded-md border border-dashed border-warning/40 bg-warning-surface p-3">
                         <div>
                             <p className="text-sm font-medium">
                                 Manual status override
@@ -997,7 +997,7 @@ export default function ServiceInvoice({
 
                         {!paid &&
                             offlineForm.data.offline_customer_paid_npr && (
-                                <p className="text-xs text-amber-600 dark:text-amber-500">
+                                <p className="text-xs text-warning">
                                     Flip the Payment Status toggle above to Paid
                                     so this profit counts toward the Monthly
                                     Tithe.
@@ -1070,13 +1070,13 @@ export default function ServiceInvoice({
                                             className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
                                                 engagement.order.payment_receipt
                                                     .status === 'approved'
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                                    ? 'bg-success-surface text-success'
                                                     : engagement.order
                                                             .payment_receipt
                                                             .status ===
                                                         'rejected'
-                                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
-                                                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
+                                                      ? 'bg-danger-surface text-danger'
+                                                      : 'bg-warning-surface text-warning'
                                             }`}
                                         >
                                             {

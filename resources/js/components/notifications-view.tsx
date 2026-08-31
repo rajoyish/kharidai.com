@@ -145,7 +145,7 @@ export function NotificationsView({
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                                    className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-red-950/40"
                                     disabled={!hasNotifications}
                                 >
                                     <Trash2 className="h-4 w-4" />

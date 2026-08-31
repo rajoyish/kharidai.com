@@ -42,13 +42,13 @@ export default function Show({
             <main className="container mx-auto px-4 py-10">
                 <Link
                     href={home()}
-                    className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-950"
+                    className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                     <ChevronLeft className="h-4 w-4" />
                     Back to all categories
                 </Link>
 
-                <section className="mb-10 overflow-hidden rounded-4xl border border-slate-200/80 bg-white/90 p-8 shadow-[0_1.875rem_4.375rem_-3rem_rgba(15,23,42,0.4)] md:p-10">
+                <section className="mb-10 overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm md:p-10">
                     <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-2xl">
                             <p className="text-sm font-semibold text-primary/80 uppercase">
@@ -57,22 +57,22 @@ export default function Show({
                             <MaskedLinesHeading
                                 key={category.slug}
                                 animateOnScroll
-                                className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl"
+                                className="mt-4 text-4xl font-semibold tracking-tight text-foreground md:text-5xl"
                             >
                                 {category.name}
                             </MaskedLinesHeading>
-                            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
+                            <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
                                 {productCount > 0
                                     ? `Explore all ${productCount} products currently available in ${category.name}.`
                                     : `There are no in-stock products in ${category.name} right now.`}
                             </p>
                         </div>
 
-                        <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/90 p-5 text-center text-sm text-slate-600">
-                            <span className="font-medium text-slate-500">
+                        <div className="grid gap-3 rounded-2xl border border-border bg-muted p-5 text-center text-sm text-muted-foreground">
+                            <span className="font-medium text-muted-foreground">
                                 Available now
                             </span>
-                            <span className="text-3xl font-semibold tracking-tight text-slate-950">
+                            <span className="text-3xl font-semibold tracking-tight text-foreground">
                                 {productCount}
                             </span>
                             <span>
@@ -87,7 +87,7 @@ export default function Show({
                 {categories.length > 0 && (
                     <section className="mb-10">
                         <div className="mb-4 flex items-center justify-between gap-4">
-                            <h2 className="text-sm font-semibold text-slate-500 uppercase">
+                            <h2 className="text-sm font-semibold text-muted-foreground uppercase">
                                 Browse Categories
                             </h2>
                         </div>
@@ -166,19 +166,19 @@ export default function Show({
                             ))}
                         </section>
 
-                        <div className="mt-12 flex items-center justify-between border-t border-slate-200/50 pt-6">
+                        <div className="mt-12 flex items-center justify-between border-t border-border pt-6">
                             <div>
-                                <p className="text-sm text-slate-500">
+                                <p className="text-sm text-muted-foreground">
                                     Showing{' '}
-                                    <span className="font-medium text-slate-900">
+                                    <span className="font-medium text-foreground">
                                         {products.from}
                                     </span>{' '}
                                     to{' '}
-                                    <span className="font-medium text-slate-900">
+                                    <span className="font-medium text-foreground">
                                         {products.to}
                                     </span>{' '}
                                     of{' '}
-                                    <span className="font-medium text-slate-900">
+                                    <span className="font-medium text-foreground">
                                         {products.total}
                                     </span>{' '}
                                     results
@@ -189,12 +189,12 @@ export default function Show({
                                     <Link
                                         href={products.prev_page_url}
                                         preserveScroll
-                                        className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-primary"
+                                        className="inline-flex items-center justify-center rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted hover:text-primary-text"
                                     >
                                         Previous
                                     </Link>
                                 ) : (
-                                    <span className="inline-flex cursor-not-allowed items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400">
+                                    <span className="inline-flex cursor-not-allowed items-center justify-center rounded-full border border-border bg-muted px-4 py-2 text-sm font-medium text-muted-foreground/60">
                                         Previous
                                     </span>
                                 )}
@@ -203,12 +203,12 @@ export default function Show({
                                     <Link
                                         href={products.next_page_url}
                                         preserveScroll
-                                        className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-primary"
+                                        className="inline-flex items-center justify-center rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted hover:text-primary-text"
                                     >
                                         Next
                                     </Link>
                                 ) : (
-                                    <span className="inline-flex cursor-not-allowed items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400">
+                                    <span className="inline-flex cursor-not-allowed items-center justify-center rounded-full border border-border bg-muted px-4 py-2 text-sm font-medium text-muted-foreground/60">
                                         Next
                                     </span>
                                 )}
@@ -216,17 +216,17 @@ export default function Show({
                         </div>
                     </>
                 ) : (
-                    <section className="rounded-4xl border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-[0_1.25rem_3.125rem_-2.5rem_rgba(15,23,42,0.45)]">
-                        <h2 className="text-2xl font-semibold text-slate-950">
+                    <section className="rounded-3xl border border-dashed border-border-strong bg-card px-8 py-16 text-center shadow-sm">
+                        <h2 className="text-2xl font-semibold text-foreground">
                             No products available right now
                         </h2>
-                        <p className="mx-auto mt-3 max-w-md text-slate-600">
+                        <p className="mx-auto mt-3 max-w-md text-muted-foreground">
                             This category exists, but it does not have any
                             in-stock products at the moment.
                         </p>
                         <Link
                             href={home()}
-                            className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+                            className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
                         >
                             Explore all categories
                         </Link>
@@ -238,7 +238,7 @@ export default function Show({
 }
 
 Show.layout = (page: React.ReactNode) => (
-    <StorefrontLayout className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_36%,#ffffff_100%)] text-foreground">
+    <StorefrontLayout className="min-h-screen storefront-canvas text-foreground">
         {page}
     </StorefrontLayout>
 );

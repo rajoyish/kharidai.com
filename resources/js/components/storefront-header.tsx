@@ -13,6 +13,8 @@ import {
 import { useEffect, useState } from 'react';
 import type { ComponentType } from 'react';
 import AppLogo from '@/components/app-logo';
+import AppearanceTabs from '@/components/appearance-tabs';
+import { AppearanceToggle } from '@/components/appearance-toggle';
 import { NavScroller } from '@/components/nav-scroller';
 import { StorefrontNavLink } from '@/components/storefront-nav-link';
 import { Button } from '@/components/ui/button';
@@ -226,6 +228,7 @@ export function StorefrontHeader({
 
                 {/* User Actions (Right) Desktop */}
                 <div className="hidden shrink-0 items-center gap-6 md:flex">
+                    <AppearanceToggle />
                     <Link
                         href={accountHref}
                         prefetch
@@ -366,6 +369,18 @@ export function StorefrontHeader({
                                         <span>Cart</span>
                                         <CartCountLabel count={cartCount} />
                                     </Link>
+                                </div>
+
+                                {/* The drawer gets the segmented control rather
+                                    than the header's icon dropdown: a menu
+                                    opening out of an already-open sheet is
+                                    awkward on touch, and there is room here to
+                                    label all three choices. */}
+                                <div className="flex flex-col gap-3 border-t pt-6">
+                                    <h4 className="px-2 text-sm font-bold tracking-wide">
+                                        Theme
+                                    </h4>
+                                    <AppearanceTabs className="self-start" />
                                 </div>
                             </div>
                         </SheetContent>

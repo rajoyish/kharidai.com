@@ -210,12 +210,12 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
             <div
                 data-fan-card
                 tabIndex={0}
-                className="absolute z-20 w-52 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 md:w-64"
+                className="absolute z-20 w-52 transform cursor-pointer rounded-3xl border border-border bg-card p-6 shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring md:w-64"
             >
-                <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-accent shadow-inner">
+                <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent-surface text-accent-strong shadow-inner">
                     <Sparkles className="h-4 w-4" />
                 </div>
-                <h3 className="text-center text-lg text-gray-800">
+                <h3 className="text-center text-lg text-card-foreground">
                     Premium Subscriptions
                 </h3>
             </div>
@@ -223,15 +223,15 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
             <div
                 data-fan-card
                 tabIndex={0}
-                className="absolute z-30 w-60 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_1.25rem_3.125rem_-0.75rem_rgba(0,0,0,0.1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:w-72 md:p-8"
+                className="absolute z-30 w-60 transform cursor-pointer rounded-3xl border border-border bg-card p-6 shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring md:w-72 md:p-8"
             >
-                <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner">
+                <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary-surface text-primary-text shadow-inner">
                     <ShoppingBag className="h-5 w-5" />
                 </div>
-                <h3 className="mb-3 text-center text-xl font-bold text-gray-900">
+                <h3 className="mb-3 text-center text-xl font-bold text-card-foreground">
                     Find exactly what you need, instantly.
                 </h3>
-                <div className="mt-6 flex items-center justify-center gap-3 text-xs font-medium text-gray-400">
+                <div className="mt-6 flex items-center justify-center gap-3 text-xs font-medium text-muted-foreground">
                     <span>{totalItemsCount} items</span>
                     <span className="h-1.5 w-1.5 rounded-full bg-primary/40" />
                     <span>24/7 delivery</span>
@@ -241,12 +241,12 @@ export function HeroFanCards({ totalItemsCount }: { totalItemsCount: number }) {
             <div
                 data-fan-card
                 tabIndex={0}
-                className="absolute z-20 w-52 transform cursor-pointer rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_0.9375rem_2.5rem_-0.75rem_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:w-64"
+                className="absolute z-20 w-52 transform cursor-pointer rounded-3xl border border-border bg-card p-6 shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring md:w-64"
             >
-                <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary shadow-inner">
+                <div className="mx-auto mb-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary-surface text-primary-text shadow-inner">
                     <Archive className="h-4 w-4" />
                 </div>
-                <h3 className="text-center text-lg text-gray-800">
+                <h3 className="text-center text-lg text-card-foreground">
                     Trusted Physical Goods
                 </h3>
             </div>

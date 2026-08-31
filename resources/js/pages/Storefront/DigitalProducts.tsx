@@ -14,7 +14,7 @@ export default function DigitalProducts(props: {
 }
 
 DigitalProducts.layout = (page: React.ReactNode) => (
-    <StorefrontLayout className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_36%,#ffffff_100%)] text-foreground">
+    <StorefrontLayout className="min-h-screen storefront-canvas text-foreground">
         {page}
     </StorefrontLayout>
 );

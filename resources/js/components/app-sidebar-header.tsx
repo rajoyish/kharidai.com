@@ -1,3 +1,4 @@
+import { AppearanceToggle } from '@/components/appearance-toggle';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { NotificationsPanel } from '@/components/NotificationsPanel';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -15,6 +16,7 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex items-center gap-2">
+                <AppearanceToggle />
                 <NotificationsPanel />
             </div>
         </header>

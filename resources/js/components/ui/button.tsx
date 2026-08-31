@@ -5,20 +5,25 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-sm font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:translate-y-px disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:ring-ring/60 focus-visible:ring-[3px] focus-visible:ring-offset-1 focus-visible:ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
+        // Brand green carries near-black, never white: white on #8dc641 is
+        // 2.04:1. Hover moves along the same hue instead of swapping to the
+        // blue, which read as the button changing identity mid-interaction.
         default:
-          "bg-accent text-white shadow-xs hover:bg-primary",
+          "bg-accent text-accent-foreground shadow-xs hover:bg-accent-hover hover:shadow-sm",
+        primary:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary-hover hover:shadow-sm",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-destructive-foreground shadow-xs hover:brightness-110 hover:shadow-sm focus-visible:ring-destructive/40",
         outline:
-          "border border-input bg-background shadow-xs hover:bg-muted hover:text-muted-foreground",
+          "border border-input bg-transparent shadow-xs hover:border-border-strong hover:bg-muted hover:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost: "hover:bg-muted hover:text-muted-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/70 hover:shadow-sm",
+        ghost: "hover:bg-muted hover:text-foreground",
+        link: "text-primary-text underline-offset-4 hover:underline decoration-primary-text/40 hover:decoration-primary-text",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

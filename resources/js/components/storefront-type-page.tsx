@@ -64,28 +64,28 @@ export function StorefrontTypePage({
             <SeoHead />
 
             <main className="container mx-auto max-w-7xl px-4 py-12 md:py-16">
-                <section className="mb-12 overflow-hidden rounded-4xl border border-slate-200/80 bg-white/90 p-8 shadow-[0_1.875rem_4.375rem_-3rem_rgba(15,23,42,0.4)] md:p-12">
+                <section className="mb-12 overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm md:p-12">
                     <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-2xl">
                             <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                                 <Icon className="h-7 w-7" />
                             </span>
-                            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+                            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
                                 {label}
                             </h1>
-                            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
+                            <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
                                 {tagline}
                             </p>
                         </div>
 
-                        <div className="grid gap-2 rounded-3xl border border-slate-200 bg-slate-50/90 px-8 py-6 text-center">
-                            <span className="text-sm font-medium text-slate-500">
+                        <div className="grid gap-2 rounded-3xl border border-border bg-muted px-8 py-6 text-center">
+                            <span className="text-sm font-medium text-muted-foreground">
                                 Available now
                             </span>
-                            <span className="text-4xl font-semibold tracking-tight text-slate-950">
+                            <span className="text-4xl font-semibold tracking-tight text-foreground">
                                 {itemCount}
                             </span>
-                            <span className="text-sm text-slate-500">
+                            <span className="text-sm text-muted-foreground">
                                 {itemCount === 1 ? 'item' : 'items'} ready to
                                 browse
                             </span>
@@ -98,7 +98,7 @@ export function StorefrontTypePage({
                     only={SEARCH_ONLY}
                     currentSearch={activeSearch}
                     placeholder={`Search ${label.toLowerCase()}...`}
-                    className="mb-12 flex flex-col items-center gap-4 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_1.25rem_3.125rem_-2.5rem_rgba(15,23,42,0.45)] sm:flex-row"
+                    className="mb-12 flex flex-col items-center gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm sm:flex-row"
                 />
 
                 <StorefrontCatalog

@@ -665,7 +665,7 @@ function MenuRow({
                 <div className="flex items-center gap-2">
                     <span className="truncate font-medium">{item.label}</span>
                     {!item.is_active && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-amber-800 uppercase">
+                        <span className="rounded-full bg-warning-surface px-2 py-0.5 text-[10px] font-bold tracking-wider text-warning uppercase">
                             Hidden
                         </span>
                     )}
@@ -707,7 +707,7 @@ function MenuRow({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                        className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                         aria-label={`Delete ${item.label}`}
                         onClick={onDelete}
                     >

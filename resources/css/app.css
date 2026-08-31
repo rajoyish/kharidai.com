@@ -8,6 +8,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ==========================================================================
+   Design tokens
+
+   Two rules govern this file:
+
+   1. `--primary` (#1176bc) and `--accent` (#8dc641) are brand identity and are
+      never altered to satisfy a contrast ratio. Where a ratio cannot be met by
+      the brand value itself, a sibling token carries the accessible variant for
+      that role — `--primary-text` for type, `--accent-strong` for type — and the
+      brand value keeps the fill.
+   2. Every foreground/background pair below is measured, not estimated. Body
+      text clears 4.5:1 and control boundaries clear 3:1 in both themes. The
+      neutral ramp carries a trace of the brand hue (250) rather than pure grey,
+      so dark surfaces read as considered rather than switched off.
+   ========================================================================== */
+
 @theme {
     --font-sans:
         'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
@@ -19,9 +35,31 @@
         'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
         'Liberation Mono', 'Courier New', monospace;
 
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
+    /* Radii. One step between each; `--radius` is the control unit and every
+       other value is derived from it so a single change re-proportions the UI. */
+    --radius-xs: calc(var(--radius) - 6px);
     --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 10px);
+    --radius-3xl: calc(var(--radius) + 18px);
+
+    /* Elevation. Every level carries a vertical offset and a soft blur; the
+       ambient second shadow keeps edges from going hard on light surfaces. */
+    --shadow-xs: 0 1px 2px -1px var(--shadow-color-strong);
+    --shadow-sm:
+        0 1px 2px -1px var(--shadow-color-strong),
+        0 2px 6px -2px var(--shadow-color);
+    --shadow-md:
+        0 2px 4px -2px var(--shadow-color-strong),
+        0 6px 16px -6px var(--shadow-color);
+    --shadow-lg:
+        0 4px 8px -4px var(--shadow-color-strong),
+        0 14px 32px -12px var(--shadow-color);
+    --shadow-xl:
+        0 8px 16px -8px var(--shadow-color-strong),
+        0 28px 56px -20px var(--shadow-color);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -34,6 +72,9 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-hover: var(--primary-hover);
+    --color-primary-text: var(--primary-text);
+    --color-primary-surface: var(--primary-surface);
 
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -43,11 +84,31 @@
 
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
+    --color-accent-hover: var(--accent-hover);
+    --color-accent-strong: var(--accent-strong);
+    --color-accent-surface: var(--accent-surface);
 
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
 
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-surface: var(--success-surface);
+
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-surface: var(--warning-surface);
+
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-surface: var(--info-surface);
+
+    --color-danger: var(--danger);
+    --color-danger-foreground: var(--danger-foreground);
+    --color-danger-surface: var(--danger-surface);
+
     --color-border: var(--border);
+    --color-border-strong: var(--border-strong);
     --color-input: var(--input);
     --color-ring: var(--ring);
 
@@ -68,74 +129,191 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --radius: 0.625rem;
+
+    /* Light surfaces sit just off white so that a white card lifts off the page
+       without needing a heavier shadow to prove it is there. */
+    --background: oklch(0.985 0.002 250);
+    --foreground: oklch(0.19 0.008 250);
+
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.19 0.008 250);
+
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
+    --popover-foreground: oklch(0.19 0.008 250);
+
+    /* Brand blue, untouched. 4.84:1 against white, so it carries white type as
+       a fill without adjustment. */
     --primary: #1176bc;
     --primary-foreground: #ffffff;
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.35 0 0);
+    /* Brand blue is at its contrast floor on white, which leaves nothing for
+       antialiasing on small type. Links and inline emphasis take this darker
+       sibling instead. */
+    /* Hover darkens the fill in the light theme; both hover values keep the
+       same foreground legible, which is why they move rather than lighten. */
+    --primary-hover: oklch(0.5 0.1373 246.59);
+    --primary-text: oklch(0.52 0.1373 246.59);
+    --primary-surface: oklch(0.958 0.021 246.59);
+
+    --secondary: oklch(0.965 0.004 250);
+    --secondary-foreground: oklch(0.25 0.008 250);
+
+    --muted: oklch(0.962 0.004 250);
+    --muted-foreground: oklch(0.47 0.012 250);
+
+    /* Brand green, untouched, and only ever used as a fill: at 2.04:1 against
+       white it cannot carry white type, so `--accent-foreground` is near-black
+       (9.70:1). `--accent-strong` is the readable green for type on a surface. */
     --accent: #8dc641;
-    --accent-foreground: oklch(0.145 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
+    --accent-foreground: oklch(0.19 0.008 250);
+    --accent-hover: oklch(0.7 0.1722 129.72);
+    --accent-strong: oklch(0.52 0.1722 129.72);
+    --accent-surface: oklch(0.962 0.035 129.72);
+
+    --destructive: oklch(0.55 0.207 27.2);
     --destructive-foreground: #ffffff;
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+
+    --success: oklch(0.512 0.14 145);
+    --success-foreground: #ffffff;
+    --success-surface: oklch(0.955 0.035 145);
+
+    --warning: oklch(0.529 0.14 75);
+    --warning-foreground: #ffffff;
+    --warning-surface: oklch(0.96 0.04 75);
+
+    --info: oklch(0.525 0.14 250);
+    --info-foreground: #ffffff;
+    --info-surface: oklch(0.958 0.028 250);
+
+    --danger: oklch(0.55 0.207 27.2);
+    --danger-foreground: #ffffff;
+    --danger-surface: oklch(0.958 0.028 27.2);
+
+    /* `--border` divides, `--border-strong` and `--input` bound a control and
+       therefore clear 3:1 as WCAG 1.4.11 requires of them. */
+    --border: oklch(0.908 0.005 250);
+    --border-strong: oklch(0.648 0.008 250);
+    --input: oklch(0.62 0.008 250);
+    --ring: oklch(0.5493 0.1373 246.59);
+
+    /* Hero aurora. Brand blue and green, mixed into the page at a strength
+       that stays clear of the type: the glows peak in the corners and behind
+       the card fan, and have fallen away by the time they reach the centre
+       column where the heading and body copy sit. */
+    --hero-glow-primary: color-mix(in srgb, var(--primary) 42%, transparent);
+    --hero-glow-accent: color-mix(in srgb, var(--accent) 46%, transparent);
+    --hero-glow-deep: color-mix(in srgb, var(--primary) 34%, transparent);
+    --hero-grid-line: color-mix(in srgb, var(--primary) 12%, transparent);
+
+    --shadow-color: oklch(0.42 0.05 250 / 0.14);
+    --shadow-color-strong: oklch(0.35 0.06 250 / 0.1);
+
+    --chart-1: oklch(0.5493 0.1373 246.59);
+    --chart-2: oklch(0.6 0.15 129.72);
+    --chart-3: oklch(0.58 0.14 75);
+    --chart-4: oklch(0.55 0.17 300);
+    --chart-5: oklch(0.58 0.16 27.2);
+
+    --sidebar: oklch(0.972 0.003 250);
+    --sidebar-foreground: oklch(0.19 0.008 250);
+    --sidebar-primary: #1176bc;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: oklch(0.93 0.008 250);
+    --sidebar-accent-foreground: oklch(0.19 0.008 250);
+    --sidebar-border: oklch(0.9 0.005 250);
+    --sidebar-ring: oklch(0.5493 0.1373 246.59);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: #1775bc;
+    /* Three distinct surface levels. The previous theme gave `--card` the same
+       value as `--background`, so every card, popover, and sheet vanished into
+       the page; depth in dark mode has to come from the surface, because a
+       shadow has almost nothing to darken. */
+    --background: oklch(0.16 0.006 250);
+    --foreground: oklch(0.965 0.003 250);
+
+    --card: oklch(0.205 0.008 250);
+    --card-foreground: oklch(0.965 0.003 250);
+
+    --popover: oklch(0.235 0.009 250);
+    --popover-foreground: oklch(0.965 0.003 250);
+
+    /* The same brand blue. It keeps white type at 4.84:1 wherever it is a fill,
+       so the button reads identically in both themes. */
+    --primary: #1176bc;
     --primary-foreground: #ffffff;
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.85 0 0);
-    --accent: #8cc63f;
-    --accent-foreground: oklch(0.145 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    /* Brand blue as type on a dark surface is only 4.06:1, so it lifts here. */
+    /* Primary keeps white type, so its hover darkens here too: lifting the
+       fill on a dark page would drop the label below 4.5:1. Accent carries
+       near-black and is free to lift. */
+    --primary-hover: oklch(0.5 0.1373 246.59);
+    --primary-text: oklch(0.68 0.1373 246.59);
+    --primary-surface: oklch(0.28 0.055 246.59);
+
+    --secondary: oklch(0.27 0.008 250);
+    --secondary-foreground: oklch(0.965 0.003 250);
+
+    --muted: oklch(0.265 0.008 250);
+    --muted-foreground: oklch(0.762 0.012 250);
+
+    /* Brand green needs no dark variant: it clears 9.67:1 against every dark
+       surface here, as type and as a fill carrying near-black. */
+    --accent: #8dc641;
+    --accent-foreground: oklch(0.19 0.008 250);
+    --accent-hover: oklch(0.81 0.1722 129.72);
+    --accent-strong: #8dc641;
+    --accent-surface: oklch(0.3 0.06 129.72);
+
+    --destructive: oklch(0.62 0.19 27.2);
+    --destructive-foreground: oklch(0.16 0.006 250);
+
+    --success: oklch(0.72 0.16 145);
+    --success-foreground: oklch(0.16 0.006 250);
+    --success-surface: oklch(0.3 0.06 145);
+
+    --warning: oklch(0.78 0.15 75);
+    --warning-foreground: oklch(0.16 0.006 250);
+    --warning-surface: oklch(0.31 0.06 75);
+
+    --info: oklch(0.7 0.13 250);
+    --info-foreground: oklch(0.16 0.006 250);
+    --info-surface: oklch(0.29 0.06 250);
+
+    --danger: oklch(0.695 0.18 27.2);
+    --danger-foreground: oklch(0.16 0.006 250);
+    --danger-surface: oklch(0.3 0.07 27.2);
+
+    --border: oklch(0.3 0.008 250);
+    --border-strong: oklch(0.49 0.009 250);
+    --input: oklch(0.53 0.009 250);
+    --ring: oklch(0.68 0.1373 246.59);
+
+    /* Blue carries much further on a dark ground than green does, so the two
+       are weighted differently here rather than reusing the light values. */
+    --hero-glow-primary: color-mix(in srgb, var(--primary) 55%, transparent);
+    --hero-glow-accent: color-mix(in srgb, var(--accent) 26%, transparent);
+    --hero-glow-deep: color-mix(in srgb, var(--primary) 42%, transparent);
+    --hero-grid-line: color-mix(in srgb, var(--primary) 22%, transparent);
+
+    /* Shadows do very little on a dark ground, so they only deepen contact.
+       The surface ladder above is what actually carries elevation here. */
+    --shadow-color: oklch(0 0 0 / 0.5);
+    --shadow-color-strong: oklch(0 0 0 / 0.42);
+
+    --chart-1: oklch(0.68 0.1373 246.59);
+    --chart-2: #8dc641;
+    --chart-3: oklch(0.78 0.15 75);
+    --chart-4: oklch(0.7 0.16 300);
+    --chart-5: oklch(0.68 0.18 27.2);
+
+    --sidebar: oklch(0.185 0.007 250);
+    --sidebar-foreground: oklch(0.965 0.003 250);
+    --sidebar-primary: oklch(0.68 0.1373 246.59);
+    --sidebar-primary-foreground: oklch(0.16 0.006 250);
+    --sidebar-accent: oklch(0.27 0.008 250);
+    --sidebar-accent-foreground: oklch(0.965 0.003 250);
+    --sidebar-border: oklch(0.3 0.008 250);
+    --sidebar-ring: oklch(0.68 0.1373 246.59);
 }
 
 @layer base {
@@ -145,8 +323,14 @@
 
     body {
         @apply bg-background text-foreground;
+        font-synthesis-weight: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
     }
 
+    /* One scale, one voice. Sizes step by roughly a major third and tracking
+       tightens as size grows, which is what stops large headings reading loose
+       against the body text under them. */
     h1,
     h2,
     h3,
@@ -154,7 +338,181 @@
     h5,
     h6 {
         @apply font-heading font-bold;
+        text-wrap: balance;
+        letter-spacing: -0.021em;
     }
+
+    h1 {
+        @apply text-3xl leading-[1.1] sm:text-4xl;
+        letter-spacing: -0.032em;
+    }
+
+    h2 {
+        @apply text-2xl leading-[1.15] sm:text-3xl;
+        letter-spacing: -0.028em;
+    }
+
+    h3 {
+        @apply text-xl leading-[1.2] sm:text-2xl;
+        letter-spacing: -0.024em;
+    }
+
+    h4 {
+        @apply text-lg leading-[1.25];
+    }
+
+    h5 {
+        @apply text-base leading-[1.3];
+    }
+
+    h6 {
+        @apply text-sm leading-[1.35];
+    }
+
+    p {
+        text-wrap: pretty;
+    }
+
+    /* The surfaces a browser draws for us still belong to the design. Left at
+       their defaults they are the clearest tell that a theme stops at the edge
+       of the components. */
+    ::selection {
+        background-color: color-mix(in oklab, var(--primary) 26%, transparent);
+        color: var(--foreground);
+    }
+
+    ::placeholder {
+        color: var(--muted-foreground);
+    }
+
+    :root {
+        accent-color: var(--primary);
+        caret-color: var(--primary-text);
+        scrollbar-color: var(--border-strong) transparent;
+    }
+
+    ::-webkit-scrollbar {
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--border-strong);
+        border: 3px solid transparent;
+        background-clip: content-box;
+        border-radius: 9999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--muted-foreground);
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    /* Numerals that share a column should not jitter as their values change. */
+    table,
+    [data-slot='table'] {
+        font-variant-numeric: tabular-nums;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    [role='button']:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+}
+
+/**
+ * Theme change is a deliberate, one-off transition rather than a standing rule:
+ * `initializeTheme` marks the document only for the length of the swap. Making
+ * every colour transition all the time would smear ordinary hover states and
+ * make the first paint fade in from the wrong theme.
+ */
+@media (prefers-reduced-motion: no-preference) {
+    html[data-theme-switching] *,
+    html[data-theme-switching] *::before,
+    html[data-theme-switching] *::after {
+        transition:
+            background-color 180ms ease-out,
+            border-color 180ms ease-out,
+            color 180ms ease-out,
+            fill 180ms ease-out,
+            stroke 180ms ease-out;
+        transition-delay: 0ms !important;
+    }
+}
+
+/**
+ * The landing hero's ground: three brand glows over the page colour.
+ *
+ * They are placed so the saturated part of each one sits where the type does
+ * not — two in the upper corners, one under the card fan — which is what lets
+ * them be strong enough to read as brand colour while the heading and body copy
+ * keep their contrast. `tests/browser/landing-hero.spec.ts` samples the painted
+ * pixels behind the text and holds that to 4.5:1.
+ */
+@utility hero-aurora {
+    background-color: var(--background);
+    background-image:
+        radial-gradient(
+            52% 48% at 2% -6%,
+            var(--hero-glow-primary) 0%,
+            transparent 72%
+        ),
+        radial-gradient(
+            44% 46% at 100% 6%,
+            var(--hero-glow-accent) 0%,
+            transparent 70%
+        ),
+        radial-gradient(
+            78% 46% at 50% 100%,
+            var(--hero-glow-deep) 0%,
+            transparent 74%
+        );
+    background-repeat: no-repeat;
+}
+
+/**
+ * The measuring grid over the hero, tinted with the brand blue rather than the
+ * neutral grey it used to be, and faded out before it reaches the content.
+ */
+@utility hero-grid {
+    background-image:
+        linear-gradient(
+            to right,
+            var(--hero-grid-line) 0.0625rem,
+            transparent 0.0625rem
+        ),
+        linear-gradient(
+            to bottom,
+            var(--hero-grid-line) 0.0625rem,
+            transparent 0.0625rem
+        );
+    background-size: 1.5rem 1.5rem;
+    mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+}
+
+/**
+ * The browse-page canvas: a soft brand glow at the top settling into the page
+ * ground. The product-type pages and the category page each carried their own
+ * copy of this as a hard-coded light-only hex gradient, so in dark mode they
+ * kept a near-white page behind dark cards.
+ */
+@utility storefront-canvas {
+    background-color: var(--background);
+    background-image: radial-gradient(
+        circle at top,
+        var(--primary-surface) 0%,
+        var(--background) 45%
+    );
+    background-repeat: no-repeat;
 }
 
 /**
@@ -172,5 +530,5 @@
 }
 
 .prose li::marker {
-    color: var(--accent);
+    color: var(--accent-strong);
 }

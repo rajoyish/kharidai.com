@@ -31,7 +31,7 @@ export function StorefrontSearch({
                 placeholder={placeholder}
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-12 w-full rounded-xl border-gray-200 bg-gray-50/50 text-base focus-visible:ring-accent sm:flex-1"
+                className="h-12 w-full rounded-xl border-input bg-card text-base focus-visible:ring-ring sm:flex-1"
             />
         </div>
     );

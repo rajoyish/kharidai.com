@@ -200,7 +200,7 @@ export default function ProductsIndex({
                                     className={PRODUCT_STATUS_COLUMN_CLASSES}
                                 >
                                     <span
-                                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap uppercase ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap uppercase ${product.in_stock ? 'bg-success-surface text-success' : 'bg-danger-surface text-danger'}`}
                                     >
                                         {product.in_stock
                                             ? 'In Stock'
@@ -227,7 +227,7 @@ export default function ProductsIndex({
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className={`h-8 px-2 text-xs ${product.in_stock ? 'text-amber-600 hover:bg-amber-50 hover:text-amber-700' : 'text-green-600 hover:bg-green-50 hover:text-green-700'}`}
+                                        className={`h-8 px-2 text-xs ${product.in_stock ? 'text-warning hover:bg-warning/10 hover:text-warning' : 'text-success hover:bg-success/10 hover:text-success'}`}
                                         onClick={() =>
                                             router.patch(
                                                 toggleStock(product).url,
@@ -261,7 +261,7 @@ export default function ProductsIndex({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                                        className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                                         disabled={
                                             deletingProductId === product.id
                                         }

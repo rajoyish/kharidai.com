@@ -12,6 +12,10 @@ import {
 } from 'lucide-react';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
+import {
+    ApprovalStatusBadge,
+    OrderStatusBadge,
+} from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -68,7 +72,7 @@ export default function Dashboard({
             <PagePanel title="Admin Dashboard" variant="transparent">
                 <div className="mb-6 grid auto-rows-min gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-                        <div className="mb-4 rounded-full bg-green-100 p-3 text-green-600 transition-colors duration-300 group-hover:bg-green-600 group-hover:text-white dark:bg-green-900/30 dark:text-green-400 dark:group-hover:bg-green-600 dark:group-hover:text-white">
+                        <div className="mb-4 rounded-full bg-green-100 p-3 text-green-700 transition-colors duration-300 group-hover:bg-green-600 group-hover:text-white dark:bg-green-900/30 dark:text-green-400 dark:group-hover:bg-green-600 dark:group-hover:text-white">
                             <Banknote className="h-6 w-6" />
                         </div>
                         <div className="text-sm font-medium text-muted-foreground">
@@ -101,7 +105,7 @@ export default function Dashboard({
                         </div>
                     </div>
                     <div className="group relative flex flex-col items-center overflow-hidden rounded-xl border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-                        <div className="mb-4 rounded-full bg-amber-100 p-3 text-amber-600 transition-colors duration-300 group-hover:bg-amber-600 group-hover:text-white dark:bg-amber-900/30 dark:text-amber-400 dark:group-hover:bg-amber-600 dark:group-hover:text-white">
+                        <div className="mb-4 rounded-full bg-amber-100 p-3 text-amber-700 transition-colors duration-300 group-hover:bg-amber-600 group-hover:text-white dark:bg-amber-900/30 dark:text-amber-400 dark:group-hover:bg-amber-600 dark:group-hover:text-white">
                             <Clock className="h-6 w-6" />
                         </div>
                         <div className="text-sm font-medium text-muted-foreground">
@@ -209,7 +213,7 @@ export default function Dashboard({
                                 <TableCell className="font-bold">
                                     {formatNpr(order.total_amount)}
                                 </TableCell>
-                                <TableCell className="font-medium text-green-600">
+                                <TableCell className="font-medium text-success">
                                     {order.status === 'completed' ? (
                                         <>{formatNpr(order.profit)}</>
                                     ) : (
@@ -219,34 +223,15 @@ export default function Dashboard({
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    <span
-                                        className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
-                                            order.status === 'completed'
-                                                ? 'bg-green-100 text-green-800'
-                                                : order.status === 'delivering'
-                                                  ? 'bg-blue-100 text-blue-800'
-                                                  : 'bg-yellow-100 text-yellow-800'
-                                        }`}
-                                    >
-                                        {order.status}
-                                    </span>
+                                    <OrderStatusBadge status={order.status} />
                                 </TableCell>
                                 <TableCell>
                                     {order.payment_receipt ? (
-                                        <span
-                                            className={`rounded-md px-2 py-1 text-xs ${
-                                                order.payment_receipt.status ===
-                                                'approved'
-                                                    ? 'border border-green-200 bg-green-100/50 text-green-700'
-                                                    : order.payment_receipt
-                                                            .status ===
-                                                        'rejected'
-                                                      ? 'border border-red-200 bg-red-100/50 text-red-700'
-                                                      : 'border border-amber-200 bg-amber-100/50 text-amber-700'
-                                            }`}
-                                        >
-                                            {order.payment_receipt.status}
-                                        </span>
+                                        <ApprovalStatusBadge
+                                            status={
+                                                order.payment_receipt.status
+                                            }
+                                        />
                                     ) : (
                                         <span className="text-xs text-muted-foreground italic">
                                             Missing

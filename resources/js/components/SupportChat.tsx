@@ -129,13 +129,13 @@ export function SupportChat({ order, postUrl }: SupportChatProps) {
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-sm">
                     <div
-                        className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}
+                        className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-success' : 'bg-muted-foreground'}`}
                     ></div>
                     <span
                         className={
                             isOnline
-                                ? 'font-medium text-green-600 dark:text-green-500'
-                                : 'text-gray-500 dark:text-gray-400'
+                                ? 'font-medium text-success'
+                                : 'text-muted-foreground'
                         }
                     >
                         {isOnline ? 'Online' : 'Offline'}

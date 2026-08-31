@@ -61,8 +61,8 @@ export default function PaymentMethodsIndex({
                                     <span
                                         className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                                             method.is_enabled
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-                                                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
+                                                ? 'bg-success-surface text-success'
+                                                : 'bg-warning-surface text-warning'
                                         }`}
                                     >
                                         {method.is_enabled
