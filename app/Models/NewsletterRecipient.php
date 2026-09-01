@@ -60,6 +60,19 @@ class NewsletterRecipient extends Model
         ])->save();
     }
 
+    /**
+     * Withhold this address without calling it a failure. Used when the row turns
+     * out to belong to an admin or to one of the app's own mailboxes by the time
+     * the job runs.
+     */
+    public function markSkipped(): void
+    {
+        $this->forceFill([
+            'status' => NewsletterRecipientStatus::Skipped,
+            'error' => null,
+        ])->save();
+    }
+
     public function markFailed(string $reason): void
     {
         $this->forceFill([

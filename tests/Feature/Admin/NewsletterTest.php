@@ -9,6 +9,7 @@ use App\Models\NewsletterRecipient;
 use App\Models\User;
 use App\Services\Mail\EmailQuotaTracker;
 use App\Services\Mail\EmailRouter;
+use App\Services\Mail\SystemMailboxes;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
@@ -114,7 +115,7 @@ test('a banned user is never mailed, even when explicitly selected', function ()
 
 test('a send spills over to gmail once the brevo allowance is spent', function () {
     $admin = newsletterAdmin();
-    $recipients = User::factory()->count(3)->create();
+    User::factory()->count(3)->create();
 
     $this->actingAs($admin)
         ->post(route('admin.newsletters.store'), [
@@ -125,11 +126,88 @@ test('a send spills over to gmail once the brevo allowance is spent', function (
         ])
         ->assertRedirect();
 
-    // The admin is a registered user too, so "everyone" is four addresses: two on
-    // Brevo's allowance, then the rest on Gmail's.
+    // "Everyone" is the three customers, not the admin who wrote it: two go on
+    // Brevo's allowance of 2, then the third spills to Gmail.
     expect(EmailDispatch::where('mailer', 'brevo')->count())->toBe(2)
-        ->and(EmailDispatch::where('mailer', 'gmail')->count())->toBe(2)
-        ->and($recipients)->toHaveCount(3);
+        ->and(EmailDispatch::where('mailer', 'gmail')->count())->toBe(1);
+});
+
+test('an admin is never mailed, even when explicitly selected', function () {
+    $admin = newsletterAdmin();
+    $otherAdmin = User::factory()->create(['is_admin' => true]);
+    $customer = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Weekly news',
+            'body' => '<p>Hello there.</p>',
+            'audience' => 'selected',
+            'user_ids' => [$otherAdmin->id, $customer->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    expect(EmailDispatch::pluck('recipient')->all())->toBe([$customer->email])
+        ->and(Newsletter::firstOrFail()->recipient_count)->toBe(1);
+});
+
+test('the mailboxes the app sends from are never mailed', function () {
+    config()->set('mail.from.address', 'shop@kharidai.test');
+    config()->set('mail.mailers.gmail.username', 'sender@gmail.test');
+
+    $admin = newsletterAdmin();
+    $shopAccount = User::factory()->create(['email' => 'shop@kharidai.test']);
+    $sendingAccount = User::factory()->create(['email' => 'SENDER@gmail.test']);
+    $customer = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Weekly news',
+            'body' => '<p>Hello there.</p>',
+            'audience' => 'selected',
+            'user_ids' => [$shopAccount->id, $sendingAccount->id, $customer->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    expect(EmailDispatch::pluck('recipient')->all())->toBe([$customer->email]);
+});
+
+test('the composer does not offer an admin as a preselected recipient', function () {
+    $admin = newsletterAdmin();
+    $customer = User::factory()->create(['name' => 'Asha']);
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin.newsletters.create', ['users' => "{$admin->id},{$customer->id}"]))
+        ->assertSuccessful();
+
+    expect($response->inertiaProps('selectedUsers'))->toHaveCount(1)
+        ->and($response->inertiaProps('selectedUsers')[0]['name'])->toBe('Asha');
+});
+
+test('a recipient promoted to admin after queueing is skipped rather than mailed', function () {
+    $newsletter = Newsletter::factory()->sending()->create(['recipient_count' => 1]);
+    $user = User::factory()->create();
+
+    $recipient = NewsletterRecipient::create([
+        'newsletter_id' => $newsletter->id,
+        'user_id' => $user->id,
+        'email' => $user->email,
+        'status' => NewsletterRecipientStatus::Pending,
+    ]);
+
+    // The send list is a snapshot, so the promotion happens after it was taken.
+    $user->forceFill(['is_admin' => true])->save();
+
+    (new SendNewsletterEmail($recipient))->handle(
+        app(EmailRouter::class),
+        app(EmailQuotaTracker::class),
+        app(SystemMailboxes::class),
+    );
+
+    expect($recipient->fresh()->status)->toBe(NewsletterRecipientStatus::Skipped)
+        ->and(EmailDispatch::count())->toBe(0)
+        ->and($newsletter->fresh()->status)->toBe(NewsletterStatus::Sent);
 });
 
 test('a send that runs out of quota pauses instead of dropping the recipient', function () {
@@ -150,6 +228,7 @@ test('a send that runs out of quota pauses instead of dropping the recipient', f
     (new SendNewsletterEmail($recipient))->handle(
         app(EmailRouter::class),
         app(EmailQuotaTracker::class),
+        app(SystemMailboxes::class),
     );
 
     expect($recipient->fresh()->status)->toBe(NewsletterRecipientStatus::Pending)
@@ -158,14 +237,14 @@ test('a send that runs out of quota pauses instead of dropping the recipient', f
 });
 
 test('the html the editor produced is what the mailbox receives', function () {
-    $admin = newsletterAdmin();
+    $customer = User::factory()->create();
 
-    $this->actingAs($admin)
+    $this->actingAs(newsletterAdmin())
         ->post(route('admin.newsletters.store'), [
             'subject' => 'Formatting check',
             'body' => '<h2>Big news</h2><p>Something <strong>bold</strong> happened.</p>',
             'audience' => 'selected',
-            'user_ids' => [$admin->id],
+            'user_ids' => [$customer->id],
             'action' => 'send',
         ])
         ->assertRedirect();

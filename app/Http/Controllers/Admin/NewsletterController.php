@@ -10,6 +10,7 @@ use App\Models\Newsletter;
 use App\Models\NewsletterRecipient;
 use App\Models\User;
 use App\Services\Mail\EmailQuotaTracker;
+use App\Services\Mail\SystemMailboxes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
@@ -57,9 +58,8 @@ class NewsletterController extends Controller
 
         $selected = $selectedIds === []
             ? new EloquentCollection
-            : User::query()
+            : $this->eligibleUsers()
                 ->whereIn('id', $selectedIds)
-                ->whereNull('banned_at')
                 ->select(['id', 'name', 'email'])
                 ->orderBy('name')
                 ->get();
@@ -296,15 +296,39 @@ class NewsletterController extends Controller
     }
 
     /**
-     * Who a newsletter may go to: registered, unbanned, and with an address.
+     * Who a newsletter may go to.
+     *
+     * Three exclusions, all deliberate:
+     *
+     * - Banned accounts, because we have already decided not to talk to them.
+     * - Admins, who run the shop rather than shop at it. A blast to the people
+     *   who wrote it is noise, and it is the fastest way to train the team to
+     *   ignore mail from their own domain.
+     * - The app's own mailboxes. Mailing the address a newsletter was sent from
+     *   is a loop, and the engagement signal it creates is one spam filters read
+     *   badly. See {@see SystemMailboxes}.
+     *
+     * This is the single definition of the audience: the composer, the recipient
+     * snapshot, and the "every registered user" count all read it, so none of
+     * them can disagree with the others.
      *
      * @return Builder<User>
      */
     private function eligibleUsers(): Builder
     {
+        $systemAddresses = app(SystemMailboxes::class)->all();
+
         return User::query()
             ->whereNull('banned_at')
-            ->whereNotNull('email');
+            ->whereNotNull('email')
+            ->where('is_admin', false)
+            ->when(
+                $systemAddresses !== [],
+                // Compared lowercased: MySQL's default collation would match
+                // either way, SQLite's `=` would not, and the test suite runs on
+                // SQLite.
+                fn (Builder $query) => $query->whereNotIn(DB::raw('lower(email)'), $systemAddresses),
+            );
     }
 
     /**
