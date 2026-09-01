@@ -127,7 +127,7 @@ export function NewsletterRecipientExclusions({
                                     <li key={user.id}>
                                         <Label
                                             htmlFor={`recipient-${user.id}`}
-                                            className="flex items-start gap-3 rounded px-2 py-1.5 font-normal hover:bg-muted/60"
+                                            className="flex items-start gap-3 rounded px-2 py-1.5 font-normal transition-colors hover:bg-accent-surface"
                                         >
                                             <Checkbox
                                                 id={`recipient-${user.id}`}

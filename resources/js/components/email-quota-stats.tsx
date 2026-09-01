@@ -1,4 +1,4 @@
-import { Clock, Gauge, Mail, ShieldAlert, TriangleAlert } from 'lucide-react';
+import { Clock, Mail, ShieldAlert, TriangleAlert } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -63,11 +63,17 @@ export function EmailQuotaStats({
     const isLow =
         !isExhausted && stats.total_remaining <= stats.total_limit * 0.1;
 
-    const HeadlineIcon = isExhausted
-        ? ShieldAlert
+    /**
+     * One status signal, carried by the card's own leading icon. A second icon
+     * beside the number gave the stacked layout a third left edge, and said
+     * nothing the colour of the number did not already say.
+     */
+    const StatusIcon = isExhausted ? ShieldAlert : isLow ? TriangleAlert : Mail;
+    const statusTone = isExhausted
+        ? 'bg-destructive/10 text-destructive'
         : isLow
-          ? TriangleAlert
-          : Gauge;
+          ? 'bg-warning/10 text-warning'
+          : 'bg-primary/10 text-primary';
 
     return (
         <section
@@ -80,14 +86,21 @@ export function EmailQuotaStats({
             )}
             aria-label={`Email sending quota for the last ${stats.window_hours} hours`}
         >
-            <div className="flex flex-col gap-3 @sm:flex-row @sm:items-start @sm:justify-between @sm:gap-4">
+            <div className="flex flex-col gap-4 @sm:flex-row @sm:items-start @sm:justify-between @sm:gap-4">
                 <div className="flex items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Mail className="size-5" />
+                    <span
+                        className={cn(
+                            'flex size-10 shrink-0 items-center justify-center rounded-lg',
+                            statusTone,
+                        )}
+                    >
+                        <StatusIcon className="size-5" />
                     </span>
-                    <div className="grid gap-0.5">
-                        <h2 className="text-sm font-semibold">Email quota</h2>
-                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="grid gap-1">
+                        <h2 className="text-sm leading-none font-semibold">
+                            Email quota
+                        </h2>
+                        <p className="flex items-center gap-1.5 text-xs leading-none text-muted-foreground">
                             <Clock className="size-3.5 shrink-0" />
                             <span className="tabular-nums">
                                 {stats.total_sent} sent in the last{' '}
@@ -97,18 +110,22 @@ export function EmailQuotaStats({
                     </div>
                 </div>
 
-                <div className="grid gap-0.5 @sm:text-right">
+                {/*
+                    Number and caption share one edge: the card's own padding
+                    when the card is stacked, the right margin once it splits.
+                    Nothing is indented against them.
+                */}
+                <div className="grid gap-1 @sm:text-right">
                     <p
                         className={cn(
-                            'flex items-center gap-2 text-3xl leading-none font-bold tabular-nums @sm:justify-end',
+                            'text-3xl leading-none font-bold tabular-nums',
                             isExhausted && 'text-destructive',
                             isLow && 'text-warning',
                         )}
                     >
-                        <HeadlineIcon className="size-5 shrink-0" />
                         {stats.total_remaining}
                     </p>
-                    <p className="text-xs text-muted-foreground tabular-nums">
+                    <p className="text-xs leading-none text-muted-foreground tabular-nums">
                         remaining of {stats.total_limit}
                     </p>
                 </div>

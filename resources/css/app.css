@@ -163,7 +163,13 @@
 
     /* Brand green, untouched, and only ever used as a fill: at 2.04:1 against
        white it cannot carry white type, so `--accent-foreground` is near-black
-       (9.70:1). `--accent-strong` is the readable green for type on a surface. */
+       (9.70:1). `--accent-strong` is the readable green for type on a surface.
+
+       A fill is not a state. `--accent` is never the background of a hover,
+       highlight, or selected row: those carry two type sizes, and the secondary
+       one is `--muted-foreground`, which lands at 3.34:1 on the green here and
+       1.04:1 in the dark theme. Interactive states take `--accent-surface` and
+       leave the type colours alone, which holds every pair above 6:1. */
     --accent: #8dc641;
     --accent-foreground: oklch(0.19 0.008 250);
     --accent-hover: oklch(0.7 0.1722 129.72);
@@ -257,7 +263,10 @@
     --muted-foreground: oklch(0.762 0.012 250);
 
     /* Brand green needs no dark variant: it clears 9.67:1 against every dark
-       surface here, as type and as a fill carrying near-black. */
+       surface here, as type and as a fill carrying near-black. The surface is
+       the state colour, not the brand value: it holds `--foreground` at 12.12:1
+       and `--muted-foreground` at 6.30:1, while reading 1.24:1 against
+       `--popover` so a highlighted row is still obviously the highlighted one. */
     --accent: #8dc641;
     --accent-foreground: oklch(0.19 0.008 250);
     --accent-hover: oklch(0.81 0.1722 129.72);

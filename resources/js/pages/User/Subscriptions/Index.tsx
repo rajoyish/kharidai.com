@@ -101,7 +101,7 @@ function EditableLabel({ subscription }: { subscription: Subscription }) {
     return (
         <Badge
             variant="outline"
-            className="cursor-pointer hover:bg-accent"
+            className="cursor-pointer hover:bg-accent-surface"
             onClick={() => setIsEditing(true)}
         >
             {subscription.user_label}
