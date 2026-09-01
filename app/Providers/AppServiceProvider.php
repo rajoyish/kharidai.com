@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Listeners\EnforceEmailQuota;
 use App\Listeners\LogSsrRenderFailure;
 use App\Models\Order;
 use App\Models\ServiceEngagement;
 use App\Observers\OrderObserver;
 use App\Observers\ServiceEngagementObserver;
+use App\Services\Mail\QuotaAwareMailManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\LazyLoadingViolationException;
@@ -26,7 +28,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->registerQuotaAwareMailManager();
+    }
+
+    /**
+     * Swap Laravel's mail manager for the one that counts what it sends.
+     *
+     * Done by extending the binding rather than rebinding it, because
+     * MailServiceProvider is deferred: a plain singleton() here would be
+     * overwritten the moment something resolved a mailer and loaded that provider.
+     *
+     * @see QuotaAwareMailManager
+     */
+    protected function registerQuotaAwareMailManager(): void
+    {
+        $this->app->extend('mail.manager', fn ($manager, $app): QuotaAwareMailManager => new QuotaAwareMailManager($app));
     }
 
     /**
@@ -39,6 +55,14 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureDefaults();
         $this->embedLogoInOutgoingMail();
+
+        /*
+         * The last line of defence on the free-tier send limits. Registered before
+         * the logo listener has no bearing on order — both are MessageSending
+         * listeners, but only this one returns a value, and a `false` from any of
+         * them cancels the send.
+         */
+        Event::listen(MessageSending::class, EnforceEmailQuota::class);
 
         // Registered here rather than left to event discovery so it survives
         // `event:cache` and stays obvious: without a listener Inertia's SSR

@@ -1,5 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Mail } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { create as composeNewsletter } from '@/actions/App/Http/Controllers/Admin/NewsletterController';
 import {
     ban as banUser,
     create as createUser,
@@ -11,6 +13,7 @@ import { PagePanel } from '@/components/page-panel';
 import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Table,
     TableBody,
@@ -71,6 +74,46 @@ export default function UsersIndex({
      */
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
+    /**
+     * Ids ticked for a newsletter. Held as a Set so toggling a row is O(1) and the
+     * header checkbox can answer "are all of these selected" without a scan per
+     * row.
+     */
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+    /**
+     * Banned accounts are dropped server-side when the send list is built, so
+     * offering them here would promise recipients that never get the mail.
+     */
+    const selectableUsers = useMemo(
+        () => users.filter((user) => !user.banned_at),
+        [users],
+    );
+
+    const allSelected =
+        selectableUsers.length > 0 &&
+        selectableUsers.every((user) => selectedIds.has(user.id));
+
+    const toggleUser = (id: number) => {
+        setSelectedIds((current) => {
+            const next = new Set(current);
+
+            if (!next.delete(id)) {
+                next.add(id);
+            }
+
+            return next;
+        });
+    };
+
+    const toggleAll = () => {
+        setSelectedIds(
+            allSelected
+                ? new Set()
+                : new Set(selectableUsers.map((user) => user.id)),
+        );
+    };
+
     const handleBan = (user: User) => {
         post(banUser.url(user.id));
     };
@@ -93,6 +136,26 @@ export default function UsersIndex({
                             currentSearch={filters?.search ?? ''}
                             placeholder="Search users..."
                         />
+                        <Button
+                            asChild={selectedIds.size > 0}
+                            variant="outline"
+                            className="w-fit"
+                            disabled={selectedIds.size === 0}
+                        >
+                            {selectedIds.size > 0 ? (
+                                <Link
+                                    href={`${composeNewsletter.url()}?users=${[...selectedIds].join(',')}`}
+                                >
+                                    <Mail className="size-4" />
+                                    Email {selectedIds.size} selected
+                                </Link>
+                            ) : (
+                                <span>
+                                    <Mail className="size-4" />
+                                    Email selected
+                                </span>
+                            )}
+                        </Button>
                         <Button asChild className="w-fit">
                             <Link href={createUser.url()}>New User</Link>
                         </Button>
@@ -102,6 +165,14 @@ export default function UsersIndex({
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead className="w-12">
+                                <Checkbox
+                                    checked={allSelected}
+                                    onCheckedChange={toggleAll}
+                                    disabled={selectableUsers.length === 0}
+                                    aria-label="Select all users"
+                                />
+                            </TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Mobile</TableHead>
@@ -116,6 +187,16 @@ export default function UsersIndex({
                     <TableBody>
                         {users.map((user) => (
                             <TableRow key={user.id}>
+                                <TableCell className="w-12">
+                                    <Checkbox
+                                        checked={selectedIds.has(user.id)}
+                                        onCheckedChange={() =>
+                                            toggleUser(user.id)
+                                        }
+                                        disabled={Boolean(user.banned_at)}
+                                        aria-label={`Select ${user.name}`}
+                                    />
+                                </TableCell>
                                 <TableCell className="font-medium">
                                     {user.name} {user.is_admin ? '(Admin)' : ''}
                                 </TableCell>
@@ -182,7 +263,7 @@ export default function UsersIndex({
                         {users.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={7}
+                                    colSpan={8}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     {filters?.search

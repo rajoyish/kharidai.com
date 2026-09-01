@@ -186,6 +186,43 @@ return [
     */
     'customer_mailer' => env('MAIL_CUSTOMER_MAILER'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Free-Tier Send Quotas
+    |--------------------------------------------------------------------------
+    |
+    | Both transports are free tiers with a hard daily ceiling, and neither tells
+    | us how much of it is left. So the app counts its own sends over a rolling
+    | window and refuses to exceed them: blowing through a free tier gets the
+    | account suspended, which costs us every transactional email too.
+    |
+    | Order matters. The first mailer with capacity wins, and Brevo leads because
+    | it sends from our own authenticated domain — Gmail is the overflow, not the
+    | preference.
+    |
+    */
+
+    'quota' => [
+
+        'mailers' => [
+            'brevo' => (int) env('MAIL_BREVO_DAILY_LIMIT', 300),
+            'gmail' => (int) env('MAIL_GMAIL_DAILY_LIMIT', 500),
+        ],
+
+        /*
+         * Rolling, not calendar. The providers reset on their own clock in their
+         * own timezone, and a rolling window is the conservative reading of both.
+         */
+        'window_hours' => (int) env('MAIL_QUOTA_WINDOW_HOURS', 24),
+
+        /*
+         * How long a dispatch row is kept after it leaves the window. Only the
+         * window is load-bearing; the extra days are there so the stats widget can
+         * be trusted after a clock change and so a bad day is still readable.
+         */
+        'retention_days' => (int) env('MAIL_QUOTA_RETENTION_DAYS', 7),
+    ],
+
     'customer_from' => [
         'address' => env('MAIL_CUSTOMER_FROM_ADDRESS'),
         'name' => env('MAIL_CUSTOMER_FROM_NAME', env('APP_NAME', 'Laravel')),

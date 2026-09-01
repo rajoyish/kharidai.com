@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
@@ -99,6 +100,13 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::post('users/{user}/ban', [UserController::class, 'ban'])->name('users.ban');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    /*
+     * Registered before the resource routes so `newsletters/{newsletter}/send`
+     * cannot be read as a `newsletters/{newsletter}` segment.
+     */
+    Route::post('newsletters/{newsletter}/send', [NewsletterController::class, 'send'])->name('newsletters.send');
+    Route::resource('newsletters', NewsletterController::class);
 
     Route::get('services', [ServiceEngagementController::class, 'index'])->name('services.index');
     Route::get('services/create', [ServiceEngagementController::class, 'create'])->name('services.create');
