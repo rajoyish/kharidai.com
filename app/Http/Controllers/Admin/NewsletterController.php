@@ -204,6 +204,49 @@ class NewsletterController extends Controller
         return $this->dispatchNewsletter($newsletter);
     }
 
+    /**
+     * Copy a finished newsletter into a fresh draft so it can be edited and sent
+     * again.
+     *
+     * A copy rather than an edit in place, because {@see syncRecipients()} rebuilds
+     * the send list from scratch on every save: reopening the original would erase
+     * who received it, on which mailer, and what failed. That record is the only
+     * evidence of what actually went out, and a newsletter that has been sent is
+     * history rather than a document.
+     */
+    public function duplicate(Request $request, Newsletter $newsletter): RedirectResponse
+    {
+        abort_unless(
+            $newsletter->status->isResendable(),
+            403,
+            'Only a newsletter that has finished sending can be copied.',
+        );
+
+        $copy = Newsletter::create([
+            'user_id' => $request->user()->id,
+            'subject' => $newsletter->subject,
+            'body' => $newsletter->body,
+            'status' => NewsletterStatus::Draft,
+        ]);
+
+        /*
+         * The previous send list carries over, so "send it again" reaches the same
+         * people by default. Passed back through the audience filter rather than
+         * copied row for row: an account banned, promoted, or deleted since the
+         * last send must not reappear because it was on an older list.
+         */
+        $this->syncRecipients(
+            $copy,
+            'selected',
+            $newsletter->recipients()->pluck('user_id')->all(),
+            [],
+        );
+
+        return redirect()
+            ->route('admin.newsletters.edit', $copy)
+            ->with('success', 'Copied to a new draft. Edit it and send when you are ready.');
+    }
+
     public function destroy(Newsletter $newsletter): RedirectResponse
     {
         // Deleting mid-send would leave orphaned jobs holding a model that no
@@ -428,6 +471,7 @@ class NewsletterController extends Controller
             'status_label' => $newsletter->status->label(),
             'is_editable' => $newsletter->status->isEditable(),
             'is_in_flight' => $newsletter->status->isInFlight(),
+            'is_resendable' => $newsletter->status->isResendable(),
             'author' => $newsletter->author?->name,
             'recipient_count' => $newsletter->recipient_count,
             'sent_count' => $newsletter->sent_count,

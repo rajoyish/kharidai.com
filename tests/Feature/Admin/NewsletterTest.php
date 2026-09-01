@@ -550,6 +550,75 @@ test('a newsletter with no recipients is not queued', function () {
     expect(Newsletter::count())->toBe(0);
 });
 
+test('a sent newsletter can be copied into a draft and sent again', function () {
+    $admin = newsletterAdmin();
+    $recipient = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Spring sale',
+            'body' => '<p>Half price.</p>',
+            'audience' => 'selected',
+            'user_ids' => [$recipient->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    $sent = Newsletter::firstOrFail();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.duplicate', $sent))
+        ->assertRedirect();
+
+    $copy = Newsletter::latest('id')->firstOrFail();
+
+    expect($copy->id)->not->toBe($sent->id)
+        ->and($copy->status)->toBe(NewsletterStatus::Draft)
+        ->and($copy->subject)->toBe('Spring sale')
+        ->and($copy->body)->toBe('<p>Half price.</p>')
+        // The same people carry over, so "send it again" needs no re-picking.
+        ->and($copy->recipients()->pluck('user_id')->all())->toBe([$recipient->id])
+        // The original keeps its delivery record intact.
+        ->and($sent->fresh()->status)->toBe(NewsletterStatus::Sent)
+        ->and($sent->recipients()->count())->toBe(1);
+});
+
+test('a copy leaves behind anyone who is no longer eligible', function () {
+    $admin = newsletterAdmin();
+    $stillEligible = User::factory()->create();
+    $laterBanned = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Spring sale',
+            'body' => '<p>Half price.</p>',
+            'audience' => 'selected',
+            'user_ids' => [$stillEligible->id, $laterBanned->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    $laterBanned->forceFill(['banned_at' => now()])->save();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.duplicate', Newsletter::firstOrFail()))
+        ->assertRedirect();
+
+    // The old list is a starting point, not an exemption from the audience rules.
+    expect(Newsletter::latest('id')->firstOrFail()->recipients()->pluck('user_id')->all())
+        ->toBe([$stillEligible->id]);
+});
+
+test('a newsletter that has not finished sending cannot be copied', function () {
+    $newsletter = Newsletter::factory()->sending()->create();
+
+    $this->actingAs(newsletterAdmin())
+        ->post(route('admin.newsletters.duplicate', $newsletter))
+        ->assertForbidden();
+
+    expect(Newsletter::count())->toBe(1);
+});
+
 test('a queued newsletter can no longer be edited', function () {
     $newsletter = Newsletter::factory()->queued()->create();
 

@@ -1,17 +1,19 @@
-import { usePoll } from '@inertiajs/react';
+import { router, usePoll } from '@inertiajs/react';
+import { CopyPlus } from 'lucide-react';
 import { useEffect } from 'react';
 
-import { index as newslettersIndex } from '@/actions/App/Http/Controllers/Admin/NewsletterController';
-import { CmsContent } from '@/components/cms-content';
 import {
-    EmailQuotaStats
-    
-} from '@/components/email-quota-stats';
-import type {EmailQuotaSummary} from '@/components/email-quota-stats';
+    duplicate as duplicateNewsletter,
+    index as newslettersIndex,
+} from '@/actions/App/Http/Controllers/Admin/NewsletterController';
+import { CmsContent } from '@/components/cms-content';
+import { EmailQuotaStats } from '@/components/email-quota-stats';
+import type { EmailQuotaSummary } from '@/components/email-quota-stats';
 import { NewsletterStatusBadge } from '@/components/newsletter-status-badge';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -91,10 +93,28 @@ export default function ShowNewsletter({
                 title={newsletter.subject}
                 variant="transparent"
                 actions={
-                    <NewsletterStatusBadge
-                        status={newsletter.status}
-                        label={newsletter.status_label}
-                    />
+                    <div className="flex items-center gap-3">
+                        <NewsletterStatusBadge
+                            status={newsletter.status}
+                            label={newsletter.status_label}
+                        />
+                        {newsletter.is_resendable && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    router.post(
+                                        duplicateNewsletter.url(newsletter.id),
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                <CopyPlus className="size-4" />
+                                Edit &amp; resend
+                            </Button>
+                        )}
+                    </div>
                 }
             >
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">

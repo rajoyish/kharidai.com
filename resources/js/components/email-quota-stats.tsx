@@ -1,4 +1,4 @@
-import { Mail, ShieldAlert } from 'lucide-react';
+import { Clock, Gauge, Mail, ShieldAlert, TriangleAlert } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -26,7 +26,10 @@ const MAILER_ACCENTS: Record<string, { bar: string; dot: string }> = {
     gmail: { bar: 'bg-chart-4', dot: 'bg-chart-4' },
 };
 
-const FALLBACK_ACCENT = { bar: 'bg-muted-foreground', dot: 'bg-muted-foreground' };
+const FALLBACK_ACCENT = {
+    bar: 'bg-muted-foreground',
+    dot: 'bg-muted-foreground',
+};
 
 function percentage(value: number, total: number) {
     if (total <= 0) {
@@ -42,6 +45,11 @@ function percentage(value: number, total: number) {
  * The numbers cover every email the app sent, not just newsletters: order
  * confirmations spend the same allowance, so a widget that only counted mass
  * mail would promise headroom the providers will not honour.
+ *
+ * Built around the meter rather than around a pair of big numbers, because the
+ * question an admin brings to this card is "will the send I am about to queue
+ * fit", not "how many went out". The headline is therefore what is left, and
+ * everything else annotates it.
  */
 export function EmailQuotaStats({
     stats,
@@ -52,52 +60,67 @@ export function EmailQuotaStats({
 }) {
     const usedPercent = percentage(stats.total_sent, stats.total_limit);
     const isExhausted = stats.total_remaining === 0;
-    const isLow = !isExhausted && stats.total_remaining <= stats.total_limit * 0.1;
+    const isLow =
+        !isExhausted && stats.total_remaining <= stats.total_limit * 0.1;
+
+    const HeadlineIcon = isExhausted
+        ? ShieldAlert
+        : isLow
+          ? TriangleAlert
+          : Gauge;
 
     return (
         <section
             className={cn(
-                'rounded-xl border bg-card p-5 text-card-foreground shadow-sm',
+                // A container, not a viewport, decides this card's layout: it
+                // renders both full width on the index and inside the composer's
+                // 22rem sidebar, where a `sm:` two-column split lands mid-phrase.
+                '@container rounded-xl border bg-card p-5 text-card-foreground shadow-sm',
                 className,
             )}
             aria-label={`Email sending quota for the last ${stats.window_hours} hours`}
         >
-            <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex flex-col gap-3 @sm:flex-row @sm:items-start @sm:justify-between @sm:gap-4">
                 <div className="flex items-center gap-3">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Mail className="size-5" />
                     </span>
-                    <div>
-                        <h2 className="text-sm font-medium text-muted-foreground">
-                            Emails sent in the last {stats.window_hours} hours
-                        </h2>
-                        <p className="text-2xl font-bold tabular-nums">
-                            {stats.total_sent}
-                            <span className="ml-1 text-base font-normal text-muted-foreground">
-                                / {stats.total_limit}
+                    <div className="grid gap-0.5">
+                        <h2 className="text-sm font-semibold">Email quota</h2>
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Clock className="size-3.5 shrink-0" />
+                            <span className="tabular-nums">
+                                {stats.total_sent} sent in the last{' '}
+                                {stats.window_hours} hours
                             </span>
                         </p>
                     </div>
                 </div>
 
-                <div className="text-right">
-                    <p className="text-sm font-medium text-muted-foreground">
-                        Remaining today
-                    </p>
+                <div className="grid gap-0.5 @sm:text-right">
                     <p
                         className={cn(
-                            'text-2xl font-bold tabular-nums',
+                            'flex items-center gap-2 text-3xl leading-none font-bold tabular-nums @sm:justify-end',
                             isExhausted && 'text-destructive',
                             isLow && 'text-warning',
                         )}
                     >
+                        <HeadlineIcon className="size-5 shrink-0" />
                         {stats.total_remaining}
+                    </p>
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                        remaining of {stats.total_limit}
                     </p>
                 </div>
             </div>
 
+            {/*
+                The combined meter. Segments are separated by a hairline gap so two
+                providers reading as one fill is never mistaken for a single
+                provider carrying the whole day.
+            */}
             <div
-                className="mt-5 flex h-2.5 w-full overflow-hidden rounded-full bg-muted"
+                className="mt-5 flex h-3 w-full gap-px overflow-hidden rounded-full bg-muted"
                 role="img"
                 aria-label={`${usedPercent}% of the combined daily quota used`}
             >
@@ -105,8 +128,9 @@ export function EmailQuotaStats({
                     <div
                         key={mailer.name}
                         className={cn(
-                            'h-full transition-[width] duration-500',
-                            (MAILER_ACCENTS[mailer.name] ?? FALLBACK_ACCENT).bar,
+                            'h-full transition-[width] duration-500 ease-out',
+                            (MAILER_ACCENTS[mailer.name] ?? FALLBACK_ACCENT)
+                                .bar,
                         )}
                         style={{
                             width: `${percentage(mailer.sent, stats.total_limit)}%`,
@@ -115,34 +139,30 @@ export function EmailQuotaStats({
                 ))}
             </div>
 
-            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+            <dl className="mt-4 grid gap-x-6 gap-y-3 @md:grid-cols-2">
                 {stats.mailers.map((mailer) => (
-                    <div key={mailer.name} className="rounded-lg border p-3">
-                        <dt className="flex items-center gap-2 text-sm font-medium">
-                            <span
-                                className={cn(
-                                    'size-2 rounded-full',
-                                    (MAILER_ACCENTS[mailer.name] ?? FALLBACK_ACCENT)
-                                        .dot,
-                                )}
-                            />
-                            {mailer.label}
-                        </dt>
-                        <dd className="mt-1 flex items-baseline justify-between gap-2">
-                            <span className="text-lg font-semibold tabular-nums">
-                                {mailer.sent}
-                                <span className="ml-1 text-sm font-normal text-muted-foreground">
-                                    / {mailer.limit}
-                                </span>
-                            </span>
-                            <span className="text-xs text-muted-foreground tabular-nums">
-                                {mailer.remaining} left
-                            </span>
-                        </dd>
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div key={mailer.name} className="grid gap-1.5">
+                        <div className="flex items-baseline justify-between gap-2">
+                            <dt className="flex items-center gap-2 text-sm font-medium">
+                                <span
+                                    className={cn(
+                                        'size-2 shrink-0 rounded-full',
+                                        (
+                                            MAILER_ACCENTS[mailer.name] ??
+                                            FALLBACK_ACCENT
+                                        ).dot,
+                                    )}
+                                />
+                                {mailer.label}
+                            </dt>
+                            <dd className="text-xs text-muted-foreground tabular-nums">
+                                {mailer.remaining} of {mailer.limit} left
+                            </dd>
+                        </div>
+                        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                             <div
                                 className={cn(
-                                    'h-full transition-[width] duration-500',
+                                    'h-full transition-[width] duration-500 ease-out',
                                     (
                                         MAILER_ACCENTS[mailer.name] ??
                                         FALLBACK_ACCENT
@@ -161,6 +181,17 @@ export function EmailQuotaStats({
                 <p className="mt-3 text-xs text-muted-foreground">
                     {stats.other_sent} more went out on a transport with no
                     configured limit, so they are not counted above.
+                </p>
+            )}
+
+            {isLow && (
+                <p className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
+                    <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+                    <span>
+                        Under a tenth of the day's allowance is left. A large
+                        send will pause partway and finish once the window rolls
+                        over.
+                    </span>
                 </p>
             )}
 

@@ -1,9 +1,11 @@
 import { Link, router, usePoll } from '@inertiajs/react';
+import { CopyPlus } from 'lucide-react';
 import { useState } from 'react';
 
 import {
     create as createNewsletter,
     destroy as destroyNewsletter,
+    duplicate as duplicateNewsletter,
     edit as editNewsletter,
     index as newslettersIndex,
     send as sendNewsletter,
@@ -35,6 +37,7 @@ export type NewsletterRow = {
     status_label: string;
     is_editable: boolean;
     is_in_flight: boolean;
+    is_resendable: boolean;
     author: string | null;
     recipient_count: number;
     sent_count: number;
@@ -171,6 +174,27 @@ export default function NewslettersIndex({
                                                     </Button>
                                                 </>
                                             )}
+                                            {newsletter.is_resendable && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            duplicateNewsletter.url(
+                                                                newsletter.id,
+                                                            ),
+                                                            {},
+                                                            {
+                                                                preserveScroll:
+                                                                    true,
+                                                            },
+                                                        )
+                                                    }
+                                                >
+                                                    <CopyPlus className="size-4" />
+                                                    Edit &amp; resend
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -195,9 +219,8 @@ export default function NewslettersIndex({
                                             colSpan={6}
                                             className="h-24 text-center text-muted-foreground"
                                         >
-                                            No newsletters yet. Compose one, or
-                                            pick recipients on the User
-                                            Management page first.
+                                            No newsletters yet. Compose one and
+                                            pick who it goes to.
                                         </TableCell>
                                     </TableRow>
                                 )}
