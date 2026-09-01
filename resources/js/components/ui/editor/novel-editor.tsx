@@ -145,7 +145,7 @@ export default function NovelEditor({
                                 value={item.title}
                                 onCommand={(val) => item.command!(val)}
                                 onMouseDown={(e) => e.preventDefault()}
-                                className="flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent"
+                                className="flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent-surface aria-selected:bg-accent-surface"
                                 key={item.title}
                             >
                                 <div className="flex h-10 w-10 items-center justify-center rounded-md border border-muted bg-background">

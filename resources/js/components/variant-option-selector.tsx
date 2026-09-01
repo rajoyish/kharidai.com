@@ -48,7 +48,7 @@ export function VariantOptionSelector({
                         key={option}
                         htmlFor={`${id}-${option}`}
                         className={cn(
-                            'flex min-w-12 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-muted bg-popover px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
+                            'flex min-w-12 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-muted bg-popover px-4 py-2 text-sm font-medium transition-colors hover:bg-accent-surface hover:text-foreground',
                             '[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:text-primary',
                         )}
                     >

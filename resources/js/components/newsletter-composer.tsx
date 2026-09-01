@@ -15,7 +15,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -24,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MediaManager } from '@/components/ui/media-manager';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 export type NewsletterRecipientOption = {
@@ -178,19 +176,65 @@ export function NewsletterComposer({
     return (
         <form
             onSubmit={(event) => submit(event, 'draft')}
-            className="mx-auto flex w-full max-w-6xl flex-col gap-6"
+            className="flex w-full flex-col gap-6"
         >
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-                <div className="flex min-w-0 flex-col gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Subject</CardTitle>
-                            <CardDescription>
-                                The line every recipient sees in their inbox.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-2.5">
-                            <Label htmlFor="subject" className="sr-only">
+            {/*
+                Page-level actions, in the same top-right position the rest of
+                the admin uses. `position: sticky` is inert inside this shell:
+                <main> computes to `overflow: hidden auto`, which makes it a
+                scrollport that never scrolls, so a pinned footer would simply
+                sit at the bottom of a very long form.
+            */}
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b pb-4">
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Users className="size-4 shrink-0" />
+                    Sending to{' '}
+                    <span className="font-semibold text-foreground tabular-nums">
+                        {recipientTotal}
+                    </span>{' '}
+                    {recipientTotal === 1 ? 'person' : 'people'}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="ghost" asChild>
+                        <Link href={cancelUrl}>Cancel</Link>
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="outline"
+                        disabled={processing}
+                    >
+                        Save as draft
+                    </Button>
+                    <Button
+                        type="button"
+                        disabled={processing || recipientTotal === 0}
+                        onClick={(event) => submit(event, 'send')}
+                    >
+                        <Send className="size-4" />
+                        {processing ? 'Working...' : 'Queue and send'}
+                    </Button>
+                </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
+                {/*
+                    Subject and body share one surface, so the form reads as the
+                    email being written rather than as two unrelated fields in
+                    two unrelated boxes.
+                */}
+                <Card
+                    className={cn(
+                        'min-w-0 gap-0 py-0',
+                        isEditorExpanded &&
+                            'fixed inset-4 z-50 overflow-hidden shadow-2xl',
+                    )}
+                >
+                    <div className="flex items-start justify-between gap-4 border-b p-5 sm:p-6">
+                        <div className="min-w-0 flex-1">
+                            <Label
+                                htmlFor="subject"
+                                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                            >
                                 Subject
                             </Label>
                             <Input
@@ -200,84 +244,73 @@ export function NewsletterComposer({
                                     setData('subject', event.target.value)
                                 }
                                 placeholder="What is this newsletter about?"
-                                className="md:text-base"
+                                className="mt-1.5 h-auto rounded-none border-0 bg-transparent p-0 text-lg font-semibold tracking-tight shadow-none focus-visible:ring-0 md:text-xl"
                                 required
                             />
                             {errors.subject && (
-                                <p className="text-xs font-medium text-destructive">
+                                <p className="mt-2 text-xs font-medium text-destructive">
                                     {errors.subject}
                                 </p>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                            <MediaManager />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() =>
+                                    setIsEditorExpanded(!isEditorExpanded)
+                                }
+                                aria-label={
+                                    isEditorExpanded
+                                        ? 'Exit full screen'
+                                        : 'Expand editor to full screen'
+                                }
+                            >
+                                {isEditorExpanded ? (
+                                    <Minimize2 className="size-4" />
+                                ) : (
+                                    <Maximize2 className="size-4" />
+                                )}
+                            </Button>
+                        </div>
+                    </div>
 
-                    <Card
+                    <div
                         className={cn(
-                            'lg:grow',
-                            isEditorExpanded &&
-                                'fixed inset-4 z-50 overflow-hidden shadow-2xl',
+                            'flex flex-col p-5 sm:p-6',
+                            isEditorExpanded && 'min-h-0 flex-1',
                         )}
                     >
-                        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                            <div className="space-y-1.5">
-                                <CardTitle>Message</CardTitle>
-                                <CardDescription>
-                                    Type "/" for formatting commands. This is
-                                    the same editor the blog uses.
-                                </CardDescription>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                                <MediaManager />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() =>
-                                        setIsEditorExpanded(!isEditorExpanded)
-                                    }
-                                    aria-label={
-                                        isEditorExpanded
-                                            ? 'Exit full screen'
-                                            : 'Expand editor to full screen'
-                                    }
-                                >
-                                    {isEditorExpanded ? (
-                                        <Minimize2 className="size-4" />
-                                    ) : (
-                                        <Maximize2 className="size-4" />
-                                    )}
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent
+                        <p className="mb-3 text-xs text-muted-foreground">
+                            Type &quot;/&quot; for formatting commands. This is
+                            the same editor the blog uses.
+                        </p>
+                        <NovelEditor
+                            initialValue={data.body}
+                            onChange={(html) => setData('body', html)}
+                            onReady={(editor) => {
+                                editorRef.current = editor;
+                            }}
                             className={cn(
-                                'lg:flex lg:grow lg:flex-col',
+                                // The card already draws the box. A second
+                                // border around the editor is a box in a box.
+                                'min-h-104 resize-none rounded-none border-0 bg-transparent px-0 py-0 focus-within:ring-0 focus-within:ring-offset-0',
                                 isEditorExpanded &&
-                                    'flex min-h-0 flex-1 flex-col',
+                                    'h-full min-h-0 flex-1 resize-none',
                             )}
-                        >
-                            <NovelEditor
-                                initialValue={data.body}
-                                onChange={(html) => setData('body', html)}
-                                onReady={(editor) => {
-                                    editorRef.current = editor;
-                                }}
-                                className={cn(
-                                    'lg:grow',
-                                    isEditorExpanded &&
-                                        'h-full min-h-0 flex-1 resize-none',
-                                )}
-                            />
-                            {errors.body && (
-                                <p className="mt-2 text-xs font-medium text-destructive">
-                                    {errors.body}
-                                </p>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                            contentClassName="w-full max-w-[72ch]"
+                        />
+                        {errors.body && (
+                            <p className="mt-2 text-xs font-medium text-destructive">
+                                {errors.body}
+                            </p>
+                        )}
+                    </div>
+                </Card>
 
-                <div className="grid gap-6 lg:sticky lg:top-6 lg:self-start">
+                <div className="grid gap-6 lg:self-start">
                     <Card>
                         <CardHeader>
                             <CardTitle>Recipients</CardTitle>
@@ -295,7 +328,7 @@ export function NewsletterComposer({
                                 }
                                 className="gap-3"
                             >
-                                <div className="flex items-start gap-3 rounded-lg border p-3">
+                                <div className="flex items-start gap-3 rounded-lg border p-3 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary-surface">
                                     <RadioGroupItem
                                         value="selected"
                                         id="audience-selected"
@@ -316,7 +349,7 @@ export function NewsletterComposer({
                                     </Label>
                                 </div>
 
-                                <div className="flex items-start gap-3 rounded-lg border p-3">
+                                <div className="flex items-start gap-3 rounded-lg border p-3 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary-surface">
                                     <RadioGroupItem
                                         value="all"
                                         id="audience-all"
@@ -374,37 +407,7 @@ export function NewsletterComposer({
                                     />
                                 </div>
                             )}
-
-                            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Users className="size-4" />
-                                Sending to{' '}
-                                <span className="font-semibold text-foreground tabular-nums">
-                                    {recipientTotal}
-                                </span>{' '}
-                                {recipientTotal === 1 ? 'person' : 'people'}
-                            </p>
                         </CardContent>
-                        <CardFooter className="flex-col items-stretch gap-2">
-                            <Separator className="mb-2" />
-                            <Button
-                                type="button"
-                                disabled={processing || recipientTotal === 0}
-                                onClick={(event) => submit(event, 'send')}
-                            >
-                                <Send className="size-4" />
-                                {processing ? 'Working...' : 'Queue and send'}
-                            </Button>
-                            <Button
-                                type="submit"
-                                variant="outline"
-                                disabled={processing}
-                            >
-                                Save as draft
-                            </Button>
-                            <Button variant="ghost" asChild>
-                                <Link href={cancelUrl}>Cancel</Link>
-                            </Button>
-                        </CardFooter>
                     </Card>
 
                     <NewsletterPlaceholders

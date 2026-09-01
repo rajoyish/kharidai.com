@@ -443,7 +443,7 @@ export default function Show({
                                         <Label
                                             key={variant.id}
                                             htmlFor={`variant-${variant.id}`}
-                                            className="flex cursor-pointer flex-col rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+                                            className="flex cursor-pointer flex-col rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent-surface hover:text-foreground [&:has([data-state=checked])]:border-primary"
                                         >
                                             <div className="flex w-full items-center justify-between">
                                                 <span className="text-base font-semibold">
