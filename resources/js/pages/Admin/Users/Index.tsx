@@ -82,11 +82,13 @@ export default function UsersIndex({
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
     /**
-     * Banned accounts are dropped server-side when the send list is built, so
-     * offering them here would promise recipients that never get the mail.
+     * Banned accounts and admins are dropped server-side when the send list is
+     * built, so offering them here would promise recipients that never get the
+     * mail. Admins run the shop rather than shop at it, and mailing them their
+     * own blast trains the team to ignore mail from their own domain.
      */
     const selectableUsers = useMemo(
-        () => users.filter((user) => !user.banned_at),
+        () => users.filter((user) => !user.banned_at && !user.is_admin),
         [users],
     );
 
@@ -105,6 +107,8 @@ export default function UsersIndex({
             return next;
         });
     };
+
+    const hasSelection = selectedIds.size > 0;
 
     const toggleAll = () => {
         setSelectedIds(
@@ -136,13 +140,20 @@ export default function UsersIndex({
                             currentSearch={filters?.search ?? ''}
                             placeholder="Search users..."
                         />
+                        {/*
+                            The two branches render the icon and label as direct
+                            children rather than wrapping them: Tailwind's preflight
+                            makes `svg` display:block, so an extra wrapper drops the
+                            label onto its own line and defeats the button's own
+                            `has-[>svg]` padding.
+                        */}
                         <Button
-                            asChild={selectedIds.size > 0}
+                            asChild={hasSelection}
                             variant="outline"
                             className="w-fit"
-                            disabled={selectedIds.size === 0}
+                            disabled={!hasSelection}
                         >
-                            {selectedIds.size > 0 ? (
+                            {hasSelection ? (
                                 <Link
                                     href={`${composeNewsletter.url()}?users=${[...selectedIds].join(',')}`}
                                 >
@@ -150,10 +161,10 @@ export default function UsersIndex({
                                     Email {selectedIds.size} selected
                                 </Link>
                             ) : (
-                                <span>
+                                <>
                                     <Mail className="size-4" />
                                     Email selected
-                                </span>
+                                </>
                             )}
                         </Button>
                         <Button asChild className="w-fit">
@@ -193,7 +204,10 @@ export default function UsersIndex({
                                         onCheckedChange={() =>
                                             toggleUser(user.id)
                                         }
-                                        disabled={Boolean(user.banned_at)}
+                                        disabled={
+                                            Boolean(user.banned_at) ||
+                                            user.is_admin
+                                        }
                                         aria-label={`Select ${user.name}`}
                                     />
                                 </TableCell>

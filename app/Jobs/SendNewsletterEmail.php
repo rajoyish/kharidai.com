@@ -6,6 +6,7 @@ use App\Mail\NewsletterMail;
 use App\Models\NewsletterRecipient;
 use App\Services\Mail\EmailQuotaTracker;
 use App\Services\Mail\EmailRouter;
+use App\Services\Mail\SystemMailboxes;
 use DateTimeInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -56,9 +57,12 @@ class SendNewsletterEmail implements ShouldQueue
         return now()->addDays(2);
     }
 
-    public function handle(EmailRouter $router, EmailQuotaTracker $tracker): void
-    {
-        $recipient = $this->recipient->fresh(['newsletter']);
+    public function handle(
+        EmailRouter $router,
+        EmailQuotaTracker $tracker,
+        SystemMailboxes $systemMailboxes,
+    ): void {
+        $recipient = $this->recipient->fresh(['newsletter', 'user']);
 
         if ($recipient === null || ! $recipient->isPending()) {
             return;
@@ -67,6 +71,21 @@ class SendNewsletterEmail implements ShouldQueue
         $newsletter = $recipient->newsletter;
 
         if ($newsletter === null) {
+            return;
+        }
+
+        /*
+         * The send list already excluded admins and app-owned mailboxes when it
+         * was built, so this is the second look rather than the first. It earns
+         * its place because the list is a snapshot: a user promoted to admin, or
+         * an address added to the mail config, between queueing and sending would
+         * otherwise still be mailed. Re-checked against the row's own address, not
+         * the user's, since that is what the mail would actually go to.
+         */
+        if ($recipient->user?->is_admin || $systemMailboxes->contains($recipient->email)) {
+            $recipient->markSkipped();
+            $newsletter->refreshProgress();
+
             return;
         }
 

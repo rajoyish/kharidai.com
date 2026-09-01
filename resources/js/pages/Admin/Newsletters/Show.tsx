@@ -51,6 +51,9 @@ const RECIPIENT_VARIANTS: Record<
     sent: 'success',
     pending: 'warning',
     failed: 'danger',
+    // Withheld on purpose, not a failure: the address turned out to be an
+    // admin's or one of the app's own by the time the job ran.
+    skipped: 'neutral',
 };
 
 export default function ShowNewsletter({
