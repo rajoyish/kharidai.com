@@ -6,12 +6,15 @@ use App\Jobs\SendNewsletterEmail;
 use App\Models\EmailDispatch;
 use App\Models\Newsletter;
 use App\Models\NewsletterRecipient;
+use App\Models\Order;
 use App\Models\User;
 use App\Services\Mail\EmailQuotaTracker;
 use App\Services\Mail\EmailRouter;
 use App\Services\Mail\SystemMailboxes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Inertia\Testing\AssertableInertia;
 
 beforeEach(function () {
     config()->set('mail.mailers.brevo.transport', 'array');
@@ -132,6 +135,97 @@ test('a send spills over to gmail once the brevo allowance is spent', function (
         ->and(EmailDispatch::where('mailer', 'gmail')->count())->toBe(1);
 });
 
+test('an account created by hand is never mailed, whatever its address', function () {
+    $admin = newsletterAdmin();
+    // A gmail.com address someone typed into the registration form is still a
+    // hand-made account. The domain is not what makes a recipient eligible.
+    $manual = User::factory()->manual()->create(['email' => 'typed-in@gmail.com']);
+    $signedIn = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Weekly news',
+            'body' => '<p>Hello there.</p>',
+            'audience' => 'selected',
+            'user_ids' => [$manual->id, $signedIn->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    expect(EmailDispatch::pluck('recipient')->all())->toBe([$signedIn->email])
+        ->and(Newsletter::firstOrFail()->recipient_count)->toBe(1);
+});
+
+test('the audience count leaves out accounts that never signed in with google', function () {
+    User::factory()->count(2)->create();
+    User::factory()->manual()->count(3)->create();
+
+    $response = $this->actingAs(newsletterAdmin())
+        ->get(route('admin.newsletters.create'))
+        ->assertSuccessful();
+
+    expect($response->inertiaProps('audienceCount'))->toBe(2);
+});
+
+test('the full audience list is only sent when the exclusion dialog asks for it', function () {
+    User::factory()->create(['name' => 'Asha']);
+    User::factory()->manual()->create(['name' => 'Typed in by hand']);
+
+    $this->actingAs(newsletterAdmin())
+        ->get(route('admin.newsletters.create'))
+        ->assertSuccessful()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            // Optional, so a plain visit does not name every customer on a page
+            // most composes never ask it of.
+            ->missing('audienceUsers')
+            ->reloadOnly('audienceUsers', fn (AssertableInertia $reloaded) => $reloaded
+                ->has('audienceUsers', 1)
+                ->where('audienceUsers.0.name', 'Asha')
+                ->etc()
+            )
+            ->etc()
+        );
+});
+
+test('an excluded user is dropped from an every-registered-user send', function () {
+    $admin = newsletterAdmin();
+    $excluded = User::factory()->create();
+    $included = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Weekly news',
+            'body' => '<p>Hello there.</p>',
+            'audience' => 'all',
+            'excluded_user_ids' => [$excluded->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    expect(EmailDispatch::pluck('recipient')->all())->toBe([$included->email])
+        ->and(Newsletter::firstOrFail()->recipient_count)->toBe(1);
+});
+
+test('exclusions are ignored by a send addressed to a picked list', function () {
+    $admin = newsletterAdmin();
+    $picked = User::factory()->count(2)->create();
+
+    // The picked list is edited in place, so a stale exclusion left over from
+    // toggling the audience back and forth must not quietly shrink it.
+    $this->actingAs($admin)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Weekly news',
+            'body' => '<p>Hello there.</p>',
+            'audience' => 'selected',
+            'user_ids' => $picked->pluck('id')->all(),
+            'excluded_user_ids' => [$picked->first()->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    expect(Newsletter::firstOrFail()->recipient_count)->toBe(2);
+});
+
 test('an admin is never mailed, even when explicitly selected', function () {
     $admin = newsletterAdmin();
     $otherAdmin = User::factory()->create(['is_admin' => true]);
@@ -234,6 +328,164 @@ test('a send that runs out of quota pauses instead of dropping the recipient', f
     expect($recipient->fresh()->status)->toBe(NewsletterRecipientStatus::Pending)
         ->and($newsletter->fresh()->status)->toBe(NewsletterStatus::Paused)
         ->and(EmailDispatch::count())->toBe(1);
+});
+
+/**
+ * Send one body to everybody named and hand back what each address received,
+ * keyed by address.
+ *
+ * @param  list<int>  $userIds
+ * @return array<string, string>
+ */
+function newsletterBodiesFor(string $body, array $userIds): array
+{
+    test()->actingAs(newsletterAdmin())
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Placeholder check',
+            'body' => $body,
+            'audience' => 'selected',
+            'user_ids' => $userIds,
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    $delivered = [];
+
+    foreach (['brevo', 'gmail'] as $mailer) {
+        foreach (Mail::mailer($mailer)->getSymfonyTransport()->messages() as $message) {
+            $sent = $message->getOriginalMessage();
+            $to = $sent->getTo()[0]->getAddress();
+            $delivered[$to] = (string) $sent->getHtmlBody();
+        }
+    }
+
+    return $delivered;
+}
+
+test('each recipient gets their own details in place of the tags', function () {
+    $alex = User::factory()->create(['name' => 'Alex Rai', 'email' => 'alex@example.test']);
+    $bina = User::factory()->create(['name' => 'Bina Shrestha', 'email' => 'bina@example.test']);
+
+    $bodies = newsletterBodiesFor(
+        '<p>Hi {first_name}, we have you at {email}. Full name: {name}.</p>',
+        [$alex->id, $bina->id],
+    );
+
+    expect($bodies['alex@example.test'])
+        ->toContain('Hi Alex, we have you at alex@example.test. Full name: Alex Rai.')
+        ->and($bodies['bina@example.test'])
+        ->toContain('Hi Bina, we have you at bina@example.test. Full name: Bina Shrestha.');
+});
+
+test('order tags resolve against the recipients most recent order', function () {
+    $user = User::factory()->create(['email' => 'buyer@example.test']);
+
+    Order::factory()->for($user)->create([
+        'order_number' => 'ORD-OLDER',
+        'created_at' => now()->subMonths(2),
+    ]);
+    Order::factory()->for($user)->create([
+        'order_number' => 'ORD-NEWEST',
+        'created_at' => now()->subDays(3)->setTime(9, 0),
+    ]);
+
+    $bodies = newsletterBodiesFor(
+        '<p>Order {latest_order_number} on {latest_order_date}. That is {total_orders} so far.</p>',
+        [$user->id],
+    );
+
+    $expectedDate = now()->subDays(3)->format('F j, Y');
+
+    expect($bodies['buyer@example.test'])
+        ->toContain("Order ORD-NEWEST on {$expectedDate}. That is 2 so far.");
+});
+
+test('a recipient who has never ordered gets a gap rather than a broken tag', function () {
+    $user = User::factory()->create(['email' => 'browser@example.test']);
+
+    $bodies = newsletterBodiesFor(
+        '<p>Order [{latest_order_number}] on [{latest_order_date}], total [{total_orders}].</p>',
+        [$user->id],
+    );
+
+    expect($bodies['browser@example.test'])->toContain('Order [] on [], total [0].');
+});
+
+test('a name with markup characters is escaped rather than injected', function () {
+    $user = User::factory()->create([
+        'name' => 'Ram & Sons <script>',
+        'email' => 'ram@example.test',
+    ]);
+
+    $bodies = newsletterBodiesFor('<p>Hi {name}.</p>', [$user->id]);
+
+    expect($bodies['ram@example.test'])
+        ->toContain('Ram &amp; Sons &lt;script&gt;')
+        ->not->toContain('<script>');
+});
+
+test('a tag the send does not know is left exactly as written', function () {
+    $user = User::factory()->create(['name' => 'Asha Gurung', 'email' => 'asha@example.test']);
+
+    // An admin who typed {discount_code} meant it. Deleting it silently would be
+    // a worse surprise than seeing it arrive.
+    $bodies = newsletterBodiesFor('<p>Hi {name}, use {discount_code}.</p>', [$user->id]);
+
+    expect($bodies['asha@example.test'])->toContain('Hi Asha Gurung, use {discount_code}.');
+});
+
+test('a body without order tags never queries the orders table', function () {
+    $user = User::factory()->create();
+    Order::factory()->for($user)->create();
+
+    DB::enableQueryLog();
+
+    newsletterBodiesFor('<p>Hi {first_name}.</p>', [$user->id]);
+
+    $orderQueries = collect(DB::getQueryLog())
+        ->filter(fn (array $query): bool => str_contains($query['query'], '"orders"')
+            || str_contains($query['query'], '`orders`'));
+
+    DB::disableQueryLog();
+
+    // Personalisation runs once per recipient, so a greeting that never mentions
+    // orders must not cost the orders table a round trip per person.
+    expect($orderQueries)->toBeEmpty();
+});
+
+test('the composer offers the same tags the send resolves', function () {
+    $response = $this->actingAs(newsletterAdmin())
+        ->get(route('admin.newsletters.create'))
+        ->assertSuccessful();
+
+    expect(collect($response->inertiaProps('placeholders'))->pluck('tag')->all())
+        ->toBe([
+            '{name}',
+            '{first_name}',
+            '{email}',
+            '{latest_order_number}',
+            '{latest_order_date}',
+            '{total_orders}',
+        ]);
+});
+
+test('the plain text part carries the same substitutions as the html', function () {
+    $user = User::factory()->create(['name' => 'Asha Gurung']);
+
+    $this->actingAs(newsletterAdmin())
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Placeholder check',
+            'body' => '<p>Hi {first_name} &amp; friends.</p>',
+            'audience' => 'selected',
+            'user_ids' => [$user->id],
+            'action' => 'send',
+        ])
+        ->assertRedirect();
+
+    $message = Mail::mailer('brevo')->getSymfonyTransport()->messages()->first();
+    $sent = $message->getOriginalMessage();
+
+    expect($sent->getTextBody())->toContain('Hi Asha & friends.');
 });
 
 test('the html the editor produced is what the mailbox receives', function () {

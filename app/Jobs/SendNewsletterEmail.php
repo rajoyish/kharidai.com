@@ -102,7 +102,7 @@ class SendNewsletterEmail implements ShouldQueue
 
         $sent = Mail::mailer($mailer)
             ->to($recipient->email)
-            ->send(new NewsletterMail($newsletter));
+            ->send(new NewsletterMail($newsletter, $recipient));
 
         /*
          * A null return means the send was cancelled, not delivered — the quota

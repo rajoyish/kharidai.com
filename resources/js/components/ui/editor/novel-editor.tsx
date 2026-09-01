@@ -7,6 +7,7 @@ import {
     EditorCommandList,
     EditorCommandItem,
     handleCommandNavigation,
+    EditorInstance,
     JSONContent,
 } from 'novel';
 import { store as storeMedia } from '@/actions/App/Http/Controllers/MediaController';
@@ -20,6 +21,12 @@ interface NovelEditorProps {
     className?: string;
     /** Extra classes for the inner ProseMirror content, e.g. a smaller min-height. */
     contentClassName?: string;
+    /**
+     * Handed the editor once it exists, so a control outside it can drive the
+     * document. The editor's own context stops at EditorRoot, and a toolbar in a
+     * sibling card cannot reach it any other way.
+     */
+    onReady?: (editor: EditorInstance) => void;
 }
 
 const uploadFileToMedia = async (file: File, view: any) => {
@@ -53,6 +60,7 @@ export default function NovelEditor({
     onChange,
     className,
     contentClassName,
+    onReady,
 }: NovelEditorProps) {
     const extensions = [...defaultExtensions, slashCommand];
 
@@ -68,6 +76,8 @@ export default function NovelEditor({
                     if (typeof initialValue === 'string' && initialValue) {
                         editor.commands.setContent(initialValue);
                     }
+
+                    onReady?.(editor);
                 }}
                 extensions={extensions}
                 onUpdate={({ editor }) => {
