@@ -1,4 +1,3 @@
-import { router } from '@inertiajs/react';
 import { UserRoundMinus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -20,6 +19,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 type NewsletterRecipientExclusionsProps = {
     /** Everyone the newsletter would reach. Undefined until the prop is loaded. */
     audienceUsers?: NewsletterRecipientOption[];
+    /** Asks the composer to fetch the audience list if it is not here yet. */
+    onRequestAudience: () => void;
     /** How many the send reaches before any exclusions. */
     audienceCount: number;
     excludedIds: number[];
@@ -33,31 +34,22 @@ type NewsletterRecipientExclusionsProps = {
  */
 export function NewsletterRecipientExclusions({
     audienceUsers,
+    onRequestAudience,
     audienceCount,
     excludedIds,
     onChange,
 }: NewsletterRecipientExclusionsProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
 
     /**
      * The audience list is an optional prop, so the page arrives without it.
-     * Opening the dialog is what asks for it: an admin can sit on the composer
-     * for a long time and never touch the recipient list, and naming every
-     * customer up front is payload spent on a maybe.
+     * Opening the dialog is one of the two things that asks for it, the other
+     * being the picker on the selected-users branch, so the fetch itself lives
+     * in the composer and both call into it.
      */
     const openDialog = () => {
         setIsOpen(true);
-
-        if (audienceUsers !== undefined || isLoading) {
-            return;
-        }
-
-        setIsLoading(true);
-        router.reload({
-            only: ['audienceUsers'],
-            onFinish: () => setIsLoading(false),
-        });
+        onRequestAudience();
     };
 
     const setIncluded = (id: number, isIncluded: boolean) => {

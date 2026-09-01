@@ -1,7 +1,7 @@
-import { Link, useForm } from '@inertiajs/react';
-import { Maximize2, Minimize2, Send, Users, X } from 'lucide-react';
+import { Link, router, useForm } from '@inertiajs/react';
+import { Maximize2, Minimize2, Send, Users } from 'lucide-react';
 import type { EditorInstance } from 'novel';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { EmailQuotaStats } from '@/components/email-quota-stats';
@@ -9,6 +9,7 @@ import type { EmailQuotaSummary } from '@/components/email-quota-stats';
 import { NewsletterPlaceholders } from '@/components/newsletter-placeholders';
 import type { NewsletterPlaceholder } from '@/components/newsletter-placeholders';
 import { NewsletterRecipientExclusions } from '@/components/newsletter-recipient-exclusions';
+import { NewsletterRecipientPicker } from '@/components/newsletter-recipient-picker';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -67,6 +68,29 @@ export function NewsletterComposer({
     const editorRef = useRef<EditorInstance | null>(null);
 
     /**
+     * Whether the audience fetch has already gone out. A ref, not state: the
+     * effect below asks on the first render of the selected branch, and setting
+     * state from an effect is what `react-hooks/set-state-in-effect` forbids.
+     * Nothing renders differently for it either — the skeletons key off
+     * `audienceUsers` still being undefined.
+     */
+    const hasRequestedAudience = useRef(false);
+
+    /**
+     * `audienceUsers` is an optional prop, so the page arrives without it. Two
+     * controls need it — the picker on the selected branch and the exclusion
+     * dialog on the everyone branch — so the fetch lives here and both ask.
+     */
+    const requestAudience = useCallback(() => {
+        if (audienceUsers !== undefined || hasRequestedAudience.current) {
+            return;
+        }
+
+        hasRequestedAudience.current = true;
+        router.reload({ only: ['audienceUsers'] });
+    }, [audienceUsers]);
+
+    /**
      * The picked recipients, kept as objects rather than ids so the list can name
      * who it is about after the user has navigated away from the users table.
      */
@@ -83,6 +107,14 @@ export function NewsletterComposer({
         excluded_user_ids: [] as number[],
         action: 'draft',
     });
+
+    // The picker is unusable without the list, so entering that branch fetches it
+    // rather than waiting for the admin to click into an empty field.
+    useEffect(() => {
+        if (data.audience === 'selected') {
+            requestAudience();
+        }
+    }, [data.audience, requestAudience]);
 
     useEffect(() => {
         if (!isEditorExpanded) {
@@ -106,11 +138,11 @@ export function NewsletterComposer({
         editorRef.current?.chain().focus().insertContent(tag).run();
     };
 
-    const removeRecipient = (id: number) => {
-        setRecipients((current) => current.filter((user) => user.id !== id));
+    const setRecipientSelection = (users: NewsletterRecipientOption[]) => {
+        setRecipients(users);
         setData(
             'user_ids',
-            data.user_ids.filter((userId) => userId !== id),
+            users.map((user) => user.id),
         );
     };
 
@@ -246,11 +278,6 @@ export function NewsletterComposer({
                 </div>
 
                 <div className="grid gap-6 lg:sticky lg:top-6 lg:self-start">
-                    <NewsletterPlaceholders
-                        placeholders={placeholders}
-                        onInsert={insertPlaceholder}
-                    />
-
                     <Card>
                         <CardHeader>
                             <CardTitle>Recipients</CardTitle>
@@ -272,7 +299,6 @@ export function NewsletterComposer({
                                     <RadioGroupItem
                                         value="selected"
                                         id="audience-selected"
-                                        disabled={recipients.length === 0}
                                         className="mt-0.5"
                                     />
                                     <Label
@@ -284,7 +310,7 @@ export function NewsletterComposer({
                                         </span>
                                         <span className="text-xs text-muted-foreground">
                                             {recipients.length === 0
-                                                ? 'Pick people on the User Management page first.'
+                                                ? 'Search for people below.'
                                                 : `${recipients.length} chosen`}
                                         </span>
                                     </Label>
@@ -313,6 +339,7 @@ export function NewsletterComposer({
                             {data.audience === 'all' && (
                                 <NewsletterRecipientExclusions
                                     audienceUsers={audienceUsers}
+                                    onRequestAudience={requestAudience}
                                     audienceCount={audienceCount}
                                     excludedIds={data.excluded_user_ids}
                                     onChange={(excludedIds) =>
@@ -330,38 +357,23 @@ export function NewsletterComposer({
                                 </p>
                             )}
 
-                            {data.audience === 'selected' &&
-                                recipients.length > 0 && (
-                                    <ul className="max-h-64 space-y-1 overflow-y-auto rounded-lg border p-2">
-                                        {recipients.map((user) => (
-                                            <li
-                                                key={user.id}
-                                                className="flex items-center justify-between gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60"
-                                            >
-                                                <span className="min-w-0">
-                                                    <span className="block truncate font-medium">
-                                                        {user.name}
-                                                    </span>
-                                                    <span className="block truncate text-xs text-muted-foreground">
-                                                        {user.email}
-                                                    </span>
-                                                </span>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="size-7 shrink-0"
-                                                    onClick={() =>
-                                                        removeRecipient(user.id)
-                                                    }
-                                                    aria-label={`Remove ${user.name}`}
-                                                >
-                                                    <X className="size-3.5" />
-                                                </Button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                            {data.audience === 'selected' && (
+                                <div className="grid gap-1.5">
+                                    <Label
+                                        htmlFor="recipient-search"
+                                        className="text-xs text-muted-foreground"
+                                    >
+                                        Who should get this
+                                    </Label>
+                                    <NewsletterRecipientPicker
+                                        inputId="recipient-search"
+                                        audienceUsers={audienceUsers}
+                                        value={recipients}
+                                        onChange={setRecipientSelection}
+                                        invalid={Boolean(errors.user_ids)}
+                                    />
+                                </div>
+                            )}
 
                             <p className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Users className="size-4" />
@@ -394,6 +406,11 @@ export function NewsletterComposer({
                             </Button>
                         </CardFooter>
                     </Card>
+
+                    <NewsletterPlaceholders
+                        placeholders={placeholders}
+                        onInsert={insertPlaceholder}
+                    />
 
                     {emailStats && <EmailQuotaStats stats={emailStats} />}
                 </div>

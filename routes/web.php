@@ -106,6 +106,7 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
      * cannot be read as a `newsletters/{newsletter}` segment.
      */
     Route::post('newsletters/{newsletter}/send', [NewsletterController::class, 'send'])->name('newsletters.send');
+    Route::post('newsletters/{newsletter}/duplicate', [NewsletterController::class, 'duplicate'])->name('newsletters.duplicate');
     Route::resource('newsletters', NewsletterController::class);
 
     Route::get('services', [ServiceEngagementController::class, 'index'])->name('services.index');

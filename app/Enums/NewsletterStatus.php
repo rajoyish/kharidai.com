@@ -31,6 +31,16 @@ enum NewsletterStatus: string
     }
 
     /**
+     * Whether a finished newsletter can be copied into a fresh draft and sent
+     * again. Only a completed send: a draft is already editable, and one still in
+     * flight has not finished saying what it will become.
+     */
+    public function isResendable(): bool
+    {
+        return $this === self::Sent;
+    }
+
+    /**
      * Whether queued work is outstanding. A paused newsletter counts: its jobs are
      * released back onto the queue, not abandoned.
      */
