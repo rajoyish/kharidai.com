@@ -1,0 +1,353 @@
+import { Link, useForm } from '@inertiajs/react';
+import { Maximize2, Minimize2, Send, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+
+import {
+    EmailQuotaStats
+    
+} from '@/components/email-quota-stats';
+import type {EmailQuotaSummary} from '@/components/email-quota-stats';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import NovelEditor from '@/components/ui/editor/novel-editor';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { MediaManager } from '@/components/ui/media-manager';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+
+export type NewsletterRecipientOption = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+type NewsletterComposerProps = {
+    submitUrl: string;
+    cancelUrl: string;
+    /** The draft being edited. Absent when composing a new newsletter. */
+    newsletter?: { id: number; subject: string; body: string };
+    selectedUsers: NewsletterRecipientOption[];
+    /** How many users a newsletter addressed to everyone would reach. */
+    audienceCount: number;
+    emailStats?: EmailQuotaSummary;
+};
+
+export function NewsletterComposer({
+    submitUrl,
+    cancelUrl,
+    newsletter,
+    selectedUsers,
+    audienceCount,
+    emailStats,
+}: NewsletterComposerProps) {
+    const isEditing = Boolean(newsletter);
+    const [isEditorExpanded, setIsEditorExpanded] = useState(false);
+
+    /**
+     * The picked recipients, kept as objects rather than ids so the list can name
+     * who it is about after the user has navigated away from the users table.
+     */
+    const [recipients, setRecipients] =
+        useState<NewsletterRecipientOption[]>(selectedUsers);
+
+    const { data, setData, post, processing, errors, transform } = useForm({
+        _method: isEditing ? 'put' : 'post',
+        subject: newsletter?.subject ?? '',
+        body: newsletter?.body ?? '',
+        audience: selectedUsers.length > 0 ? 'selected' : 'all',
+        user_ids: selectedUsers.map((user) => user.id),
+        action: 'draft',
+    });
+
+
+    useEffect(() => {
+        if (!isEditorExpanded) {
+            return;
+        }
+
+        const exitOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsEditorExpanded(false);
+            }
+        };
+
+        window.addEventListener('keydown', exitOnEscape);
+
+        return () => window.removeEventListener('keydown', exitOnEscape);
+    }, [isEditorExpanded]);
+
+    const removeRecipient = (id: number) => {
+        setRecipients((current) => current.filter((user) => user.id !== id));
+        setData(
+            'user_ids',
+            data.user_ids.filter((userId) => userId !== id),
+        );
+    };
+
+    /**
+     * Which button was pressed rides on the request rather than in form state:
+     * `setData` is asynchronous, so staging the action and submitting in the same
+     * handler would serialise the previous value. `transform` is applied when the
+     * request is built, so setting it here is read by the `post` on the next line.
+     */
+    const submit = (event: FormEvent, action: 'draft' | 'send') => {
+        event.preventDefault();
+
+        transform((current) => ({
+            ...current,
+            action,
+            // A newsletter addressed to everyone resolves its list server-side, so
+            // shipping thousands of ids the server will ignore is wasted payload.
+            user_ids: current.audience === 'all' ? [] : current.user_ids,
+        }));
+
+        post(submitUrl);
+    };
+
+    const recipientTotal =
+        data.audience === 'all' ? audienceCount : recipients.length;
+
+    return (
+        <form
+            onSubmit={(event) => submit(event, 'draft')}
+            className="mx-auto flex w-full max-w-6xl flex-col gap-6"
+        >
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="flex min-w-0 flex-col gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Subject</CardTitle>
+                            <CardDescription>
+                                The line every recipient sees in their inbox.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-2.5">
+                            <Label htmlFor="subject" className="sr-only">
+                                Subject
+                            </Label>
+                            <Input
+                                id="subject"
+                                value={data.subject}
+                                onChange={(event) =>
+                                    setData('subject', event.target.value)
+                                }
+                                placeholder="What is this newsletter about?"
+                                className="md:text-base"
+                                required
+                            />
+                            {errors.subject && (
+                                <p className="text-xs font-medium text-destructive">
+                                    {errors.subject}
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card
+                        className={cn(
+                            'lg:grow',
+                            isEditorExpanded &&
+                                'fixed inset-4 z-50 overflow-hidden shadow-2xl',
+                        )}
+                    >
+                        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+                            <div className="space-y-1.5">
+                                <CardTitle>Message</CardTitle>
+                                <CardDescription>
+                                    Type "/" for formatting commands. This is
+                                    the same editor the blog uses.
+                                </CardDescription>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                                <MediaManager />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() =>
+                                        setIsEditorExpanded(!isEditorExpanded)
+                                    }
+                                    aria-label={
+                                        isEditorExpanded
+                                            ? 'Exit full screen'
+                                            : 'Expand editor to full screen'
+                                    }
+                                >
+                                    {isEditorExpanded ? (
+                                        <Minimize2 className="size-4" />
+                                    ) : (
+                                        <Maximize2 className="size-4" />
+                                    )}
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent
+                            className={cn(
+                                'lg:flex lg:grow lg:flex-col',
+                                isEditorExpanded &&
+                                    'flex min-h-0 flex-1 flex-col',
+                            )}
+                        >
+                            <NovelEditor
+                                initialValue={data.body}
+                                onChange={(html) => setData('body', html)}
+                                className={cn(
+                                    'lg:grow',
+                                    isEditorExpanded &&
+                                        'h-full min-h-0 flex-1 resize-none',
+                                )}
+                            />
+                            {errors.body && (
+                                <p className="mt-2 text-xs font-medium text-destructive">
+                                    {errors.body}
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="grid gap-6 lg:sticky lg:top-6 lg:self-start">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Recipients</CardTitle>
+                            <CardDescription>
+                                Banned accounts are always excluded.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            <RadioGroup
+                                value={data.audience}
+                                onValueChange={(value) =>
+                                    setData('audience', value)
+                                }
+                                className="gap-3"
+                            >
+                                <div className="flex items-start gap-3 rounded-lg border p-3">
+                                    <RadioGroupItem
+                                        value="selected"
+                                        id="audience-selected"
+                                        disabled={recipients.length === 0}
+                                        className="mt-0.5"
+                                    />
+                                    <Label
+                                        htmlFor="audience-selected"
+                                        className="grid gap-0.5 font-normal"
+                                    >
+                                        <span className="font-medium">
+                                            Selected users
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {recipients.length === 0
+                                                ? 'Pick people on the User Management page first.'
+                                                : `${recipients.length} chosen`}
+                                        </span>
+                                    </Label>
+                                </div>
+
+                                <div className="flex items-start gap-3 rounded-lg border p-3">
+                                    <RadioGroupItem
+                                        value="all"
+                                        id="audience-all"
+                                        className="mt-0.5"
+                                    />
+                                    <Label
+                                        htmlFor="audience-all"
+                                        className="grid gap-0.5 font-normal"
+                                    >
+                                        <span className="font-medium">
+                                            Every registered user
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {audienceCount} accounts
+                                        </span>
+                                    </Label>
+                                </div>
+                            </RadioGroup>
+
+                            {errors.user_ids && (
+                                <p className="text-xs font-medium text-destructive">
+                                    {errors.user_ids}
+                                </p>
+                            )}
+
+                            {data.audience === 'selected' &&
+                                recipients.length > 0 && (
+                                    <ul className="max-h-64 space-y-1 overflow-y-auto rounded-lg border p-2">
+                                        {recipients.map((user) => (
+                                            <li
+                                                key={user.id}
+                                                className="flex items-center justify-between gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60"
+                                            >
+                                                <span className="min-w-0">
+                                                    <span className="block truncate font-medium">
+                                                        {user.name}
+                                                    </span>
+                                                    <span className="block truncate text-xs text-muted-foreground">
+                                                        {user.email}
+                                                    </span>
+                                                </span>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-7 shrink-0"
+                                                    onClick={() =>
+                                                        removeRecipient(user.id)
+                                                    }
+                                                    aria-label={`Remove ${user.name}`}
+                                                >
+                                                    <X className="size-3.5" />
+                                                </Button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+
+                            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Users className="size-4" />
+                                Sending to{' '}
+                                <span className="font-semibold text-foreground tabular-nums">
+                                    {recipientTotal}
+                                </span>{' '}
+                                {recipientTotal === 1 ? 'person' : 'people'}
+                            </p>
+                        </CardContent>
+                        <CardFooter className="flex-col items-stretch gap-2">
+                            <Separator className="mb-2" />
+                            <Button
+                                type="button"
+                                disabled={processing || recipientTotal === 0}
+                                onClick={(event) => submit(event, 'send')}
+                            >
+                                <Send className="size-4" />
+                                {processing ? 'Working...' : 'Queue and send'}
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={processing}
+                            >
+                                Save as draft
+                            </Button>
+                            <Button variant="ghost" asChild>
+                                <Link href={cancelUrl}>Cancel</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+
+                    {emailStats && <EmailQuotaStats stats={emailStats} />}
+                </div>
+            </div>
+        </form>
+    );
+}
