@@ -3,6 +3,8 @@
 namespace App\Mail;
 
 use App\Models\Newsletter;
+use App\Models\NewsletterRecipient;
+use App\Services\Mail\NewsletterPlaceholders;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -25,6 +27,7 @@ class NewsletterMail extends Mailable
 
     public function __construct(
         public Newsletter $newsletter,
+        public NewsletterRecipient $recipient,
     ) {}
 
     public function envelope(): Envelope
@@ -44,6 +47,14 @@ class NewsletterMail extends Mailable
 
     public function content(): Content
     {
+        /*
+         * The one place the {tags} in the body resolve. There is a single stored
+         * body and one job per recipient reading it, so personalisation belongs
+         * here, where the copy being built is already one person's.
+         */
+        $body = app(NewsletterPlaceholders::class)
+            ->apply($this->newsletter->body, $this->recipient);
+
         return new Content(
             markdown: 'emails.newsletter',
 
@@ -56,8 +67,11 @@ class NewsletterMail extends Mailable
 
             with: [
                 'subject' => $this->newsletter->subject,
-                'bodyHtml' => $this->newsletter->body,
-                'bodyText' => $this->plainTextBody(),
+                'bodyHtml' => $body,
+
+                // Derived from the substituted body, not the stored one, so the
+                // text part carries the same names and order numbers the HTML does.
+                'bodyText' => $this->plainTextBody($body),
             ],
         );
     }
@@ -66,12 +80,12 @@ class NewsletterMail extends Mailable
      * The editor's HTML flattened to readable text: block tags become line breaks
      * before the tags are stripped, so paragraphs do not run together.
      */
-    private function plainTextBody(): string
+    private function plainTextBody(string $body): string
     {
         $withBreaks = preg_replace(
             '/<\/(p|div|h[1-6]|li|tr|blockquote)>/i',
             "\n\n",
-            (string) $this->newsletter->body,
+            $body,
         );
 
         $withBreaks = preg_replace('/<br\s*\/?>/i', "\n", (string) $withBreaks);

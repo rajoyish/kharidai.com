@@ -1,6 +1,7 @@
 ---
 paths:
   - 'app/Mail/**'
+  - app/Mail/NewsletterMail.php
 ---
 
 # Mail
@@ -17,10 +18,21 @@ Two consequences worth knowing:
 `Mail::fake()` replaces the manager wholesale, so quota behaviour is untestable under it — point the mailers at the `array` transport instead (see tests/Feature/EmailQuotaTest.php).
 
 ## Newsletters never go to admins or the app's own mailboxes
-A mass newsletter may only reach customers. Three groups are excluded from the audience: banned accounts, users with `is_admin`, and any address the app itself sends from.
+A mass newsletter may only reach customers. Four groups are excluded from the audience: banned accounts, users with `is_admin`, any address the app itself sends from, and accounts that never signed in with Google (see "Only Google sign-ins are newsletter-eligible" in `.ai/rules/admin.md`).
 
 `App\Services\Mail\SystemMailboxes` derives that last group from the mail config (`mail.from.address`, `mail.customer_from.address`, `mail.order_notification_address`, and every `mail.mailers.*.username` that parses as an email), so a mailer added later is covered without editing a list. Mailing the address a newsletter was sent from is a loop, and the engagement signal it creates is one spam filters read badly.
 
 `NewsletterController::eligibleUsers()` is the single definition of the audience — the composer, the recipient snapshot, and the "every registered user" count all read it. Do not hand-roll a second user query for newsletter recipients.
 
 The send list is a snapshot, so `SendNewsletterEmail` re-checks before sending and marks the row `Skipped` (not `Failed`) if the user was promoted to admin, or the config changed, after queueing.
+
+## Newsletter {tags} resolve per recipient in the mailable
+`App\Services\Mail\NewsletterPlaceholders::TAGS` is the single definition of the newsletter tag vocabulary. `NewsletterMail::content()` applies it; the composer lists it from the same array via the `placeholders` prop. Add a tag in one place only.
+
+Substitution happens per recipient at send time, never at compose time. One stored body is read by one job per person, so the tags must survive in the database and resolve only in the copy being built.
+
+`apply()` reads which tags the body uses before resolving anything, so a body without order tags costs the orders table nothing. Keep that check if you add a tag that queries.
+
+Values are HTML-escaped (the body is HTML). The text part is derived from the already-substituted body, and `emails/newsletter_text.blade.php` uses `{!! !!}` on purpose: `{{ }}` would re-escape a name like "Ram & Sons" into `&amp;` in a text/plain part.
+
+Unknown `{tags}` are left as written rather than stripped.

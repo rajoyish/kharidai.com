@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\NewsletterRecipientStatus;
 use App\Enums\NewsletterStatus;
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Controller;
 use App\Jobs\QueueNewsletterRecipients;
 use App\Models\Newsletter;
 use App\Models\NewsletterRecipient;
 use App\Models\User;
 use App\Services\Mail\EmailQuotaTracker;
+use App\Services\Mail\NewsletterPlaceholders;
 use App\Services\Mail\SystemMailboxes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -71,6 +73,8 @@ class NewsletterController extends Controller
                 'email' => $user->email,
             ])->all(),
             'audienceCount' => $this->eligibleUsers()->count(),
+            'audienceUsers' => Inertia::optional(fn (): array => $this->audienceUsers()),
+            'placeholders' => app(NewsletterPlaceholders::class)->definitions(),
             'emailStats' => $tracker->stats(),
         ]);
     }
@@ -86,7 +90,12 @@ class NewsletterController extends Controller
             'status' => NewsletterStatus::Draft,
         ]);
 
-        $this->syncRecipients($newsletter, $validated['audience'], $validated['user_ids'] ?? []);
+        $this->syncRecipients(
+            $newsletter,
+            $validated['audience'],
+            $validated['user_ids'] ?? [],
+            $validated['excluded_user_ids'] ?? [],
+        );
 
         if ($validated['action'] === 'send') {
             return $this->dispatchNewsletter($newsletter);
@@ -148,6 +157,8 @@ class NewsletterController extends Controller
                 'email' => $recipient->email,
             ])->all(),
             'audienceCount' => $this->eligibleUsers()->count(),
+            'audienceUsers' => Inertia::optional(fn (): array => $this->audienceUsers()),
+            'placeholders' => app(NewsletterPlaceholders::class)->definitions(),
             'emailStats' => $tracker->stats(),
         ]);
     }
@@ -163,7 +174,12 @@ class NewsletterController extends Controller
             'body' => $validated['body'],
         ]);
 
-        $this->syncRecipients($newsletter, $validated['audience'], $validated['user_ids'] ?? []);
+        $this->syncRecipients(
+            $newsletter,
+            $validated['audience'],
+            $validated['user_ids'] ?? [],
+            $validated['excluded_user_ids'] ?? [],
+        );
 
         if ($validated['action'] === 'send') {
             return $this->dispatchNewsletter($newsletter);
@@ -211,18 +227,25 @@ class NewsletterController extends Controller
      *     body: string,
      *     audience: string,
      *     action: string,
-     *     user_ids?: list<int>
+     *     user_ids?: list<int>,
+     *     excluded_user_ids?: list<int>
      * }
      */
     private function validateNewsletter(Request $request): array
     {
-        /** @var array{subject: string, body: string, audience: string, action: string, user_ids?: list<int>} $validated */
+        /** @var array{subject: string, body: string, audience: string, action: string, user_ids?: list<int>, excluded_user_ids?: list<int>} $validated */
         $validated = $request->validate([
             'subject' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
             'audience' => ['required', Rule::in(['all', 'selected'])],
             'user_ids' => ['required_if:audience,selected', 'array'],
             'user_ids.*' => ['integer', 'exists:users,id'],
+            // No `exists` rule, unlike the ids above: an exclusion only ever
+            // removes someone from a query, so an id that no longer resolves is
+            // a no-op. Requiring it to exist would reject the whole newsletter
+            // because an account was deleted while the draft was open.
+            'excluded_user_ids' => ['sometimes', 'array'],
+            'excluded_user_ids.*' => ['integer'],
             'action' => ['required', Rule::in(['draft', 'send'])],
         ]);
 
@@ -258,9 +281,10 @@ class NewsletterController extends Controller
      * loaded at once: the row count follows the user table, and hydrating every
      * user to build it is exactly the query that runs a shared host out of memory.
      *
-     * @param  list<int>  $userIds
+     * @param  list<int>  $userIds  Who to send to, when the audience is a picked list.
+     * @param  list<int>  $excludedIds  Who to drop, when the audience is everyone.
      */
-    private function syncRecipients(Newsletter $newsletter, string $audience, array $userIds): void
+    private function syncRecipients(Newsletter $newsletter, string $audience, array $userIds, array $excludedIds): void
     {
         $newsletter->recipients()->delete();
 
@@ -268,6 +292,11 @@ class NewsletterController extends Controller
 
         if ($audience === 'selected') {
             $query->whereIn('id', $userIds);
+        } elseif ($excludedIds !== []) {
+            // "Everyone except these few" stays a server-resolved query rather
+            // than becoming a picked list, so the send still follows the audience
+            // as it stands at save time instead of a list the browser built.
+            $query->whereNotIn('id', $excludedIds);
         }
 
         $now = now();
@@ -298,7 +327,7 @@ class NewsletterController extends Controller
     /**
      * Who a newsletter may go to.
      *
-     * Three exclusions, all deliberate:
+     * Four exclusions, all deliberate:
      *
      * - Banned accounts, because we have already decided not to talk to them.
      * - Admins, who run the shop rather than shop at it. A blast to the people
@@ -307,6 +336,16 @@ class NewsletterController extends Controller
      * - The app's own mailboxes. Mailing the address a newsletter was sent from
      *   is a loop, and the engagement signal it creates is one spam filters read
      *   badly. See {@see SystemMailboxes}.
+     * - Accounts that never signed in with Google. `google_id` is written only by
+     *   {@see GoogleController::callback()}, so a null one marks an address nobody
+     *   proved they own: a hand-made account from the registration form, a seeder,
+     *   or a support fix. Those are the addresses that bounce or get marked as
+     *   spam, and on a free tier a bounce costs the same quota as a delivery.
+     *
+     *   The email domain is not the test. A Workspace account signs in with
+     *   Google from its own domain, and a hand-typed address can be a gmail.com
+     *   one, so the domain answers a different question than "did this person
+     *   sign in".
      *
      * This is the single definition of the audience: the composer, the recipient
      * snapshot, and the "every registered user" count all read it, so none of
@@ -321,6 +360,7 @@ class NewsletterController extends Controller
         return User::query()
             ->whereNull('banned_at')
             ->whereNotNull('email')
+            ->whereNotNull('google_id')
             ->where('is_admin', false)
             ->when(
                 $systemAddresses !== [],
@@ -329,6 +369,31 @@ class NewsletterController extends Controller
                 // SQLite.
                 fn (Builder $query) => $query->whereNotIn(DB::raw('lower(email)'), $systemAddresses),
             );
+    }
+
+    /**
+     * The whole "every registered user" audience, by name, for the dialog that
+     * drops individuals from it.
+     *
+     * Optional rather than always sent: most composes never open that dialog, and
+     * naming every customer on a page that already carries a rich text editor is
+     * payload spent on a maybe. The dialog asks for it with a partial reload the
+     * first time it opens.
+     *
+     * @return list<array{id: int, name: string, email: string}>
+     */
+    private function audienceUsers(): array
+    {
+        return $this->eligibleUsers()
+            ->select(['id', 'name', 'email'])
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ])
+            ->all();
     }
 
     /**

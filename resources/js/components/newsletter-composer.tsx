@@ -1,13 +1,14 @@
 import { Link, useForm } from '@inertiajs/react';
 import { Maximize2, Minimize2, Send, Users, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import type { EditorInstance } from 'novel';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
-import {
-    EmailQuotaStats
-    
-} from '@/components/email-quota-stats';
-import type {EmailQuotaSummary} from '@/components/email-quota-stats';
+import { EmailQuotaStats } from '@/components/email-quota-stats';
+import type { EmailQuotaSummary } from '@/components/email-quota-stats';
+import { NewsletterPlaceholders } from '@/components/newsletter-placeholders';
+import type { NewsletterPlaceholder } from '@/components/newsletter-placeholders';
+import { NewsletterRecipientExclusions } from '@/components/newsletter-recipient-exclusions';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -39,6 +40,13 @@ type NewsletterComposerProps = {
     selectedUsers: NewsletterRecipientOption[];
     /** How many users a newsletter addressed to everyone would reach. */
     audienceCount: number;
+    /**
+     * That same audience by name, for the exclusion dialog. An optional prop, so
+     * it is absent until the dialog asks for it with a partial reload.
+     */
+    audienceUsers?: NewsletterRecipientOption[];
+    /** The {tags} the send knows how to resolve, listed beside the editor. */
+    placeholders: NewsletterPlaceholder[];
     emailStats?: EmailQuotaSummary;
 };
 
@@ -48,10 +56,15 @@ export function NewsletterComposer({
     newsletter,
     selectedUsers,
     audienceCount,
+    audienceUsers,
+    placeholders,
     emailStats,
 }: NewsletterComposerProps) {
     const isEditing = Boolean(newsletter);
     const [isEditorExpanded, setIsEditorExpanded] = useState(false);
+
+    /** Held so the placeholder list can write into the body at the cursor. */
+    const editorRef = useRef<EditorInstance | null>(null);
 
     /**
      * The picked recipients, kept as objects rather than ids so the list can name
@@ -66,9 +79,10 @@ export function NewsletterComposer({
         body: newsletter?.body ?? '',
         audience: selectedUsers.length > 0 ? 'selected' : 'all',
         user_ids: selectedUsers.map((user) => user.id),
+        /** Who to drop from an "every registered user" send. */
+        excluded_user_ids: [] as number[],
         action: 'draft',
     });
-
 
     useEffect(() => {
         if (!isEditorExpanded) {
@@ -85,6 +99,12 @@ export function NewsletterComposer({
 
         return () => window.removeEventListener('keydown', exitOnEscape);
     }, [isEditorExpanded]);
+
+    const insertPlaceholder = (tag: string) => {
+        // focus() before the insert puts the cursor back where it was left, so a
+        // tag clicked from the sidebar lands mid-sentence rather than at the top.
+        editorRef.current?.chain().focus().insertContent(tag).run();
+    };
 
     const removeRecipient = (id: number) => {
         setRecipients((current) => current.filter((user) => user.id !== id));
@@ -108,14 +128,20 @@ export function NewsletterComposer({
             action,
             // A newsletter addressed to everyone resolves its list server-side, so
             // shipping thousands of ids the server will ignore is wasted payload.
+            // The exclusions are the mirror image: they only mean anything to a
+            // send that resolves its own list.
             user_ids: current.audience === 'all' ? [] : current.user_ids,
+            excluded_user_ids:
+                current.audience === 'all' ? current.excluded_user_ids : [],
         }));
 
         post(submitUrl);
     };
 
     const recipientTotal =
-        data.audience === 'all' ? audienceCount : recipients.length;
+        data.audience === 'all'
+            ? Math.max(audienceCount - data.excluded_user_ids.length, 0)
+            : recipients.length;
 
     return (
         <form
@@ -201,6 +227,9 @@ export function NewsletterComposer({
                             <NovelEditor
                                 initialValue={data.body}
                                 onChange={(html) => setData('body', html)}
+                                onReady={(editor) => {
+                                    editorRef.current = editor;
+                                }}
                                 className={cn(
                                     'lg:grow',
                                     isEditorExpanded &&
@@ -217,11 +246,18 @@ export function NewsletterComposer({
                 </div>
 
                 <div className="grid gap-6 lg:sticky lg:top-6 lg:self-start">
+                    <NewsletterPlaceholders
+                        placeholders={placeholders}
+                        onInsert={insertPlaceholder}
+                    />
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Recipients</CardTitle>
                             <CardDescription>
-                                Banned accounts are always excluded.
+                                Only accounts that signed in with Google are
+                                eligible. Banned accounts and admins are always
+                                excluded.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-4">
@@ -273,6 +309,20 @@ export function NewsletterComposer({
                                     </Label>
                                 </div>
                             </RadioGroup>
+
+                            {data.audience === 'all' && (
+                                <NewsletterRecipientExclusions
+                                    audienceUsers={audienceUsers}
+                                    audienceCount={audienceCount}
+                                    excludedIds={data.excluded_user_ids}
+                                    onChange={(excludedIds) =>
+                                        setData(
+                                            'excluded_user_ids',
+                                            excludedIds,
+                                        )
+                                    }
+                                />
+                            )}
 
                             {errors.user_ids && (
                                 <p className="text-xs font-medium text-destructive">

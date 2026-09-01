@@ -30,7 +30,25 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+
+            // Google is how customers actually get an account here, and some
+            // features read `google_id` to tell a real sign-in from an address
+            // someone typed. A factory user is one of the former by default; use
+            // manual() for the latter.
+            'google_id' => (string) fake()->unique()->numberBetween(100000000, 999999999),
         ];
+    }
+
+    /**
+     * Indicate that the account was created by hand rather than by signing in
+     * with Google: the registration form, a seeder, or a support fix.
+     */
+    public function manual(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'google_id' => null,
+            'avatar' => null,
+        ]);
     }
 
     /**
