@@ -44,7 +44,34 @@ interface Media {
     url: string;
 }
 
-export function MediaManager() {
+/**
+ * Which gallery this manager drives. The default is the public one behind
+ * `MediaController`, whose files sit on the `public` disk and answer to anyone
+ * holding the URL — right for a blog post, wrong for a delivery guide, which
+ * passes the gated `guide-media` endpoints instead.
+ */
+export type MediaEndpoints = {
+    indexUrl: string;
+    storeUrl: string;
+    destroyUrl: (id: number) => string;
+};
+
+const PUBLIC_MEDIA_ENDPOINTS: MediaEndpoints = {
+    indexUrl: mediaIndex.url(),
+    storeUrl: storeMedia.url(),
+    destroyUrl: (id) => destroyMedia.url(id),
+};
+
+export function MediaManager({
+    endpoints = PUBLIC_MEDIA_ENDPOINTS,
+    label = 'Media Gallery',
+    description,
+}: {
+    endpoints?: MediaEndpoints;
+    label?: string;
+    /** Replaces the image count under the dialog title. */
+    description?: string;
+} = {}) {
     const [mediaList, setMediaList] = useState<Media[]>([]);
     const [hasLoadedMedia, setHasLoadedMedia] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +82,7 @@ export function MediaManager() {
         setIsLoading(true);
 
         try {
-            const response = await fetch(mediaIndex.url());
+            const response = await fetch(endpoints.indexUrl);
             const data = await response.json();
             setMediaList(data);
         } catch {
@@ -64,7 +91,7 @@ export function MediaManager() {
             setHasLoadedMedia(true);
             setIsLoading(false);
         }
-    }, []);
+    }, [endpoints.indexUrl]);
 
     const handleOpenChange = (open: boolean) => {
         if (open && !hasLoadedMedia && !isLoading) {
@@ -88,7 +115,7 @@ export function MediaManager() {
                 .querySelector('meta[name="csrf-token"]')
                 ?.getAttribute('content');
 
-            const response = await fetch(storeMedia.url(), {
+            const response = await fetch(endpoints.storeUrl, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -128,7 +155,7 @@ export function MediaManager() {
                 .querySelector('meta[name="csrf-token"]')
                 ?.getAttribute('content');
 
-            const response = await fetch(destroyMedia.url(id), {
+            const response = await fetch(endpoints.destroyUrl(id), {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': token || '',
@@ -165,7 +192,7 @@ export function MediaManager() {
                     className="w-full justify-start sm:w-fit"
                 >
                     <Images className="size-4" />
-                    <span className="min-w-0 truncate">Media Gallery</span>
+                    <span className="min-w-0 truncate">{label}</span>
                     {hasLoadedMedia && (
                         <span className="ml-auto rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground sm:ml-1">
                             {mediaList.length}
@@ -176,11 +203,12 @@ export function MediaManager() {
 
             <DialogContent className="max-h-[calc(100vh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-4xl">
                 <DialogHeader className="border-b px-4 py-4 pr-12 sm:px-6">
-                    <DialogTitle>Media Gallery</DialogTitle>
+                    <DialogTitle>{label}</DialogTitle>
                     <DialogDescription>
                         {isLoading
                             ? 'Loading images...'
-                            : `${mediaList.length} ${mediaList.length === 1 ? 'image' : 'images'}`}
+                            : (description ??
+                              `${mediaList.length} ${mediaList.length === 1 ? 'image' : 'images'}`)}
                     </DialogDescription>
                 </DialogHeader>
 

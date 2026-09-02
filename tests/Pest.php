@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +49,31 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
-{
-    // ..
+/**
+ * An order for one buyer holding a single unit of one product.
+ *
+ * Delivery guides are gated on the order, so most tests around them need the
+ * same three rows — order, variant, item — differing only by status.
+ */
+function orderFor(
+    User $buyer,
+    Product $product,
+    string $status = 'completed',
+): Order {
+    $order = Order::factory()->create([
+        'user_id' => $buyer->id,
+        'status' => $status,
+    ]);
+
+    OrderItem::factory()->create([
+        'order_id' => $order->id,
+        'product_variant_id' => ProductVariant::factory()->create([
+            'product_id' => $product->id,
+        ])->id,
+        'price' => 500,
+        'purchase_price' => 200,
+        'quantity' => 1,
+    ]);
+
+    return $order;
 }

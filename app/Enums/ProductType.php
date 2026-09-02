@@ -45,6 +45,35 @@ enum ProductType: string
     }
 
     /**
+     * Whether this type can carry reusable delivery guides.
+     *
+     * A guide is one document read by every buyer of the product, which only
+     * makes sense where every buyer receives the same thing. A service is
+     * scoped, quoted and delivered per engagement, so its instructions belong
+     * on that engagement, not on the product.
+     */
+    public function supportsGuides(): bool
+    {
+        return match ($this) {
+            self::Digital, self::Physical => true,
+            self::Service => false,
+        };
+    }
+
+    /**
+     * The types that can carry delivery guides, as plain strings for queries.
+     *
+     * @return list<string>
+     */
+    public static function guideSupportedValues(): array
+    {
+        return array_values(array_map(
+            fn (self $type): string => $type->value,
+            array_filter(self::cases(), fn (self $type): bool => $type->supportsGuides()),
+        ));
+    }
+
+    /**
      * All enum values as plain strings, useful for validation rules.
      *
      * @return list<string>

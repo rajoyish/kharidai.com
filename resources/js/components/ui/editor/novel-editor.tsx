@@ -27,15 +27,21 @@ interface NovelEditorProps {
      * sibling card cannot reach it any other way.
      */
     onReady?: (editor: EditorInstance) => void;
+    /**
+     * Where a pasted or dropped image is uploaded. Defaults to the public media
+     * gallery; delivery guides pass the gated endpoint instead, so a screenshot
+     * dropped into a guide never lands on a world-readable disk.
+     */
+    uploadUrl?: string;
 }
 
-const uploadFileToMedia = async (file: File, view: any) => {
+const uploadFileToMedia = async (file: File, view: any, uploadUrl: string) => {
     const formData = new FormData();
     formData.append('file', file);
     const token = document.head.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
     try {
-        const response = await fetch(storeMedia.url(), {
+        const response = await fetch(uploadUrl, {
             method: 'POST',
             body: formData,
             headers: {
@@ -61,6 +67,7 @@ export default function NovelEditor({
     className,
     contentClassName,
     onReady,
+    uploadUrl = storeMedia.url(),
 }: NovelEditorProps) {
     const extensions = [...defaultExtensions, slashCommand];
 
@@ -97,7 +104,7 @@ export default function NovelEditor({
                             const file = image.getAsFile();
                             if (file) {
                                 event.preventDefault();
-                                uploadFileToMedia(file, view);
+                                uploadFileToMedia(file, view, uploadUrl);
                                 return true;
                             }
                         }
@@ -124,7 +131,7 @@ export default function NovelEditor({
                             const file = event.dataTransfer.files[0];
                             if (file.type.startsWith('image/')) {
                                 event.preventDefault();
-                                uploadFileToMedia(file, view);
+                                uploadFileToMedia(file, view, uploadUrl);
                                 return true;
                             }
                         }

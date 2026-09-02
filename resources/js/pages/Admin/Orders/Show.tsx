@@ -24,6 +24,8 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { CopyButton } from '@/components/copy-button';
+import { DeliveryGuides } from '@/components/delivery-guides';
+import type { DeliveryGuide } from '@/components/delivery-guides';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
@@ -37,6 +39,7 @@ import type { SelectedOptions } from '@/components/variant-option-badges';
 import { formatNpr } from '@/lib/currency';
 import { dashboard } from '@/routes/admin';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
+import { index as productGuidesIndex } from '@/routes/admin/products/guides';
 
 type Order = {
     id: number;
@@ -81,11 +84,14 @@ type Order = {
             weight_kg: string | null;
             product: {
                 title: string;
+                slug: string | null;
                 image: string;
                 type: 'physical' | 'digital' | 'service';
             };
         };
         service_invoices: ServiceInvoice[];
+        /** Drafts included: this is the admin's preview of the buyer's view. */
+        delivery_guides: DeliveryGuide[];
     }[];
     credentials: {
         id: number;
@@ -552,6 +558,12 @@ export default function AdminOrderShow({
                                 </form>
                             </div>
                         )}
+
+                        <DeliveryGuides
+                            items={order.items}
+                            showStatus
+                            manageHref={(slug) => productGuidesIndex.url(slug)}
+                        />
                     </div>
 
                     <div className="space-y-6">

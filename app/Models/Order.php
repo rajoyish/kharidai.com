@@ -160,6 +160,25 @@ class Order extends Model
     }
 
     /**
+     * The statuses an order reaches only after its payment has been accepted.
+     * `delivering` is set the moment an admin approves the payment receipt, so
+     * it, not `completed`, is where a paid customer starts waiting for goods.
+     *
+     * @var list<string>
+     */
+    public const PAID_STATUSES = ['delivering', 'completed'];
+
+    /**
+     * Whether the customer has paid for this order. Gates everything the buyer
+     * is owed but a browser must never be handed early — the delivery guides
+     * most of all, since they are the same document for every buyer.
+     */
+    public function isPaid(): bool
+    {
+        return in_array($this->status, self::PAID_STATUSES, true);
+    }
+
+    /**
      * The order total shown to the customer, in NPR. A service item's checkout
      * price is only an estimate; once its engagement has a saved invoice, the
      * invoice's grand total is what the customer actually owes. So each item

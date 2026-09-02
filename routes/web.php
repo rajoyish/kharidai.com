@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductGuideController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ServiceEngagementController;
 use App\Http\Controllers\Admin\ShippingController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\GuideMediaController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PageController;
@@ -69,6 +71,13 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::post('checkout/{order}/npr', [CheckoutController::class, 'processNprPayment'])->name('checkout.npr.process');
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+
+    /*
+     * Images embedded in a delivery guide. Registered here rather than under
+     * /admin because the buyer who paid for the guide has to load them too;
+     * GuideMediaPolicy, not the URL, is what keeps everyone else out.
+     */
+    Route::get('guide-media/{guideMedia}', [GuideMediaController::class, 'show'])->name('guide-media.show');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('subscriptions', [UserSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::put('subscriptions/{subscription}', [UserSubscriptionController::class, 'update'])->name('subscriptions.update');
@@ -144,9 +153,21 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
     Route::resource('products.variants', ProductVariantController::class)->except(['show']);
 
+    /*
+     * Purchase-gated delivery guides. There is deliberately no show route:
+     * a guide is only ever read on an order page the buyer has paid for.
+     */
+    Route::resource('products.guides', ProductGuideController::class)->except(['show']);
+
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
     Route::post('media', [MediaController::class, 'store'])->name('media.store');
     Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
+
+    // The private gallery behind the delivery guides. Same shape as the public
+    // one above, but the files never become web-readable.
+    Route::get('guide-media', [GuideMediaController::class, 'index'])->name('guide-media.index');
+    Route::post('guide-media', [GuideMediaController::class, 'store'])->name('guide-media.store');
+    Route::delete('guide-media/{guideMedia}', [GuideMediaController::class, 'destroy'])->name('guide-media.destroy');
 
     Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');

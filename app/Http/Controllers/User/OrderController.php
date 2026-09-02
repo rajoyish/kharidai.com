@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Events\OrderMessageCreated;
+use App\Http\Controllers\Concerns\AttachesProductGuides;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -17,6 +18,8 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    use AttachesProductGuides;
+
     public function index(Request $request): Response
     {
         $orders = Order::with(['items.productVariant.product', 'items.serviceEngagements', 'shipment'])
@@ -77,6 +80,10 @@ class OrderController extends Controller
         // The Summary panel shows the invoice-aware total, not the stored
         // checkout-time figure, so service orders don't read as Rs. 0.
         $order->setAttribute('display_total_npr', $order->displayTotalNpr());
+
+        // The reusable half of digital delivery. Withheld until the order is
+        // paid for, so an unpaid order's page never carries the instructions.
+        $this->attachCustomerDeliveryGuides($order);
 
         return Inertia::render('User/Orders/Show', [
             'order' => $order,
