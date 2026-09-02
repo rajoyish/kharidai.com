@@ -195,19 +195,35 @@ it('registers no public route that can serve a guide', function () {
     expect($adminOnly)->toBeTrue();
 });
 
-it('shows drafts to an admin reviewing the order', function () {
+it('shows drafts to an admin reviewing a paid order', function () {
     $buyer = User::factory()->create();
     $admin = User::factory()->create(['is_admin' => true]);
     $product = Product::factory()->create();
     ProductGuide::factory()->draft()->create(['product_id' => $product->id, 'title' => 'Work in progress']);
 
     $this->actingAs($admin)
-        ->get(route('admin.orders.show', orderFor($buyer, $product, status: 'pending')))
+        ->get(route('admin.orders.show', orderFor($buyer, $product)))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->where('order.items.0.delivery_guides.0.title', 'Work in progress')
             ->where('order.items.0.delivery_guides.0.is_published', false),
         );
+});
+
+it('withholds guides from the admin order page until the order is paid', function () {
+    $buyer = User::factory()->create();
+    $admin = User::factory()->create(['is_admin' => true]);
+    $product = Product::factory()->create();
+    ProductGuide::factory()->create([
+        'product_id' => $product->id,
+        'content' => '<p>Steps the buyer cannot see yet</p>',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.orders.show', orderFor($buyer, $product, status: 'pending')))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->where('order.items.0.delivery_guides', []))
+        ->assertDontSee('Steps the buyer cannot see yet');
 });
 
 it('creates a guide from the admin form', function () {

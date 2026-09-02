@@ -92,8 +92,8 @@ class OrderController extends Controller
             $item->makeHidden('serviceEngagements');
         });
 
-        // Shown so an admin can check what the buyer will read before releasing
-        // the order. Drafts are included here and nowhere else.
+        // What the buyer sees on their own order page, drafts included so the
+        // admin can check one before releasing it. Empty until the order is paid.
         $this->attachAdminDeliveryGuides($order);
 
         return Inertia::render('Admin/Orders/Show', [
