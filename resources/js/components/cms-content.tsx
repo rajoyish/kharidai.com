@@ -1,4 +1,5 @@
 import Markdown from 'markdown-to-jsx/react';
+import type { ComponentPropsWithoutRef, ComponentType } from 'react';
 
 import { normalizeProductDescriptionMarkdown } from '@/lib/product-description-markdown';
 import { productDescriptionMarkdownOptions } from '@/lib/product-description-markdown-options';
@@ -7,6 +8,12 @@ import { cn } from '@/lib/utils';
 type CmsContentProps = {
     content?: string | null;
     className?: string;
+    /**
+     * Replaces the plain `<img>` the body would otherwise render. Delivery
+     * guides pass a lightbox trigger so a screenshot can be opened full screen
+     * and zoomed, which a 700px-wide column cannot show legibly.
+     */
+    imageComponent?: ComponentType<ComponentPropsWithoutRef<'img'>>;
 };
 
 /**
@@ -15,10 +22,24 @@ type CmsContentProps = {
  * The editor emits HTML, which is normalized back to markdown before it is
  * rendered, matching how product descriptions are handled.
  */
-export function CmsContent({ content, className }: CmsContentProps) {
+export function CmsContent({
+    content,
+    className,
+    imageComponent,
+}: CmsContentProps) {
     if (!content) {
         return null;
     }
+
+    const options = imageComponent
+        ? {
+              ...productDescriptionMarkdownOptions,
+              overrides: {
+                  ...productDescriptionMarkdownOptions.overrides,
+                  img: { component: imageComponent },
+              },
+          }
+        : productDescriptionMarkdownOptions;
 
     return (
         <div
@@ -27,7 +48,7 @@ export function CmsContent({ content, className }: CmsContentProps) {
                 className,
             )}
         >
-            <Markdown options={productDescriptionMarkdownOptions}>
+            <Markdown options={options}>
                 {normalizeProductDescriptionMarkdown(content)}
             </Markdown>
         </div>

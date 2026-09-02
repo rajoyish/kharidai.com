@@ -1,8 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { BookOpen, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import type { ComponentPropsWithoutRef } from 'react';
 
 import { CmsContent } from '@/components/cms-content';
+import { shouldOpenLightboxFromClick } from '@/components/lightbox-image-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +12,10 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { collectGuideImages } from '@/lib/guide-images';
 import { cn } from '@/lib/utils';
+
+const ImageLightbox = lazy(() => import('@/components/image-lightbox'));
 
 export type DeliveryGuide = {
     id: number;
@@ -86,6 +91,50 @@ function GuideCard({
     showStatus: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+    const images = useMemo(
+        () => collectGuideImages(guide.content),
+        [guide.content],
+    );
+
+    /*
+     * Rendered in place of every `<img>` in the body. The anchor keeps the raw
+     * image one middle-click away and gives keyboard users something focusable,
+     * while a plain left click opens the gallery instead of navigating.
+     */
+    const GuideImage = useCallback(
+        ({ src, alt, ...props }: ComponentPropsWithoutRef<'img'>) => {
+            const index = images.indexOf(String(src));
+
+            return (
+                <a
+                    href={String(src)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open ${alt || 'guide image'} full screen`}
+                    className="block cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onClick={(event) => {
+                        if (!shouldOpenLightboxFromClick(event)) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        setLightboxIndex(index === -1 ? 0 : index);
+                    }}
+                >
+                    <img
+                        {...props}
+                        src={src}
+                        alt={alt ?? ''}
+                        loading="lazy"
+                        decoding="async"
+                    />
+                </a>
+            );
+        },
+        [images],
+    );
 
     return (
         <Collapsible
@@ -113,6 +162,7 @@ function GuideCard({
                         <CmsContent
                             content={guide.content}
                             className="prose-sm"
+                            imageComponent={GuideImage}
                         />
                     ) : (
                         <p className="text-sm text-muted-foreground italic">
@@ -121,6 +171,17 @@ function GuideCard({
                     )}
                 </div>
             </CollapsibleContent>
+
+            {lightboxIndex !== null && (
+                <Suspense fallback={null}>
+                    <ImageLightbox
+                        open
+                        close={() => setLightboxIndex(null)}
+                        index={lightboxIndex}
+                        slides={images.map((src) => ({ src }))}
+                    />
+                </Suspense>
+            )}
         </Collapsible>
     );
 }

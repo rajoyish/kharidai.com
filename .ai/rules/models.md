@@ -10,7 +10,7 @@ A `ProductGuide` is deliberately not a `Post`. Posts carry a slug and are served
 
 `App\Http\Controllers\Concerns\AttachesProductGuides` is the only path a guide takes to a browser. Do not add a second one, and do not eager load `Product::guides()` on a storefront or listing query — the relation serializes with the product.
 
-The customer gate is three checks together: the order is theirs (the controller's own 403), `Order::isPaid()`, and `ProductGuide::scopePublished()`. Admins get drafts too, via `attachAdminDeliveryGuides()`.
+The customer gate is three checks together: the order is theirs (the controller's own 403), `Order::isPaid()`, and `ProductGuide::scopePublished()`. `Order::isPaid()` applies on the admin order page too, so the panel appears there exactly when the buyer's does; drafts are the only thing an admin sees extra.
 
 Only digital and physical products carry guides — `ProductType::supportsGuides()` is the single answer, and the authoring controller, the delivery query and `GuideMediaPolicy` all read it. A service is scoped and delivered per engagement, so it has no one document every buyer reads. Converting a product to a service does not delete its guides; it stops delivering them, so converting back restores them.
 
