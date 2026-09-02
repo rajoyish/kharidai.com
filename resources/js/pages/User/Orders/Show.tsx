@@ -11,6 +11,8 @@ import {
 } from '@/actions/App/Http/Controllers/User/OrderController';
 import { agreeInvoice } from '@/actions/App/Http/Controllers/User/ServiceController';
 import { CopyButton } from '@/components/copy-button';
+import { DeliveryGuides } from '@/components/delivery-guides';
+import type { DeliveryGuide } from '@/components/delivery-guides';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { PaymentQrPanel } from '@/components/payment-qr-panel';
@@ -45,6 +47,8 @@ type Order = {
         selected_options: SelectedOptions;
         brief: { note?: string } | null;
         service_invoices: ServiceInvoice[];
+        /** Empty until the order is paid for; drafts never appear. */
+        delivery_guides: DeliveryGuide[];
         product_variant: {
             name: string;
             weight_kg: string | null;
@@ -504,6 +508,8 @@ export default function OrderShow({ order }: { order: Order }) {
                                 )}
                             </div>
                         )}
+
+                        <DeliveryGuides items={order.items} />
 
                         {/* Order Messages */}
                         <SupportChat

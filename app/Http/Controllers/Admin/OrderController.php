@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Events\OrderMessageCreated;
+use App\Http\Controllers\Concerns\AttachesProductGuides;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderCredential;
@@ -21,6 +22,8 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    use AttachesProductGuides;
+
     public function index(Request $request): Response
     {
         $years = $this->yearsWithOrders();
@@ -88,6 +91,10 @@ class OrderController extends Controller
 
             $item->makeHidden('serviceEngagements');
         });
+
+        // Shown so an admin can check what the buyer will read before releasing
+        // the order. Drafts are included here and nowhere else.
+        $this->attachAdminDeliveryGuides($order);
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,

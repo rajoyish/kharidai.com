@@ -7,6 +7,7 @@ import {
     index as productsIndex,
     toggleStock,
 } from '@/actions/App/Http/Controllers/Admin/ProductController';
+import { index as productGuides } from '@/actions/App/Http/Controllers/Admin/ProductGuideController';
 import { index as productVariants } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
@@ -32,6 +33,7 @@ type Product = {
     description: string;
     image: string;
     slug: string;
+    type: 'physical' | 'digital' | 'service';
     in_stock: boolean;
     categories?: {
         id: number;
@@ -250,6 +252,18 @@ export default function ProductsIndex({
                                             Variants
                                         </Link>
                                     </Button>
+                                    {product.type !== 'service' && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 px-2 text-xs hover:bg-muted"
+                                            asChild
+                                        >
+                                            <Link href={productGuides(product)}>
+                                                Guides
+                                            </Link>
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="outline"
                                         size="sm"

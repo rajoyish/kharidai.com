@@ -8,4 +8,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 | vite.config.ts | .ai/rules/general.md |
 | app/Mail/**, app/Mail/NewsletterMail.php | .ai/rules/mail.md |
 | database/migrations/** | .ai/rules/migrations.md |
+| app/Models/ProductGuide.php | .ai/rules/models.md |
 | resources/js/routes/** | .ai/rules/routes.md |

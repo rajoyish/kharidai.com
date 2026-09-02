@@ -110,6 +110,20 @@ class Product extends Model
     }
 
     /**
+     * The purchase-gated delivery guides for this product, in reading order.
+     *
+     * Never eager load this on a storefront or listing query: the relation
+     * serializes with the product, and a guide is only ever meant to reach a
+     * customer through an order they paid for.
+     *
+     * @return HasMany<ProductGuide, $this>
+     */
+    public function guides(): HasMany
+    {
+        return $this->hasMany(ProductGuide::class)->inReadingOrder();
+    }
+
+    /**
      * @return BelongsToMany<Category, $this>
      */
     public function categories(): BelongsToMany
