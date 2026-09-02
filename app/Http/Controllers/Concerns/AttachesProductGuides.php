@@ -22,21 +22,32 @@ use App\Models\ProductGuide;
 trait AttachesProductGuides
 {
     /**
-     * Attach every guide behind the order, drafts included, for admin review.
+     * The admin's view of the order: what the buyer reads, plus any draft still
+     * being written. Still withheld until the order is paid, so the panel on the
+     * admin page appears exactly when the buyer's does.
      */
     protected function attachAdminDeliveryGuides(Order $order): void
     {
-        $this->setGuidesOnItems($order, $this->guidesByProduct($order, publishedOnly: false));
+        $this->attachDeliveryGuides($order, includeDrafts: true);
     }
 
     /**
-     * Attach the guides the buyer has actually earned: published ones, for the
-     * products in this order, and only once the order is paid for.
+     * The buyer's view: released guides only.
      */
     protected function attachCustomerDeliveryGuides(Order $order): void
     {
+        $this->attachDeliveryGuides($order, includeDrafts: false);
+    }
+
+    /**
+     * Payment is the gate both audiences share; drafts are the only difference
+     * between them. Keeping that in one place is what stops the admin page and
+     * the order page from drifting apart.
+     */
+    private function attachDeliveryGuides(Order $order, bool $includeDrafts): void
+    {
         $guides = $order->isPaid()
-            ? $this->guidesByProduct($order, publishedOnly: true)
+            ? $this->guidesByProduct($order, publishedOnly: ! $includeDrafts)
             : [];
 
         $this->setGuidesOnItems($order, $guides);
