@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Enums\EngagementSource;
 use App\Enums\EngagementStatus;
 use App\Exceptions\InvalidEngagementTransitionException;
 use App\Http\Controllers\Controller;
@@ -14,10 +15,15 @@ use Inertia\Response;
 
 class ServiceController extends Controller
 {
+    /**
+     * Admin-assigned engagements are internal records for offline service work,
+     * so the customer only sees the ones that came from their own orders.
+     */
     public function index(Request $request): Response
     {
         $engagements = $request->user()
             ->serviceEngagements()
+            ->customerVisible()
             ->with(['product:id,title', 'productVariant:id,name', 'orderItem.order:id,order_number'])
             ->latest()
             ->get()
@@ -46,10 +52,14 @@ class ServiceController extends Controller
     /**
      * The customer accepts the generated invoice, moving the engagement to
      * Awaiting payment so the QR payment and receipt upload step opens up.
+     *
+     * An admin-assigned engagement is off limits here for the same reason it is
+     * hidden from the index: the customer never sees its invoice, so agreeing to
+     * one by id would advance a record they are not party to.
      */
     public function agreeInvoice(Request $request, ServiceEngagement $serviceEngagement, EngagementStateMachine $stateMachine): RedirectResponse
     {
-        if ($serviceEngagement->user_id !== $request->user()->id) {
+        if ($serviceEngagement->user_id !== $request->user()->id || $serviceEngagement->source !== EngagementSource::Storefront) {
             abort(403);
         }
 

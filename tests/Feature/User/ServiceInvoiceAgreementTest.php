@@ -47,6 +47,19 @@ it('cannot agree before the invoice gives it an agreed price', function () {
     expect($engagement->refresh()->status)->toBe(EngagementStatus::Negotiation);
 });
 
+it('cannot agree to an admin-assigned invoice', function () {
+    $engagement = ServiceEngagement::factory()->negotiation()->adminAssigned()->create([
+        'user_id' => $this->user->id,
+        'agreed_price_npr' => 11000,
+    ]);
+
+    $this->actingAs($this->user)
+        ->post("/account/services/{$engagement->id}/agree")
+        ->assertForbidden();
+
+    expect($engagement->refresh()->status)->toBe(EngagementStatus::Negotiation);
+});
+
 it('cannot agree to another customer\'s invoice', function () {
     $engagement = ServiceEngagement::factory()->negotiation()->create([
         'agreed_price_npr' => 11000,

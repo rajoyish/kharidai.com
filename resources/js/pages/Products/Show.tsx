@@ -613,6 +613,7 @@ export default function Show({
                         {product.hidden_description && (
                             <ProductDescription
                                 description={product.hidden_description}
+                                className="rounded-lg bg-emerald-100 p-4 dark:bg-emerald-950"
                             />
                         )}
                     </div>
