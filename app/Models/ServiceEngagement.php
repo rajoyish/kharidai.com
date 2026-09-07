@@ -175,6 +175,19 @@ class ServiceEngagement extends Model
     }
 
     /**
+     * Engagements a customer may see in their account. Admin-assigned engagements
+     * are internal bookkeeping for offline service work, so they stay out of
+     * /account/services even when they carry the customer's user_id.
+     *
+     * @param  Builder<ServiceEngagement>  $query
+     * @return Builder<ServiceEngagement>
+     */
+    public function scopeCustomerVisible(Builder $query): Builder
+    {
+        return $query->where('source', EngagementSource::Storefront);
+    }
+
+    /**
      * Engagements whose offline profit should feed the Monthly Tithe: a settled
      * (paid) engagement with a recorded offline customer payment, a recorded
      * settlement date and a product to attribute the profit to, that is not billed

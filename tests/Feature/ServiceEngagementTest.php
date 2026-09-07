@@ -78,6 +78,21 @@ it('lets a user view their services', function () {
     $this->actingAs($this->user)->get('/account/services')->assertSuccessful();
 });
 
+it('hides admin-assigned engagements from the services page', function () {
+    $storefront = ServiceEngagement::factory()->create(['user_id' => $this->user->id]);
+    $adminAssigned = ServiceEngagement::factory()->adminAssigned()->create(['user_id' => $this->user->id]);
+
+    $this->actingAs($this->user)
+        ->get('/account/services')
+        ->assertInertia(fn ($page) => $page
+            ->component('User/Services/Index')
+            ->has('engagements', 1)
+            ->where('engagements.0.id', $storefront->id)
+        );
+
+    expect($adminAssigned->refresh()->user_id)->toBe($this->user->id);
+});
+
 it('exposes invoice totals and the linked order to the services page', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
     $variant = ProductVariant::factory()->create();

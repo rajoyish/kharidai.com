@@ -68,6 +68,7 @@ type EntryGroup = {
     entries: TitheEntry[];
     profit: number;
     tithe: number;
+    actualProfit: number;
     paidCount: number;
 };
 
@@ -108,6 +109,11 @@ function toMoney(value: number): number {
     return Math.round(value * 100) / 100;
 }
 
+/** What is left of a record's profit once its tithe is set aside. */
+function actualProfit(profit: number, tithe: number): number {
+    return toMoney(profit - tithe);
+}
+
 /** First appearance sets a group's position, so the month keeps its own order. */
 function groupEntries(entries: TitheEntry[]): EntryGroup[] {
     const groups: EntryGroup[] = [];
@@ -122,6 +128,7 @@ function groupEntries(entries: TitheEntry[]): EntryGroup[] {
                 entries: [],
                 profit: 0,
                 tithe: 0,
+                actualProfit: 0,
                 paidCount: 0,
             };
             byLabel.set(entry.label, group);
@@ -131,6 +138,7 @@ function groupEntries(entries: TitheEntry[]): EntryGroup[] {
         group.entries.push(entry);
         group.profit = toMoney(group.profit + entry.profit);
         group.tithe = toMoney(group.tithe + entry.tithe);
+        group.actualProfit = actualProfit(group.profit, group.tithe);
         group.paidCount += entry.is_paid ? 1 : 0;
     }
 
@@ -373,6 +381,14 @@ function EntryRow({
             >
                 {formatNpr(entry.tithe)}
             </TableCell>
+            <TableCell
+                className={cn(
+                    'hidden py-3 text-right whitespace-nowrap tabular-nums sm:table-cell',
+                    cellPadding,
+                )}
+            >
+                {formatNpr(actualProfit(entry.profit, entry.tithe))}
+            </TableCell>
             <TableCell className={cn('py-3 text-right', cellPadding)}>
                 <EntryStatusButton
                     entry={entry}
@@ -460,6 +476,14 @@ function MonthlyTitheSummary({
                         <TableHead className={cn('text-right', cellPadding)}>
                             Tithe
                         </TableHead>
+                        <TableHead
+                            className={cn(
+                                'hidden text-right sm:table-cell',
+                                cellPadding,
+                            )}
+                        >
+                            Actual Profit
+                        </TableHead>
                         <TableHead className={cn('text-right', cellPadding)}>
                             Status
                         </TableHead>
@@ -514,6 +538,14 @@ function MonthlyTitheSummary({
                                     </TableCell>
                                     <TableCell
                                         className={cn(
+                                            'hidden py-2.5 text-right whitespace-nowrap tabular-nums sm:table-cell',
+                                            cellPadding,
+                                        )}
+                                    >
+                                        {formatNpr(group.actualProfit)}
+                                    </TableCell>
+                                    <TableCell
+                                        className={cn(
                                             'py-2.5 text-right text-xs whitespace-nowrap text-muted-foreground',
                                             cellPadding,
                                         )}
@@ -544,7 +576,7 @@ function MonthlyTitheSummary({
                     {tithe.entries.length === 0 && (
                         <TableRow>
                             <TableCell
-                                colSpan={4}
+                                colSpan={5}
                                 className={cn(
                                     'h-16 text-center text-muted-foreground',
                                     cellPadding,
@@ -577,6 +609,19 @@ function MonthlyTitheSummary({
                             )}
                         >
                             {formatNpr(tithe.total_amount)}
+                        </TableCell>
+                        <TableCell
+                            className={cn(
+                                'hidden py-3 text-right font-semibold whitespace-nowrap tabular-nums sm:table-cell',
+                                cellPadding,
+                            )}
+                        >
+                            {formatNpr(
+                                actualProfit(
+                                    tithe.total_profit,
+                                    tithe.total_amount,
+                                ),
+                            )}
                         </TableCell>
                         <TableCell />
                     </TableRow>

@@ -115,7 +115,7 @@ export default function UserServicesIndex({
                                         </div>
                                     ) : (
                                         <span className="text-muted-foreground">
-                                            Admin assigned
+                                            —
                                         </span>
                                     )}
                                 </TableCell>
