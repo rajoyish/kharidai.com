@@ -9,4 +9,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Mail/**, app/Mail/NewsletterMail.php | .ai/rules/mail.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/ProductGuide.php | .ai/rules/models.md |
+| public/.htaccess | .ai/rules/public.md |
 | resources/js/routes/** | .ai/rules/routes.md |

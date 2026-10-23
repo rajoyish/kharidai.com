@@ -26,22 +26,29 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] scheduler: $*"
 }
 
+# True when the interpreter satisfies the PHP version and extensions the
+# vendor tree was installed against. Composer generates this check from
+# composer.lock, so it tracks the real requirement without a hardcoded version.
+meets_platform() {
+    "$1" "${APP_ROOT}/vendor/composer/platform_check.php" >/dev/null 2>&1
+}
+
 # Mirrors resolve_node() in ssr-server.sh: prefer an explicit binary, fall back
-# to PATH, then to where cPanel actually keeps its PHP builds.
+# to PATH, then to where cPanel actually keeps its PHP builds. cPanel installs
+# several side by side and a bare glob lists the oldest first, so the builds are
+# tried newest first and only one that passes the platform check is taken.
 resolve_php() {
     if [ -n "${PHP_BIN:-}" ]; then
         echo "${PHP_BIN}"
         return 0
     fi
 
-    if command -v php >/dev/null 2>&1; then
-        command -v php
-        return 0
-    fi
-
     local candidate
-    for candidate in /usr/local/bin/php /opt/cpanel/ea-php*/root/usr/bin/php; do
-        if [ -x "${candidate}" ]; then
+    for candidate in \
+        "$(command -v php 2>/dev/null)" \
+        /usr/local/bin/php \
+        $(ls -d /opt/cpanel/ea-php*/root/usr/bin/php 2>/dev/null | sort -r); do
+        if [ -n "${candidate}" ] && [ -x "${candidate}" ] && meets_platform "${candidate}"; then
             echo "${candidate}"
             return 0
         fi
@@ -51,7 +58,7 @@ resolve_php() {
 }
 
 PHP="$(resolve_php)" || {
-    log "FATAL — no php interpreter found; set PHP_BIN in the cron entry"
+    log "FATAL — no php interpreter meets composer.json's platform requirements; set PHP_BIN in the cron entry"
     exit 1
 }
 

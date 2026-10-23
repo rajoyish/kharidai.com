@@ -17,7 +17,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: mbstring, xml, ctype, iconv, intl, pdo, dom, filter, gd, json, libxml
           
       - name: Install Composer Dependencies
@@ -52,6 +52,34 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      # vendor/ is installed here on the runner, and Composer bakes the PHP
+      # version and extensions it resolved against into platform_check.php,
+      # which every request and artisan call runs first. Run that same check
+      # with the server's PHP before touching anything: if it fails after the
+      # rsync, `php artisan up` fails with everything else and the site stays
+      # stuck in maintenance mode.
+      #
+      # cPanel's MultiPHP Manager pins a site's PHP version by writing a handler
+      # block into the docroot's .htaccess. rsync --delete would replace that
+      # file with the repo's copy and quietly drop the site back to the server
+      # default PHP, so refuse to deploy until the block is committed.
+      - name: Preflight Server PHP
+        run: |
+          SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
+          DEST="${{ secrets.SERVER_DESTINATION_PATH }}"
+
+          if ! ssh "${SERVER}" "cd ${DEST} && php" < vendor/composer/platform_check.php; then
+            echo "::error::The server's PHP does not meet composer.json's platform requirements. Upgrade it in cPanel → MultiPHP Manager, then re-run this deploy."
+            exit 1
+          fi
+
+          HANDLER_MARKER='php -- BEGIN cPanel-generated handler'
+          if ssh "${SERVER}" "grep -qF -- '${HANDLER_MARKER}' ${DEST}/public/.htaccess" \
+            && ! grep -qF -- "${HANDLER_MARKER}" public/.htaccess; then
+            echo "::error::The server's public/.htaccess carries a cPanel PHP handler block that this deploy would delete. Copy it into the repo's public/.htaccess and commit it."
+            exit 1
+          fi
 
       - name: Enable Maintenance Mode
         uses: appleboy/ssh-action@v1.2.5
@@ -123,3 +151,26 @@ jobs:
           script: |
             cd ${{ secrets.SERVER_DESTINATION_PATH }}
             php artisan up || true
+
+      # A broken SSR render still answers 200 with an empty root, so the status
+      # code alone proves nothing; the data-server-rendered marker does. The
+      # query string keeps an edge cache from answering with a stale page.
+      - name: Smoke Test Production
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_DESTINATION_PATH }}
+            APP_URL="$(php artisan tinker --execute 'echo rtrim(config("app.url"), "/");')"
+
+            if ! curl -fsS -m 20 -o /dev/null "${APP_URL}/up"; then
+              echo "Health check failed: ${APP_URL}/up — see storage/logs/laravel.log"
+              exit 1
+            fi
+
+            if ! curl -fsS -m 20 "${APP_URL}/?deploy-check=$(date +%s)" | grep -q 'data-server-rendered'; then
+              echo "${APP_URL}/ is not server-rendered — see storage/logs/ssr.log"
+              exit 1
+            fi

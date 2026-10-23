@@ -5,6 +5,7 @@ use App\Models\Page;
 use App\Models\Post;
 use App\Models\Product;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\Process\Process;
 
@@ -113,6 +114,10 @@ beforeEach(function () {
     if (! file_exists(base_path('bootstrap/ssr/ssr.js'))) {
         $this->markTestSkipped('SSR bundle is not built — run `npm run build:ssr`.');
     }
+
+    // A running `npm run dev` leaves `public/hot` behind, which makes the SSR
+    // gateway post to the Vite dev server instead of the bundle under test.
+    Vite::useHotFile(storage_path('framework/testing/no-vite-hot-file'));
 
     // phpunit.xml disables SSR for the rest of the suite, so opt this file back in.
     config([
