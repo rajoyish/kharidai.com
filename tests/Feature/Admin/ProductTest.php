@@ -53,6 +53,28 @@ it('ignores an invalid product type filter', function () {
     );
 });
 
+it('restores the remembered product type filter when revisiting the list', function () {
+    $this->actingAs($this->admin)->get('/admin/products?type=digital')->assertSuccessful();
+
+    $this->get('/admin/products')->assertRedirect('/admin/products?type=digital');
+});
+
+it('does not redirect a search made without a type filter', function () {
+    $this->actingAs($this->admin)->get('/admin/products?type=digital');
+
+    $this->get('/admin/products?search=netflix')->assertSuccessful();
+});
+
+it('forgets the remembered product type filter when all types are chosen', function () {
+    $this->actingAs($this->admin)->get('/admin/products?type=digital');
+
+    $this->get('/admin/products?type=all')
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->where('filters.type', null));
+
+    $this->get('/admin/products')->assertSuccessful();
+});
+
 it('can create a product', function () {
     $response = $this->actingAs($this->admin)->post('/admin/products', [
         'title' => 'New Product',

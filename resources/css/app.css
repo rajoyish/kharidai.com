@@ -538,6 +538,7 @@
     }
 }
 
+/* A block can recolour its bullets by setting --prose-marker. */
 .prose li::marker {
-    color: var(--accent-strong);
+    color: var(--prose-marker, var(--accent-strong));
 }

@@ -24,9 +24,27 @@ class ProductController extends Controller
 {
     use StoresSeoFriendlyImages;
 
-    public function index(Request $request): Response
+    /**
+     * The session key holding the admin's last chosen product type filter.
+     */
+    private const string TYPE_FILTER_SESSION_KEY = 'admin.products.type';
+
+    public function index(Request $request): Response|RedirectResponse
     {
-        $type = ProductType::tryFrom((string) $request->query('type'));
+        if ($request->query->has('type')) {
+            $type = ProductType::tryFrom((string) $request->query('type'));
+
+            $type
+                ? $request->session()->put(self::TYPE_FILTER_SESSION_KEY, $type->value)
+                : $request->session()->forget(self::TYPE_FILTER_SESSION_KEY);
+        } elseif ($request->query->count() === 0 && $request->session()->has(self::TYPE_FILTER_SESSION_KEY)) {
+            return to_route('admin.products.index', [
+                'type' => $request->session()->get(self::TYPE_FILTER_SESSION_KEY),
+            ]);
+        } else {
+            $type = null;
+        }
+
         $search = $request->string('search')->trim()->value();
 
         $products = Product::query()

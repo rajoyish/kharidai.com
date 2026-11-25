@@ -1,11 +1,19 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { BadgeCheck, Clock, RefreshCw, Truck, Weight } from 'lucide-react';
+import {
+    BadgeCheck,
+    Clock,
+    KeyRound,
+    RefreshCw,
+    Truck,
+    Weight,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { add as addToCart } from '@/actions/App/Http/Controllers/CartController';
 import { CategoryPill } from '@/components/category-pill';
+import { GlowCard } from '@/components/glow-card';
 import {
     LightboxImageAnchor,
     shouldOpenLightboxFromClick,
@@ -611,10 +619,32 @@ export default function Show({
                         {/* Members-only description — the guard also keeps the
                             wrapper out of the DOM when the field is empty. */}
                         {product.hidden_description && (
-                            <ProductDescription
-                                description={product.hidden_description}
-                                className="rounded-lg bg-emerald-100 p-4 dark:bg-emerald-950"
-                            />
+                            <GlowCard
+                                className="mb-8"
+                                contentClassName="bg-linear-to-b from-primary-surface/70 to-card"
+                            >
+                                <div
+                                    aria-hidden
+                                    className="absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-primary/60 to-transparent"
+                                />
+                                <div className="flex items-center gap-3 border-b border-border/70 px-5 py-4 sm:px-6">
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-text ring-1 ring-primary/20">
+                                        <KeyRound className="size-4" />
+                                    </span>
+                                    <div>
+                                        <p className="text-xs font-semibold tracking-wider text-primary-text uppercase">
+                                            Members only
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Details for signed-in customers
+                                        </p>
+                                    </div>
+                                </div>
+                                <ProductDescription
+                                    description={product.hidden_description}
+                                    className="mb-0 px-5 py-5 [--prose-marker:var(--primary-text)] sm:px-6 prose-headings:mb-3 prose-headings:text-foreground prose-h2:text-xl prose-h3:text-lg [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>div>*:first-child]:mt-0 [&>div>*:last-child]:mb-0"
+                                />
+                            </GlowCard>
                         )}
                     </div>
                 </div>
