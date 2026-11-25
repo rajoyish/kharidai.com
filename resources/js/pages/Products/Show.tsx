@@ -642,7 +642,7 @@ export default function Show({
                                 </div>
                                 <ProductDescription
                                     description={product.hidden_description}
-                                    className="mb-0 px-5 py-5 sm:px-6 prose-headings:mb-3 prose-headings:text-foreground prose-h2:text-xl prose-h3:text-lg prose-li:marker:text-primary [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>div>*:first-child]:mt-0 [&>div>*:last-child]:mb-0"
+                                    className="mb-0 px-5 py-5 [--prose-marker:var(--primary-text)] sm:px-6 prose-headings:mb-3 prose-headings:text-foreground prose-h2:text-xl prose-h3:text-lg [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>div>*:first-child]:mt-0 [&>div>*:last-child]:mb-0"
                                 />
                             </GlowCard>
                         )}
