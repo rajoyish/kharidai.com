@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CostBasis;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\Procurement\PriceCalculator;
+use App\Services\Procurement\VariantPriceHistory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,15 +15,31 @@ use Inertia\Response;
 
 class ProductVariantController extends Controller
 {
-    public function index(Product $product): Response
+    public function __construct(private readonly VariantPriceHistory $priceHistory) {}
+
+    public function index(Product $product, PriceCalculator $calculator): Response
     {
-        $variants = $product->variants()->latest()->get();
+        $variants = $product->variants()
+            ->with(['supplier', 'latestCalculatorSnapshot'])
+            ->latest()
+            ->get();
 
         return Inertia::render('Admin/ProductVariants/Index', [
             'product' => $product,
             // Admins are the only audience allowed to see wholesale cost, which
             // the model hides from serialization by default.
-            'variants' => $variants->each->makeVisible('purchase_price_npr'),
+            'variants' => $variants->map(fn (ProductVariant $variant): array => [
+                ...$variant->makeVisible(ProductVariant::PROCUREMENT_FIELDS)
+                    ->makeHidden(['supplier', 'latestCalculatorSnapshot'])
+                    ->toArray(),
+                'supplier_name' => $variant->supplier?->name,
+                // What the variant's supplier cost lands at today, so a price set
+                // against cheaper credits shows up before it erodes the margin.
+                'current_cost_npr' => ($cost = $calculator->currentLandedCost(
+                    $variant,
+                    $variant->latestCalculatorSnapshot?->cost_basis ?? CostBasis::Fifo,
+                )) === null ? null : round($cost + ($variant->latestCalculatorSnapshot?->extra_cost_npr ?? 0), 2),
+            ]),
         ]);
     }
 
@@ -31,7 +50,8 @@ class ProductVariantController extends Controller
 
     public function store(Request $request, Product $product): RedirectResponse
     {
-        $product->variants()->create($this->validatedData($request));
+        $variant = $product->variants()->create($this->validatedData($request));
+        $this->priceHistory->recordManualChange($variant, $request->user());
 
         return redirect()->route('admin.products.variants.index', $product)->with('success', 'Variant created successfully.');
     }
@@ -40,13 +60,14 @@ class ProductVariantController extends Controller
     {
         return Inertia::render('Admin/ProductVariants/Edit', [
             'product' => $product,
-            'variant' => $variant->makeVisible('purchase_price_npr'),
+            'variant' => $variant->makeVisible(ProductVariant::PROCUREMENT_FIELDS),
         ]);
     }
 
     public function update(Request $request, Product $product, ProductVariant $variant): RedirectResponse
     {
         $variant->update($this->validatedData($request));
+        $this->priceHistory->recordManualChange($variant, $request->user());
 
         return redirect()->route('admin.products.variants.index', $product)->with('success', 'Variant updated successfully.');
     }
