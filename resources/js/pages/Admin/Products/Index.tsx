@@ -73,7 +73,9 @@ export default function ProductsIndex({
         router.get(
             productsIndex().url,
             {
-                ...(type ? { type } : {}),
+                // "all" (rather than omitting the type) tells the server to
+                // forget the remembered filter instead of restoring it.
+                type: type || 'all',
                 ...(filters.search ? { search: filters.search } : {}),
             },
             {
