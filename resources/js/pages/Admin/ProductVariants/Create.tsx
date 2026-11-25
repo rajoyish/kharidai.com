@@ -3,7 +3,19 @@ import { useState } from 'react';
 
 import { index as productsIndex } from '@/actions/App/Http/Controllers/Admin/ProductController';
 import { store as storeVariant } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
+import { quoteNew } from '@/actions/App/Http/Controllers/Admin/VariantPricingController';
 import { PagePanel } from '@/components/page-panel';
+import {
+    CalculatorFields,
+    QuoteBreakdown,
+    SupplierFields,
+    usePriceCalculator,
+} from '@/components/procurement/price-calculator';
+import type {
+    CalculatorDefaults,
+    Option,
+} from '@/components/procurement/price-calculator';
+import type { SupplierSummary } from '@/components/procurement/supplier-form-dialog';
 import { PhysicalVariantFields } from '@/components/product-form/PhysicalVariantFields';
 import {
     getProductTypeTheme,
@@ -24,6 +36,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { formatNpr } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 
 type Product = {
@@ -33,10 +47,33 @@ type Product = {
     type?: string;
 };
 
-export default function CreateVariant({ product }: { product: Product }) {
-    const [hasValidity, setHasValidity] = useState(false);
+type PricingMode = 'calculator' | 'manual';
 
-    const { data, setData, post, processing, errors } = useForm({
+type Props = {
+    product: Product;
+    suppliers: SupplierSummary[];
+    defaults: CalculatorDefaults;
+    costBases: Option[];
+    roundings: Option[];
+};
+
+export default function CreateVariant({
+    product,
+    suppliers,
+    defaults,
+    costBases,
+    roundings,
+}: Props) {
+    const [hasValidity, setHasValidity] = useState(false);
+    const [pricingMode, setPricingMode] = useState<PricingMode>('calculator');
+
+    const { calculator, quote, supplier } = usePriceCalculator({
+        quoteUrl: quoteNew.url(product),
+        defaults,
+        suppliers,
+    });
+
+    const { data, setData, post, transform, processing, errors } = useForm({
         name: '',
         details: '',
         price_npr: '',
@@ -55,8 +92,25 @@ export default function CreateVariant({ product }: { product: Product }) {
     const showAdvancePayment = supportsAdvancePayment(product.type);
     const theme = getProductTypeTheme(product.type);
 
+    const isCalculated = pricingMode === 'calculator';
+    const calculatorErrors = {
+        ...calculator.errors,
+        ...errors,
+    } as Record<string, string | undefined>;
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
+        transform((variantData) =>
+            isCalculated
+                ? {
+                      ...variantData,
+                      ...calculator.data,
+                      price_npr: '',
+                      purchase_price_npr: '',
+                      pricing_mode: pricingMode,
+                  }
+                : { ...variantData, pricing_mode: pricingMode },
+        );
         post(storeVariant.url(product));
     };
 
@@ -127,51 +181,132 @@ export default function CreateVariant({ product }: { product: Product }) {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="price_npr">
-                                        Selling Price (NPR)
-                                    </Label>
-                                    <Input
-                                        id="price_npr"
-                                        type="number"
-                                        step="0.01"
-                                        value={data.price_npr}
-                                        onChange={(e) =>
-                                            setData('price_npr', e.target.value)
+                            <div className="grid gap-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <Label>Price</Label>
+                                    <ToggleGroup
+                                        type="single"
+                                        variant="outline"
+                                        value={pricingMode}
+                                        onValueChange={(value) =>
+                                            value &&
+                                            setPricingMode(value as PricingMode)
                                         }
-                                        required
-                                        placeholder="2100"
-                                    />
-                                    {errors.price_npr && (
-                                        <div className="text-sm text-destructive">
-                                            {errors.price_npr}
-                                        </div>
-                                    )}
+                                        aria-label="How to set the price"
+                                    >
+                                        <ToggleGroupItem
+                                            value="calculator"
+                                            className="px-3"
+                                        >
+                                            Price calculator
+                                        </ToggleGroupItem>
+                                        <ToggleGroupItem
+                                            value="manual"
+                                            className="px-3"
+                                        >
+                                            Type a price
+                                        </ToggleGroupItem>
+                                    </ToggleGroup>
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="purchase_price_npr">
-                                        Purchase Price (NPR)
-                                    </Label>
-                                    <Input
-                                        id="purchase_price_npr"
-                                        type="number"
-                                        step="0.01"
-                                        value={data.purchase_price_npr}
-                                        onChange={(e) =>
-                                            setData(
-                                                'purchase_price_npr',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="1800"
-                                    />
-                                    {errors.purchase_price_npr && (
-                                        <div className="text-sm text-destructive">
-                                            {errors.purchase_price_npr}
+
+                                {isCalculated ? (
+                                    <div className="grid gap-6 rounded-md border p-4 lg:grid-cols-5">
+                                        <div className="grid content-start gap-5 sm:grid-cols-2 lg:col-span-3">
+                                            <SupplierFields
+                                                calculator={calculator}
+                                                suppliers={suppliers}
+                                                errors={calculatorErrors}
+                                            />
+                                            <CalculatorFields
+                                                calculator={calculator}
+                                                quote={quote}
+                                                supplier={supplier}
+                                                suppliers={suppliers}
+                                                costBases={costBases}
+                                                roundings={roundings}
+                                                errors={calculatorErrors}
+                                            />
                                         </div>
-                                    )}
-                                </div>
+                                        <div className="flex flex-col gap-4 lg:col-span-2">
+                                            <div className="flex items-center justify-between gap-2 text-sm font-medium">
+                                                Result for 1 unit
+                                                {calculator.processing && (
+                                                    <Badge variant="neutral">
+                                                        Updating…
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            {quote ? (
+                                                <QuoteBreakdown
+                                                    quote={quote}
+                                                    costBasis={
+                                                        calculator.data
+                                                            .cost_basis
+                                                    }
+                                                    costBases={costBases}
+                                                />
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground">
+                                                    {suppliers.length === 0 &&
+                                                    calculator.data
+                                                        .cost_basis !== 'manual'
+                                                        ? 'No supplier yet. Pick "Type my own" as the credit rate.'
+                                                        : 'Enter the supplier price in credits.'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="price_npr">
+                                                Selling Price (NPR)
+                                            </Label>
+                                            <Input
+                                                id="price_npr"
+                                                type="number"
+                                                step="0.01"
+                                                value={data.price_npr}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'price_npr',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                required
+                                                placeholder="2100"
+                                            />
+                                            {errors.price_npr && (
+                                                <div className="text-sm text-destructive">
+                                                    {errors.price_npr}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="purchase_price_npr">
+                                                Purchase Price (NPR)
+                                            </Label>
+                                            <Input
+                                                id="purchase_price_npr"
+                                                type="number"
+                                                step="0.01"
+                                                value={data.purchase_price_npr}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'purchase_price_npr',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="1800"
+                                            />
+                                            {errors.purchase_price_npr && (
+                                                <div className="text-sm text-destructive">
+                                                    {errors.purchase_price_npr}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -288,10 +423,18 @@ export default function CreateVariant({ product }: { product: Product }) {
 
                             <Button
                                 type="submit"
-                                disabled={processing}
+                                disabled={
+                                    processing ||
+                                    (isCalculated &&
+                                        (calculator.processing ||
+                                            quote?.selling_price_npr == null))
+                                }
                                 className="mt-2 mr-auto"
                             >
                                 Create Variant
+                                {isCalculated &&
+                                    quote?.selling_price_npr != null &&
+                                    ` at ${formatNpr(quote.selling_price_npr)}`}
                             </Button>
                         </form>
                     </CardContent>

@@ -154,6 +154,57 @@ it('applies an overridden final price and keeps the purchase price when asked', 
         ->and($variant->purchase_price_npr)->toBe(300.0);
 });
 
+it('does not add a history row when the same quote is applied twice', function () {
+    $url = route('admin.products.variants.pricing.apply', [$this->product, $this->variant]);
+
+    $this->actingAs($this->admin)->post($url, pricingInput($this->supplier));
+    $this->actingAs($this->admin)->post($url, pricingInput($this->supplier));
+    $this->actingAs($this->admin)->post($url, pricingInput($this->supplier, ['target_profit_npr' => 600]));
+
+    expect(VariantPriceSnapshot::query()->pluck('selling_price_npr')->all())->toBe([899.0, 999.0]);
+});
+
+it('creates a variant priced by the calculator with only a calculator history row', function () {
+    $response = $this->actingAs($this->admin)->post(route('admin.products.variants.store', $this->product), [
+        'name' => '6 Months',
+        'price_npr' => 1,
+        'pricing_mode' => 'calculator',
+        ...pricingInput($this->supplier),
+    ]);
+
+    $response->assertRedirect(route('admin.products.variants.index', $this->product));
+    $variant = $this->product->variants()->where('name', '6 Months')->sole();
+    expect($variant->price_npr)->toBe(899.0)
+        ->and($variant->purchase_price_npr)->toBe(398.99)
+        ->and($variant->supplier_id)->toBe($this->supplier->id)
+        ->and($variant->supplier_cost_credits)->toBe('2.04000000');
+    $snapshot = $variant->priceSnapshots()->sole();
+    expect($snapshot->source)->toBe(PriceSnapshotSource::Calculator)
+        ->and($snapshot->selling_price_npr)->toBe(899.0)
+        ->and($snapshot->user_id)->toBe($this->admin->id);
+});
+
+it('quotes a variant that is still being created', function () {
+    $this->actingAs($this->admin)
+        ->postJson(route('admin.products.variants.quote', $this->product), pricingInput($this->supplier))
+        ->assertOk()
+        ->assertJson(['selling_price_npr' => 899]);
+});
+
+it('does not create a calculator-priced variant when the supplier has no credits', function () {
+    $emptySupplier = Supplier::factory()->create();
+
+    $response = $this->actingAs($this->admin)->post(route('admin.products.variants.store', $this->product), [
+        'name' => '6 Months',
+        'pricing_mode' => 'calculator',
+        ...pricingInput($emptySupplier),
+    ]);
+
+    $response->assertSessionHasErrors('supplier_cost_credits');
+    expect($this->product->variants()->where('name', '6 Months')->exists())->toBeFalse()
+        ->and(VariantPriceSnapshot::count())->toBe(0);
+});
+
 it('records a manual price edit in the history only when a price changed', function () {
     $url = '/admin/products/'.$this->product->slug.'/variants/'.$this->variant->id;
 

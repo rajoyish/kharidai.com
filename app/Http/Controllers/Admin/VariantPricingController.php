@@ -18,6 +18,7 @@ use App\Services\Procurement\WalletLedger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,10 +41,7 @@ class VariantPricingController extends Controller
         $variant->makeVisible(ProductVariant::PROCUREMENT_FIELDS);
         $lastCalculation = $variant->latestCalculatorSnapshot()->first();
 
-        // Each supplier carries its wallet's live balance and credit prices,
-        // so the page can show what is available the moment one is picked.
-        $suppliers = Supplier::query()->with('latestTopUp')->orderBy('name')->get()
-            ->map(fn (Supplier $supplier): array => SupplierController::summary($supplier, $this->ledger));
+        $suppliers = self::supplierOptions($this->ledger);
 
         $snapshots = $variant->priceSnapshots()
             ->with(['user:id,name', 'supplier:id,name'])
@@ -102,8 +100,7 @@ class VariantPricingController extends Controller
             ],
             'snapshots' => $snapshots,
             'purchases' => $purchases,
-            'costBases' => array_map(fn (CostBasis $basis): array => ['value' => $basis->value, 'label' => $basis->label()], CostBasis::cases()),
-            'roundings' => array_map(fn (PriceRounding $rounding): array => ['value' => $rounding->value, 'label' => $rounding->label()], PriceRounding::cases()),
+            ...self::calculatorOptions(),
         ]);
     }
 
@@ -133,12 +130,21 @@ class VariantPricingController extends Controller
 
     public function quote(Request $request, Product $product, ProductVariant $variant): JsonResponse
     {
-        return response()->json($this->calculator->quote($this->validatedInput($request)));
+        return response()->json($this->calculator->quote(self::validateCalculatorInput($request)));
+    }
+
+    /**
+     * Quote a variant that is still being created, for the calculator on the
+     * Create Variant form.
+     */
+    public function quoteNew(Request $request, Product $product): JsonResponse
+    {
+        return response()->json($this->calculator->quote(self::validateCalculatorInput($request)));
     }
 
     public function apply(Request $request, Product $product, ProductVariant $variant): RedirectResponse
     {
-        $input = $this->validatedInput($request);
+        $input = self::validateCalculatorInput($request);
         $input['notes'] = $request->validate(['notes' => 'nullable|string|max:2000'])['notes'] ?? null;
 
         $applied = $this->history->applyQuote($variant, $input, $request->boolean('update_purchase_price', true), $request->user());
@@ -157,9 +163,37 @@ class VariantPricingController extends Controller
     }
 
     /**
+     * Every supplier with its wallet's live balance and credit prices, so a
+     * calculator can show what is available the moment one is picked.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public static function supplierOptions(WalletLedger $ledger): Collection
+    {
+        return Supplier::query()->with('latestTopUp')->orderBy('name')->get()
+            ->map(fn (Supplier $supplier): array => SupplierController::summary($supplier, $ledger))
+            ->values();
+    }
+
+    /**
+     * The choices a calculator offers for its credit rate and rounding.
+     *
+     * @return array{costBases: list<array{value: string, label: string}>, roundings: list<array{value: string, label: string}>}
+     */
+    public static function calculatorOptions(): array
+    {
+        return [
+            'costBases' => array_map(fn (CostBasis $basis): array => ['value' => $basis->value, 'label' => $basis->label()], CostBasis::cases()),
+            'roundings' => array_map(fn (PriceRounding $rounding): array => ['value' => $rounding->value, 'label' => $rounding->label()], PriceRounding::cases()),
+        ];
+    }
+
+    /**
+     * Validate a calculator's inputs.
+     *
      * @return array<string, mixed>
      */
-    private function validatedInput(Request $request): array
+    public static function validateCalculatorInput(Request $request): array
     {
         return $request->validate([
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id', Rule::requiredIf($request->input('cost_basis') !== CostBasis::Manual->value)],
