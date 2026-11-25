@@ -39,6 +39,8 @@ export type SharedData = {
     paymentMethods: PaymentMethod[];
     requiresMobileNumber: boolean;
     sidebarOpen: boolean;
+    /** Keys of the sidebar sections the user folded away. */
+    sidebarCollapsedSections: string[];
     seo: SeoData;
     storefront: StorefrontNavigationData;
 };

@@ -78,6 +78,7 @@ class HandleInertiaRequests extends Middleware
                 && blank($user->mobile_number)
                 && ! $request->session()->get(MobileNumberController::DISMISSED_SESSION_KEY, false),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'sidebarCollapsedSections' => $this->sidebarCollapsedSections($request),
             // The QR payment panel appears on several pages and will appear on
             // more, so which providers are in service is shared everywhere
             // rather than wired up per page.
@@ -297,5 +298,27 @@ class HandleInertiaRequests extends Middleware
         Cache::forever(Category::STOREFRONT_NAVIGATION_CACHE_KEY, $groups);
 
         return $groups;
+    }
+
+    /**
+     * Read which sidebar sections the user folded away. The cookie is written
+     * by the client, so only short slug-like keys are kept.
+     *
+     * @return list<string>
+     */
+    private function sidebarCollapsedSections(Request $request): array
+    {
+        $cookie = $request->cookie('sidebar_collapsed_sections');
+
+        if (! is_string($cookie) || $cookie === '') {
+            return [];
+        }
+
+        return collect(explode(',', $cookie))
+            ->filter(fn (string $section): bool => preg_match('/^[a-z][a-z-]{0,31}$/', $section) === 1)
+            ->unique()
+            ->take(20)
+            ->values()
+            ->all();
     }
 }
