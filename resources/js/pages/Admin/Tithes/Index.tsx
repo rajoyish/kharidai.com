@@ -38,8 +38,10 @@ type TitheEntry = {
     source_id: number;
     label: string;
     reference: string;
+    /** Net of any prorated refund, which is charged against the order's own month. */
     profit: number;
     tithe: number;
+    refund: { amount: number; refunded_on: string | null } | null;
     is_paid: boolean;
     paid_at: string | null;
 };
@@ -281,6 +283,18 @@ function EntryReference({ entry }: { entry: TitheEntry }) {
             {entry.source_type === 'service' && (
                 <span className="rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                     Offline
+                </span>
+            )}
+            {entry.refund !== null && (
+                <span
+                    className="rounded-full bg-danger-surface px-1.5 py-px text-[10px] font-medium tracking-wide text-danger uppercase"
+                    title={
+                        entry.refund.refunded_on
+                            ? `Refunded on ${entry.refund.refunded_on}; profit and tithe are shown net of it.`
+                            : 'Profit and tithe are shown net of this refund.'
+                    }
+                >
+                    Refunded −{formatNpr(entry.refund.amount)}
                 </span>
             )}
         </span>

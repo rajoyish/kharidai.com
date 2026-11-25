@@ -30,7 +30,9 @@ class OrderObserver
 
     public function updated(Order $order): void
     {
-        if (! $order->wasChanged(['status', 'created_at'])) {
+        // A prorated refund is charged against the order's own profit, so recording,
+        // editing or removing one moves that month's tithe just as a status change does.
+        if (! $order->wasChanged(['status', 'created_at', 'refund_amount'])) {
             return;
         }
 

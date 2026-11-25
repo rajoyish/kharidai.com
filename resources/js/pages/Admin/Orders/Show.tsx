@@ -28,6 +28,9 @@ import { DeliveryGuides } from '@/components/delivery-guides';
 import type { DeliveryGuide } from '@/components/delivery-guides';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
+import { ProratedRefundBadge } from '@/components/prorated-refund-badge';
+import type { OrderRefund } from '@/components/prorated-refund-badge';
+import { ProratedRefundPanel } from '@/components/prorated-refund-panel';
 import { SeoHead } from '@/components/seo-head';
 import { ServiceInvoiceCard } from '@/components/service-invoice-card';
 import type { ServiceInvoice } from '@/components/service-invoice-card';
@@ -41,7 +44,7 @@ import { dashboard } from '@/routes/admin';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
 import { index as productGuidesIndex } from '@/routes/admin/products/guides';
 
-type Order = {
+type Order = OrderRefund & {
     id: number;
     order_number: string;
     total_amount: string;
@@ -120,6 +123,7 @@ type Order = {
         order_item: {
             id: number;
             quantity: number;
+            price: string;
             product_variant: {
                 name: string;
                 product: {
@@ -138,6 +142,8 @@ export default function AdminOrderShow({
     shipmentStatuses: string[];
 }) {
     const isCompleted = order.status === 'completed';
+    // Mirrors Order::isPaid(): only money that was accepted can be refunded.
+    const isPaid = order.status === 'delivering' || isCompleted;
 
     const {
         data: statusData,
@@ -257,6 +263,11 @@ export default function AdminOrderShow({
                         <CopyButton
                             value={order.order_number}
                             label="order number"
+                        />
+                        <ProratedRefundBadge
+                            order={order}
+                            showAmount
+                            className="ml-2"
                         />
                     </h1>
                 }
@@ -613,6 +624,18 @@ export default function AdminOrderShow({
                                             {formatNpr(order.amount_due_now)}
                                         </span>
                                     </div>
+                                    {order.refund_amount !== null && (
+                                        <div className="flex justify-between text-danger">
+                                            <span>
+                                                Prorated refund (
+                                                {order.refunded_on})
+                                            </span>
+                                            <span>
+                                                −
+                                                {formatNpr(order.refund_amount)}
+                                            </span>
+                                        </div>
+                                    )}
                                     {Number(order.balance_due) > 0 && (
                                         <div className="flex items-center justify-between text-amber-600">
                                             <span>Balance due on delivery</span>
@@ -806,6 +829,14 @@ export default function AdminOrderShow({
                                 </div>
                             )}
                         </div>
+
+                        {/* Prorated Refund */}
+                        {(isPaid || order.refund_amount !== null) && (
+                            <ProratedRefundPanel
+                                order={order}
+                                subscriptions={order.subscriptions}
+                            />
+                        )}
 
                         {/* Order Messages */}
                         <SupportChat

@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Copy, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Copy, Upload, AlertCircle, CheckCircle2, Undo2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { toast } from 'sonner';
@@ -16,6 +16,11 @@ import type { DeliveryGuide } from '@/components/delivery-guides';
 import { LightboxImageLink } from '@/components/lightbox-image-link';
 import { PagePanel } from '@/components/page-panel';
 import { PaymentQrPanel } from '@/components/payment-qr-panel';
+import {
+    hasProratedRefund,
+    ProratedRefundBadge,
+} from '@/components/prorated-refund-badge';
+import type { OrderRefund } from '@/components/prorated-refund-badge';
 import { SeoHead } from '@/components/seo-head';
 import { ServiceInvoiceCard } from '@/components/service-invoice-card';
 import type { ServiceInvoice } from '@/components/service-invoice-card';
@@ -29,7 +34,7 @@ import { VariantOptionBadges } from '@/components/variant-option-badges';
 import type { SelectedOptions } from '@/components/variant-option-badges';
 import { formatNpr } from '@/lib/currency';
 
-type Order = {
+type Order = OrderRefund & {
     id: number;
     order_number: string;
     /** Invoice-aware total: service invoices supersede checkout estimates. */
@@ -200,6 +205,10 @@ export default function OrderShow({ order }: { order: Order }) {
                 description={`Placed on ${new Date(order.created_at).toLocaleString()}`}
                 actions={
                     <div className="flex items-center gap-3">
+                        <ProratedRefundBadge
+                            order={order}
+                            className="px-4 py-1.5 text-sm"
+                        />
                         <OrderStatusBadge
                             status={order.status}
                             className="px-4 py-1.5 text-sm"
@@ -222,6 +231,17 @@ export default function OrderShow({ order }: { order: Order }) {
                             Once approved, we will process your order.
                         </div>
                     )}
+                {hasProratedRefund(order) && (
+                    <div className="mb-6 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-surface p-4 text-sm text-danger">
+                        <Undo2 className="mt-0.5 size-4 shrink-0" />
+                        <div>
+                            <strong>Prorated refund issued.</strong> We refunded{' '}
+                            {formatNpr(order.refund_amount ?? 0)} for the unused
+                            part of this order on {order.refunded_on}. Any
+                            subscription from this order ended on that date.
+                        </div>
+                    </div>
+                )}
                 {unpaidInvoicesTotal > 0 && (
                     <div className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
                         <div>
@@ -563,8 +583,62 @@ export default function OrderShow({ order }: { order: Order }) {
                                         {formatNpr(order.display_total_npr)}
                                     </span>
                                 </div>
+                                {hasProratedRefund(order) && (
+                                    <>
+                                        <div className="flex items-center justify-between border-b py-2 text-danger">
+                                            <span>Prorated refund</span>
+                                            <span>
+                                                −
+                                                {formatNpr(
+                                                    order.refund_amount ?? 0,
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-muted-foreground">
+                                                Net paid
+                                            </span>
+                                            <span className="font-semibold">
+                                                {formatNpr(
+                                                    order.display_total_npr -
+                                                        Number(
+                                                            order.refund_amount,
+                                                        ),
+                                                )}
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
+
+                        {hasProratedRefund(order) &&
+                            order.refund_receipt_path && (
+                                <div className="rounded-xl border bg-card p-6">
+                                    <h3 className="mb-1 text-lg font-semibold">
+                                        Refund Receipt
+                                    </h3>
+                                    <p className="mb-4 text-sm text-muted-foreground">
+                                        Proof of the{' '}
+                                        {formatNpr(order.refund_amount ?? 0)}{' '}
+                                        sent back to you on {order.refunded_on}.
+                                    </p>
+                                    <div className="overflow-hidden rounded-lg border bg-muted p-2">
+                                        <LightboxImageLink
+                                            src={`/storage/${order.refund_receipt_path}`}
+                                            alt="Refund payment receipt"
+                                            ariaLabel="View full-size refund receipt"
+                                            className="w-full"
+                                            imageClassName="h-auto max-h-60 w-full object-contain transition-opacity hover:opacity-90"
+                                        />
+                                    </div>
+                                    {order.refund_note && (
+                                        <p className="mt-4 text-sm whitespace-pre-wrap text-muted-foreground">
+                                            {order.refund_note}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                         {order.payment_receipt && (
                             <div className="mt-6 rounded-xl border bg-card p-6">

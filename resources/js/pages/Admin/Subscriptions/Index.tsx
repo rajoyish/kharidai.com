@@ -3,6 +3,12 @@ import { Link } from '@inertiajs/react';
 import { CopyableOrderNumber } from '@/components/copy-button';
 import { DaysLeft } from '@/components/days-left';
 import { PagePanel } from '@/components/page-panel';
+import {
+    hasProratedRefund,
+    ProratedRefundBadge,
+    SubscriptionEndDate,
+} from '@/components/prorated-refund-badge';
+import type { OrderRefund } from '@/components/prorated-refund-badge';
 import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
@@ -31,7 +37,7 @@ type Subscription = {
         email: string;
         mobile_number: string | null;
     };
-    order: {
+    order: OrderRefund & {
         id: number;
         order_number: string;
     };
@@ -142,15 +148,24 @@ export default function AdminSubscriptionIndex({
                                         {sub.start_date}
                                     </TableCell>
                                     <TableCell className="whitespace-nowrap">
-                                        {sub.end_date || 'Lifetime'}
+                                        <SubscriptionEndDate
+                                            endDate={sub.end_date}
+                                            order={sub.order}
+                                        />
                                     </TableCell>
                                     <TableCell>
-                                        <DaysLeft
-                                            startDate={sub.start_date}
-                                            endDate={sub.end_date}
-                                            initialDaysLeft={sub.days_left}
-                                            isExpired={sub.is_expired}
-                                        />
+                                        {hasProratedRefund(sub.order) ? (
+                                            <ProratedRefundBadge
+                                                order={sub.order}
+                                            />
+                                        ) : (
+                                            <DaysLeft
+                                                startDate={sub.start_date}
+                                                endDate={sub.end_date}
+                                                initialDaysLeft={sub.days_left}
+                                                isExpired={sub.is_expired}
+                                            />
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <WhatsappContactAction

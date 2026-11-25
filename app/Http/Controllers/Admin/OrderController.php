@@ -11,6 +11,7 @@ use App\Models\PaymentReceipt;
 use App\Models\Shipment;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
+use App\Notifications\ProratedRefundIssuedNotification;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
@@ -212,14 +213,82 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Message sent.');
     }
 
-    public function destroy(Order $order): RedirectResponse
+    /**
+     * Record, or correct, the prorated refund handed back on a paid order. The
+     * screenshot is required the first time and optional on an edit, so fixing a
+     * mistyped amount does not mean re-uploading the proof.
+     */
+    public function saveRefund(Request $request, Order $order): RedirectResponse
     {
-        $receiptPath = $order->paymentReceipt?->file_path;
+        abort_unless($order->isPaid(), 422, 'Only a paid order can be refunded.');
 
-        $order->delete();
+        $order->loadMissing('items.serviceEngagements');
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0', 'max:'.$order->displayTotalNpr()],
+            'refunded_on' => ['required', 'date', 'after_or_equal:'.$order->created_at->toDateString(), 'before_or_equal:today'],
+            'receipt' => [$order->refund_receipt_path === null ? 'required' : 'nullable', 'image', 'max:2048'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'amount.max' => 'The refund cannot exceed the order total of Rs. '.number_format($order->displayTotalNpr(), 2).'.',
+            'refunded_on.after_or_equal' => 'The refund date cannot be before the order was placed.',
+        ]);
+
+        $isNewRefund = ! $order->hasProratedRefund();
+        $previousReceiptPath = $order->refund_receipt_path;
+
+        $receiptPath = $request->hasFile('receipt')
+            ? $request->file('receipt')->store('refund-receipts', 'public')
+            : $previousReceiptPath;
+
+        $order->update([
+            'refund_amount' => $validated['amount'],
+            'refunded_on' => $validated['refunded_on'],
+            'refund_receipt_path' => $receiptPath,
+            'refund_note' => $validated['note'] ?? null,
+        ]);
+
+        if ($previousReceiptPath !== null && $previousReceiptPath !== $receiptPath) {
+            Storage::disk('public')->delete($previousReceiptPath);
+        }
+
+        if ($isNewRefund) {
+            $order->user->notify(new ProratedRefundIssuedNotification($order));
+        }
+
+        return redirect()->back()->with('success', $isNewRefund ? 'Prorated refund recorded.' : 'Prorated refund updated.');
+    }
+
+    /**
+     * Remove a refund recorded in error. The order's profit and tithe return to
+     * what they were before it.
+     */
+    public function destroyRefund(Order $order): RedirectResponse
+    {
+        $receiptPath = $order->refund_receipt_path;
+
+        $order->update([
+            'refund_amount' => null,
+            'refunded_on' => null,
+            'refund_receipt_path' => null,
+            'refund_note' => null,
+        ]);
 
         if ($receiptPath !== null) {
             Storage::disk('public')->delete($receiptPath);
+        }
+
+        return redirect()->back()->with('success', 'Prorated refund removed.');
+    }
+
+    public function destroy(Order $order): RedirectResponse
+    {
+        $receiptPaths = array_filter([$order->paymentReceipt?->file_path, $order->refund_receipt_path]);
+
+        $order->delete();
+
+        if ($receiptPaths !== []) {
+            Storage::disk('public')->delete($receiptPaths);
         }
 
         return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
