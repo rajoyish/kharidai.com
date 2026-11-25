@@ -71,7 +71,7 @@ export function PersonalPurchaseDialog({
                         id="description"
                         label="What you bought"
                         error={errors.description}
-                        className="grid gap-2 sm:col-span-2"
+                        className="sm:col-span-2"
                     >
                         <Input
                             id="description"
@@ -148,7 +148,7 @@ export function PersonalPurchaseDialog({
                         id="notes"
                         label="Notes"
                         error={errors.notes}
-                        className="grid gap-2 sm:col-span-2"
+                        className="sm:col-span-2"
                     >
                         <Textarea
                             id="notes"

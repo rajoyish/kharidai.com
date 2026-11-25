@@ -127,7 +127,7 @@ export function SupplierFormDialog({
                         id="supplier_name"
                         label="Name"
                         error={errors.name}
-                        className="grid gap-2 sm:col-span-2"
+                        className="sm:col-span-2"
                     >
                         <Input
                             id="supplier_name"
@@ -181,7 +181,7 @@ export function SupplierFormDialog({
                         label="Shop link"
                         hint="A Telegram @username, +phone for WhatsApp, or a website."
                         error={errors.shop_url}
-                        className="grid gap-2 sm:col-span-2"
+                        className="sm:col-span-2"
                     >
                         <Input
                             id="supplier_shop_url"
@@ -228,7 +228,7 @@ export function SupplierFormDialog({
                         id="supplier_notes"
                         label="Notes"
                         error={errors.notes}
-                        className="grid gap-2 sm:col-span-2"
+                        className="sm:col-span-2"
                     >
                         <Textarea
                             id="supplier_notes"

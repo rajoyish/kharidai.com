@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
-/** A labelled form control with its hint and validation message. */
+/**
+ * A labelled form control with its hint and validation message. Its rows pack
+ * to the top, so when a neighbour in a form grid carries a hint the extra
+ * height falls below this field instead of pushing its control out of line.
+ */
 export function FormField({
     id,
     label,
@@ -18,7 +23,7 @@ export function FormField({
     className?: string;
 }) {
     return (
-        <div className={className ?? 'grid gap-2'}>
+        <div className={cn('grid content-start gap-2', className)}>
             <Label htmlFor={id}>{label}</Label>
             {children}
             {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
