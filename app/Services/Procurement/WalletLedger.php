@@ -85,9 +85,11 @@ class WalletLedger
     }
 
     /**
-     * Pay for a purchase out of the wallet, oldest credits first.
+     * Pay for a purchase out of the wallet, oldest credits first. A personal
+     * purchase spends the credits the same way but leaves the variant's
+     * supplier cost alone.
      *
-     * @param  array{unit_cost_credits: string|float, quantity: int, product_variant_id?: int|null, description?: string|null, reference?: string|null, purchased_at: string|Carbon, notes?: string|null}  $data
+     * @param  array{unit_cost_credits: string|float, quantity: int, is_personal?: bool, product_variant_id?: int|null, description?: string|null, reference?: string|null, purchased_at: string|Carbon, notes?: string|null}  $data
      */
     public function recordPurchase(Supplier $supplier, array $data, ?User $user = null): WalletPurchase
     {
@@ -154,6 +156,7 @@ class WalletLedger
             $purchase = $supplier->purchases()->create([
                 'product_variant_id' => $data['product_variant_id'] ?? null,
                 'user_id' => $user?->id,
+                'is_personal' => (bool) ($data['is_personal'] ?? false),
                 'description' => $data['description'] ?? null,
                 'reference' => $data['reference'] ?? null,
                 'quantity' => $quantity,
@@ -254,16 +257,18 @@ class WalletLedger
     /**
      * Keep the variant's reference supplier cost at its most recent purchase,
      * so the calculator starts from what the supplier charges now. A
-     * back-dated entry does not overwrite a newer observation.
+     * back-dated entry does not overwrite a newer observation, and a personal
+     * purchase is not stock for a sale, so it is no observation at all.
      */
     private function rememberSupplierCost(WalletPurchase $purchase): void
     {
-        if ($purchase->product_variant_id === null) {
+        if ($purchase->product_variant_id === null || $purchase->is_personal) {
             return;
         }
 
         $isMostRecent = ! WalletPurchase::query()
             ->where('product_variant_id', $purchase->product_variant_id)
+            ->where('is_personal', false)
             ->whereKeyNot($purchase->id)
             ->where('purchased_at', '>', $purchase->purchased_at)
             ->exists();

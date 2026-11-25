@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { show as variantPricing } from '@/actions/App/Http/Controllers/Admin/VariantPricingController';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -16,6 +17,7 @@ export type Purchase = {
     id: number;
     supplier_id: number;
     supplier_name: string | null;
+    is_personal: boolean;
     description: string | null;
     reference: string | null;
     variant: {
@@ -64,6 +66,11 @@ export function PurchasesTable({
                     <TableRow key={purchase.id}>
                         <TableCell className="whitespace-nowrap">
                             {purchase.purchased_at}
+                            {purchase.is_personal && (
+                                <Badge variant="info" className="ml-2">
+                                    Personal
+                                </Badge>
+                            )}
                             {purchase.supplier_name && (
                                 <div className="text-xs text-muted-foreground">
                                     {purchase.supplier_name}
