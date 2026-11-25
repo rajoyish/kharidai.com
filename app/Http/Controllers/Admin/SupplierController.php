@@ -160,6 +160,7 @@ class SupplierController extends Controller
             'id' => $purchase->id,
             'supplier_id' => $purchase->supplier_id,
             'supplier_name' => $purchase->supplier?->name,
+            'is_personal' => $purchase->is_personal,
             'description' => $purchase->description,
             'reference' => $purchase->reference,
             'variant' => $purchase->variant ? [

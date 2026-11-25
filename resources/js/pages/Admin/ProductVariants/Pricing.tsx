@@ -36,6 +36,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -259,7 +260,7 @@ export default function VariantPricing({
 
     const applyForm = useForm({ update_purchase_price: true, notes: '' });
     const assignForm = useForm({});
-    const buyForm = useForm({ quantity: '1' });
+    const buyForm = useForm({ quantity: '1', is_personal: false });
 
     const { data, setData } = calculator;
     const quote = calculator.response;
@@ -356,6 +357,7 @@ export default function VariantPricing({
             product_variant_id: variant.id,
             unit_cost_credits: data.supplier_cost_credits,
             quantity: buyData.quantity,
+            is_personal: buyData.is_personal,
             purchased_at: today(),
         }));
         buyForm.post(storePurchase.url(supplier.id), {
@@ -390,13 +392,16 @@ export default function VariantPricing({
             })),
         [snapshots],
     );
+    // A personal purchase is not stock for a sale, so it is no cost signal.
     const chartPurchases = useMemo(
         () =>
-            purchases.map((purchase) => ({
-                at: purchase.purchased_at,
-                unitCost: purchase.unit_cost_npr,
-                quantity: purchase.quantity,
-            })),
+            purchases
+                .filter((purchase) => !purchase.is_personal)
+                .map((purchase) => ({
+                    at: purchase.purchased_at,
+                    unitCost: purchase.unit_cost_npr,
+                    quantity: purchase.quantity,
+                })),
         [purchases],
     );
 
@@ -673,6 +678,29 @@ export default function VariantPricing({
                                             {creditsForBuy > 0 &&
                                                 ` · ${formatCredits(creditsForBuy.toFixed(8))} credits`}
                                         </Button>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <Checkbox
+                                            id="buy_is_personal"
+                                            checked={buyForm.data.is_personal}
+                                            onCheckedChange={(checked) =>
+                                                buyForm.setData(
+                                                    'is_personal',
+                                                    checked === true,
+                                                )
+                                            }
+                                        />
+                                        <Label
+                                            htmlFor="buy_is_personal"
+                                            className="grid gap-0.5 font-normal"
+                                        >
+                                            For my own use
+                                            <span className="text-xs text-muted-foreground">
+                                                Credits are still spent, but
+                                                this product&rsquo;s cost
+                                                doesn&rsquo;t change.
+                                            </span>
+                                        </Label>
                                     </div>
                                     {(errors.unit_cost_credits ||
                                         errors.quantity) && (

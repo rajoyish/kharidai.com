@@ -17,10 +17,16 @@ use Illuminate\Support\Carbon;
  * basis of the credits consumed, taken from the oldest lots first, so it
  * reflects what those credits really cost rather than today's rate.
  *
+ * A personal purchase is one bought for the owner's own use. It spends the
+ * wallet like any other, but it is not stock for a sale, so it never moves a
+ * variant's supplier cost. Profit and tithes come from orders alone, so a
+ * wallet purchase of either kind never earns or owes anything.
+ *
  * @property int $id
  * @property int $supplier_id
  * @property int|null $product_variant_id
  * @property int|null $user_id
+ * @property bool $is_personal
  * @property string|null $description
  * @property string|null $reference
  * @property int $quantity
@@ -34,7 +40,7 @@ use Illuminate\Support\Carbon;
  * @property ProductVariant|null $variant
  * @property Supplier $supplier
  */
-#[Fillable(['supplier_id', 'product_variant_id', 'user_id', 'description', 'reference', 'quantity', 'unit_cost_credits', 'credits_spent', 'cost_npr', 'purchased_at', 'notes'])]
+#[Fillable(['supplier_id', 'product_variant_id', 'user_id', 'is_personal', 'description', 'reference', 'quantity', 'unit_cost_credits', 'credits_spent', 'cost_npr', 'purchased_at', 'notes'])]
 class WalletPurchase extends Model
 {
     /** @use HasFactory<WalletPurchaseFactory> */
@@ -46,6 +52,7 @@ class WalletPurchase extends Model
     protected function casts(): array
     {
         return [
+            'is_personal' => 'boolean',
             'quantity' => 'integer',
             'unit_cost_credits' => WalletCredits::class,
             'credits_spent' => WalletCredits::class,

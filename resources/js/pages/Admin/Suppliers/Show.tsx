@@ -5,6 +5,7 @@ import { destroy as destroyPurchase } from '@/actions/App/Http/Controllers/Admin
 import { destroy as destroyTopUp } from '@/actions/App/Http/Controllers/Admin/WalletTopUpController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
+import { PersonalPurchaseDialog } from '@/components/procurement/personal-purchase-dialog';
 import { PurchasesTable } from '@/components/procurement/purchases-table';
 import type { Purchase } from '@/components/procurement/purchases-table';
 import { ShopLink } from '@/components/procurement/shop-link';
@@ -86,6 +87,7 @@ export default function SupplierShow({
     const [purchaseToReverse, setPurchaseToReverse] = useState<Purchase | null>(
         null,
     );
+    const [addingPersonalPurchase, setAddingPersonalPurchase] = useState(false);
 
     const rateGap =
         supplier.average_npr_per_credit && supplier.latest_npr_per_credit
@@ -308,11 +310,23 @@ export default function SupplierShow({
                     </Card>
 
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Purchases</CardTitle>
-                            <CardDescription>
-                                Buy from a product&rsquo;s Pricing page.
-                            </CardDescription>
+                        <CardHeader className="flex-row flex-wrap items-start justify-between gap-4">
+                            <div className="grid gap-1.5">
+                                <CardTitle>Purchases</CardTitle>
+                                <CardDescription>
+                                    Buy for the store from a product&rsquo;s
+                                    Pricing page. Buying for yourself? Add a
+                                    personal purchase: it spends credits but
+                                    counts no profit or tithe.
+                                </CardDescription>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setAddingPersonalPurchase(true)}
+                            >
+                                Personal purchase
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             <PurchasesTable
@@ -358,6 +372,15 @@ export default function SupplierShow({
                         )
                     }
                     onOpenChange={(open) => !open && setTopUpToDelete(null)}
+                />
+            )}
+
+            {addingPersonalPurchase && (
+                <PersonalPurchaseDialog
+                    supplierId={supplier.id}
+                    supplierName={supplier.name}
+                    balanceCredits={supplier.balance_credits}
+                    onClose={() => setAddingPersonalPurchase(false)}
                 />
             )}
 

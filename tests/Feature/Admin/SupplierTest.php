@@ -108,6 +108,58 @@ it('pays for a purchase from the oldest credits first and carries the rest forwa
         ->and($variant->supplier_id)->toBe($this->supplier->id);
 });
 
+it('spends the wallet on a personal purchase without a product or a cost change', function () {
+    $topUp = referenceTopUp($this->supplier);
+    $variant = ProductVariant::factory()->create(['supplier_cost_credits' => '1.50']);
+
+    $this->actingAs($this->admin)->post(route('admin.suppliers.purchases.store', $this->supplier), [
+        'is_personal' => true,
+        'description' => 'Netflix for me',
+        'quantity' => 1,
+        'unit_cost_credits' => '2.04',
+        'purchased_at' => '2026-11-12',
+    ])->assertSessionHas('inertia.flash_data.toast', ['type' => 'success', 'message' => 'Personal purchase added. Cost: Rs. 398.99.']);
+
+    $this->actingAs($this->admin)->post(route('admin.suppliers.purchases.store', $this->supplier), [
+        'is_personal' => true,
+        'product_variant_id' => $variant->id,
+        'quantity' => 1,
+        'unit_cost_credits' => '2.04',
+        'purchased_at' => '2026-11-12',
+    ])->assertSessionHasNoErrors();
+
+    expect(WalletPurchase::where('is_personal', true)->count())->toBe(2)
+        ->and($topUp->refresh()->credits_remaining)->toBe('4.01676294')
+        ->and($variant->refresh()->supplier_cost_credits)->toBe('1.50000000');
+});
+
+it('needs a product for a store purchase and a description for a personal one', function () {
+    referenceTopUp($this->supplier);
+    $input = ['quantity' => 1, 'unit_cost_credits' => '2.04', 'purchased_at' => '2026-11-12'];
+
+    $this->actingAs($this->admin)
+        ->post(route('admin.suppliers.purchases.store', $this->supplier), $input)
+        ->assertSessionHasErrors('product_variant_id');
+
+    $this->actingAs($this->admin)
+        ->post(route('admin.suppliers.purchases.store', $this->supplier), [...$input, 'is_personal' => true])
+        ->assertSessionHasErrors(['description' => 'Say what you bought.'])
+        ->assertSessionDoesntHaveErrors('product_variant_id');
+
+    $this->assertDatabaseCount('wallet_purchases', 0);
+});
+
+it('lets a store purchase set the cost even when a later personal one exists', function () {
+    referenceTopUp($this->supplier);
+    $variant = ProductVariant::factory()->create();
+    $ledger = app(WalletLedger::class);
+
+    $ledger->recordPurchase($this->supplier, ['is_personal' => true, 'product_variant_id' => $variant->id, 'quantity' => 1, 'unit_cost_credits' => '3', 'purchased_at' => '2026-11-20']);
+    $ledger->recordPurchase($this->supplier, ['product_variant_id' => $variant->id, 'quantity' => 1, 'unit_cost_credits' => '2.04', 'purchased_at' => '2026-11-12']);
+
+    expect($variant->refresh()->supplier_cost_credits)->toBe('2.04000000');
+});
+
 it('refuses a purchase the wallet cannot cover and moves no balance', function () {
     $topUp = referenceTopUp($this->supplier);
 
