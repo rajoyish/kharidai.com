@@ -5,6 +5,8 @@ import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/Or
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { CopyableOrderNumber } from '@/components/copy-button';
 import { PagePanel } from '@/components/page-panel';
+import { ProratedRefundBadge } from '@/components/prorated-refund-badge';
+import type { OrderRefund } from '@/components/prorated-refund-badge';
 import { SearchFilter } from '@/components/search-filter';
 import { SeoHead } from '@/components/seo-head';
 import {
@@ -29,7 +31,7 @@ import {
 } from '@/routes/admin/orders';
 import type { BreadcrumbItem } from '@/types';
 
-type Order = {
+type Order = OrderRefund & {
     id: number;
     order_number: string;
     total_amount: string;
@@ -373,7 +375,10 @@ function OrderTable({
                             )}
                         </TableCell>
                         <TableCell>
-                            <OrderStatusBadge status={order.status} />
+                            <span className="inline-flex flex-wrap items-center gap-1.5">
+                                <OrderStatusBadge status={order.status} />
+                                <ProratedRefundBadge order={order} />
+                            </span>
                         </TableCell>
                         <TableCell>
                             {order.payment_receipt ? (

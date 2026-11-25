@@ -17,8 +17,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * @phpstan-type TitheEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float}
- * @phpstan-type SettledEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float, is_paid: bool, paid_at: string|null}
+ * @phpstan-type TitheEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null}
+ * @phpstan-type SettledEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null, is_paid: bool, paid_at: string|null}
  */
 class TitheController extends Controller
 {
@@ -241,7 +241,8 @@ class TitheController extends Controller
 
     /**
      * Match a search term against the month label ("January 2026") or any record
-     * that contributed profit to it, by name or by order number.
+     * that contributed profit to it, by name or by order number. "Refund" finds
+     * the months holding a refunded order.
      *
      * @param  array{label: string, entries: list<SettledEntry>}  $tithe
      */
@@ -253,7 +254,8 @@ class TitheController extends Controller
 
         return collect($tithe['entries'])->contains(
             fn (array $entry): bool => Str::contains($entry['label'], $search, ignoreCase: true)
-                || Str::contains($entry['reference'], $search, ignoreCase: true),
+                || Str::contains($entry['reference'], $search, ignoreCase: true)
+                || ($entry['refund'] !== null && Str::contains('prorated refund', $search, ignoreCase: true)),
         );
     }
 

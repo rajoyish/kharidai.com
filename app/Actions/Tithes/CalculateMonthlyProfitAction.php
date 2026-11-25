@@ -23,7 +23,12 @@ use Illuminate\Support\Collection as SupportCollection;
  * entry of its own. Nothing is merged across records, so settling one entry can
  * never move another.
  *
- * @phpstan-type TitheEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float}
+ * A prorated refund is charged against the order it refunds, in the month that
+ * order earned its profit, rather than as a negative entry in the refund's own
+ * month: a month holding nothing but a refund would otherwise owe a negative
+ * tithe and be dropped as profitless, losing the credit entirely.
+ *
+ * @phpstan-type TitheEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null}
  * @phpstan-type MonthBreakdown array{entries: list<TitheEntry>, total_profit: float, total_tithe: float}
  */
 class CalculateMonthlyProfitAction
@@ -186,7 +191,7 @@ class CalculateMonthlyProfitAction
     private function orderEntry(Collection $orderItems): array
     {
         $order = $orderItems->firstOrFail()->order;
-        $profit = round($orderItems->sum(fn (OrderItem $item): float => $item->profitNpr()), 2);
+        $profit = round($orderItems->sum(fn (OrderItem $item): float => $item->profitNpr()) - $order->refundedNpr(), 2);
 
         return [
             'source_type' => self::SOURCE_ORDER,
@@ -195,6 +200,9 @@ class CalculateMonthlyProfitAction
             'reference' => $order->order_number,
             'profit' => $profit,
             'tithe' => round($profit * self::TITHE_RATE, 2),
+            'refund' => $order->hasProratedRefund()
+                ? ['amount' => $order->refundedNpr(), 'refunded_on' => $order->refunded_on?->toDateString()]
+                : null,
         ];
     }
 
@@ -244,6 +252,7 @@ class CalculateMonthlyProfitAction
             'reference' => $engagement->project_name ?? 'Service #'.$engagement->id,
             'profit' => $profit,
             'tithe' => round($profit * self::TITHE_RATE, 2),
+            'refund' => null,
         ];
     }
 
@@ -286,7 +295,7 @@ class CalculateMonthlyProfitAction
                 ->whereNotNull('created_at'),
             )
             ->orderBy('id')
-            ->with(['order:id,order_number,status,created_at', 'serviceEngagements', 'productVariant.product']);
+            ->with(['order:id,order_number,status,created_at,refund_amount,refunded_on', 'serviceEngagements', 'productVariant.product']);
     }
 
     private function monthKeyFor(CarbonInterface $createdAt): string

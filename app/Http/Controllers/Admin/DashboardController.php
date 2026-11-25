@@ -30,7 +30,7 @@ class DashboardController extends Controller
             ->lazy()
             ->each(function (Order $order) use (&$totalProfitNpr, &$totalSalesNpr): void {
                 $totalProfitNpr += $order->profit;
-                $totalSalesNpr += $order->displayTotalNpr();
+                $totalSalesNpr += $order->displayTotalNpr() - $order->refundedNpr();
             });
 
         $monthlyTithes = MonthlyTithe::query()->get();

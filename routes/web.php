@@ -176,6 +176,9 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::patch('orders/{order}/allow-reupload', [AdminOrderController::class, 'allowReceiptReupload'])->name('orders.allow-reupload');
     Route::patch('orders/{order}/shipment-status', [AdminOrderController::class, 'updateShipmentStatus'])->name('orders.shipment-status.update');
     Route::patch('orders/{order}/mark-balance-paid', [AdminOrderController::class, 'markBalancePaid'])->name('orders.mark-balance-paid');
+    // POST rather than PUT: the receipt screenshot is a file upload.
+    Route::post('orders/{order}/refund', [AdminOrderController::class, 'saveRefund'])->name('orders.refund.save');
+    Route::delete('orders/{order}/refund', [AdminOrderController::class, 'destroyRefund'])->name('orders.refund.destroy');
     Route::patch('receipts/{paymentReceipt}/status', [AdminOrderController::class, 'updateReceiptStatus'])->name('receipts.status.update');
     Route::post('orders/{order}/credentials', [AdminOrderController::class, 'storeCredential'])->name('orders.credentials.store');
     Route::put('orders/{order}/credentials/{credential}', [AdminOrderController::class, 'updateCredential'])->name('orders.credentials.update');

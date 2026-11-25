@@ -25,6 +25,10 @@ use Illuminate\Support\Carbon;
  * @property float $amount_due_now
  * @property float $balance_due
  * @property PaymentOption|null $payment_option
+ * @property float|null $refund_amount
+ * @property Carbon|null $refunded_on
+ * @property string|null $refund_receipt_path
+ * @property string|null $refund_note
  * @property int|null $shipping_address_id
  * @property array<string, mixed>|null $additional_data
  * @property bool $can_reupload_receipt
@@ -44,6 +48,10 @@ use Illuminate\Support\Carbon;
     'shipping_total',
     'amount_due_now',
     'balance_due',
+    'refund_amount',
+    'refunded_on',
+    'refund_receipt_path',
+    'refund_note',
     'payment_option',
     'shipping_address_id',
     'additional_data',
@@ -66,6 +74,8 @@ class Order extends Model
             'shipping_total' => MoneyNpr::class,
             'amount_due_now' => MoneyNpr::class,
             'balance_due' => MoneyNpr::class,
+            'refund_amount' => MoneyNpr::class,
+            'refunded_on' => 'date:Y-m-d',
             'additional_data' => 'array',
             'can_reupload_receipt' => 'boolean',
             'request_receipt_upload' => 'boolean',
@@ -147,7 +157,25 @@ class Order extends Model
 
         return round($this->items->sum(
             fn (OrderItem $item): float => $item->profitNpr(),
-        ), 2);
+        ) - $this->refundedNpr(), 2);
+    }
+
+    /**
+     * Whether part of this order's payment was handed back as a prorated refund.
+     */
+    public function hasProratedRefund(): bool
+    {
+        return $this->refund_amount !== null;
+    }
+
+    /**
+     * What was handed back to the customer, in NPR. A refund comes straight out
+     * of revenue while the cost of goods stays spent, so it reduces profit — and
+     * the tithe levied on it — by its full amount.
+     */
+    public function refundedNpr(): float
+    {
+        return $this->refund_amount ?? 0.0;
     }
 
     /**
