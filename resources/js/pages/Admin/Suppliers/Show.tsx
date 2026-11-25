@@ -9,6 +9,7 @@ import { PersonalPurchaseDialog } from '@/components/procurement/personal-purcha
 import { PurchasesTable } from '@/components/procurement/purchases-table';
 import type { Purchase } from '@/components/procurement/purchases-table';
 import { ShopLink } from '@/components/procurement/shop-link';
+import { Stat } from '@/components/procurement/stat';
 import { SupplierFormDialog } from '@/components/procurement/supplier-form-dialog';
 import type {
     PlatformOption,
@@ -41,32 +42,6 @@ import {
     formatRate,
     formatSignedPercent,
 } from '@/lib/wallet-credits';
-
-function Stat({
-    label,
-    value,
-    hint,
-}: {
-    label: string;
-    value: string;
-    hint?: string;
-}) {
-    return (
-        <Card className="gap-1 py-4">
-            <CardContent className="px-4">
-                <div className="text-xs text-muted-foreground">{label}</div>
-                <div className="text-xl font-semibold tabular-nums">
-                    {value}
-                </div>
-                {hint && (
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                        {hint}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
 
 export default function SupplierShow({
     supplier,
