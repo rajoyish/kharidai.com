@@ -11,6 +11,7 @@ use App\Models\WalletPurchase;
 use App\Models\WalletTopUp;
 use App\Services\Procurement\ShopLink;
 use App\Services\Procurement\WalletLedger;
+use App\Services\Procurement\WalletSpendReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,7 @@ class SupplierController extends Controller
 
     public function __construct(private readonly WalletLedger $ledger) {}
 
-    public function index(): Response
+    public function index(WalletSpendReport $spendReport): Response
     {
         $suppliers = Supplier::query()
             ->with('latestTopUp')
@@ -43,6 +44,7 @@ class SupplierController extends Controller
         return Inertia::render('Admin/Suppliers/Index', [
             'suppliers' => $suppliers,
             'platforms' => PurchasePlatform::options(),
+            'spend' => $spendReport->build(),
         ]);
     }
 

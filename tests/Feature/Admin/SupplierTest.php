@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WalletPurchase;
 use App\Models\WalletTopUp;
 use App\Services\Procurement\WalletLedger;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->admin = User::factory()->create(['is_admin' => true]);
@@ -325,4 +326,29 @@ it('does not label a supplier whose platform is other', function () {
     $this->actingAs($this->admin)
         ->get(route('admin.suppliers.index'))
         ->assertInertia(fn ($page) => $page->where('suppliers.0.platform_label', null));
+});
+
+it('totals every wallet by where its money went, per supplier and per month', function () {
+    $this->travelTo('2026-11-20');
+    $ledger = app(WalletLedger::class);
+    $other = Supplier::factory()->create(['name' => 'Zed Credits']);
+    referenceTopUp($this->supplier);
+    referenceTopUp($other, ['topped_up_at' => '2025-10-01']);
+    $ledger->recordPurchase($this->supplier, ['product_variant_id' => ProductVariant::factory()->create()->id, 'quantity' => 1, 'unit_cost_credits' => '2.04', 'purchased_at' => '2026-11-12']);
+    $ledger->recordPurchase($this->supplier, ['is_personal' => true, 'description' => 'For me', 'quantity' => 1, 'unit_cost_credits' => '2.04', 'purchased_at' => '2026-10-05']);
+
+    $this->actingAs($this->admin)->get(route('admin.suppliers.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('spend.totals.topped_up_npr', 3167.22)
+            ->where('spend.totals.store_npr', 398.99)
+            ->where('spend.totals.personal_npr', 399)
+            ->where('spend.totals.remaining_npr', 2369.23)
+            ->where('spend.suppliers.0.name', $this->supplier->name)
+            ->where('spend.suppliers.0.remaining_npr', 785.62)
+            ->where('spend.suppliers.1.store_npr', 0)
+            ->has('spend.months', 12)
+            ->where('spend.months.0.month', '2025-12')
+            ->where('spend.months.11', ['month' => '2026-11', 'topped_up_npr' => 1583.61, 'store_npr' => 398.99, 'personal_npr' => 0])
+            ->where('spend.months.10.personal_npr', 399),
+        );
 });
