@@ -155,6 +155,7 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::resource('products', ProductController::class)->except(['show']);
     Route::patch('products/{product}/toggle-stock', [ProductController::class, 'toggleStock'])->name('products.toggle-stock');
     Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
+    Route::post('products/{product}/variants/quote', [VariantPricingController::class, 'quoteNew'])->name('products.variants.quote');
     Route::resource('products.variants', ProductVariantController::class)->except(['show']);
 
     // Price calculator and price history for one variant.

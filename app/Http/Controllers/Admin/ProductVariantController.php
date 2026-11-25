@@ -3,18 +3,30 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CostBasis;
+use App\Enums\PriceRounding;
+use App\Enums\PriceSnapshotSource;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\VariantPriceSnapshot;
 use App\Services\Procurement\PriceCalculator;
 use App\Services\Procurement\VariantPriceHistory;
+use App\Services\Procurement\WalletLedger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProductVariantController extends Controller
 {
+    /** The Create form prices the new variant with the calculator. */
+    public const PRICED_BY_CALCULATOR = 'calculator';
+
+    /** The Create form takes a selling price typed in by hand. */
+    public const PRICED_BY_HAND = 'manual';
+
     public function __construct(private readonly VariantPriceHistory $priceHistory) {}
 
     public function index(Product $product, PriceCalculator $calculator): Response
@@ -43,15 +55,58 @@ class ProductVariantController extends Controller
         ]);
     }
 
-    public function create(Product $product): Response
+    public function create(Product $product, WalletLedger $ledger): Response
     {
-        return Inertia::render('Admin/ProductVariants/Create', ['product' => $product]);
+        $suppliers = VariantPricingController::supplierOptions($ledger);
+
+        // A new variant is usually bought the same way as its siblings, so the
+        // calculator starts from the product's most recent calculation.
+        $lastCalculation = VariantPriceSnapshot::query()
+            ->whereIn('product_variant_id', $product->variants()->select('id'))
+            ->where('source', PriceSnapshotSource::Calculator)
+            ->latest('id')
+            ->first();
+
+        return Inertia::render('Admin/ProductVariants/Create', [
+            'product' => $product,
+            'suppliers' => $suppliers,
+            'defaults' => [
+                'supplier_id' => $lastCalculation?->supplier_id ?? $suppliers->first()['id'] ?? null,
+                'cost_basis' => $suppliers->isEmpty() ? CostBasis::Manual->value : ($lastCalculation?->cost_basis->value ?? CostBasis::Fifo->value),
+                'manual_npr_per_credit' => $lastCalculation?->cost_basis === CostBasis::Manual ? $lastCalculation->npr_per_credit : '',
+                'extra_cost_npr' => $lastCalculation?->extra_cost_npr ?? '',
+                'profit_mode' => $lastCalculation?->target_margin_percent !== null ? 'margin' : 'amount',
+                'target_profit_npr' => $lastCalculation?->target_profit_npr ?? '',
+                'target_margin_percent' => $lastCalculation?->target_margin_percent ?? '',
+                'rounding' => $lastCalculation?->rounding->value ?? PriceRounding::NearestRupee->value,
+            ],
+            ...VariantPricingController::calculatorOptions(),
+        ]);
     }
 
+    /**
+     * Create a variant priced either by the calculator, which records its
+     * cost inputs as the first history row, or by a price typed by hand.
+     */
     public function store(Request $request, Product $product): RedirectResponse
     {
-        $variant = $product->variants()->create($this->validatedData($request));
-        $this->priceHistory->recordManualChange($variant, $request->user());
+        $pricedBy = $request->validate([
+            'pricing_mode' => ['nullable', Rule::in([self::PRICED_BY_CALCULATOR, self::PRICED_BY_HAND])],
+        ])['pricing_mode'] ?? self::PRICED_BY_HAND;
+
+        if ($pricedBy === self::PRICED_BY_HAND) {
+            $variant = $product->variants()->create($this->validatedData($request));
+            $this->priceHistory->recordManualChange($variant, $request->user());
+
+            return redirect()->route('admin.products.variants.index', $product)->with('success', 'Variant created successfully.');
+        }
+
+        $attributes = Arr::except($this->validatedData($request, requiresPrice: false), ['price_npr', 'purchase_price_npr']);
+        $input = VariantPricingController::validateCalculatorInput($request);
+
+        if ($this->priceHistory->createFromQuote($product, $attributes, $input, $request->user()) === null) {
+            return redirect()->back()->withInput()->withErrors(['supplier_cost_credits' => 'Add a top-up first, or type your own credit price.']);
+        }
 
         return redirect()->route('admin.products.variants.index', $product)->with('success', 'Variant created successfully.');
     }
@@ -78,12 +133,12 @@ class ProductVariantController extends Controller
      *
      * @return array<string, mixed>
      */
-    protected function validatedData(Request $request): array
+    protected function validatedData(Request $request, bool $requiresPrice = true): array
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'details' => 'nullable|string',
-            'price_npr' => 'required|numeric|min:0',
+            'price_npr' => [$requiresPrice ? 'required' : 'nullable', 'numeric', 'min:0'],
             'purchase_price_npr' => 'nullable|numeric|min:0',
             'show_pricing' => 'nullable|boolean',
             'validity_days' => 'nullable|integer|min:1',
