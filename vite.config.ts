@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
     resolve: {
         dedupe: ['react', 'react-dom'],
     },
@@ -22,7 +22,15 @@ export default defineConfig({
         // It also settles the `novel` -> `react-tweet` case: that package
         // imports a CSS module, which Node would refuse to `import` with
         // ERR_UNKNOWN_FILE_EXTENSION. Bundled, Vite handles the stylesheet.
-        noExternal: true,
+        //
+        // Build only: the dev server's SSR module runner evaluates inlined
+        // dependencies as ES modules without CommonJS interop, so inlining
+        // `react` there throws "module is not defined". In dev, `node_modules`
+        // is present, so everything else resolves normally; only `react-tweet`
+        // still has to be inlined for its CSS module import, along with
+        // `novel`, which imports it (an externalised `novel` would load
+        // `react-tweet` through Node and bypass Vite).
+        noExternal: command === 'build' ? true : ['novel', 'react-tweet'],
     },
     plugins: [
         laravel({
@@ -48,4 +56,4 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
-});
+}));
