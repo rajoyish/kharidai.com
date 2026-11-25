@@ -19,6 +19,7 @@ import {
     Tags,
     Truck,
     Users,
+    Handshake,
     LayoutDashboard,
     ShoppingBag,
     Store,
@@ -62,6 +63,7 @@ import { index as adminProductsIndex } from '@/routes/admin/products';
 import { index as adminServicesIndex } from '@/routes/admin/services';
 import { index as adminShippingIndex } from '@/routes/admin/shipping';
 import { index as adminSubscriptionsIndex } from '@/routes/admin/subscriptions';
+import { index as adminSuppliersIndex } from '@/routes/admin/suppliers';
 import { index as adminTithesIndex } from '@/routes/admin/tithes';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as ordersIndex } from '@/routes/orders';
@@ -174,6 +176,11 @@ const adminNavSections: NavSection[] = [
                 title: 'Categories',
                 href: adminCategoriesIndex(),
                 icon: Tags,
+            },
+            {
+                title: 'Suppliers',
+                href: adminSuppliersIndex(),
+                icon: Handshake,
             },
         ],
     },

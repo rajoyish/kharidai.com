@@ -6,6 +6,7 @@ import {
     destroy as destroyVariant,
     edit as editVariant,
 } from '@/actions/App/Http/Controllers/Admin/ProductVariantController';
+import { show as variantPricing } from '@/actions/App/Http/Controllers/Admin/VariantPricingController';
 import { PagePanel } from '@/components/page-panel';
 import { SeoHead } from '@/components/seo-head';
 import {
@@ -17,6 +18,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -26,6 +28,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatNpr } from '@/lib/currency';
+import { formatCredits, formatSignedPercent } from '@/lib/wallet-credits';
 
 type Product = {
     id: number;
@@ -36,10 +40,29 @@ type Product = {
 type Variant = {
     id: number;
     name: string;
-    price_npr: string;
-    purchase_price_npr: string | null;
+    price_npr: number;
+    purchase_price_npr: number | null;
     validity_days: number | null;
+    supplier_cost_credits: string | null;
+    supplier_name: string | null;
+    /** What the supplier cost lands at today, from the variant's wallet. */
+    current_cost_npr: number | null;
 };
+
+/**
+ * How far today's landed cost has moved from the purchase price the variant
+ * was priced against, once the gap is large enough to act on.
+ */
+function costDrift(variant: Variant): number | null {
+    if (variant.current_cost_npr === null || !variant.purchase_price_npr) {
+        return null;
+    }
+
+    const drift =
+        (variant.current_cost_npr / variant.purchase_price_npr - 1) * 100;
+
+    return Math.abs(drift) >= 2 ? drift : null;
+}
 
 export default function VariantsIndex({
     product,
@@ -77,8 +100,10 @@ export default function VariantsIndex({
                     <TableHeader>
                         <TableRow>
                             <TableHead>Name</TableHead>
-                            <TableHead>Selling Price (NPR)</TableHead>
-                            <TableHead>Purchase Price (NPR)</TableHead>
+                            <TableHead>Selling Price</TableHead>
+                            <TableHead>Purchase Price</TableHead>
+                            <TableHead>Profit</TableHead>
+                            <TableHead>Supplier Price</TableHead>
                             <TableHead>Validity</TableHead>
                             <TableHead className="text-right">
                                 Actions
@@ -91,9 +116,53 @@ export default function VariantsIndex({
                                 <TableCell className="font-medium">
                                     {variant.name}
                                 </TableCell>
-                                <TableCell>{variant.price_npr}</TableCell>
-                                <TableCell>
-                                    {variant.purchase_price_npr || '0.00'}
+                                <TableCell className="tabular-nums">
+                                    {formatNpr(variant.price_npr)}
+                                </TableCell>
+                                <TableCell className="tabular-nums">
+                                    {formatNpr(variant.purchase_price_npr ?? 0)}
+                                    {costDrift(variant) !== null && (
+                                        <div>
+                                            <Badge
+                                                variant={
+                                                    (costDrift(variant) ?? 0) >
+                                                    0
+                                                        ? 'warning'
+                                                        : 'info'
+                                                }
+                                                title={`Cost now: ${formatNpr(variant.current_cost_npr ?? 0)}`}
+                                            >
+                                                Cost{' '}
+                                                {formatSignedPercent(
+                                                    costDrift(variant) ?? 0,
+                                                )}
+                                            </Badge>
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="tabular-nums">
+                                    {variant.purchase_price_npr
+                                        ? `${formatNpr(variant.price_npr - variant.purchase_price_npr)}${variant.price_npr > 0 ? ` · ${(((variant.price_npr - variant.purchase_price_npr) / variant.price_npr) * 100).toFixed(1)}%` : ''}`
+                                        : '—'}
+                                </TableCell>
+                                <TableCell className="text-sm">
+                                    {variant.supplier_cost_credits ? (
+                                        <>
+                                            {formatCredits(
+                                                variant.supplier_cost_credits,
+                                            )}{' '}
+                                            credits
+                                            {variant.supplier_name && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    {variant.supplier_name}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <span className="text-muted-foreground">
+                                            —
+                                        </span>
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     {!variant.validity_days
@@ -101,6 +170,16 @@ export default function VariantsIndex({
                                         : `${variant.validity_days} days`}
                                 </TableCell>
                                 <TableCell className="flex justify-end gap-2">
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link
+                                            href={variantPricing.url({
+                                                product: product.slug,
+                                                variant: variant.id,
+                                            })}
+                                        >
+                                            Pricing
+                                        </Link>
+                                    </Button>
                                     <Button variant="outline" size="sm" asChild>
                                         <Link
                                             href={editVariant.url({
@@ -127,7 +206,7 @@ export default function VariantsIndex({
                         {variants.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={5}
+                                    colSpan={7}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No variants found.

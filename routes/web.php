@@ -15,8 +15,12 @@ use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ServiceEngagementController;
 use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
+use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\TitheController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VariantPricingController;
+use App\Http\Controllers\Admin\WalletPurchaseController;
+use App\Http\Controllers\Admin\WalletTopUpController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
@@ -152,6 +156,20 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::patch('products/{product}/toggle-stock', [ProductController::class, 'toggleStock'])->name('products.toggle-stock');
     Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
     Route::resource('products.variants', ProductVariantController::class)->except(['show']);
+
+    // Price calculator and price history for one variant.
+    Route::scopeBindings()->group(function () {
+        Route::get('products/{product}/variants/{variant}/pricing', [VariantPricingController::class, 'show'])->name('products.variants.pricing.show');
+        Route::post('products/{product}/variants/{variant}/pricing/quote', [VariantPricingController::class, 'quote'])->name('products.variants.pricing.quote');
+        Route::post('products/{product}/variants/{variant}/pricing', [VariantPricingController::class, 'apply'])->name('products.variants.pricing.apply');
+        Route::patch('products/{product}/variants/{variant}/supplier', [VariantPricingController::class, 'assignSupplier'])->name('products.variants.supplier.update');
+    });
+
+    // Suppliers and the prepaid wallet each holds: top-ups are cost lots,
+    // purchases draw them down oldest first.
+    Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+    Route::resource('suppliers.top-ups', WalletTopUpController::class)->only(['store', 'update', 'destroy'])->scoped()->parameters(['top-ups' => 'topUp']);
+    Route::resource('suppliers.purchases', WalletPurchaseController::class)->only(['store', 'destroy'])->scoped();
 
     /*
      * Purchase-gated delivery guides. There is deliberately no show route:
