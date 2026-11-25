@@ -247,7 +247,7 @@ export function TopUpDialog({
                         id="notes"
                         label="Notes"
                         error={errors.notes}
-                        className="grid gap-2 sm:col-span-2"
+                        className="sm:col-span-2"
                     >
                         <Textarea
                             id="notes"
