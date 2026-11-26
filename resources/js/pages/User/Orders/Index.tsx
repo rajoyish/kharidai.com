@@ -15,12 +15,15 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { ValidityBadge } from '@/components/validity-badge';
 import { formatNpr } from '@/lib/currency';
 import { home } from '@/routes';
 import { index as ordersIndex, show as showOrder } from '@/routes/orders';
 
 type Order = {
     id: number;
+    /** The order's URL key; the id is never used in links. */
+    uuid: string;
     order_number: string;
     /** Invoice-aware total: service invoices supersede checkout estimates. */
     display_total_npr: number;
@@ -32,6 +35,7 @@ type Order = {
         quantity: number;
         product_variant: {
             name: string;
+            validity_months: number | null;
             product: {
                 title: string;
             };
@@ -74,7 +78,7 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                     <CopyableOrderNumber
                                         orderNumber={order.order_number}
                                     >
-                                        <Link href={showOrder(order.id)}>
+                                        <Link href={showOrder(order.uuid)}>
                                             {order.order_number}
                                         </Link>
                                     </CopyableOrderNumber>
@@ -90,13 +94,24 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                             const text = `${item.quantity}x ${item.product_variant.product.title} (${item.product_variant.name})`;
 
                                             return (
-                                                <TruncatedText
+                                                <span
                                                     key={item.id}
-                                                    title={text}
-                                                    className="inline-block max-w-[200px] rounded bg-secondary px-1.5 py-0.5 align-bottom text-xs text-secondary-foreground sm:max-w-[300px]"
+                                                    className="inline-flex max-w-full items-center gap-1"
                                                 >
-                                                    {text}
-                                                </TruncatedText>
+                                                    <TruncatedText
+                                                        title={text}
+                                                        className="inline-block max-w-[200px] rounded bg-secondary px-1.5 py-0.5 align-bottom text-xs text-secondary-foreground sm:max-w-[300px]"
+                                                    >
+                                                        {text}
+                                                    </TruncatedText>
+                                                    <ValidityBadge
+                                                        months={
+                                                            item.product_variant
+                                                                .validity_months
+                                                        }
+                                                        size="sm"
+                                                    />
+                                                </span>
                                             );
                                         })}
                                     </div>
@@ -127,21 +142,21 @@ export default function OrderIndex({ orders }: { orders: { data: Order[] } }) {
                                             asChild
                                             className="border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-900 focus-visible:ring-amber-500 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
                                         >
-                                            <Link href={showOrder(order.id)}>
+                                            <Link href={showOrder(order.uuid)}>
                                                 <Upload className="mr-1 h-4 w-4" />{' '}
                                                 Reupload Receipt
                                             </Link>
                                         </Button>
                                     )}
                                     <Button variant="ghost" size="sm" asChild>
-                                        <Link href={showOrder(order.id)}>
+                                        <Link href={showOrder(order.uuid)}>
                                             <Eye className="h-4 w-4" />
                                             View
                                         </Link>
                                     </Button>
                                     <Button variant="outline" size="sm" asChild>
                                         <Link
-                                            href={`${showOrder(order.id)}#chat`}
+                                            href={`${showOrder(order.uuid)}#chat`}
                                         >
                                             <MessageCircle className="h-4 w-4" />
                                             Support

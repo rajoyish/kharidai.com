@@ -111,7 +111,7 @@ it('refuses the order page to someone who did not place the order', function () 
 
     $this->actingAs($stranger)
         ->get(route('orders.show', orderFor($buyer, $product)))
-        ->assertForbidden()
+        ->assertNotFound()
         ->assertDontSee('Paid steps');
 });
 

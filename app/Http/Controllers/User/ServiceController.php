@@ -24,7 +24,7 @@ class ServiceController extends Controller
         $engagements = $request->user()
             ->serviceEngagements()
             ->customerVisible()
-            ->with(['product:id,title', 'productVariant:id,name', 'orderItem.order:id,order_number'])
+            ->with(['product:id,title', 'productVariant:id,name', 'orderItem.order:id,uuid,order_number'])
             ->latest()
             ->get()
             ->map(fn (ServiceEngagement $engagement): array => [
@@ -38,7 +38,7 @@ class ServiceController extends Controller
                 'project_completion_date' => $engagement->project_completion_date?->format('n/j/Y'),
                 'product' => $engagement->product?->only('id', 'title'),
                 'variant' => $engagement->productVariant?->only('id', 'name'),
-                'order_id' => $engagement->orderItem?->order?->id,
+                'order_uuid' => $engagement->orderItem?->order?->uuid,
                 'order_number' => $engagement->orderItem?->order?->order_number,
                 'delivery_note' => $engagement->delivery_note,
                 'created_at' => $engagement->created_at?->format('n/j/Y'),

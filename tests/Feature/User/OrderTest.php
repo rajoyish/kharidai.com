@@ -7,9 +7,12 @@ use App\Models\ProductVariant;
 use App\Models\ServiceEngagement;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
+use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -31,7 +34,7 @@ it('can list user orders', function () {
 it('can view specific order details', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->user)->get('/orders/'.$order->id);
+    $response = $this->actingAs($this->user)->get('/orders/'.$order->uuid);
 
     $response->assertSuccessful();
 });
@@ -57,7 +60,7 @@ it('shows the service invoice on the order details page', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->get('/orders/'.$order->id)
+        ->get('/orders/'.$order->uuid)
         ->assertInertia(fn ($page) => $page
             ->component('User/Orders/Show')
             ->where('order.items.0.service_invoices.0.project_name', 'Brand Refresh')
@@ -94,7 +97,7 @@ it('rolls the service invoice total up to the order total on the show page', fun
     ]);
 
     $this->actingAs($this->user)
-        ->get('/orders/'.$order->id)
+        ->get('/orders/'.$order->uuid)
         ->assertInertia(fn ($page) => $page
             ->component('User/Orders/Show')
             ->where('order.display_total_npr', 11300)
@@ -145,7 +148,7 @@ it('keeps the stored item totals for orders without service invoices', function 
     ]);
 
     $this->actingAs($this->user)
-        ->get('/orders/'.$order->id)
+        ->get('/orders/'.$order->uuid)
         ->assertInertia(fn ($page) => $page
             ->where('order.display_total_npr', 10100)
         );
@@ -168,7 +171,7 @@ it('shows the engagement status on the order page before an invoice exists', fun
     ]);
 
     $this->actingAs($this->user)
-        ->get('/orders/'.$order->id)
+        ->get('/orders/'.$order->uuid)
         ->assertInertia(fn ($page) => $page
             ->component('User/Orders/Show')
             ->where('order.items.0.service_invoices.0.status_label', 'Final billing')
@@ -176,13 +179,23 @@ it('shows the engagement status on the order page before an invoice exists', fun
         );
 });
 
-it('cannot view other user order details', function () {
+it('answers another customer\'s order as not found, never confirming it exists', function () {
     $otherUser = User::factory()->create();
     $order = Order::factory()->create(['user_id' => $otherUser->id]);
 
-    $response = $this->actingAs($this->user)->get('/orders/'.$order->id);
+    $this->actingAs($this->user)->get('/orders/'.$order->uuid)->assertNotFound();
+    $this->actingAs($this->user)->get(route('checkout.npr', $order))->assertNotFound();
+    $this->actingAs($this->user)->post('/orders/'.$order->uuid.'/messages', ['message' => 'Hi'])->assertNotFound();
+});
 
-    $response->assertForbidden();
+it('addresses orders by an unguessable uuid, not the sequential id', function () {
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+
+    expect(route('orders.show', $order))->toEndWith('/orders/'.$order->uuid)
+        ->and($order->uuid)->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/');
+
+    $this->actingAs($this->user)->get('/orders/'.$order->uuid)->assertSuccessful();
+    $this->actingAs($this->user)->get('/orders/'.$order->id)->assertNotFound();
 });
 
 it('can send a message on an order', function () {
@@ -191,7 +204,7 @@ it('can send a message on an order', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->user)->post('/orders/'.$order->id.'/messages', [
+    $response = $this->actingAs($this->user)->post('/orders/'.$order->uuid.'/messages', [
         'message' => 'Hello this is a test message',
     ]);
 
@@ -212,7 +225,7 @@ it('can ask for receipt reupload', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->user)->post('/orders/'.$order->id.'/ask-reupload-receipt');
+    $response = $this->actingAs($this->user)->post('/orders/'.$order->uuid.'/ask-reupload-receipt');
 
     $response->assertRedirect();
     $this->assertDatabaseHas('orders', [
@@ -241,11 +254,42 @@ it('exposes the amounts the scan-to-pay QR needs on the order details page', fun
     ]);
 
     $this->actingAs($this->user)
-        ->get('/orders/'.$order->id)
+        ->get('/orders/'.$order->uuid)
         ->assertInertia(fn ($page) => $page
             ->component('User/Orders/Show')
             ->where('order.amount_due_now', 250)
             ->where('order.balance_due', 1750)
             ->where('order.payment_receipt', null)
         );
+});
+
+it('links order notifications by the order uuid', function () {
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+
+    $data = (new OrderStatusUpdatedNotification($order, 'completed'))->toArray($this->user);
+
+    expect($data['url'])->toBe(route('orders.show', $order))
+        ->and($data['url'])->toContain($order->uuid);
+});
+
+it('rewrites stored notification links from order ids to uuids', function () {
+    $order = Order::factory()->create(['user_id' => $this->user->id]);
+    $migration = require database_path('migrations/2026_11_26_154715_add_uuid_to_orders_table.php');
+    $migration->down();
+
+    DB::table('notifications')->insert([
+        'id' => (string) Str::uuid(),
+        'type' => OrderStatusUpdatedNotification::class,
+        'notifiable_type' => User::class,
+        'notifiable_id' => $this->user->id,
+        'data' => json_encode(['url' => "https://kharidai.com/orders/{$order->id}", 'order_id' => $order->id]),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $migration->up();
+
+    $uuid = DB::table('orders')->where('id', $order->id)->value('uuid');
+    expect(json_decode(DB::table('notifications')->value('data'), true)['url'])
+        ->toBe("https://kharidai.com/orders/{$uuid}");
 });

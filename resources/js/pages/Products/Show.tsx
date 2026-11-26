@@ -24,6 +24,7 @@ import { ServiceBriefForm } from '@/components/service-brief-form';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ValidityBadge } from '@/components/validity-badge';
 import { VariantOptionSelector } from '@/components/variant-option-selector';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
 import { formatNpr, formatNprAmount } from '@/lib/currency';
@@ -64,6 +65,8 @@ type Variant = {
      * viewers. Null when it has none, which means the product's apply.
      */
     hidden_description?: string | null;
+    /** How long a subscription bought on this variant lasts; null for none. */
+    validity_months?: number | null;
 };
 
 type ProductGallery = {
@@ -459,16 +462,24 @@ export default function Show({
                                         <Label
                                             key={variant.id}
                                             htmlFor={`variant-${variant.id}`}
-                                            className="flex cursor-pointer flex-col rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent-surface hover:text-foreground [&:has([data-state=checked])]:border-primary"
+                                            className="group/variant flex cursor-pointer flex-col rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent-surface hover:text-foreground [&:has([data-state=checked])]:border-primary"
                                         >
-                                            <div className="flex w-full items-center justify-between">
+                                            <div className="flex w-full items-center justify-between gap-3">
                                                 <span className="text-base font-semibold">
                                                     {variant.name}
                                                 </span>
-                                                <RadioGroupItem
-                                                    value={variant.id.toString()}
-                                                    id={`variant-${variant.id}`}
-                                                />
+                                                <div className="flex shrink-0 items-center gap-3">
+                                                    <ValidityBadge
+                                                        months={
+                                                            variant.validity_months
+                                                        }
+                                                        className="group-has-[[data-state=checked]]/variant:border-primary/30 group-has-[[data-state=checked]]/variant:bg-primary-surface group-has-[[data-state=checked]]/variant:text-primary-text"
+                                                    />
+                                                    <RadioGroupItem
+                                                        value={variant.id.toString()}
+                                                        id={`variant-${variant.id}`}
+                                                    />
+                                                </div>
                                             </div>
                                             {variant.details && (
                                                 <span className="mt-1 text-sm font-normal text-muted-foreground">

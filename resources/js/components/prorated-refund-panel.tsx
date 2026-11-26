@@ -102,7 +102,7 @@ export function ProratedRefundPanel({
     order,
     subscriptions,
 }: {
-    order: OrderRefund & { id: number; order_number: string };
+    order: OrderRefund & { id: number; uuid: string; order_number: string };
     subscriptions: RefundableSubscription[];
 }) {
     const isRefunded = hasProratedRefund(order);
@@ -132,7 +132,7 @@ export function ProratedRefundPanel({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        post(saveRefund.url(order.id), {
+        post(saveRefund.url(order.uuid), {
             preserveScroll: true,
             onSuccess: () => {
                 setIsEditing(false);
@@ -153,7 +153,7 @@ export function ProratedRefundPanel({
     };
 
     const handleRemove = () => {
-        router.delete(destroyRefund.url(order.id), {
+        router.delete(destroyRefund.url(order.uuid), {
             preserveScroll: true,
             onSuccess: () => {
                 reset();

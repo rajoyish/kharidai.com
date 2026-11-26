@@ -520,7 +520,7 @@ it('settles one order without touching another in the same month', function () {
     $monthlyTithe = MonthlyTithe::query()->where('year', 2026)->where('month', 7)->sole();
 
     $this->actingAs($this->admin)
-        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->id]))
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->uuid]))
         ->assertRedirect();
 
     $this->assertDatabaseHas('monthly_tithe_items', [
@@ -559,7 +559,7 @@ it('settles two orders of the same product independently', function () {
     $monthlyTithe = syncTithe(2026, 7);
 
     $this->actingAs($this->admin)
-        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $first->id]))
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $first->uuid]))
         ->assertRedirect();
 
     $this->actingAs($this->admin)
@@ -619,7 +619,7 @@ it('settles the month automatically once every entry is paid', function () {
 
     foreach ([$smaller, $larger] as $order) {
         $this->actingAs($this->admin)
-            ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $order->id]))
+            ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $order->uuid]))
             ->assertRedirect();
     }
 
@@ -667,7 +667,7 @@ it('returns the month to unpaid when a single entry is unsettled after a bulk pa
         ->assertRedirect();
 
     $this->actingAs($this->admin)
-        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->id]))
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->uuid]))
         ->assertRedirect();
 
     expect($monthlyTithe->fresh()->is_paid)->toBeFalse();
@@ -697,7 +697,7 @@ it('treats a month settled before entry tracking existed as fully paid', functio
 
     // Unsettling one entry must backfill the rest as paid rather than wipe them.
     $this->actingAs($this->admin)
-        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->id]))
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $smaller->uuid]))
         ->assertRedirect();
 
     $this->actingAs($this->admin)
@@ -714,7 +714,7 @@ it('rejects settling an order that earned no profit in the month', function () {
     $unrelatedOrder = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
 
     $this->actingAs($this->admin)
-        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $unrelatedOrder->id]))
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $unrelatedOrder->uuid]))
         ->assertNotFound();
 
     $this->assertDatabaseCount('monthly_tithe_items', 0);
@@ -776,7 +776,7 @@ it('prevents non-admins from accessing tithe management', function () {
         ->assertForbidden();
 
     $this->actingAs($this->user)
-        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $order->id]))
+        ->patch(route('admin.tithes.orders.toggle-status', [$monthlyTithe->id, $order->uuid]))
         ->assertForbidden();
 
     $this->actingAs($this->user)

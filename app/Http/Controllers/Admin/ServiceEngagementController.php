@@ -30,7 +30,7 @@ class ServiceEngagementController extends Controller
         $search = $request->string('search')->trim()->value();
 
         $engagements = ServiceEngagement::query()
-            ->with(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'assignedBy:id,name', 'orderItem.order:id,order_number'])
+            ->with(['user:id,name,email', 'product:id,title', 'productVariant:id,name', 'assignedBy:id,name', 'orderItem.order:id,uuid,order_number'])
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('project_name', 'like', "%{$search}%")
@@ -59,7 +59,7 @@ class ServiceEngagementController extends Controller
                 'product' => $engagement->product?->only('id', 'title'),
                 'variant' => $engagement->productVariant?->only('id', 'name'),
                 'assigned_by' => $engagement->assignedBy?->name,
-                'order' => $engagement->orderItem?->order?->only('id', 'order_number'),
+                'order' => $engagement->orderItem?->order?->only('id', 'uuid', 'order_number'),
                 'created_at' => $engagement->created_at?->format('n/j/Y'),
             ]);
 
@@ -171,6 +171,7 @@ class ServiceEngagementController extends Controller
                 'brief' => $serviceEngagement->brief,
                 'order' => $linkedOrder ? [
                     'id' => $linkedOrder->id,
+                    'uuid' => $linkedOrder->uuid,
                     'order_number' => $linkedOrder->order_number,
                     // The customer's uploaded receipt, so payment can be
                     // verified here before toggling the invoice to Paid.

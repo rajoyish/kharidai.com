@@ -30,7 +30,8 @@ type Engagement = {
     project_completion_date: string | null;
     product: { id: number; title: string } | null;
     variant: { id: number; name: string } | null;
-    order_id: number | null;
+    /** The linked order's URL key, for the order link. */
+    order_uuid: string | null;
     order_number: string | null;
     delivery_note: string | null;
     created_at: string | null;
@@ -82,7 +83,7 @@ export default function UserServicesIndex({
                                     {engagement.variant?.name ?? '—'}
                                 </TableCell>
                                 <TableCell>
-                                    {engagement.order_id &&
+                                    {engagement.order_uuid &&
                                     engagement.order_number ? (
                                         <div className="flex flex-col items-start gap-1">
                                             <CopyableOrderNumber
@@ -92,7 +93,7 @@ export default function UserServicesIndex({
                                             >
                                                 <Link
                                                     href={showOrder(
-                                                        engagement.order_id,
+                                                        engagement.order_uuid,
                                                     )}
                                                     className="font-medium text-primary underline-offset-4 hover:underline"
                                                 >
@@ -104,7 +105,7 @@ export default function UserServicesIndex({
                                                 engagement.due_npr > 0 && (
                                                     <Link
                                                         href={showOrder(
-                                                            engagement.order_id,
+                                                            engagement.order_uuid,
                                                         )}
                                                         className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                                                     >

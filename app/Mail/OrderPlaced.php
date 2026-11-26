@@ -70,7 +70,7 @@ class OrderPlaced extends Mailable implements ShouldQueue
                  * with a saved invoice differs from the snapshot total_amount.
                  */
                 'total' => $this->order->displayTotalNpr(),
-                'adminUrl' => route('admin.orders.show', $this->order->id),
+                'adminUrl' => route('admin.orders.show', $this->order),
             ],
         );
     }

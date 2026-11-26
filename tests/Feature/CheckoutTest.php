@@ -307,7 +307,7 @@ it('can view NPR payment page', function () {
         'status' => 'pending',
     ]);
 
-    $response = $this->actingAs($this->user)->get('/checkout/'.$order->id.'/npr');
+    $response = $this->actingAs($this->user)->get('/checkout/'.$order->uuid.'/npr');
 
     $response->assertSuccessful();
 });
@@ -323,7 +323,7 @@ it('can process NPR payment receipt upload', function () {
 
     $file = UploadedFile::fake()->image('receipt.jpg');
 
-    $response = $this->actingAs($this->user)->post('/checkout/'.$order->id.'/npr', [
+    $response = $this->actingAs($this->user)->post('/checkout/'.$order->uuid.'/npr', [
         'receipt' => $file,
     ]);
 
@@ -355,7 +355,7 @@ it('can process NPR payment receipt re-upload and deletes old receipt', function
 
     $newFile = UploadedFile::fake()->image('new_receipt.jpg');
 
-    $response = $this->actingAs($this->user)->post('/checkout/'.$order->id.'/npr', [
+    $response = $this->actingAs($this->user)->post('/checkout/'.$order->uuid.'/npr', [
         'receipt' => $newFile,
     ]);
 
@@ -380,7 +380,7 @@ it('cannot upload receipt if already uploaded and can_reupload_receipt is false'
 
     $file = UploadedFile::fake()->image('receipt.jpg');
 
-    $response = $this->actingAs($this->user)->post('/checkout/'.$order->id.'/npr', [
+    $response = $this->actingAs($this->user)->post('/checkout/'.$order->uuid.'/npr', [
         'receipt' => $file,
     ]);
 

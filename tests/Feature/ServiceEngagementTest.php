@@ -122,7 +122,7 @@ it('exposes invoice totals and the linked order to the services page', function 
             ->where('engagements.0.payment_status', 'due')
             ->where('engagements.0.total_npr', 11300)
             ->where('engagements.0.due_npr', 7300)
-            ->where('engagements.0.order_id', $order->id)
+            ->where('engagements.0.order_uuid', $order->uuid)
             ->where('engagements.0.order_number', $order->order_number)
         );
 });

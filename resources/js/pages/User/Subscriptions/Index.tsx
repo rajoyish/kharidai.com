@@ -35,6 +35,7 @@ type Subscription = {
     user_label: string | null;
     order: OrderRefund & {
         id: number;
+        uuid: string;
         order_number: string;
     };
     order_item: {
@@ -167,7 +168,7 @@ export default function SubscriptionIndex({
                                         orderNumber={sub.order.order_number}
                                     >
                                         <Link
-                                            href={showOrder(sub.order.id)}
+                                            href={showOrder(sub.order.uuid)}
                                             className="text-primary hover:underline"
                                         >
                                             {sub.order.order_number}

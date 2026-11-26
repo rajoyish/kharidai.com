@@ -10,9 +10,12 @@ import SettingsLayout from '@/layouts/settings/layout';
  */
 export function resolveLayout(name: string) {
     switch (true) {
+        // Storefront pages bring their own layout; the error page stands alone,
+        // since the app's layouts need data an error response may lack.
         case name === 'welcome':
         case name === 'Categories/Show':
         case name === 'Products/Show':
+        case name === 'ErrorPage':
             return null;
         case name.startsWith('auth/'):
             return AuthLayout;

@@ -18,11 +18,15 @@ class OrderStatusUpdatedNotification extends Notification
 
     public int $orderId;
 
+    /** The order's URL key; null only on notifications queued before it existed. */
+    public ?string $orderUuid = null;
+
     public string $orderNumber;
 
     public function __construct(Order $order, public string $status)
     {
         $this->orderId = $order->id;
+        $this->orderUuid = $order->uuid;
         $this->orderNumber = $order->order_number;
     }
 
@@ -55,7 +59,7 @@ class OrderStatusUpdatedNotification extends Notification
         return [
             'message' => 'Order Status Updated',
             'description' => 'Your order #'.$this->orderNumber.' is now '.$this->status.'.',
-            'url' => route('orders.show', $this->orderId),
+            'url' => route('orders.show', $this->orderUuid ?? $this->orderId),
             'order_id' => $this->orderId,
         ];
     }

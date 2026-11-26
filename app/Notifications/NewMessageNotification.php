@@ -23,6 +23,9 @@ class NewMessageNotification extends Notification
 
     public int $orderId;
 
+    /** The order's URL key; null only on notifications queued before it existed. */
+    public ?string $orderUuid = null;
+
     public string $senderName;
 
     public string $excerpt;
@@ -31,9 +34,10 @@ class NewMessageNotification extends Notification
     {
         // Eager-loaded rather than read through the relation: the sender is needed
         // now, while the record is certainly still here.
-        $message->loadMissing('user');
+        $message->loadMissing(['user', 'order:id,uuid']);
 
         $this->orderId = $message->order_id;
+        $this->orderUuid = $message->order->uuid;
         $this->senderName = $message->user->is_admin ? 'Support Admin' : $message->user->name;
         $this->excerpt = (string) str($message->message)->limit(50);
     }
@@ -68,8 +72,8 @@ class NewMessageNotification extends Notification
             'message' => 'New Message from '.$this->senderName,
             'description' => $this->excerpt,
             'url' => $notifiable->is_admin
-                ? route('admin.orders.show', $this->orderId)
-                : route('orders.show', $this->orderId),
+                ? route('admin.orders.show', $this->orderUuid ?? $this->orderId)
+                : route('orders.show', $this->orderUuid ?? $this->orderId),
             'order_id' => $this->orderId,
         ];
     }

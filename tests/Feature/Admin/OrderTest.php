@@ -167,7 +167,7 @@ it('lists orders without a query per order', function () {
 it('can view order details', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->get('/admin/orders/'.$order->id);
+    $response = $this->actingAs($this->admin)->get('/admin/orders/'.$order->uuid);
 
     $response->assertSuccessful();
 });
@@ -177,7 +177,7 @@ it('can update order status', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', [
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->uuid.'/status', [
         'status' => 'delivering',
     ]);
 
@@ -219,7 +219,7 @@ it('creates one subscription per purchased unit when an admin completes an order
         'quantity' => 1,
     ]);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', [
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->uuid.'/status', [
         'status' => 'completed',
     ]);
 
@@ -262,7 +262,7 @@ it('does not create subscriptions for non-subscription products', function () {
         'quantity' => 1,
     ]);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', [
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->uuid.'/status', [
         'status' => 'completed',
     ]);
 
@@ -302,7 +302,7 @@ it('can update receipt status', function () {
 it('can add digital credentials to an order', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->post('/admin/orders/'.$order->id.'/credentials', [
+    $response = $this->actingAs($this->admin)->post('/admin/orders/'.$order->uuid.'/credentials', [
         'content' => 'Test Credential Content',
     ]);
 
@@ -320,7 +320,7 @@ it('can update digital credentials', function () {
         'content' => 'Old Content',
     ]);
 
-    $response = $this->actingAs($this->admin)->put('/admin/orders/'.$order->id.'/credentials/'.$credential->id, [
+    $response = $this->actingAs($this->admin)->put('/admin/orders/'.$order->uuid.'/credentials/'.$credential->id, [
         'content' => 'New Content',
     ]);
 
@@ -338,7 +338,7 @@ it('can delete digital credentials', function () {
         'content' => 'Old Content',
     ]);
 
-    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id.'/credentials/'.$credential->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->uuid.'/credentials/'.$credential->id);
 
     $response->assertRedirect();
     $this->assertDatabaseMissing('order_credentials', [
@@ -352,7 +352,7 @@ it('can send a message on an order', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->post('/admin/orders/'.$order->id.'/messages', [
+    $response = $this->actingAs($this->admin)->post('/admin/orders/'.$order->uuid.'/messages', [
         'message' => 'Admin test message',
     ]);
 
@@ -370,7 +370,7 @@ it('can send a message on an order', function () {
 it('can delete an order', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id);
+    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->uuid);
 
     $response->assertRedirect(route('admin.orders.index'));
     $this->assertSoftDeleted($order);
@@ -405,7 +405,7 @@ it('can permanently delete an order with related records', function () {
 
     Storage::disk('public')->put($receipt->file_path, 'receipt');
 
-    $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id);
+    $this->actingAs($this->admin)->delete('/admin/orders/'.$order->uuid);
     $response = $this->actingAs($this->admin)->delete(route('admin.orders.force-destroy', $order));
 
     $response->assertRedirect();
@@ -430,7 +430,7 @@ it('can permanently delete an order with related records', function () {
 it('can allow receipt reupload', function () {
     $order = Order::factory()->create(['user_id' => $this->user->id, 'request_receipt_upload' => true]);
 
-    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/allow-reupload');
+    $response = $this->actingAs($this->admin)->patch('/admin/orders/'.$order->uuid.'/allow-reupload');
 
     $response->assertRedirect();
     $this->assertDatabaseHas('orders', [
@@ -453,7 +453,7 @@ it('ends a one-month subscription on the last day of a shorter month', function 
         'quantity' => 1,
     ]);
 
-    $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', ['status' => 'completed']);
+    $this->actingAs($this->admin)->patch('/admin/orders/'.$order->uuid.'/status', ['status' => 'completed']);
 
     expect(Subscription::where('order_item_id', $item->id)->sole()->end_date->toDateString())->toBe('2027-02-28');
 });

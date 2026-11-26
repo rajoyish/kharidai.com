@@ -91,7 +91,7 @@ it('carries the service requirements onto the order item and both order views', 
 
     // The admin's order management view surfaces the same requirements.
     $this->actingAs($admin)
-        ->get("/admin/orders/{$order->id}")
+        ->get("/admin/orders/{$order->uuid}")
         ->assertInertia(fn (Assert $page) => $page
             ->where('order.items.0.brief.note', 'Modern minimalist logo')
         );

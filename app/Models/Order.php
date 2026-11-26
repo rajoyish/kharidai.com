@@ -7,6 +7,7 @@ use App\Enums\PaymentOption;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,9 +15,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property string $order_number
  * @property int $user_id
  * @property string $status
@@ -63,7 +66,33 @@ use Illuminate\Support\Carbon;
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
+
+    /**
+     * The public, unguessable key: order URLs use it instead of the sequential
+     * id, which stays the primary key. Filled in on create.
+     *
+     * @return list<string>
+     */
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    /**
+     * A fully random (v4) UUID. The trait's default, v7, leads with a timestamp
+     * and steps a counter for ids made in the same millisecond, so one order's
+     * key would hint at its neighbours'. This key is for lookup, not ordering.
+     */
+    public function newUniqueId(): string
+    {
+        return (string) Str::uuid();
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     /**
      * @return array<string, string>

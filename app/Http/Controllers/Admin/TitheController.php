@@ -17,8 +17,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * @phpstan-type TitheEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null}
- * @phpstan-type SettledEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null, is_paid: bool, paid_at: string|null}
+ * @phpstan-type TitheEntry array{source_type: string, source_id: int, order_uuid?: string, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null}
+ * @phpstan-type SettledEntry array{source_type: string, source_id: int, order_uuid?: string, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null, is_paid: bool, paid_at: string|null}
  */
 class TitheController extends Controller
 {

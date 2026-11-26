@@ -25,6 +25,9 @@ class OrderPlacedNotification extends Notification
 
     public int $orderId;
 
+    /** The order's URL key; null only on notifications queued before it existed. */
+    public ?string $orderUuid = null;
+
     public string $orderNumber;
 
     public float $totalAmount;
@@ -32,6 +35,7 @@ class OrderPlacedNotification extends Notification
     public function __construct(Order $order)
     {
         $this->orderId = $order->id;
+        $this->orderUuid = $order->uuid;
         $this->orderNumber = $order->order_number;
         $this->totalAmount = $order->total_amount;
     }
@@ -65,7 +69,7 @@ class OrderPlacedNotification extends Notification
         return [
             'message' => 'New Order #'.$this->orderNumber,
             'description' => 'A new order has been placed for Rs. '.number_format($this->totalAmount, 0),
-            'url' => route('admin.orders.show', $this->orderId),
+            'url' => route('admin.orders.show', $this->orderUuid ?? $this->orderId),
             'order_id' => $this->orderId,
         ];
     }
