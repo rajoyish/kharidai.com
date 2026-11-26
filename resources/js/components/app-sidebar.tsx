@@ -11,6 +11,7 @@ import {
     LayoutGrid,
     ListTree,
     Mail,
+    Megaphone,
     Newspaper,
     Package,
     Receipt,
@@ -49,11 +50,13 @@ import {
 } from '@/components/ui/sidebar';
 import { LINK_PREFETCH } from '@/lib/prefetch';
 import { home } from '@/routes';
+import { index as noticesIndex } from '@/routes/account/notices';
 import { index as servicesIndex } from '@/routes/account/services';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCategoriesIndex } from '@/routes/admin/categories';
 import { index as adminMenusIndex } from '@/routes/admin/menus';
 import { index as adminNewslettersIndex } from '@/routes/admin/newsletters';
+import { index as adminNoticesIndex } from '@/routes/admin/notices';
 import { index as adminNotificationsIndex } from '@/routes/admin/notifications';
 import { index as adminOrdersIndex } from '@/routes/admin/orders';
 import { index as adminPagesIndex } from '@/routes/admin/pages';
@@ -91,6 +94,11 @@ const mainNavItems: NavItem[] = [
         title: 'My Services',
         href: servicesIndex(),
         icon: Briefcase,
+    },
+    {
+        title: 'Notices',
+        href: noticesIndex(),
+        icon: Megaphone,
     },
 ];
 
@@ -203,6 +211,11 @@ const adminNavSections: NavSection[] = [
                 title: 'Notifications',
                 href: adminNotificationsIndex(),
                 icon: Bell,
+            },
+            {
+                title: 'Notices',
+                href: adminNoticesIndex(),
+                icon: Megaphone,
             },
         ],
     },
