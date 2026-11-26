@@ -126,6 +126,8 @@ jobs:
 
             php artisan optimize:clear
             php artisan migrate --force
+            # Only products still missing a thumbnail; a no-op once backfilled.
+            php artisan products:generate-thumbnails || true
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
