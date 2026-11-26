@@ -319,11 +319,10 @@ export default function Show({
             return;
         }
 
-        post(addToCart.url(), {
-            onSuccess: () => {
-                toast.success('Added to cart');
-            },
-        });
+        // The server flashes the toast for both outcomes: a product pulled
+        // since this page loaded redirects without validation errors, so an
+        // onSuccess toast here would claim success for a refused add.
+        post(addToCart.url());
     };
 
     // Update form data when variant changes, resetting option choices to the

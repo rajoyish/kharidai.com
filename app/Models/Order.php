@@ -149,8 +149,10 @@ class Order extends Model
         return $this->belongsTo(ShippingAddress::class);
     }
 
-    protected $appends = ['profit'];
-
+    /**
+     * Not appended by default: customer pages serialize orders, and the margin
+     * is the shop's business. Admin pages opt in with `append('profit')`.
+     */
     public function getProfitAttribute(): float
     {
         if ($this->status !== 'completed') {

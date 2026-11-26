@@ -4,6 +4,7 @@ import {
     ChevronDown,
     Cpu,
     LayoutGrid,
+    LogOut,
     Menu,
     Package,
     ShoppingCart,
@@ -32,8 +33,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { LINK_PREFETCH } from '@/lib/prefetch';
-import { home } from '@/routes';
+import { home, logout } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as blogIndex } from '@/routes/blog';
 import { index as cartIndex } from '@/routes/cart';
@@ -156,6 +158,14 @@ export function StorefrontHeader({
 
     const [isOpen, setIsOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const cleanupMobileNavigation = useMobileNavigation();
+
+    // Same as the panel's user menu: release the drawer's body lock and drop
+    // prefetched pages, which were rendered for the account being signed out.
+    const handleLogout = () => {
+        cleanupMobileNavigation();
+        router.flushAll();
+    };
 
     useEffect(() => {
         return router.on('navigate', () => setIsOpen(false));
@@ -277,6 +287,19 @@ export function StorefrontHeader({
                         <span>Cart</span>
                         <CartCountLabel count={cartCount} />
                     </Link>
+                    {auth.user && (
+                        <Link
+                            href={logout()}
+                            as="button"
+                            onClick={handleLogout}
+                            aria-label="Log out"
+                            title="Log out"
+                            className={DESKTOP_ACCOUNT_CLASSES}
+                            data-test="storefront-logout-button"
+                        >
+                            <LogOut className="h-5 w-5 shrink-0" aria-hidden />
+                        </Link>
+                    )}
                 </div>
 
                 {/* Mobile Menu (Right) */}
@@ -413,6 +436,20 @@ export function StorefrontHeader({
                                         <span>Cart</span>
                                         <CartCountLabel count={cartCount} />
                                     </Link>
+                                    {auth.user && (
+                                        <Link
+                                            href={logout()}
+                                            as="button"
+                                            onClick={handleLogout}
+                                            className={MOBILE_ACCOUNT_CLASSES}
+                                        >
+                                            <LogOut
+                                                className="h-5 w-5 shrink-0"
+                                                aria-hidden
+                                            />
+                                            <span>Log out</span>
+                                        </Link>
+                                    )}
                                 </div>
 
                                 {/* The drawer gets the segmented control rather

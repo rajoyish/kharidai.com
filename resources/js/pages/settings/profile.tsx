@@ -99,16 +99,6 @@ export default function Profile() {
                                     autoComplete="username"
                                     placeholder="Email address"
                                 />
-                                <input
-                                    type="hidden"
-                                    name="email"
-                                    value={profile.email}
-                                />
-
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.email}
-                                />
                             </div>
 
                             <div className="flex items-center gap-4">

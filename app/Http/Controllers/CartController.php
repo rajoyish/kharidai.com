@@ -7,6 +7,7 @@ use App\Models\CartItem;
 use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,7 +16,12 @@ class CartController extends Controller
 {
     public function index(Request $request): Response
     {
-        $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
+        $userId = $request->user()->id;
+        $cart = Cart::where('user_id', $userId)->first() ?? DB::transaction(function () use ($userId): Cart {
+            Cart::lockOwner($userId);
+
+            return Cart::firstOrCreate(['user_id' => $userId]);
+        });
 
         // Only the columns the page and the free-service check read. The full
         // rows drag along product descriptions and the variant's purchase price,
@@ -23,8 +29,15 @@ class CartController extends Controller
         $cart->load([
             'items:id,cart_id,product_variant_id,quantity,selected_options',
             'items.productVariant:id,product_id,name,price_npr',
-            'items.productVariant.product:id,type,title,image',
+            'items.productVariant.product:id,type,title,image,in_stock,is_visible',
         ]);
+
+        // A deletion can cascade after the items query but before the eager loads.
+        $cart->setRelation('items', $cart->items
+            ->filter(fn (CartItem $item): bool => $item->productVariant?->product !== null)
+            ->values());
+
+        $hasUnavailableItems = $cart->unavailableItems()->isNotEmpty();
 
         // A cart of only free services (zero price) needs neither shipping
         // details nor a payment step, so it can be placed straight from the cart
@@ -37,6 +50,7 @@ class CartController extends Controller
                     'id' => $item->id,
                     'quantity' => $item->quantity,
                     'selected_options' => $item->selected_options,
+                    'is_available' => $item->productVariant->product->isPurchasable(),
                     'product_variant' => [
                         'id' => $item->productVariant->id,
                         'name' => $item->productVariant->name,
@@ -49,14 +63,15 @@ class CartController extends Controller
                     ],
                 ])->all(),
             ],
-            'canCheckoutDirectly' => $cart->isFreeServiceOrder(),
+            'canCheckoutDirectly' => ! $hasUnavailableItems && $cart->isFreeServiceOrder(),
+            'hasUnavailableItems' => $hasUnavailableItems,
         ]);
     }
 
     public function add(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'product_variant_id' => 'required|exists:product_variants,id',
+            'product_variant_id' => 'required|integer',
             'quantity' => 'required|integer|min:1',
             'brief' => 'nullable|string|max:5000',
             'selected_options' => 'nullable|array',
@@ -64,36 +79,54 @@ class CartController extends Controller
             'selected_options.size' => 'nullable|string',
         ]);
 
-        $variant = ProductVariant::query()->where('id', $validated['product_variant_id'])->firstOrFail();
-        $selectedOptions = $this->resolveSelectedOptions($request, $variant);
+        $added = DB::transaction(function () use ($request, $validated): bool {
+            $userId = $request->user()->id;
+            Cart::lockOwner($userId);
 
-        $brief = ! empty($validated['brief']) ? ['note' => $validated['brief']] : null;
+            // Keep the variant available for the foreign key until the cart line is saved.
+            $variant = ProductVariant::query()
+                ->with('product:id,in_stock,is_visible')
+                ->whereKey($validated['product_variant_id'])
+                ->sharedLock()
+                ->first();
 
-        $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
-
-        // The same variant chosen with different options is a distinct line, so
-        // only merge quantities when the selected options also match.
-        $cartItem = $cart->items()
-            ->where('product_variant_id', $validated['product_variant_id'])
-            ->get()
-            ->first(fn (CartItem $item): bool => $item->selected_options == $selectedOptions);
-
-        if ($cartItem) {
-            $cartItem->quantity += $validated['quantity'];
-            if ($brief !== null) {
-                $cartItem->brief = $brief;
+            if (! $variant?->product?->isPurchasable()) {
+                return false;
             }
-            $cartItem->save();
-        } else {
-            $cart->items()->create([
-                'product_variant_id' => $validated['product_variant_id'],
-                'quantity' => $validated['quantity'],
-                'brief' => $brief,
-                'selected_options' => $selectedOptions,
-            ]);
-        }
 
-        return redirect()->route('cart.index')->with('success', 'Added to cart.');
+            $selectedOptions = $this->resolveSelectedOptions($request, $variant);
+            $brief = ! empty($validated['brief']) ? ['note' => $validated['brief']] : null;
+            $cart = Cart::firstOrCreate(['user_id' => $userId]);
+
+            // Different option choices for the same variant stay on separate lines.
+            $cartItem = $cart->items()
+                ->where('product_variant_id', $variant->id)
+                ->get()
+                ->first(fn (CartItem $item): bool => $item->selected_options == $selectedOptions);
+
+            if ($cartItem) {
+                $cartItem->quantity += $validated['quantity'];
+                if ($brief !== null) {
+                    $cartItem->brief = $brief;
+                }
+                $cartItem->save();
+            } else {
+                $cart->items()->create([
+                    'product_variant_id' => $variant->id,
+                    'quantity' => $validated['quantity'],
+                    'brief' => $brief,
+                    'selected_options' => $selectedOptions,
+                ]);
+            }
+
+            return true;
+        });
+
+        Inertia::flash('toast', $added
+            ? ['type' => 'success', 'message' => 'Added to cart.']
+            : ['type' => 'error', 'message' => 'This product is no longer available.']);
+
+        return redirect()->route('cart.index');
     }
 
     /**

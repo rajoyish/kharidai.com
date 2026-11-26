@@ -2,6 +2,8 @@
 
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\Order;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,6 +23,39 @@ it('can view the cart', function () {
     );
 });
 
+it('omits a deleted line while rendering the rest of the cart', function (string $deletedRelation) {
+    $user = User::factory()->create();
+    $cart = Cart::factory()->for($user)->create();
+    $removed = CartItem::factory()->for($cart)->create();
+    $variant = $removed->productVariant;
+    $product = $variant->product;
+    $freeService = ProductVariant::factory()->for(Product::factory()->service())->create(['price_npr' => 0]);
+    $remaining = CartItem::factory()->for($cart)->for($freeService, 'productVariant')->create();
+
+    if ($deletedRelation === 'variant') {
+        CartItem::retrieved(function (CartItem $item) use ($removed, $variant): void {
+            if ($item->is($removed)) {
+                $variant->delete();
+            }
+        });
+    } else {
+        ProductVariant::retrieved(function (ProductVariant $loaded) use ($variant, $product): void {
+            if ($loaded->is($variant)) {
+                $product->delete();
+            }
+        });
+    }
+
+    $this->actingAs($user)->get(route('cart.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('cart.items', 1)
+            ->where('cart.items.0.id', $remaining->id)
+            ->where('hasUnavailableItems', false)
+            ->where('canCheckoutDirectly', true),
+        );
+})->with(['variant', 'product']);
+
 it('can add an item to the cart', function () {
     $user = User::factory()->create();
     $variant = ProductVariant::factory()->create();
@@ -37,6 +72,81 @@ it('can add an item to the cart', function () {
         'product_variant_id' => $variant->id,
         'quantity' => 2,
     ]);
+
+    $this->actingAs($user)
+        ->get(route('cart.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->hasFlash('toast', ['type' => 'success', 'message' => 'Added to cart.']),
+        );
+});
+
+it('refuses to add a variant whose product is hidden or out of stock', function (array $state) {
+    $user = User::factory()->create();
+    $variant = ProductVariant::factory()->for(Product::factory()->state($state))->create();
+
+    $this->actingAs($user)
+        ->from(route('products.show', $variant->product))
+        ->followingRedirects()
+        ->post(route('cart.add'), ['product_variant_id' => $variant->id, 'quantity' => 1])
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Cart/Index')
+            ->hasFlash('toast', ['type' => 'error', 'message' => 'This product is no longer available.']),
+        );
+
+    $this->assertDatabaseMissing('cart_items', ['product_variant_id' => $variant->id]);
+})->with([
+    'hidden' => [['is_visible' => false]],
+    'out of stock' => [['in_stock' => false]],
+]);
+
+it('shows the unavailable toast for a deleted product during add to cart', function (string $timing) {
+    $user = User::factory()->create();
+    $variant = ProductVariant::factory()->create();
+    $product = $variant->product;
+
+    if ($timing === 'before the request') {
+        $product->delete();
+    } else {
+        ProductVariant::retrieved(function () use ($product): void {
+            $product->delete();
+        });
+    }
+
+    $this->actingAs($user)
+        ->from(route('products.show', $product))
+        ->followingRedirects()
+        ->post(route('cart.add'), ['product_variant_id' => $variant->id, 'quantity' => 1])
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Cart/Index')
+            ->hasFlash('toast', ['type' => 'error', 'message' => 'This product is no longer available.']),
+        );
+
+    $this->assertDatabaseMissing('cart_items', ['product_variant_id' => $variant->id]);
+})->with(['before the request', 'after loading the variant']);
+
+it('flags a cart line whose product went unavailable and holds back checkout', function () {
+    $user = User::factory()->create();
+    $cart = Cart::factory()->create(['user_id' => $user->id]);
+    $item = CartItem::factory()->create(['cart_id' => $cart->id]);
+    $item->productVariant->product->update(['in_stock' => false]);
+
+    $this->actingAs($user)
+        ->get('/cart')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('cart.items.0.is_available', false)
+            ->where('hasUnavailableItems', true)
+            ->where('canCheckoutDirectly', false),
+        );
+
+    $this->actingAs($user)
+        ->get(route('checkout.index'))
+        ->assertRedirect(route('cart.index'));
+
+    $this->actingAs($user)
+        ->post(route('checkout.process'))
+        ->assertRedirect(route('cart.index'));
+
+    expect(Order::query()->count())->toBe(0);
 });
 
 it('captures the selected color and size when adding a variant with options', function () {
@@ -119,7 +229,7 @@ it('ships only the cart fields the page renders', function () {
 
     $response->assertInertia(fn (Assert $page) => $page
         ->has('cart.items.0', fn (Assert $item) => $item
-            ->hasAll(['id', 'quantity', 'selected_options', 'product_variant'])
+            ->hasAll(['id', 'quantity', 'selected_options', 'is_available', 'product_variant'])
             ->has('product_variant', fn (Assert $variantProp) => $variantProp
                 ->hasAll(['id', 'name', 'price_npr', 'product'])
                 ->has('product', fn (Assert $product) => $product
@@ -145,13 +255,13 @@ it('serves a quantity change as a partial reload of just the cart props', functi
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $version,
             'X-Inertia-Partial-Component' => 'Cart/Index',
-            'X-Inertia-Partial-Data' => 'cart,canCheckoutDirectly,cartCount',
+            'X-Inertia-Partial-Data' => 'cart,canCheckoutDirectly,hasUnavailableItems,cartCount',
         ])
         ->get('/cart');
 
     $response->assertOk();
     $response->assertJsonPath('component', 'Cart/Index');
-    $response->assertJsonStructure(['props' => ['cart', 'canCheckoutDirectly', 'cartCount']]);
+    $response->assertJsonStructure(['props' => ['cart', 'canCheckoutDirectly', 'hasUnavailableItems', 'cartCount']]);
     // The expensive shared props are closures, so a partial reload never runs them.
     $response->assertJsonMissingPath('props.paymentMethods');
     $response->assertJsonMissingPath('props.storefront');

@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\AttachesProductGuides;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderCredential;
+use App\Models\OrderItem;
 use App\Models\PaymentReceipt;
 use App\Models\Shipment;
 use App\Notifications\NewMessageNotification;
@@ -42,7 +43,11 @@ class OrderController extends Controller
         // A single year's orders are a bounded set, so the whole year is sent and
         // the page sorts each column client-side. This keeps the computed `profit`
         // column sortable, which a SQL sort could not offer.
-        $orders = Order::with(['user', 'paymentReceipt', 'items.productVariant.product', 'items.serviceEngagements'])
+        //
+        // The items are only read to compute that profit, so they are left out of
+        // the payload: a year of orders, each carrying its variants and full
+        // product rows, made this one of the heaviest pages in the panel.
+        $orders = Order::with(['user:id,name,email', 'paymentReceipt:id,order_id,status', 'items.serviceEngagements'])
             ->whereYear('created_at', $selectedYear)
             ->whereHas('items.productVariant.product', fn ($query) => $query->where('type', $productType))
             ->when($search, function ($query) use ($search) {
@@ -55,7 +60,12 @@ class OrderController extends Controller
                 });
             })
             ->latest()
-            ->get();
+            ->get()
+            ->each(fn (Order $order): Order => $order->append('profit')->setVisible([
+                'id', 'order_number', 'total_amount', 'status', 'profit', 'created_at',
+                'refund_amount', 'refunded_on', 'refund_receipt_path', 'refund_note',
+                'user', 'paymentReceipt',
+            ]));
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
@@ -134,6 +144,11 @@ class OrderController extends Controller
         }
 
         $order->load(['items.productVariant.product', 'items.serviceEngagements', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product', 'shipment', 'shippingAddress']);
+
+        // Cost and margin are hidden on the models so customer pages cannot leak
+        // them; this is the one page that shows them.
+        $order->append('profit');
+        $order->items->each(fn (OrderItem $item): OrderItem => $item->makeVisible('purchase_price'));
 
         // Engagements without a saved invoice are still listed so the lifecycle
         // status stays visible while the brief is being prepared.

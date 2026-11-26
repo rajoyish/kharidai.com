@@ -28,6 +28,30 @@ it('can view the homepage', function () {
     );
 });
 
+it('sends product cards without the long description', function () {
+    $category = Category::factory()->create(['type' => ProductType::Digital]);
+
+    Product::factory()->hasAttached($category)->create(['in_stock' => true, 'is_visible' => true, 'description' => '<p>Long copy</p>']);
+    Product::factory()->create(['in_stock' => true, 'is_visible' => true, 'description' => '<p>Long copy</p>']);
+
+    $this->get(route('digital-products.index'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('categories.0.products.0.slug')
+            ->has('categories.0.products.0.variants_count')
+            ->missing('categories.0.products.0.description')
+            ->has('uncategorizedProducts.0.title')
+            ->missing('uncategorizedProducts.0.description'),
+        );
+
+    $this->get(route('categories.show', $category))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('products.data.0.slug')
+            ->missing('products.data.0.description'),
+        );
+});
+
 it('groups the homepage into digital, physical and service sections', function () {
     $category = Category::factory()->create([
         'type' => ProductType::Digital,

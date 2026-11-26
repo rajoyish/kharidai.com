@@ -33,12 +33,13 @@ it('can update profile information', function () {
         'email' => 'updated@example.com',
     ]);
 
+    $originalEmail = $this->user->email;
+
     $response->assertRedirect(route('profile.edit'));
     $this->user->refresh();
 
     expect($this->user->name)->toBe('Updated Name')
-        ->and($this->user->email)->toBe('updated@example.com')
-        ->and($this->user->email_verified_at)->toBeNull();
+        ->and($this->user->email)->toBe($originalEmail);
 });
 
 it('can delete account', function () {

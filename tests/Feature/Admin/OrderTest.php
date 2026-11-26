@@ -68,6 +68,22 @@ it('shows only the orders of the requested year', function () {
         );
 });
 
+it('sends only the columns the orders list renders', function () {
+    $order = digitalOrder($this->user, now()->toDateTimeString());
+    $order->update(['status' => 'completed']);
+    PaymentReceipt::factory()->create(['order_id' => $order->id, 'status' => 'approved', 'file_path' => 'receipts/r.png']);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('orders.0.profit', 600)
+            ->where('orders.0.user.email', $this->user->email)
+            ->where('orders.0.payment_receipt.status', 'approved')
+            ->missing('orders.0.items')
+            ->missing('orders.0.user.mobile_number')
+        );
+});
+
 it('lists the years that have orders, newest first, alongside the current year', function () {
     Order::factory()->create(['user_id' => $this->user->id, 'created_at' => '2024-05-01 10:00:00']);
     Order::factory()->create(['user_id' => $this->user->id, 'created_at' => '2027-01-01 10:00:00']);
