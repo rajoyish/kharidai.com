@@ -1,4 +1,12 @@
 import { Link, router } from '@inertiajs/react';
+import {
+    BookOpen,
+    EllipsisVertical,
+    ExternalLink,
+    PackageCheck,
+    PackageX,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import {
     create,
@@ -16,6 +24,13 @@ import { SeoHead } from '@/components/seo-head';
 import { TruncatedText } from '@/components/truncated-text';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Table,
     TableBody,
@@ -215,85 +230,110 @@ export default function ProductsIndex({
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-8 px-2 text-xs hover:bg-muted"
+                                        className="h-8 px-2.5 text-xs hover:bg-muted"
                                         asChild
                                     >
-                                        <a
-                                            href={showStorefrontProduct.url(
-                                                product,
-                                            )}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            View
-                                        </a>
+                                        <Link href={edit(product)}>Edit</Link>
                                     </Button>
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className={`h-8 px-2 text-xs ${product.in_stock ? 'text-warning hover:bg-warning/10 hover:text-warning' : 'text-success hover:bg-success/10 hover:text-success'}`}
-                                        onClick={() =>
-                                            router.patch(
-                                                toggleStock(product).url,
-                                                {},
-                                                { preserveScroll: true },
-                                            )
-                                        }
-                                    >
-                                        {product.in_stock
-                                            ? 'Unlist'
-                                            : 'Restock'}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 px-2 text-xs hover:bg-muted"
+                                        className="h-8 px-2.5 text-xs hover:bg-muted"
                                         asChild
                                     >
                                         <Link href={productVariants(product)}>
                                             Variants
                                         </Link>
                                     </Button>
-                                    {product.type !== 'service' && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 px-2 text-xs hover:bg-muted"
-                                            asChild
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-8"
+                                                aria-label={`More actions for ${product.title}`}
+                                                disabled={
+                                                    deletingProductId ===
+                                                    product.id
+                                                }
+                                            >
+                                                <EllipsisVertical className="size-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-48"
                                         >
-                                            <Link href={productGuides(product)}>
-                                                Guides
-                                            </Link>
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 px-2 text-xs hover:bg-muted"
-                                        asChild
-                                    >
-                                        <Link href={edit(product)}>Edit</Link>
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                        disabled={
-                                            deletingProductId === product.id
-                                        }
-                                        onClick={() =>
-                                            setProductToDelete(product)
-                                        }
-                                    >
-                                        Delete
-                                    </Button>
+                                            <DropdownMenuItem asChild>
+                                                <a
+                                                    href={showStorefrontProduct.url(
+                                                        product,
+                                                    )}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <ExternalLink />
+                                                    View on storefront
+                                                </a>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onSelect={() =>
+                                                    router.patch(
+                                                        toggleStock(product)
+                                                            .url,
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
+                                            >
+                                                {product.in_stock ? (
+                                                    <>
+                                                        <PackageX />
+                                                        Mark out of stock
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <PackageCheck />
+                                                        Mark in stock
+                                                    </>
+                                                )}
+                                            </DropdownMenuItem>
+                                            {product.type !== 'service' && (
+                                                <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem asChild>
+                                                        <Link
+                                                            href={productGuides(
+                                                                product,
+                                                            )}
+                                                        >
+                                                            <BookOpen />
+                                                            Guides
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                variant="destructive"
+                                                onSelect={() =>
+                                                    setProductToDelete(product)
+                                                }
+                                            >
+                                                <Trash2 />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                             </TableRow>
                         ))}
                         {products.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={4}
+                                    colSpan={5}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     {filters.search

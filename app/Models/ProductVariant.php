@@ -19,12 +19,13 @@ use Illuminate\Support\Carbon;
  * @property int $product_id
  * @property string $name
  * @property string|null $details
+ * @property string|null $hidden_description
  * @property float $price_npr
  * @property float $purchase_price_npr
  * @property int|null $supplier_id
  * @property string|null $supplier_cost_credits
  * @property bool $show_pricing
- * @property int|null $validity_days
+ * @property int|null $validity_months
  * @property list<string>|null $colors
  * @property list<string>|null $sizes
  * @property float|null $weight_kg
@@ -35,7 +36,7 @@ use Illuminate\Support\Carbon;
  * @property Product $product
  * @property Supplier|null $supplier
  */
-#[Fillable(['product_id', 'name', 'details', 'price_npr', 'purchase_price_npr', 'supplier_id', 'supplier_cost_credits', 'show_pricing', 'validity_days', 'colors', 'sizes', 'weight_kg', 'ships_individually', 'advance_payment_percent'])]
+#[Fillable(['product_id', 'name', 'details', 'hidden_description', 'price_npr', 'purchase_price_npr', 'supplier_id', 'supplier_cost_credits', 'show_pricing', 'validity_months', 'colors', 'sizes', 'weight_kg', 'ships_individually', 'advance_payment_percent'])]
 class ProductVariant extends Model
 {
     /** @use HasFactory<ProductVariantFactory> */
@@ -51,9 +52,13 @@ class ProductVariant extends Model
      * The supplier and its credit cost are the same kind of procurement
      * data, so they are hidden alongside it.
      *
+     * The members-only description is hidden for a different reason: it is
+     * for signed-in customers only, and the product page reveals it for them
+     * with `makeVisible()`, as it does the product's own.
+     *
      * @var list<string>
      */
-    protected $hidden = ['purchase_price_npr', 'supplier_id', 'supplier_cost_credits'];
+    protected $hidden = ['purchase_price_npr', 'supplier_id', 'supplier_cost_credits', 'hidden_description'];
 
     /**
      * Every procurement field an admin screen opts back in to.
@@ -71,7 +76,7 @@ class ProductVariant extends Model
             'price_npr' => MoneyNpr::class,
             'purchase_price_npr' => MoneyNpr::class,
             'supplier_cost_credits' => WalletCredits::class,
-            'validity_days' => 'integer',
+            'validity_months' => 'integer',
             'show_pricing' => 'boolean',
             'colors' => 'array',
             'sizes' => 'array',

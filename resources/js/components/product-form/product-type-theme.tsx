@@ -96,10 +96,10 @@ export function getProductTypeTheme(type?: string): ProductTypeTheme {
 }
 
 /**
- * Validity days model a subscription or licence window, which only applies to
+ * Validity (in months) models a subscription or licence window, which only applies to
  * digitally delivered products. Physical goods and services do not expire.
  */
-export function supportsValidityDays(type?: string): boolean {
+export function supportsValidity(type?: string): boolean {
     return resolveProductType(type) === 'digital';
 }
 

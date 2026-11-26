@@ -7,6 +7,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -22,12 +23,17 @@ it('repairs grouped subscriptions and lists each purchased unit separately', fun
         'status' => 'completed',
     ]);
     $startDate = today();
-    $monthlyVariant = ProductVariant::factory()->create([
-        'validity_days' => 30,
-    ]);
-    $annualVariant = ProductVariant::factory()->create([
-        'validity_days' => 365,
-    ]);
+    $monthlyVariant = ProductVariant::factory()->create();
+    $annualVariant = ProductVariant::factory()->create();
+
+    // This repair migration ran in July 2026, when validity was counted in days;
+    // rebuild that column so it runs against the schema it was written for.
+    Schema::table('product_variants', function (Blueprint $table) {
+        $table->unsignedInteger('validity_days')->nullable();
+    });
+    DB::table('product_variants')->where('id', $monthlyVariant->id)->update(['validity_days' => 30]);
+    DB::table('product_variants')->where('id', $annualVariant->id)->update(['validity_days' => 365]);
+
     $monthlyItem = OrderItem::create([
         'order_id' => $order->id,
         'product_variant_id' => $monthlyVariant->id,
@@ -107,7 +113,7 @@ it('computes and serializes days left when the database has no days_left column'
         'status' => 'pending',
     ]);
     $variant = ProductVariant::factory()->create([
-        'validity_days' => 30,
+        'validity_months' => 1,
     ]);
     $item = OrderItem::create([
         'order_id' => $order->id,
@@ -131,7 +137,8 @@ it('computes and serializes days left when the database has no days_left column'
         ->where('order_item_id', $item->id)
         ->firstOrFail();
 
-    expect($subscription->days_left)->toBe(30);
+    $daysInFirstMonth = (int) today()->diffInDays(today()->addMonthsNoOverflow(1));
+    expect($subscription->days_left)->toBe($daysInFirstMonth);
 
     $this->actingAs($user)
         ->get(route('subscriptions.index'))
@@ -139,7 +146,7 @@ it('computes and serializes days left when the database has no days_left column'
         ->assertInertia(fn (Assert $page) => $page
             ->component('User/Subscriptions/Index')
             ->has('subscriptions', 1)
-            ->where('subscriptions.0.days_left', 30)
+            ->where('subscriptions.0.days_left', $daysInFirstMonth)
         );
 });
 
@@ -155,10 +162,10 @@ it('creates one subscription per purchased unit without duplicating them on repe
     ]);
     $startDate = today();
     $monthlyVariant = ProductVariant::factory()->create([
-        'validity_days' => 30,
+        'validity_months' => 1,
     ]);
     $annualVariant = ProductVariant::factory()->create([
-        'validity_days' => 365,
+        'validity_months' => 12,
     ]);
     $monthlyItem = OrderItem::create([
         'order_id' => $order->id,
@@ -196,11 +203,13 @@ it('creates one subscription per purchased unit without duplicating them on repe
 
     expect($monthlySubscriptions)->toHaveCount(5);
     expect($annualSubscriptions)->toHaveCount(1);
+    $monthlyEnd = $startDate->copy()->addMonthsNoOverflow(1);
+    $annualEnd = $startDate->copy()->addMonthsNoOverflow(12);
     expect($monthlySubscriptions->pluck('end_date')->map->toDateString()->unique()->all())
-        ->toBe([$startDate->copy()->addDays(30)->toDateString()]);
+        ->toBe([$monthlyEnd->toDateString()]);
     expect($annualSubscriptions->pluck('end_date')->map->toDateString()->unique()->all())
-        ->toBe([$startDate->copy()->addDays(365)->toDateString()]);
-    expect($monthlySubscriptions->pluck('days_left')->unique()->all())->toBe([30]);
-    expect($annualSubscriptions->pluck('days_left')->unique()->all())->toBe([365]);
+        ->toBe([$annualEnd->toDateString()]);
+    expect($monthlySubscriptions->pluck('days_left')->unique()->all())->toBe([(int) $startDate->diffInDays($monthlyEnd)]);
+    expect($annualSubscriptions->pluck('days_left')->unique()->all())->toBe([(int) $startDate->diffInDays($annualEnd)]);
     $this->assertDatabaseCount('subscriptions', 6);
 });

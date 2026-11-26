@@ -59,6 +59,11 @@ type Variant = {
     show_pricing?: boolean;
     colors?: string[] | null;
     sizes?: string[] | null;
+    /**
+     * This variant's own members-only details, sent only to signed-in
+     * viewers. Null when it has none, which means the product's apply.
+     */
+    hidden_description?: string | null;
 };
 
 type ProductGallery = {
@@ -227,6 +232,10 @@ export default function Show({
     const [selectedSize, setSelectedSize] = useState<string | null>(() =>
         soleOption(variants[0]?.sizes),
     );
+
+    // A variant without its own members-only details shows the product's.
+    const membersDetails =
+        selectedVariant?.hidden_description || product.hidden_description;
 
     const variantColors = selectedVariant?.colors ?? [];
     const variantSizes = selectedVariant?.sizes ?? [];
@@ -617,7 +626,7 @@ export default function Show({
 
                         {/* Members-only description — the guard also keeps the
                             wrapper out of the DOM when the field is empty. */}
-                        {product.hidden_description && (
+                        {membersDetails && (
                             <GlowCard
                                 className="mb-8"
                                 contentClassName="bg-linear-to-b from-primary-surface/70 to-card"
@@ -635,12 +644,12 @@ export default function Show({
                                             Members only
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            Details for signed-in customers
+                                            Read before you buy
                                         </p>
                                     </div>
                                 </div>
                                 <ProductDescription
-                                    description={product.hidden_description}
+                                    description={membersDetails}
                                     className="mb-0 px-5 py-5 [--prose-marker:var(--primary-text)] sm:px-6 prose-headings:mb-3 prose-headings:text-foreground prose-h2:text-xl prose-h3:text-lg [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>div>*:first-child]:mt-0 [&>div>*:last-child]:mb-0"
                                 />
                             </GlowCard>

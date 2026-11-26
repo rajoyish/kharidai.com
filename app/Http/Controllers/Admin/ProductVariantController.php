@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\CostBasis;
 use App\Enums\PriceRounding;
 use App\Enums\PriceSnapshotSource;
+use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -97,13 +98,13 @@ class ProductVariantController extends Controller
         ])['pricing_mode'] ?? self::PRICED_BY_HAND;
 
         if ($pricedBy === self::PRICED_BY_HAND) {
-            $variant = $product->variants()->create($this->validatedData($request));
+            $variant = $product->variants()->create($this->validatedData($request, $product));
             $this->priceHistory->recordManualChange($variant, $request->user());
 
             return redirect()->route('admin.products.variants.index', $product)->with('success', 'Variant created successfully.');
         }
 
-        $attributes = Arr::except($this->validatedData($request, requiresPrice: false), ['price_npr', 'purchase_price_npr']);
+        $attributes = Arr::except($this->validatedData($request, $product, requiresPrice: false), ['price_npr', 'purchase_price_npr']);
         $input = VariantPricingController::validateCalculatorInput($request);
 
         if ($this->priceHistory->createFromQuote($product, $attributes, $input, $request->user()) === null) {
@@ -117,13 +118,13 @@ class ProductVariantController extends Controller
     {
         return Inertia::render('Admin/ProductVariants/Edit', [
             'product' => $product,
-            'variant' => $variant->makeVisible(ProductVariant::PROCUREMENT_FIELDS),
+            'variant' => $variant->makeVisible([...ProductVariant::PROCUREMENT_FIELDS, 'hidden_description']),
         ]);
     }
 
     public function update(Request $request, Product $product, ProductVariant $variant): RedirectResponse
     {
-        $variant->update($this->validatedData($request));
+        $variant->update($this->validatedData($request, $product));
         $this->priceHistory->recordManualChange($variant, $request->user());
 
         return redirect()->route('admin.products.variants.index', $product)->with('success', 'Variant updated successfully.');
@@ -133,17 +134,23 @@ class ProductVariantController extends Controller
      * Validate and normalize the variant payload. A variant carries one
      * shipping weight; color and size are option lists trimmed of blanks.
      *
+     * Members-only details exist for digital products only, as on the product
+     * itself. An emptied editor still submits markup (`<p></p>`), so a value
+     * with no text is stored as null: the variant then shows the product's own
+     * members-only details.
+     *
      * @return array<string, mixed>
      */
-    protected function validatedData(Request $request, bool $requiresPrice = true): array
+    protected function validatedData(Request $request, Product $product, bool $requiresPrice = true): array
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'details' => 'nullable|string',
+            'hidden_description' => 'nullable|string',
             'price_npr' => [$requiresPrice ? 'required' : 'nullable', 'numeric', 'min:0'],
             'purchase_price_npr' => 'nullable|numeric|min:0',
             'show_pricing' => 'nullable|boolean',
-            'validity_days' => 'nullable|integer|min:1',
+            'validity_months' => 'nullable|integer|min:1|max:120',
             'colors' => 'nullable|array',
             'colors.*' => 'nullable|string|max:255',
             'sizes' => 'nullable|array',
@@ -161,6 +168,14 @@ class ProductVariantController extends Controller
             array_map('trim', $validated['sizes'] ?? []),
             fn (string $size): bool => $size !== '',
         ));
+
+        $hiddenDescription = $validated['hidden_description'] ?? null;
+        $hasMembersText = $hiddenDescription !== null
+            // Decoded `&nbsp;` is a non-breaking space, which trim() keeps.
+            && preg_replace('/[\s\x{00A0}]+/u', '', html_entity_decode(strip_tags($hiddenDescription, '<img>'))) !== '';
+        $validated['hidden_description'] = $product->type === ProductType::Digital && $hasMembersText
+            ? $hiddenDescription
+            : null;
 
         return $validated;
     }

@@ -20,8 +20,9 @@ import { PhysicalVariantFields } from '@/components/product-form/PhysicalVariant
 import {
     getProductTypeTheme,
     supportsAdvancePayment,
-    supportsValidityDays,
+    supportsValidity,
 } from '@/components/product-form/product-type-theme';
+import { VariantMembersDetailsField } from '@/components/product-form/VariantMembersDetailsField';
 import { SeoHead } from '@/components/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -76,10 +77,11 @@ export default function CreateVariant({
     const { data, setData, post, transform, processing, errors } = useForm({
         name: '',
         details: '',
+        hidden_description: '',
         price_npr: '',
         purchase_price_npr: '',
         show_pricing: product.type !== 'service',
-        validity_days: '',
+        validity_months: '',
         colors: [] as string[],
         sizes: [] as string[],
         weight_kg: '',
@@ -88,7 +90,8 @@ export default function CreateVariant({
     });
 
     const isPhysical = product.type === 'physical';
-    const showValidityDays = supportsValidityDays(product.type);
+    const isDigital = product.type === 'digital';
+    const showValidity = supportsValidity(product.type);
     const showAdvancePayment = supportsAdvancePayment(product.type);
     const theme = getProductTypeTheme(product.type);
 
@@ -180,6 +183,16 @@ export default function CreateVariant({
                                     </div>
                                 )}
                             </div>
+
+                            {isDigital && (
+                                <VariantMembersDetailsField
+                                    value={data.hidden_description}
+                                    onChange={(html) =>
+                                        setData('hidden_description', html)
+                                    }
+                                    error={errors.hidden_description}
+                                />
+                            )}
 
                             <div className="grid gap-3">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -362,7 +375,7 @@ export default function CreateVariant({
                                 </div>
                             )}
 
-                            {showValidityDays && (
+                            {showValidity && (
                                 <div className="grid gap-2">
                                     <div className="flex items-center space-x-2">
                                         <Switch
@@ -370,41 +383,42 @@ export default function CreateVariant({
                                             checked={hasValidity}
                                             onCheckedChange={(checked) => {
                                                 setHasValidity(checked);
-                                                setData('validity_days', '');
+                                                setData('validity_months', '');
                                             }}
                                         />
                                         <Label htmlFor="has_validity">
-                                            Enable Validity Days
+                                            Enable validity
                                         </Label>
                                     </div>
 
                                     {hasValidity && (
                                         <div className="mt-2 grid gap-2">
-                                            <Label htmlFor="validity_days">
-                                                Validity Days
+                                            <Label htmlFor="validity_months">
+                                                Validity (months)
                                             </Label>
                                             <Input
-                                                id="validity_days"
+                                                id="validity_months"
                                                 type="number"
                                                 min="1"
+                                                max="120"
                                                 step="1"
-                                                value={data.validity_days}
+                                                value={data.validity_months}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'validity_days',
+                                                        'validity_months',
                                                         e.target.value,
                                                     )
                                                 }
-                                                placeholder="30"
+                                                placeholder="12"
                                             />
                                             <div className="text-sm text-muted-foreground">
                                                 Leave this blank for lifetime or
                                                 one-time purchase products. Fill
                                                 it only for timed subscriptions.
                                             </div>
-                                            {errors.validity_days && (
+                                            {errors.validity_months && (
                                                 <div className="text-sm text-destructive">
-                                                    {errors.validity_days}
+                                                    {errors.validity_months}
                                                 </div>
                                             )}
                                         </div>

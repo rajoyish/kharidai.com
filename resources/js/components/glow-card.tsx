@@ -19,7 +19,10 @@ type GlowCardProps = {
  *
  * The outer element is a 1px "frame" painted with a radial gradient centred on
  * the pointer; the inner surface sits on top of it, so only the frame's edge
- * shows the bright glow while a fainter spotlight tints the surface. Pointer
+ * shows the bright glow while a fainter spotlight tints the surface. Both
+ * corners come from `--glow-radius`, the inner one 1px tighter: if they drift
+ * apart, the surface covers the frame at the corners and the border looks
+ * cropped there. Change the radius through that variable, not `rounded-*`. Pointer
  * coordinates are written to CSS variables once per animation frame, so moving
  * the mouse never re-renders React.
  */
@@ -71,7 +74,7 @@ export function GlowCard({
             onPointerLeave={handlePointerLeave}
             style={{ '--glow-opacity': '0' } as CSSProperties}
             className={cn(
-                'group/glow relative isolate rounded-2xl bg-border p-px',
+                'group/glow relative isolate rounded-(--glow-radius) bg-border p-px [--glow-radius:var(--radius-2xl)]',
                 className,
             )}
         >
@@ -84,7 +87,7 @@ export function GlowCard({
 
             <div
                 className={cn(
-                    'relative overflow-hidden rounded-[calc(1rem-1px)] bg-card',
+                    'relative overflow-hidden rounded-[calc(var(--glow-radius)-1px)] bg-card',
                     contentClassName,
                 )}
             >

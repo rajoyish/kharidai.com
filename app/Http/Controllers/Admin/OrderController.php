@@ -468,14 +468,16 @@ class OrderController extends Controller
         $order->loadMissing(['items.productVariant', 'items.subscriptions']);
 
         foreach ($order->items as $item) {
-            $validityDays = $item->productVariant->validity_days;
+            $validityMonths = $item->productVariant->validity_months;
 
-            if ($validityDays === null) {
+            if ($validityMonths === null) {
                 continue;
             }
 
+            // Calendar months, clamped to the month's last day: a one-month
+            // plan bought on 31 January ends on 28 (or 29) February, not 3 March.
             $startDate = today();
-            $endDate = $startDate->copy()->addDays($validityDays);
+            $endDate = $startDate->copy()->addMonthsNoOverflow($validityMonths);
             $missingSubscriptions = max($item->quantity - $item->subscriptions->count(), 0);
 
             if ($missingSubscriptions === 0) {

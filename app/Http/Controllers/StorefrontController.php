@@ -237,6 +237,11 @@ class StorefrontController extends Controller
         // it only once the viewer is authenticated.
         if (auth()->check()) {
             $product->makeVisible('hidden_description');
+
+            // A variant can carry its own members-only details. The page shows
+            // them when that variant is picked and falls back to the product's
+            // when it has none. Hidden on the model for the same reason.
+            $product->variants->each(fn (ProductVariant $variant) => $variant->makeVisible('hidden_description'));
         }
 
         // A variant with `show_pricing` off is quoted on request: the storefront
