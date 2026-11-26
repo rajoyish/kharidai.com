@@ -30,6 +30,12 @@ class VariantPricingController extends Controller
 {
     use FlashesToasts;
 
+    /** Rows per page in the price history and purchases tables. */
+    private const HISTORY_PER_PAGE = 10;
+
+    /** Most points the price chart plots, newest kept. */
+    private const CHART_POINTS = 500;
+
     public function __construct(
         private readonly PriceCalculator $calculator,
         private readonly VariantPriceHistory $history,
@@ -43,12 +49,14 @@ class VariantPricingController extends Controller
 
         $suppliers = self::supplierOptions($this->ledger);
 
+        // Both lists page on their own query key, so moving through one leaves
+        // the other where it was.
         $snapshots = $variant->priceSnapshots()
             ->with(['user:id,name', 'supplier:id,name'])
             ->latest('id')
-            ->limit(500)
-            ->get()
-            ->map(fn (VariantPriceSnapshot $snapshot): array => [
+            ->paginate(self::HISTORY_PER_PAGE, pageName: 'history_page')
+            ->withQueryString()
+            ->through(fn (VariantPriceSnapshot $snapshot): array => [
                 'id' => $snapshot->id,
                 'source' => $snapshot->source->value,
                 'source_label' => $snapshot->source->label(),
@@ -72,9 +80,9 @@ class VariantPricingController extends Controller
             ->with(['variant.product:id,title,slug', 'supplier:id,name'])
             ->latest('purchased_at')
             ->latest('id')
-            ->limit(200)
-            ->get()
-            ->map(fn (WalletPurchase $purchase): array => SupplierController::purchaseRow($purchase));
+            ->paginate(self::HISTORY_PER_PAGE, pageName: 'purchases_page')
+            ->withQueryString()
+            ->through(fn (WalletPurchase $purchase): array => SupplierController::purchaseRow($purchase));
 
         $currentCost = $this->calculator->currentLandedCost($variant, $lastCalculation?->cost_basis ?? CostBasis::Fifo);
 
@@ -90,8 +98,7 @@ class VariantPricingController extends Controller
                 'manual_npr_per_credit' => $lastCalculation?->cost_basis === CostBasis::Manual ? $lastCalculation->npr_per_credit : '',
                 'extra_cost_npr' => $lastCalculation?->extra_cost_npr ?? '',
                 'profit_mode' => $lastCalculation?->target_margin_percent !== null ? 'margin' : 'amount',
-                'target_profit_npr' => $lastCalculation?->target_profit_npr ?? '',
-                'target_margin_percent' => $lastCalculation?->target_margin_percent ?? '',
+                ...$this->profitTargetsFor($variant, $lastCalculation),
                 'rounding' => $lastCalculation?->rounding->value ?? PriceRounding::NearestRupee->value,
             ],
             'costDrift' => $currentCost === null ? null : [
@@ -100,8 +107,83 @@ class VariantPricingController extends Controller
             ],
             'snapshots' => $snapshots,
             'purchases' => $purchases,
+            'chart' => $this->chartSeries($variant),
             ...self::calculatorOptions(),
         ]);
+    }
+
+    /**
+     * The full price and purchase timeline for the chart, which plots every
+     * point while the tables below it page. Only the fields it draws are sent,
+     * oldest first, capped so a long-lived variant cannot bloat the page.
+     *
+     * @return array{prices: list<array{at: string|null, price: float, cost: float|null}>, purchases: list<array{at: string, unit_cost: float, quantity: int}>}
+     */
+    private function chartSeries(ProductVariant $variant): array
+    {
+        $prices = $variant->priceSnapshots()
+            ->latest('id')
+            ->limit(self::CHART_POINTS)
+            ->get()
+            ->reverse()
+            ->map(fn (VariantPriceSnapshot $snapshot): array => [
+                'at' => $snapshot->created_at?->toIso8601String(),
+                'price' => $snapshot->selling_price_npr,
+                'cost' => $snapshot->costNpr(),
+            ])
+            ->values()
+            ->all();
+
+        // A personal purchase is not stock for a sale, so it is no cost signal.
+        $purchases = $variant->walletPurchases()
+            ->where('is_personal', false)
+            ->latest('purchased_at')
+            ->latest('id')
+            ->limit(self::CHART_POINTS)
+            ->get()
+            ->reverse()
+            ->map(fn (WalletPurchase $purchase): array => [
+                'at' => $purchase->purchased_at->toDateString(),
+                'unit_cost' => $purchase->unitCostNpr(),
+                'quantity' => $purchase->quantity,
+            ])
+            ->values()
+            ->all();
+
+        return ['prices' => $prices, 'purchases' => $purchases];
+    }
+
+    /**
+     * The profit target the calculator opens with: whatever the variant earns at
+     * the price it has now, measured against the last recorded cost.
+     *
+     * Replaying the saved target is not enough. A price typed into "Your own
+     * price" is applied but not stored as a target, so the saved target is often
+     * zero, and the calculator would open suggesting cost plus nothing: a 95%
+     * price cut one click from being applied. Deriving the target from the live
+     * price opens the page on that price instead.
+     *
+     * @return array{target_profit_npr: float|string, target_margin_percent: float|string}
+     */
+    private function profitTargetsFor(ProductVariant $variant, ?VariantPriceSnapshot $lastCalculation): array
+    {
+        $saved = [
+            'target_profit_npr' => $lastCalculation?->target_profit_npr ?? '',
+            'target_margin_percent' => $lastCalculation?->target_margin_percent ?? '',
+        ];
+
+        if ($lastCalculation?->landed_cost_npr === null || $variant->price_npr <= 0) {
+            return $saved;
+        }
+
+        $cost = $lastCalculation->landed_cost_npr + ($lastCalculation->extra_cost_npr ?? 0);
+        $profit = max(0.0, $variant->price_npr - $cost);
+
+        if ($lastCalculation->target_margin_percent !== null) {
+            return [...$saved, 'target_margin_percent' => round(min(95.0, $profit / $variant->price_npr * 100), 2)];
+        }
+
+        return [...$saved, 'target_profit_npr' => round($profit, 2)];
     }
 
     /**
@@ -178,12 +260,17 @@ class VariantPricingController extends Controller
     /**
      * The choices a calculator offers for its credit rate and rounding.
      *
-     * @return array{costBases: list<array{value: string, label: string}>, roundings: list<array{value: string, label: string}>}
+     * @return array{costBases: list<array{value: string, label: string, description: string, guidance: string}>, roundings: list<array{value: string, label: string}>}
      */
     public static function calculatorOptions(): array
     {
         return [
-            'costBases' => array_map(fn (CostBasis $basis): array => ['value' => $basis->value, 'label' => $basis->label()], CostBasis::cases()),
+            'costBases' => array_map(fn (CostBasis $basis): array => [
+                'value' => $basis->value,
+                'label' => $basis->label(),
+                'description' => $basis->description(),
+                'guidance' => $basis->guidance(),
+            ], CostBasis::cases()),
             'roundings' => array_map(fn (PriceRounding $rounding): array => ['value' => $rounding->value, 'label' => $rounding->label()], PriceRounding::cases()),
         ];
     }

@@ -15,6 +15,9 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/WalletPurchaseController';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PagePanel } from '@/components/page-panel';
+import { PaginationLinks } from '@/components/pagination-links';
+import type { PaginationLink } from '@/components/pagination-links';
+import { COMPACT_TABLE } from '@/components/procurement/compact-table';
 import {
     asInput,
     CalculatorFields,
@@ -61,6 +64,7 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { formatNpr } from '@/lib/currency';
+import { SHOP_TIME_ZONE } from '@/lib/dates';
 import {
     formatCredits,
     formatRate,
@@ -104,11 +108,28 @@ type Props = {
         current_cost_npr: number;
         recorded_cost_npr: number | null;
     } | null;
-    snapshots: Snapshot[];
-    purchases: Purchase[];
+    snapshots: Paginated<Snapshot>;
+    purchases: Paginated<Purchase>;
+    chart: {
+        prices: { at: string | null; price: number; cost: number | null }[];
+        purchases: { at: string; unit_cost: number; quantity: number }[];
+    };
     costBases: Option[];
     roundings: Option[];
 };
+
+/** One page of a Laravel paginator. */
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLink[];
+};
+
+/**
+ * Reloaded together whichever list is paged. Each paginator's links carry the
+ * query string of the request that built them, so reloading only the clicked
+ * list would leave the other's links stale and drop its page from the URL.
+ */
+const PAGED_LISTS = ['snapshots', 'purchases'];
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -118,6 +139,7 @@ const recordedAt = new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: SHOP_TIME_ZONE,
 });
 
 function Stat({
@@ -153,6 +175,7 @@ export default function VariantPricing({
     costDrift,
     snapshots,
     purchases,
+    chart,
     costBases,
     roundings,
 }: Props) {
@@ -265,26 +288,24 @@ export default function VariantPricing({
         );
     };
 
+    // The chart plots the whole timeline; the tables below it page.
     const chartPrices = useMemo(
         () =>
-            snapshots.map((snapshot) => ({
-                at: snapshot.recorded_at,
-                price: snapshot.selling_price_npr,
-                cost: snapshot.cost_npr,
+            chart.prices.map((point) => ({
+                at: point.at ?? '',
+                price: point.price,
+                cost: point.cost,
             })),
-        [snapshots],
+        [chart.prices],
     );
-    // A personal purchase is not stock for a sale, so it is no cost signal.
     const chartPurchases = useMemo(
         () =>
-            purchases
-                .filter((purchase) => !purchase.is_personal)
-                .map((purchase) => ({
-                    at: purchase.purchased_at,
-                    unitCost: purchase.unit_cost_npr,
-                    quantity: purchase.quantity,
-                })),
-        [purchases],
+            chart.purchases.map((point) => ({
+                at: point.at,
+                unitCost: point.unit_cost,
+                quantity: point.quantity,
+            })),
+        [chart.purchases],
     );
 
     const drift =
@@ -297,6 +318,33 @@ export default function VariantPricing({
         quote?.selling_price_npr != null
             ? quote.selling_price_npr - variant.price_npr
             : null;
+    /**
+     * What Apply would change, so the button can say it. A note counts on its
+     * own because it is recorded as a history row.
+     *
+     * A different supplier or credit price alone does not count: Save supplier
+     * is the action for that. When the new supplier's credits cost a different
+     * amount, though, the purchase price moves, and that is a real change.
+     */
+    const isUnchanged = (amount: number | null, current: number | null) =>
+        amount === null || Math.abs(amount - (current ?? 0)) < 0.005;
+    const isPriceChanging =
+        quote?.selling_price_npr != null &&
+        !isUnchanged(quote.selling_price_npr, variant.price_npr);
+    const isCostChanging =
+        quote?.selling_price_npr != null &&
+        applyForm.data.update_purchase_price &&
+        !isUnchanged(quote.total_cost_npr, variant.purchase_price_npr);
+    const hasNote = applyForm.data.notes.trim() !== '';
+    const hasChangesToApply = isPriceChanging || isCostChanging || hasNote;
+    const applyLabel = isPriceChanging
+        ? `Apply ${formatNpr(quote?.selling_price_npr ?? 0)}`
+        : isCostChanging
+          ? `Update cost to ${formatNpr(quote?.total_cost_npr ?? 0)}`
+          : hasNote
+            ? 'Save note'
+            : 'No change to apply';
+
     const errors = {
         ...calculator.errors,
         ...assignForm.errors,
@@ -654,17 +702,47 @@ export default function VariantPricing({
                                                 disabled={
                                                     applyForm.processing ||
                                                     calculator.processing ||
-                                                    quote.selling_price_npr ===
-                                                        null
+                                                    !hasChangesToApply
                                                 }
                                             >
-                                                Apply{' '}
-                                                {quote.selling_price_npr !==
-                                                    null &&
-                                                    formatNpr(
-                                                        quote.selling_price_npr,
-                                                    )}
+                                                {applyLabel}
                                             </Button>
+                                            {!isPriceChanging &&
+                                                isCostChanging && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Price stays{' '}
+                                                        {formatNpr(
+                                                            variant.price_npr,
+                                                        )}
+                                                        . Purchase price{' '}
+                                                        {formatNpr(
+                                                            variant.purchase_price_npr ??
+                                                                0,
+                                                        )}{' '}
+                                                        →{' '}
+                                                        {formatNpr(
+                                                            quote.total_cost_npr ??
+                                                                0,
+                                                        )}
+                                                        . Turn off "Also update
+                                                        purchase price" to leave
+                                                        it.
+                                                    </p>
+                                                )}
+                                            {!hasChangesToApply &&
+                                                quote.selling_price_npr !==
+                                                    null && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        The price is already{' '}
+                                                        {formatNpr(
+                                                            variant.price_npr,
+                                                        )}
+                                                        .{' '}
+                                                        {isSupplierChanged
+                                                            ? 'To switch supplier without changing the price, use Save supplier above.'
+                                                            : 'Type a new price in Your own price, or change the profit, to apply one.'}
+                                                    </p>
+                                                )}
                                         </div>
                                     </>
                                 )}
@@ -689,11 +767,12 @@ export default function VariantPricing({
                             <CardTitle>Price history</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
+                            <Table className={COMPACT_TABLE}>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>When</TableHead>
                                         <TableHead>Source</TableHead>
+                                        <TableHead>Supplier</TableHead>
                                         <TableHead className="text-right">
                                             Price
                                         </TableHead>
@@ -707,7 +786,7 @@ export default function VariantPricing({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {snapshots.map((snapshot) => {
+                                    {snapshots.data.map((snapshot) => {
                                         const margin =
                                             snapshot.cost_npr !== null
                                                 ? snapshot.selling_price_npr -
@@ -745,6 +824,13 @@ export default function VariantPricing({
                                                         </div>
                                                     )}
                                                 </TableCell>
+                                                <TableCell className="text-sm">
+                                                    {snapshot.supplier_name ?? (
+                                                        <span className="text-muted-foreground">
+                                                            —
+                                                        </span>
+                                                    )}
+                                                </TableCell>
                                                 <TableCell className="text-right tabular-nums">
                                                     {formatNpr(
                                                         snapshot.selling_price_npr,
@@ -776,8 +862,6 @@ export default function VariantPricing({
                                                                 {
                                                                     snapshot.cost_basis_label
                                                                 }
-                                                                {snapshot.supplier_name &&
-                                                                    ` · ${snapshot.supplier_name}`}
                                                             </div>
                                                         </>
                                                     ) : (
@@ -787,10 +871,10 @@ export default function VariantPricing({
                                             </TableRow>
                                         );
                                     })}
-                                    {snapshots.length === 0 && (
+                                    {snapshots.data.length === 0 && (
                                         <TableRow>
                                             <TableCell
-                                                colSpan={6}
+                                                colSpan={7}
                                                 className="h-20 text-center text-muted-foreground"
                                             >
                                                 No price changes yet.
@@ -799,6 +883,11 @@ export default function VariantPricing({
                                     )}
                                 </TableBody>
                             </Table>
+                            <PaginationLinks
+                                links={snapshots.links}
+                                label="Price history pages"
+                                only={PAGED_LISTS}
+                            />
                         </CardContent>
                     </Card>
 
@@ -808,9 +897,14 @@ export default function VariantPricing({
                         </CardHeader>
                         <CardContent>
                             <PurchasesTable
-                                purchases={purchases}
+                                purchases={purchases.data}
                                 showVariant={false}
                                 onReverse={setPurchaseToReverse}
+                            />
+                            <PaginationLinks
+                                links={purchases.links}
+                                label="Purchase pages"
+                                only={PAGED_LISTS}
                             />
                         </CardContent>
                     </Card>

@@ -35,7 +35,7 @@ it('can list orders', function () {
 
 /**
  * A digital order, which is the only kind the orders index lists under
- * `digitalOrders`.
+ * `orders` on the default (digital) page.
  */
 function digitalOrder(User $user, string $createdAt): Order
 {
@@ -63,8 +63,8 @@ it('shows only the orders of the requested year', function () {
         ->get(route('admin.orders.index', ['year' => 2027]))
         ->assertInertia(fn (Assert $page) => $page
             ->where('filters.year', 2027)
-            ->has('digitalOrders', 1)
-            ->where('digitalOrders.0.id', $wanted->id)
+            ->has('orders', 1)
+            ->where('orders.0.id', $wanted->id)
         );
 });
 
@@ -89,8 +89,8 @@ it('defaults to the current year when no year is requested', function () {
         ->get(route('admin.orders.index'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('filters.year', (int) now()->year)
-            ->has('digitalOrders', 1)
-            ->where('digitalOrders.0.id', $currentOrder->id)
+            ->has('orders', 1)
+            ->where('orders.0.id', $currentOrder->id)
         );
 });
 
@@ -101,7 +101,7 @@ it('falls back to the current year when an unknown year is requested', function 
         ->get(route('admin.orders.index', ['year' => 1999]))
         ->assertInertia(fn (Assert $page) => $page
             ->where('filters.year', (int) now()->year)
-            ->has('digitalOrders', 1)
+            ->has('orders', 1)
         );
 });
 
@@ -356,12 +356,10 @@ it('can delete an order', function () {
     $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id);
 
     $response->assertRedirect(route('admin.orders.index'));
-    $this->assertDatabaseMissing('orders', [
-        'id' => $order->id,
-    ]);
+    $this->assertSoftDeleted($order);
 });
 
-it('can delete an order with related records', function () {
+it('can permanently delete an order with related records', function () {
     Storage::fake('public');
 
     $order = Order::factory()->create(['user_id' => $this->user->id]);
@@ -390,9 +388,10 @@ it('can delete an order with related records', function () {
 
     Storage::disk('public')->put($receipt->file_path, 'receipt');
 
-    $response = $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id);
+    $this->actingAs($this->admin)->delete('/admin/orders/'.$order->id);
+    $response = $this->actingAs($this->admin)->delete(route('admin.orders.force-destroy', $order));
 
-    $response->assertRedirect(route('admin.orders.index'));
+    $response->assertRedirect();
     $this->assertDatabaseMissing('orders', [
         'id' => $order->id,
     ]);

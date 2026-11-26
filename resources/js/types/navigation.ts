@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /** Sub-pages listed beneath this item. Its own link stays clickable. */
+    items?: NavItem[];
 };

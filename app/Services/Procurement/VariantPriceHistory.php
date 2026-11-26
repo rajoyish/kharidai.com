@@ -105,8 +105,30 @@ class VariantPriceHistory
     }
 
     /**
-     * The latest snapshot, when it already records exactly this quote and the
-     * variant's price did not move, so a second click on Apply is a no-op.
+     * What a snapshot records about the price itself. Two snapshots that agree
+     * on these describe the same price, however it was reached.
+     */
+    private const OUTCOME_ATTRIBUTES = [
+        'supplier_id',
+        'source',
+        'selling_price_npr',
+        'purchase_price_npr',
+        'landed_cost_npr',
+        'supplier_cost_credits',
+        'npr_per_credit',
+        'cost_basis',
+        'extra_cost_npr',
+    ];
+
+    /**
+     * The latest snapshot, when it already records this price and the variant
+     * did not move, so applying again adds no history row.
+     *
+     * Compared on the outcome only. Profit target and rounding are how the
+     * admin arrived at a price, and the calculator reopens with a target
+     * derived from the live price, so the same price is often reached through
+     * a different target. Counting those as changes wrote a duplicate row for
+     * every click on an unchanged Apply.
      *
      * @param  array<string, mixed>  $input
      * @param  array<string, mixed>  $quote
@@ -125,7 +147,7 @@ class VariantPriceHistory
 
         $candidate = (new VariantPriceSnapshot)->forceFill($this->snapshotAttributes($variant, $input, $quote));
 
-        foreach (array_keys($candidate->getAttributes()) as $attribute) {
+        foreach (self::OUTCOME_ATTRIBUTES as $attribute) {
             if ($latest->getAttribute($attribute) != $candidate->getAttribute($attribute)) {
                 return null;
             }
@@ -158,7 +180,9 @@ class VariantPriceHistory
     private function snapshotAttributes(ProductVariant $variant, array $input, array $quote): array
     {
         return [
-            'supplier_id' => $this->isManualRate($input) ? null : $quote['supplier_id'],
+            // A typed rate is still bought from the variant's supplier, so the
+            // row names it rather than leaving the history unattributed.
+            'supplier_id' => $this->isManualRate($input) ? $variant->supplier_id : $quote['supplier_id'],
             'source' => PriceSnapshotSource::Calculator,
             'selling_price_npr' => $quote['selling_price_npr'],
             'purchase_price_npr' => $variant->purchase_price_npr,

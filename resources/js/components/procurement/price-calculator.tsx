@@ -17,7 +17,14 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { formatNpr } from '@/lib/currency';
 import { formatCredits, formatRate } from '@/lib/wallet-credits';
 
-export type Option = { value: string; label: string };
+export type Option = {
+    value: string;
+    label: string;
+    /** One line under the option in its dropdown. */
+    description?: string;
+    /** When to choose it, shown under the field once chosen. */
+    guidance?: string;
+};
 
 export type Quote = {
     cost_basis: string;
@@ -245,12 +252,21 @@ export function CalculatorFields({
 }) {
     const { data, setData } = calculator;
     const isManual = data.cost_basis === 'manual';
+    const selectedBasis = costBases.find(
+        (basis) => basis.value === data.cost_basis,
+    );
 
     return (
         <>
             <FormField
                 id="cost_basis"
                 label="Credit rate"
+                hint={
+                    <>
+                        How many rupees one supplier credit cost you. The price
+                        is built on top of this. {selectedBasis?.guidance}
+                    </>
+                }
                 error={errors.cost_basis}
             >
                 <Select
@@ -260,11 +276,12 @@ export function CalculatorFields({
                     <SelectTrigger id="cost_basis">
                         <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent align="start" className="max-w-80">
                         {costBases.map((basis) => (
                             <SelectItem
                                 key={basis.value}
                                 value={basis.value}
+                                description={basis.description}
                                 disabled={
                                     basis.value !== 'manual' &&
                                     suppliers.length === 0
@@ -281,7 +298,6 @@ export function CalculatorFields({
                 <FormField
                     id="manual_npr_per_credit"
                     label="Rs. per credit"
-                    hint="Use this if you have no top-up yet."
                     error={errors.manual_npr_per_credit}
                 >
                     <Input
@@ -432,7 +448,7 @@ export function CalculatorFields({
                     onChange={(e) => setData('final_price_npr', e.target.value)}
                     placeholder={
                         quote?.suggested_price_npr
-                            ? String(quote.suggested_price_npr)
+                            ? `Suggested Rs. ${quote.suggested_price_npr}`
                             : 'e.g. 899'
                     }
                 />
