@@ -52,6 +52,18 @@ it('sends product cards without the long description', function () {
         );
 });
 
+it('sends the homepage marquee each product\'s thumbnail', function () {
+    $category = Category::factory()->create(['type' => ProductType::Digital]);
+    $product = Product::factory()->hasAttached($category)->create(['in_stock' => true, 'is_visible' => true]);
+    $product->forceFill(['image_thumb' => 'products/thumbs/card-1a2b3c4d.webp'])->saveQuietly();
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('sections.0.categories.0.products.0.image_thumb', 'products/thumbs/card-1a2b3c4d.webp'),
+        );
+});
+
 it('groups the homepage into digital, physical and service sections', function () {
     $category = Category::factory()->create([
         'type' => ProductType::Digital,

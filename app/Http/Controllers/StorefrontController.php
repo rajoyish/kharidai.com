@@ -33,6 +33,7 @@ class StorefrontController extends Controller
         'products.title',
         'products.slug',
         'products.image',
+        'products.image_thumb',
         'products.image_alt',
         'products.created_at',
     ];
