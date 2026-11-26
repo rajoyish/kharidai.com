@@ -61,8 +61,9 @@ class OrderController extends Controller
             })
             ->latest()
             ->get()
+            // `uuid` is the order's URL key: every row links and acts through it.
             ->each(fn (Order $order): Order => $order->append('profit')->setVisible([
-                'id', 'order_number', 'total_amount', 'status', 'profit', 'created_at',
+                'id', 'uuid', 'order_number', 'total_amount', 'status', 'profit', 'created_at',
                 'refund_amount', 'refunded_on', 'refund_receipt_path', 'refund_note',
                 'user', 'paymentReceipt',
             ]));
