@@ -71,6 +71,7 @@ test('deleted orders are listed on their own page, not with live orders', functi
             ->component('Admin/Orders/Deleted')
             ->has('orders.data', 1)
             ->where('orders.data.0.id', $this->order->id)
+            ->where('orders.data.0.uuid', $this->order->uuid)
             ->where('orders.data.0.customer.email', $this->customer->email));
 
     $this->actingAs($this->admin)
@@ -160,3 +161,26 @@ test('customers cannot delete, restore or erase orders', function (string $metho
     'restore' => ['patch', 'admin.orders.restore', true],
     'permanent delete' => ['delete', 'admin.orders.force-destroy', true],
 ]);
+
+test('the deleted orders page gives Restore and Erase the URL key they need', function (string $action) {
+    $this->order->delete();
+
+    // Follow the page as the browser does: its buttons build their URLs from
+    // the uuid in the page data.
+    $uuid = null;
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.deleted'))
+        ->assertInertia(function (Assert $page) use (&$uuid) {
+            $uuid = $page->toArray()['props']['orders']['data'][0]['uuid'] ?? null;
+        });
+
+    expect($uuid)->toBe($this->order->uuid);
+
+    $action === 'restore'
+        ? $this->actingAs($this->admin)->patch("/admin/orders/{$uuid}/restore")->assertRedirect()
+        : $this->actingAs($this->admin)->delete("/admin/orders/{$uuid}/force")->assertRedirect();
+
+    $action === 'restore'
+        ? expect($this->order->fresh()->trashed())->toBeFalse()
+        : expect(Order::withTrashed()->find($this->order->id))->toBeNull();
+})->with(['restore', 'erase']);
