@@ -107,6 +107,8 @@ class OrderController extends Controller
             ->withQueryString()
             ->through(fn (Order $order): array => [
                 'id' => $order->id,
+                // The URL key: Restore and Erase address the order by it.
+                'uuid' => $order->uuid,
                 'order_number' => $order->order_number,
                 'status' => $order->status,
                 'total_amount' => (float) $order->total_amount,
