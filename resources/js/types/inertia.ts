@@ -38,6 +38,8 @@ export type SharedData = {
      */
     paymentMethods: PaymentMethod[];
     requiresMobileNumber: boolean;
+    /** The oldest published notice the user has not dismissed, popped up in the panel. */
+    pendingNotice: { id: number; title: string; body: string } | null;
     sidebarOpen: boolean;
     /** Keys of the sidebar sections the user folded away. */
     sidebarCollapsedSections: string[];

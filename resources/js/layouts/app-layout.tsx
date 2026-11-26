@@ -2,6 +2,7 @@ import { usePage, router } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { MobileNumberPrompt } from '@/components/mobile-number-prompt';
+import { NoticePopup } from '@/components/notice-popup';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -84,6 +85,7 @@ export default function AppLayout({
     return (
         <AppLayoutTemplate breadcrumbs={breadcrumbs}>
             <MobileNumberPrompt />
+            <NoticePopup />
             {children}
         </AppLayoutTemplate>
     );

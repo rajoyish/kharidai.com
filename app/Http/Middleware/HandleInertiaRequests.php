@@ -8,6 +8,7 @@ use App\Http\Controllers\Settings\MobileNumberController;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\MenuItem;
+use App\Models\Notice;
 use App\Models\Page;
 use App\Models\PaymentMethod;
 use App\Models\Post;
@@ -77,6 +78,17 @@ class HandleInertiaRequests extends Middleware
             'requiresMobileNumber' => $user !== null
                 && blank($user->mobile_number)
                 && ! $request->session()->get(MobileNumberController::DISMISSED_SESSION_KEY, false),
+            // The oldest published notice this user has not closed yet. Only the
+            // panel layout renders it, as a popup; the next one surfaces once
+            // this one is dismissed.
+            'pendingNotice' => $user === null
+                ? null
+                : fn (): ?array => Notice::query()
+                    ->visibleTo($user)
+                    ->notDismissedBy($user)
+                    ->oldest('published_at')
+                    ->first(['id', 'title', 'body', 'published_at'])
+                    ?->only(['id', 'title', 'body']),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'sidebarCollapsedSections' => $this->sidebarCollapsedSections($request),
             // The QR payment panel appears on several pages and will appear on

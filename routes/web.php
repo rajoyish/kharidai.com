@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\NewsletterController;
+use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
@@ -32,6 +33,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\User\AddressController;
+use App\Http\Controllers\User\NoticeController as UserNoticeController;
 use App\Http\Controllers\User\NotificationController as UserNotificationController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\ServiceController as UserServiceController;
@@ -92,6 +94,8 @@ Route::middleware(['auth', 'verified', 'not-banned'])->group(function () {
     Route::put('account/addresses/{address}', [AddressController::class, 'update'])->name('account.addresses.update');
     Route::patch('account/addresses/{address}/default', [AddressController::class, 'setDefault'])->name('account.addresses.default');
     Route::delete('account/addresses/{address}', [AddressController::class, 'destroy'])->name('account.addresses.destroy');
+    Route::get('account/notices', [UserNoticeController::class, 'index'])->name('account.notices.index');
+    Route::post('account/notices/{notice}/dismiss', [UserNoticeController::class, 'dismiss'])->name('account.notices.dismiss');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
@@ -121,6 +125,8 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::post('newsletters/{newsletter}/send', [NewsletterController::class, 'send'])->name('newsletters.send');
     Route::post('newsletters/{newsletter}/duplicate', [NewsletterController::class, 'duplicate'])->name('newsletters.duplicate');
     Route::resource('newsletters', NewsletterController::class);
+
+    Route::resource('notices', AdminNoticeController::class)->only(['index', 'store', 'update', 'destroy']);
 
     Route::get('services', [ServiceEngagementController::class, 'index'])->name('services.index');
     Route::get('services/create', [ServiceEngagementController::class, 'create'])->name('services.create');
