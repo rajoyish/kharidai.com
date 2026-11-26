@@ -202,7 +202,11 @@ it('can delete a product', function () {
 
     $response = $this->actingAs($this->admin)->delete('/admin/products/'.$product->slug);
 
-    $response->assertRedirect();
+    $response->assertRedirect(route('admin.products.index'));
+    $this->followingRedirects()->get(route('admin.products.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->hasFlash('toast', ['type' => 'success', 'message' => 'Product deleted successfully.']),
+        );
     $this->assertDatabaseMissing('products', [
         'id' => $product->id,
     ]);
@@ -222,6 +226,30 @@ it('can delete a product with variants', function () {
         'id' => $variant->id,
     ]);
 });
+
+it('keeps ordered catalog entries and their images when an admin tries to delete them', function (string $entry) {
+    Storage::fake('public');
+    $product = Product::factory()->create(['image' => 'products/ordered.png']);
+    $product->galleries()->create(['image_path' => 'galleries/ordered.png', 'sort_order' => 0]);
+    Storage::disk('public')->put($product->image, 'product image');
+    Storage::disk('public')->put('galleries/ordered.png', 'gallery image');
+
+    $order = orderFor(User::factory()->create(), $product);
+    $item = $order->items()->sole();
+    $order->delete(); // The order can still be restored.
+
+    $url = $entry === 'product'
+        ? route('admin.products.destroy', $product)
+        : route('admin.products.variants.destroy', [$product, $item->product_variant_id]);
+    $this->actingAs($this->admin)->delete($url)
+        ->assertRedirect()
+        ->assertSessionHas('inertia.flash_data.toast.type', 'error');
+
+    $this->assertModelExists($product);
+    $this->assertModelExists($item);
+    $this->assertDatabaseHas('product_variants', ['id' => $item->product_variant_id]);
+    Storage::disk('public')->assertExists([$product->image, 'galleries/ordered.png']);
+})->with(['product', 'variant']);
 
 it('can toggle product stock status', function () {
     $product = Product::factory()->create(['in_stock' => true]);

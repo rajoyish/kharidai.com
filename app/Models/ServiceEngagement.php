@@ -13,6 +13,7 @@ use App\Services\Pricing\PricingStrategy as PricingStrategyContract;
 use Carbon\CarbonInterface;
 use Database\Factories\ServiceEngagementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -87,6 +88,7 @@ use Illuminate\Support\Carbon;
     'brief',
     'delivery_note',
 ])]
+#[Hidden(['purchase_price_npr'])] // the shop's cost; engagements ride along with customer order payloads
 class ServiceEngagement extends Model
 {
     /** @use HasFactory<ServiceEngagementFactory> */

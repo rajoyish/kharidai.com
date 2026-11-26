@@ -5,8 +5,10 @@ namespace App\Providers;
 use App\Listeners\EnforceEmailQuota;
 use App\Listeners\LogSsrRenderFailure;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\ServiceEngagement;
 use App\Observers\OrderObserver;
+use App\Observers\ProductObserver;
 use App\Observers\ServiceEngagementObserver;
 use App\Services\Mail\QuotaAwareMailManager;
 use Carbon\CarbonImmutable;
@@ -52,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Order::observe(OrderObserver::class);
         ServiceEngagement::observe(ServiceEngagementObserver::class);
+        Product::observe(ProductObserver::class);
 
         $this->configureDefaults();
         $this->embedLogoInOutgoingMail();

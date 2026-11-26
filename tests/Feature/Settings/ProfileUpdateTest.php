@@ -29,8 +29,22 @@ test('profile information can be updated', function () {
     $user->refresh();
 
     expect($user->name)->toBe('Test User');
-    expect($user->email)->toBe('test@example.com');
-    expect($user->email_verified_at)->toBeNull();
+});
+
+test('profile update never changes the email address', function () {
+    $user = User::factory()->create(['email' => 'owner@example.com']);
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), [
+            'name' => 'Test User',
+            'email' => 'someone-else@gmail.com',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $user->refresh();
+
+    expect($user->email)->toBe('owner@example.com');
+    expect($user->email_verified_at)->not->toBeNull();
 });
 
 test('profile update ignores privileged user attributes', function () {
@@ -103,3 +117,18 @@ test('correct password must be provided to delete account', function () {
 
     expect($user->fresh())->not->toBeNull();
 });
+
+test('a banned user is signed out of the settings pages', function (string $method, string $route) {
+    $user = User::factory()->create(['banned_at' => now(), 'name' => 'Original Name']);
+
+    $this->actingAs($user)
+        ->{$method}(route($route), ['name' => 'Changed Name'])
+        ->assertRedirect(route('login'));
+
+    $this->assertGuest();
+    expect($user->fresh()->name)->toBe('Original Name');
+})->with([
+    'view profile' => ['get', 'profile.edit'],
+    'update profile' => ['patch', 'profile.update'],
+    'delete account' => ['delete', 'profile.destroy'],
+]);

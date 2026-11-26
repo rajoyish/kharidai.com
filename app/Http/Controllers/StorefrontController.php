@@ -19,6 +19,25 @@ class StorefrontController extends Controller
 {
     use BuildsSeoMetadata;
 
+    /**
+     * The product columns a storefront card renders. Listings repeat a product
+     * under every category it sits in, so sending the full row (the long HTML
+     * description, the SEO fields) multiplied the homepage payload for nothing
+     * the card shows.
+     *
+     * @var list<string>
+     */
+    private const array PRODUCT_CARD_COLUMNS = [
+        'products.id',
+        'products.type',
+        'products.title',
+        'products.slug',
+        'products.image',
+        'products.image_thumb',
+        'products.image_alt',
+        'products.created_at',
+    ];
+
     public function index(): Response
     {
         $defaultSeoImage = $this->defaultSeoImage();
@@ -116,7 +135,11 @@ class StorefrontController extends Controller
     {
         $defaultSeoImage = $this->defaultSeoImage();
 
-        $products = $this->storefrontProductQuery($category->products(), $category->type)->paginate(12)->withQueryString();
+        $products = $this->storefrontProductQuery($category->products(), $category->type)
+            // BelongsToMany::paginate() adds `products.*` for its default columns,
+            // which would undo the card select; an empty list keeps it as is.
+            ->paginate(12, columns: [])
+            ->withQueryString();
         $productCount = $products->total();
 
         return Inertia::render('Categories/Show', [
@@ -347,6 +370,7 @@ class StorefrontController extends Controller
     private function uncategorizedProducts(ProductType $type, ?string $search = null): Collection
     {
         return Product::query()
+            ->select(self::PRODUCT_CARD_COLUMNS)
             ->whereDoesntHave('categories')
             ->ofType($type)
             ->visible()
@@ -426,6 +450,7 @@ class StorefrontController extends Controller
     private function storefrontProductQuery(Relation $query, ?ProductType $type = null, ?string $search = null): Relation
     {
         $query
+            ->select(self::PRODUCT_CARD_COLUMNS)
             ->when($type, fn ($inner) => $inner->where('type', $type))
             ->where('in_stock', true)
             ->where('is_visible', true)

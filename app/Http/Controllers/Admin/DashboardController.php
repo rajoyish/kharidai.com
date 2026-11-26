@@ -16,7 +16,8 @@ class DashboardController extends Controller
         $recentOrders = Order::with(['user', 'paymentReceipt', 'items.serviceEngagements'])
             ->latest()
             ->take(5)
-            ->get();
+            ->get()
+            ->each->append('profit');
 
         // Sales and profit both hinge on per-item invoice data that SQL cannot sum
         // for us, so the orders are walked in chunks rather than hydrated all at

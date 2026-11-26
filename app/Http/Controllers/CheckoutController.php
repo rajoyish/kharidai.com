@@ -12,6 +12,8 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\ShippingAddress;
 use App\Models\ShippingZone;
 use App\Models\User;
@@ -33,6 +35,10 @@ use Inertia\Response;
 
 class CheckoutController extends Controller
 {
+    private const string UNAVAILABLE_ITEMS_MESSAGE = 'Some items in your cart are no longer available. Remove them to continue.';
+
+    private const string CART_CHANGED_MESSAGE = 'Your cart changed during checkout. Review it and try again.';
+
     public function index(Request $request, ShippingCalculator $calculator): Response|RedirectResponse
     {
         $cart = Cart::with(['items.productVariant.product.physicalDetail'])
@@ -41,6 +47,10 @@ class CheckoutController extends Controller
 
         if (! $cart || $cart->items->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+        }
+
+        if ($cart->unavailableItems()->isNotEmpty()) {
+            return $this->backToCartWithError(self::UNAVAILABLE_ITEMS_MESSAGE);
         }
 
         $physicalItems = $this->physicalItems($cart->items);
@@ -94,6 +104,10 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
+        if ($cart->unavailableItems()->isNotEmpty()) {
+            return $this->backToCartWithError(self::UNAVAILABLE_ITEMS_MESSAGE);
+        }
+
         $physicalItems = $this->physicalItems($cart->items);
         $hasPhysicalItems = $physicalItems->isNotEmpty();
         $isPhysicalOnly = $hasPhysicalItems && $physicalItems->count() === $cart->items->count();
@@ -145,7 +159,21 @@ class CheckoutController extends Controller
         $order = DB::transaction(function () use (
             $request, $cart, $validated, $hasPhysicalItems, $zone, $mobileNumber,
             $itemsTotal, $shippingTotal, $totalAmount, $amountDueNow, $balanceDue, $paymentOption
-        ) {
+        ): Order|string {
+            Cart::lockOwner($cart->user_id);
+
+            $catalogChange = $this->catalogChangeMessage($cart);
+            if ($catalogChange !== null) {
+                return $catalogChange;
+            }
+
+            $lockedItems = $cart->items()->lockForUpdate()->get()->keyBy('id');
+            if ($lockedItems->count() !== $cart->items->count() || $cart->items->contains(
+                fn (CartItem $item): bool => $lockedItems->get($item->id)?->getRawOriginal() !== $item->getRawOriginal(),
+            )) {
+                return self::CART_CHANGED_MESSAGE;
+            }
+
             $shippingAddress = $hasPhysicalItems ? $this->resolveShippingAddress($request, $validated, $mobileNumber) : null;
 
             $order = Order::create([
@@ -192,16 +220,20 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            // The foreign key clears these locked lines along with their cart.
+            $cart->delete();
+
             return $order;
         });
+
+        if (is_string($order)) {
+            return $this->backToCartWithError($order);
+        }
 
         $admins = User::where('is_admin', true)->get();
         Notification::send($admins, new OrderPlacedNotification($order));
 
         $this->sendOrderEmails($order);
-
-        $cart->items()->delete();
-        $cart->delete();
 
         // With nothing to pay up front there is no QR step to show, so go
         // straight to the order confirmation.
@@ -210,6 +242,53 @@ class CheckoutController extends Controller
         }
 
         return redirect()->route('checkout.npr', $order);
+    }
+
+    private function backToCartWithError(string $message): RedirectResponse
+    {
+        Inertia::flash('toast', ['type' => 'error', 'message' => $message]);
+
+        return redirect()->route('cart.index');
+    }
+
+    /**
+     * Recheck the catalog values used to price the order and hold them stable
+     * until the transaction records the order items.
+     */
+    private function catalogChangeMessage(Cart $cart): ?string
+    {
+        $cartVariants = $cart->items->map(fn (CartItem $item): ProductVariant => $item->productVariant)->keyBy('id');
+        $productIds = $cartVariants->pluck('product_id')->unique();
+
+        $products = Product::query()
+            ->whereKey($productIds)
+            ->sharedLock()
+            ->get(['id', 'in_stock', 'is_visible']);
+
+        if ($products->count() !== $productIds->count() || ! $products->every(fn (Product $product): bool => $product->isPurchasable())) {
+            return self::UNAVAILABLE_ITEMS_MESSAGE;
+        }
+
+        $lockedVariants = ProductVariant::query()
+            ->whereKey($cartVariants->keys())
+            ->sharedLock()
+            ->get(['id', 'price_npr', 'purchase_price_npr']);
+
+        if ($lockedVariants->count() !== $cartVariants->count()) {
+            return self::UNAVAILABLE_ITEMS_MESSAGE;
+        }
+
+        foreach ($lockedVariants as $lockedVariant) {
+            $quotedVariant = $cartVariants[$lockedVariant->id];
+            if (
+                $lockedVariant->getRawOriginal('price_npr') !== $quotedVariant->getRawOriginal('price_npr')
+                || $lockedVariant->getRawOriginal('purchase_price_npr') !== $quotedVariant->getRawOriginal('purchase_price_npr')
+            ) {
+                return self::CART_CHANGED_MESSAGE;
+            }
+        }
+
+        return null;
     }
 
     /**

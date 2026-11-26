@@ -1,23 +1,19 @@
 import { Briefcase, CloudDownload, Search, Star, Truck } from 'lucide-react';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
-import { HeroFanCards } from '@/components/hero-fan-cards';
 import { MaskedLinesHeading } from '@/components/masked-lines-heading';
 import { PinnedPanels } from '@/components/pinned-panels';
+import { ProductMarquee } from '@/components/product-marquee';
 import { SeoHead } from '@/components/seo-head';
 import { StorefrontHomeSection } from '@/components/storefront-home-section';
 import { StorefrontSearch } from '@/components/storefront-search';
 import { StorefrontLayout } from '@/layouts/storefront-layout';
-import { collectAllProducts } from '@/lib/storefront-products';
+import { collectAllProducts, dedupeProducts } from '@/lib/storefront-products';
 import { home } from '@/routes';
 import { index as digitalProducts } from '@/routes/digital-products';
 import { index as physicalProducts } from '@/routes/physical-products';
 import { index as services } from '@/routes/services';
-import type {
-    StorefrontProduct,
-    StorefrontSection,
-    StorefrontType,
-} from '@/types';
+import type { StorefrontSection, StorefrontType } from '@/types';
 
 const SECTION_HREF: Record<
     StorefrontType,
@@ -30,9 +26,8 @@ const SECTION_HREF: Record<
 
 const SEARCH_ONLY = ['sections', 'filters'];
 
-function countProduct(product: StorefrontProduct): number {
-    return 1 + (product.variants_count ?? 0);
-}
+/** Below this the loop would mostly show the same few products repeating. */
+const MIN_MARQUEE_PRODUCTS = 3;
 
 export default function Welcome({
     sections,
@@ -41,25 +36,6 @@ export default function Welcome({
     sections: StorefrontSection[];
     filters: { search: string | null };
 }) {
-    const totalItemsCount = useMemo(
-        () =>
-            sections.reduce((total, section) => {
-                const products = collectAllProducts(
-                    section.categories,
-                    section.uncategorizedProducts,
-                );
-
-                return (
-                    total +
-                    products.reduce(
-                        (sum, product) => sum + countProduct(product),
-                        0,
-                    )
-                );
-            }, 0),
-        [sections],
-    );
-
     const hasResults = sections.some(
         (section) =>
             section.categories.some(
@@ -70,6 +46,28 @@ export default function Welcome({
                     ),
             ) || section.uncategorizedProducts.length > 0,
     );
+
+    const catalogProducts = useMemo(
+        () =>
+            dedupeProducts(
+                sections.flatMap((section) =>
+                    collectAllProducts(
+                        section.categories,
+                        section.uncategorizedProducts,
+                    ),
+                ),
+            ),
+        [sections],
+    );
+
+    // The marquee sits in the hero, above the search. A search narrows
+    // `sections`, and the hero changing height under the results would jump
+    // the page, so it keeps the last unfiltered catalog while a search is on.
+    const [marqueeProducts, setMarqueeProducts] = useState(catalogProducts);
+
+    if (!filters.search && marqueeProducts !== catalogProducts) {
+        setMarqueeProducts(catalogProducts);
+    }
 
     const shopRef = useRef<HTMLElement>(null);
 
@@ -112,7 +110,12 @@ export default function Welcome({
                             </div>
                         </div>
 
-                        <HeroFanCards totalItemsCount={totalItemsCount} />
+                        {marqueeProducts.length >= MIN_MARQUEE_PRODUCTS && (
+                            <ProductMarquee
+                                products={marqueeProducts}
+                                className="relative z-10 mt-16"
+                            />
+                        )}
                     </div>
                 </div>
 

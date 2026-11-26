@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\MoneyNpr;
 use Database\Factories\OrderItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property ProductVariant $productVariant
  */
 #[Fillable(['order_id', 'product_variant_id', 'price', 'purchase_price', 'quantity', 'selected_options', 'brief'])]
+#[Hidden(['purchase_price'])] // what the shop paid; customer pages serialize order items, so only admin pages reveal it via makeVisible()
 class OrderItem extends Model
 {
     /** @use HasFactory<OrderItemFactory> */

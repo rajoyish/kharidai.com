@@ -83,6 +83,16 @@ class Product extends Model
     }
 
     /**
+     * Whether the product can still be bought: listed on the storefront and in
+     * stock. A cart line outlives these flags, so the cart and checkout ask
+     * again rather than trusting what was true when it was added.
+     */
+    public function isPurchasable(): bool
+    {
+        return $this->is_visible && $this->in_stock;
+    }
+
+    /**
      * Constrain the query to a single product type.
      *
      * @param  Builder<Product>  $query

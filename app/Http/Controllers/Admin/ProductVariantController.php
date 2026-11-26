@@ -6,12 +6,14 @@ use App\Enums\CostBasis;
 use App\Enums\PriceRounding;
 use App\Enums\PriceSnapshotSource;
 use App\Http\Controllers\Controller;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\VariantPriceSnapshot;
 use App\Services\Procurement\PriceCalculator;
 use App\Services\Procurement\VariantPriceHistory;
 use App\Services\Procurement\WalletLedger;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -165,8 +167,20 @@ class ProductVariantController extends Controller
 
     public function destroy(Product $product, ProductVariant $variant): RedirectResponse
     {
-        $variant->delete();
+        try {
+            $variant->deleteOrFail();
+        } catch (QueryException $exception) {
+            if ($exception->getCode() !== '23000' || ! OrderItem::where('product_variant_id', $variant->id)->exists()) {
+                throw $exception;
+            }
 
-        return redirect()->route('admin.products.variants.index', $product)->with('success', 'Variant deleted successfully.');
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'This variant is part of an order and must be kept for order history.']);
+
+            return to_route('admin.products.variants.index', $product);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Variant deleted successfully.']);
+
+        return to_route('admin.products.variants.index', $product);
     }
 }

@@ -8,8 +8,10 @@ use App\Enums\ProductType;
 use App\Http\Controllers\Concerns\StoresSeoFriendlyImages;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -177,15 +179,28 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $images = $product->galleries()->pluck('image_path');
         if ($product->image) {
-            Storage::disk('public')->delete($product->image);
+            $images->push($product->image);
         }
-        foreach ($product->galleries as $gallery) {
-            Storage::disk('public')->delete($gallery->image_path);
-        }
-        $product->delete();
 
-        return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
+        try {
+            $product->deleteOrFail();
+        } catch (QueryException $exception) {
+            if ($exception->getCode() !== '23000' || ! OrderItem::whereIn('product_variant_id', $product->variants()->select('id'))->exists()) {
+                throw $exception;
+            }
+
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'This product is part of an order. Hide it to remove it from the storefront.']);
+
+            return to_route('admin.products.index');
+        }
+
+        Storage::disk('public')->delete($images->all());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Product deleted successfully.']);
+
+        return to_route('admin.products.index');
     }
 
     public function toggleStock(Product $product): RedirectResponse

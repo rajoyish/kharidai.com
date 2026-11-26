@@ -30,6 +30,8 @@ type CartItem = {
     id: number;
     quantity: number;
     selected_options: { color?: string; size?: string } | null;
+    /** False once the product is hidden or out of stock; checkout refuses it. */
+    is_available: boolean;
     product_variant: ProductVariant;
 };
 
@@ -42,14 +44,21 @@ type Cart = {
  * The only props a quantity change can alter. Asking for them by name keeps the
  * server from rebuilding the rest of the page's props on every click.
  */
-const QUANTITY_PROPS = ['cart', 'canCheckoutDirectly', 'cartCount'];
+const QUANTITY_PROPS = [
+    'cart',
+    'canCheckoutDirectly',
+    'hasUnavailableItems',
+    'cartCount',
+];
 
 export default function CartIndex({
     cart,
     canCheckoutDirectly,
+    hasUnavailableItems,
 }: {
     cart: Cart;
     canCheckoutDirectly: boolean;
+    hasUnavailableItems: boolean;
 }) {
     const [placing, setPlacing] = useState(false);
     const [removing, setRemoving] = useState<number[]>([]);
@@ -235,6 +244,11 @@ export default function CartIndex({
                                                                 .name
                                                         }
                                                     </p>
+                                                    {!item.is_available && (
+                                                        <p className="mt-1 text-sm font-medium text-destructive">
+                                                            No longer available
+                                                        </p>
+                                                    )}
                                                     {(item.selected_options
                                                         ?.color ||
                                                         item.selected_options
@@ -355,13 +369,23 @@ export default function CartIndex({
 
                                     <div className="mb-6 border-t pt-4">
                                         <p className="mb-4 text-sm text-muted-foreground">
-                                            {canCheckoutDirectly
-                                                ? 'No payment required. Your order will be placed right away.'
-                                                : 'Taxes and shipping calculated at checkout.'}
+                                            {hasUnavailableItems
+                                                ? 'Remove the items that are no longer available to continue.'
+                                                : canCheckoutDirectly
+                                                  ? 'No payment required. Your order will be placed right away.'
+                                                  : 'Taxes and shipping calculated at checkout.'}
                                         </p>
                                     </div>
 
-                                    {canCheckoutDirectly ? (
+                                    {hasUnavailableItems ? (
+                                        <Button
+                                            size="lg"
+                                            className="w-fit"
+                                            disabled
+                                        >
+                                            Proceed to Checkout
+                                        </Button>
+                                    ) : canCheckoutDirectly ? (
                                         <Button
                                             size="lg"
                                             className="w-fit"

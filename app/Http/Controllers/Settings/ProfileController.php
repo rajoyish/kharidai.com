@@ -43,10 +43,6 @@ class ProfileController extends Controller
             $request->user()->name_changed_at = now();
         }
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
         $request->user()->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);

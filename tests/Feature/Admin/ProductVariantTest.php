@@ -4,6 +4,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -179,6 +180,10 @@ it('can delete a product variant', function () {
     $response = $this->actingAs($this->admin)->delete('/admin/products/'.$product->slug.'/variants/'.$variant->id);
 
     $response->assertRedirect(route('admin.products.variants.index', $product));
+    $this->get(route('admin.products.variants.index', $product))
+        ->assertInertia(fn (Assert $page) => $page
+            ->hasFlash('toast', ['type' => 'success', 'message' => 'Variant deleted successfully.']),
+        );
     $this->assertDatabaseMissing('product_variants', [
         'id' => $variant->id,
     ]);
