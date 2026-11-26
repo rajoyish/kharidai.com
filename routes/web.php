@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ProductType;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MenuController;
@@ -194,9 +195,17 @@ Route::middleware(['auth', 'verified', 'not-banned', 'admin'])->prefix('admin')-
     Route::post('guide-media', [GuideMediaController::class, 'store'])->name('guide-media.store');
     Route::delete('guide-media/{guideMedia}', [GuideMediaController::class, 'destroy'])->name('guide-media.destroy');
 
-    Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
-    Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    // `/admin/orders` is the digital list; the other types live under their own
+    // segment, constrained so `orders/{order}` and `orders/deleted` still match.
+    Route::get('orders/{productType?}', [AdminOrderController::class, 'index'])
+        ->whereIn('productType', [ProductType::Physical->value, ProductType::Service->value])
+        ->name('orders.index');
+    // Before orders/{order}, which would otherwise read `deleted` as an order id.
+    Route::get('orders/deleted', [AdminOrderController::class, 'deleted'])->name('orders.deleted');
+    Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show')->withTrashed();
     Route::delete('orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+    Route::patch('orders/{order}/restore', [AdminOrderController::class, 'restore'])->name('orders.restore')->withTrashed();
+    Route::delete('orders/{order}/force', [AdminOrderController::class, 'forceDestroy'])->name('orders.force-destroy')->withTrashed();
     Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status.update');
     Route::patch('orders/{order}/allow-reupload', [AdminOrderController::class, 'allowReceiptReupload'])->name('orders.allow-reupload');
     Route::patch('orders/{order}/shipment-status', [AdminOrderController::class, 'updateShipmentStatus'])->name('orders.shipment-status.update');

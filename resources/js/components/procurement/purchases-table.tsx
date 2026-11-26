@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { show as variantPricing } from '@/actions/App/Http/Controllers/Admin/VariantPricingController';
+import { COMPACT_TABLE } from '@/components/procurement/compact-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,7 +47,7 @@ export function PurchasesTable({
     onReverse: (purchase: Purchase) => void;
 }) {
     return (
-        <Table>
+        <Table className={COMPACT_TABLE}>
             <TableHeader>
                 <TableRow>
                     <TableHead>Date</TableHead>
@@ -120,7 +121,7 @@ export function PurchasesTable({
                         <TableCell className="text-right">
                             <Button
                                 variant="ghost"
-                                size="sm"
+                                size="xs"
                                 className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => onReverse(purchase)}
                             >

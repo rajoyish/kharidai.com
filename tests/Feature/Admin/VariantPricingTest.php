@@ -6,6 +6,7 @@ use App\Models\ProductVariant;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\VariantPriceSnapshot;
+use App\Models\WalletPurchase;
 use App\Services\Procurement\WalletLedger;
 
 beforeEach(function () {
@@ -266,4 +267,95 @@ it('needs a supplier to assign', function () {
     $response = $this->actingAs($this->admin)->patch(route('admin.products.variants.supplier.update', [$this->product, $this->variant]), []);
 
     $response->assertSessionHasErrors(['supplier_id' => 'Pick a supplier.']);
+});
+
+it('reopens the calculator on the price that was applied, not on cost plus a stale target', function () {
+    $this->variant->update(['supplier_id' => $this->supplier->id, 'supplier_cost_credits' => '2.04']);
+
+    // Priced by typing a final price, with no profit target behind it.
+    $this->actingAs($this->admin)->post(
+        route('admin.products.variants.pricing.apply', [$this->product, $this->variant]),
+        pricingInput($this->supplier, ['target_profit_npr' => 0, 'final_price_npr' => 949]),
+    );
+
+    $defaults = $this->actingAs($this->admin)
+        ->get(route('admin.products.variants.pricing.show', [$this->product, $this->variant]))
+        ->inertiaProps('defaults');
+
+    expect($defaults['target_profit_npr'])->toBe(550.01);
+
+    // Quoting what the page opens with lands back on the live price.
+    $this->actingAs($this->admin)
+        ->postJson(quoteUrl($this->product, $this->variant), pricingInput($this->supplier, [
+            'target_profit_npr' => $defaults['target_profit_npr'],
+        ]))
+        ->assertJson(['selling_price_npr' => 949]);
+});
+
+it('reopens a margin-priced calculator on the margin the live price earns', function () {
+    $this->actingAs($this->admin)->post(
+        route('admin.products.variants.pricing.apply', [$this->product, $this->variant]),
+        pricingInput($this->supplier, ['profit_mode' => 'margin', 'target_margin_percent' => 10, 'final_price_npr' => 798]),
+    );
+
+    $defaults = $this->actingAs($this->admin)
+        ->get(route('admin.products.variants.pricing.show', [$this->product, $this->variant]))
+        ->inertiaProps('defaults');
+
+    expect($defaults['profit_mode'])->toBe('margin')
+        ->and($defaults['target_margin_percent'])->toEqual(50);
+});
+
+it('does not add a history row when the same price is reached through a different profit target', function () {
+    $applyUrl = route('admin.products.variants.pricing.apply', [$this->product, $this->variant]);
+
+    // First set by typing a final price, then re-applied from the page as it
+    // reopens: same price, but with the profit target derived from it.
+    $this->actingAs($this->admin)->post($applyUrl, pricingInput($this->supplier, ['target_profit_npr' => 0, 'final_price_npr' => 949]));
+    $this->actingAs($this->admin)->post($applyUrl, pricingInput($this->supplier, ['target_profit_npr' => 550.01]));
+
+    expect($this->variant->refresh()->price_npr)->toBe(949.0)
+        ->and($this->variant->priceSnapshots()->count())->toBe(1);
+});
+
+it('still records a new row when the same price is re-applied with a note', function () {
+    $applyUrl = route('admin.products.variants.pricing.apply', [$this->product, $this->variant]);
+
+    $this->actingAs($this->admin)->post($applyUrl, pricingInput($this->supplier));
+    $this->actingAs($this->admin)->post($applyUrl, pricingInput($this->supplier, ['notes' => 'Checked with the supplier']));
+
+    expect($this->variant->priceSnapshots()->count())->toBe(2);
+});
+
+it('names the variant\'s supplier on a price set from a typed credit rate', function () {
+    $this->variant->update(['supplier_id' => $this->supplier->id]);
+
+    $this->actingAs($this->admin)->post(
+        route('admin.products.variants.pricing.apply', [$this->product, $this->variant]),
+        pricingInput($this->supplier, ['cost_basis' => 'manual', 'manual_npr_per_credit' => 150, 'supplier_id' => null]),
+    );
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.products.variants.pricing.show', [$this->product, $this->variant]))
+        ->assertInertia(fn ($page) => $page
+            ->where('snapshots.data.0.cost_basis_label', 'Type my own')
+            ->where('snapshots.data.0.supplier_name', $this->supplier->name));
+});
+
+it('pages the price history and purchases on their own, while the chart keeps every point', function () {
+    VariantPriceSnapshot::factory()->count(12)->for($this->variant, 'variant')->sequence(
+        fn ($sequence) => ['selling_price_npr' => 100 + $sequence->index],
+    )->create();
+    WalletPurchase::factory()->count(11)->for($this->supplier)->create(['product_variant_id' => $this->variant->id]);
+    WalletPurchase::factory()->for($this->supplier)->create(['product_variant_id' => $this->variant->id, 'is_personal' => true]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.products.variants.pricing.show', [$this->product, $this->variant, 'history_page' => 2]))
+        ->assertInertia(fn ($page) => $page
+            ->has('snapshots.data', 2)
+            ->where('snapshots.data.0.selling_price_npr', 101)
+            ->has('purchases.data', 10)
+            ->has('chart.prices', 12)
+            ->where('chart.prices.0.price', 100)
+            ->has('chart.purchases', 11));
 });

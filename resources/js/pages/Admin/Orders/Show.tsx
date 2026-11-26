@@ -849,13 +849,12 @@ export default function AdminOrderShow({
 
             {isDeleteOrderDialogOpen && (
                 <ConfirmDialog
-                    title="Are you sure you want to delete this order completely?"
+                    title="Delete this order?"
                     description={
                         <>
-                            This permanently removes order {order.order_number}{' '}
-                            along with its items, receipt, messages, shipment,
-                            and any subscription bought in it. This cannot be
-                            undone.
+                            Order {order.order_number} moves to Orders › Deleted
+                            and the customer no longer sees it, or any
+                            subscription bought in it. You can restore it there.
                         </>
                     }
                     confirmLabel="Delete Order"

@@ -23,7 +23,7 @@ beforeEach(function () {
 
 /**
  * A digital order, which is the only kind the orders index lists under
- * `digitalOrders`.
+ * `orders` on the default (digital) page.
  */
 function digitalOrderFor(User $user): Order
 {
@@ -124,8 +124,8 @@ it('filters orders by order number', function () {
         ->get(route('admin.orders.index', ['search' => $wanted->order_number]))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('digitalOrders', 1)
-            ->where('digitalOrders.0.order_number', $wanted->order_number)
+            ->has('orders', 1)
+            ->where('orders.0.order_number', $wanted->order_number)
             ->etc()
         );
 });
@@ -138,8 +138,8 @@ it('filters orders by customer', function () {
         ->get(route('admin.orders.index', ['search' => 'sita']))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('digitalOrders', 1)
-            ->where('digitalOrders.0.user.name', 'Sita Rai')
+            ->has('orders', 1)
+            ->where('orders.0.user.name', 'Sita Rai')
             ->etc()
         );
 });

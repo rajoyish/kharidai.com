@@ -143,13 +143,13 @@ it('prevents non-admins from viewing admin subscriptions panel', function () {
     $response->assertForbidden();
 });
 
-it('deletes subscriptions when the order is deleted', function () {
+it('deletes subscriptions when the order is permanently deleted', function () {
     $order = Order::factory()->create();
     $subscription = Subscription::factory()->create(['order_id' => $order->id]);
 
     $this->assertDatabaseHas('subscriptions', ['id' => $subscription->id]);
 
-    $order->delete();
+    $order->forceDelete();
 
     $this->assertDatabaseMissing('subscriptions', ['id' => $subscription->id]);
 });

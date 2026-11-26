@@ -18,6 +18,8 @@ class SubscriptionController extends Controller
     {
         $subscriptions = $request->user()
             ->subscriptions()
+            // A subscription bought in an order the admin deleted goes with it.
+            ->has('order')
             ->with([
                 'orderItem.productVariant.product',
                 'order.items.serviceEngagements',

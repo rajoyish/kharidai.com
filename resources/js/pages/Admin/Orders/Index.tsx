@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, setLayoutProps } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, ArrowUpDown, Eye, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { destroy as destroyOrder } from '@/actions/App/Http/Controllers/Admin/OrderController';
@@ -55,13 +55,20 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Orders', href: adminOrdersIndex().url },
 ];
 
-const RELOAD_ONLY = [
-    'digitalOrders',
-    'physicalOrders',
-    'serviceOrders',
-    'years',
-    'filters',
-];
+const RELOAD_ONLY = ['orders', 'years', 'filters'];
+
+/**
+ * Digital orders live at the bare `/admin/orders`, so their link carries no
+ * type segment; the sidebar matches the same URL to highlight the page.
+ */
+function ordersUrlFor(type: string, query?: Record<string, string | number>) {
+    return adminOrdersIndex(
+        type === 'digital' ? undefined : { productType: type },
+        {
+            query,
+        },
+    ).url;
+}
 
 /**
  * Compares two orders on the given column. Direction is applied by the caller,
@@ -86,22 +93,30 @@ function compareOrders(a: Order, b: Order, key: SortKey): number {
 }
 
 export default function AdminOrderIndex({
-    physicalOrders,
-    digitalOrders,
-    serviceOrders,
+    orders,
+    productType,
     years,
     filters,
 }: {
-    physicalOrders: Order[];
-    digitalOrders: Order[];
-    serviceOrders: Order[];
+    orders: Order[];
+    productType: { value: string; label: string };
     years: number[];
     filters: { year: number; search?: string };
 }) {
+    setLayoutProps({
+        breadcrumbs: [
+            ...breadcrumbs,
+            {
+                title: productType.label,
+                href: ordersUrlFor(productType.value),
+            },
+        ],
+    });
+
     const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
     /**
-     * The order awaiting delete confirmation. A single dialog is shared by all
-     * three tables rather than rendering one per row.
+     * The order awaiting delete confirmation. A single dialog is shared by
+     * every row rather than rendering one per row.
      */
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
 
@@ -113,11 +128,9 @@ export default function AdminOrderIndex({
         }
 
         router.visit(
-            adminOrdersIndex({
-                query: {
-                    year: selected,
-                    ...(filters.search ? { search: filters.search } : {}),
-                },
+            ordersUrlFor(productType.value, {
+                year: selected,
+                ...(filters.search ? { search: filters.search } : {}),
             }),
             {
                 preserveState: true,
@@ -141,18 +154,16 @@ export default function AdminOrderIndex({
 
     return (
         <>
-            <SeoHead title="Manage Orders" />
+            <SeoHead title={`${productType.label} Orders`} />
 
             <div className="space-y-8">
                 <PagePanel
-                    title="Digital Orders"
+                    title={`${productType.label} Orders`}
                     variant="transparent"
                     actions={
                         <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:flex-row sm:items-center">
-                            {/* One search box drives all three tables, since the
-                                server filters every list by the same term. */}
                             <SearchFilter
-                                href={adminOrdersIndex().url}
+                                href={ordersUrlFor(productType.value)}
                                 currentSearch={filters?.search ?? ''}
                                 placeholder="Search order # or customer..."
                                 params={{ year: filters.year }}
@@ -179,23 +190,7 @@ export default function AdminOrderIndex({
                     }
                 >
                     <OrderTable
-                        orders={digitalOrders}
-                        deletingOrderId={deletingOrderId}
-                        onRequestDelete={setOrderToDelete}
-                    />
-                </PagePanel>
-
-                <PagePanel title="Physical Orders" variant="transparent">
-                    <OrderTable
-                        orders={physicalOrders}
-                        deletingOrderId={deletingOrderId}
-                        onRequestDelete={setOrderToDelete}
-                    />
-                </PagePanel>
-
-                <PagePanel title="Service Orders" variant="transparent">
-                    <OrderTable
-                        orders={serviceOrders}
+                        orders={orders}
                         deletingOrderId={deletingOrderId}
                         onRequestDelete={setOrderToDelete}
                     />
@@ -204,14 +199,13 @@ export default function AdminOrderIndex({
 
             {orderToDelete && (
                 <ConfirmDialog
-                    title="Are you sure you want to delete this order?"
+                    title="Delete this order?"
                     description={
                         <>
-                            This permanently removes order{' '}
-                            {orderToDelete.order_number} placed by{' '}
-                            {orderToDelete.user.name}, along with its shipment
-                            and any subscription bought in it. This cannot be
-                            undone.
+                            Order {orderToDelete.order_number} placed by{' '}
+                            {orderToDelete.user.name} moves to Orders › Deleted
+                            and the customer no longer sees it, or any
+                            subscription bought in it. You can restore it there.
                         </>
                     }
                     onConfirm={() => handleDelete(orderToDelete)}

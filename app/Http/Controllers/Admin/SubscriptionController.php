@@ -22,6 +22,8 @@ class SubscriptionController extends Controller
             'orderItem.productVariant.product',
             'order.items.serviceEngagements',
         ])
+            // Hidden with its deleted order; restoring the order brings it back.
+            ->has('order')
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->whereHas('order', fn ($order) => $order->where('order_number', 'like', "%{$search}%"))

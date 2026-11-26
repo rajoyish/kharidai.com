@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatNpr } from '@/lib/currency';
+import { SHOP_TIME_ZONE } from '@/lib/dates';
 
 export type PricePoint = {
     /** ISO timestamp or Y-m-d date. */
@@ -25,11 +26,13 @@ const PADDING = { top: 16, right: 16, bottom: 28, left: 64 };
 const dateLabel = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'short',
+    timeZone: SHOP_TIME_ZONE,
 });
 const fullDateLabel = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    timeZone: SHOP_TIME_ZONE,
 });
 
 /**

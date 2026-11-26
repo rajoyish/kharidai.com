@@ -11,6 +11,10 @@ import {
     LayoutGrid,
     ListTree,
     Mail,
+    ArchiveRestore,
+    MonitorSmartphone,
+    Boxes,
+    Wrench,
     Megaphone,
     Newspaper,
     Package,
@@ -58,7 +62,10 @@ import { index as adminMenusIndex } from '@/routes/admin/menus';
 import { index as adminNewslettersIndex } from '@/routes/admin/newsletters';
 import { index as adminNoticesIndex } from '@/routes/admin/notices';
 import { index as adminNotificationsIndex } from '@/routes/admin/notifications';
-import { index as adminOrdersIndex } from '@/routes/admin/orders';
+import {
+    deleted as adminDeletedOrders,
+    index as adminOrdersIndex,
+} from '@/routes/admin/orders';
 import { index as adminPagesIndex } from '@/routes/admin/pages';
 import { index as adminPaymentMethodsIndex } from '@/routes/admin/payment-methods';
 import { index as adminPostsIndex } from '@/routes/admin/posts';
@@ -152,6 +159,28 @@ const adminNavSections: NavSection[] = [
                 title: 'Orders',
                 href: adminOrdersIndex(),
                 icon: Receipt,
+                items: [
+                    {
+                        title: 'Digital',
+                        href: adminOrdersIndex(),
+                        icon: MonitorSmartphone,
+                    },
+                    {
+                        title: 'Physical',
+                        href: adminOrdersIndex({ productType: 'physical' }),
+                        icon: Boxes,
+                    },
+                    {
+                        title: 'Service',
+                        href: adminOrdersIndex({ productType: 'service' }),
+                        icon: Wrench,
+                    },
+                    {
+                        title: 'Deleted',
+                        href: adminDeletedOrders(),
+                        icon: ArchiveRestore,
+                    },
+                ],
             },
             {
                 title: 'Subscriptions',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ProductType;
 use App\Events\OrderMessageCreated;
 use App\Http\Controllers\Concerns\AttachesProductGuides;
 use App\Http\Controllers\Controller;
@@ -25,7 +26,12 @@ class OrderController extends Controller
 {
     use AttachesProductGuides;
 
-    public function index(Request $request): Response
+    /**
+     * One product type's orders for the selected year. `/admin/orders` is the
+     * digital list, so links made before the lists were split still land on a
+     * page of orders.
+     */
+    public function index(Request $request, ProductType $productType = ProductType::Digital): Response
     {
         $years = $this->yearsWithOrders();
         $selectedYear = $this->selectedYear($request, $years);
@@ -33,8 +39,12 @@ class OrderController extends Controller
 
         // items.serviceEngagements feeds the appended `profit` attribute, which is
         // serialized for every order below; without it each order lazy-loads.
-        $baseQuery = Order::with(['user', 'paymentReceipt', 'items.productVariant.product', 'items.serviceEngagements'])
+        // A single year's orders are a bounded set, so the whole year is sent and
+        // the page sorts each column client-side. This keeps the computed `profit`
+        // column sortable, which a SQL sort could not offer.
+        $orders = Order::with(['user', 'paymentReceipt', 'items.productVariant.product', 'items.serviceEngagements'])
             ->whereYear('created_at', $selectedYear)
+            ->whereHas('items.productVariant.product', fn ($query) => $query->where('type', $productType))
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('order_number', 'like', "%{$search}%")
@@ -44,19 +54,15 @@ class OrderController extends Controller
                         });
                 });
             })
-            ->latest();
-
-        // A single year's orders are a bounded set, so the whole year is sent and the
-        // page sorts each column client-side. This keeps the computed `profit` column
-        // sortable, which a SQL sort could not offer.
-        $ordersOfType = fn (string $type) => (clone $baseQuery)
-            ->whereHas('items.productVariant.product', fn ($query) => $query->where('type', $type))
+            ->latest()
             ->get();
 
         return Inertia::render('Admin/Orders/Index', [
-            'digitalOrders' => $ordersOfType('digital'),
-            'physicalOrders' => $ordersOfType('physical'),
-            'serviceOrders' => $ordersOfType('service'),
+            'orders' => $orders,
+            'productType' => [
+                'value' => $productType->value,
+                'label' => $productType->label(),
+            ],
             'years' => $years,
             'filters' => [
                 'year' => $selectedYear,
@@ -65,8 +71,68 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Order $order): Response
+    /**
+     * Orders an admin deleted, most recently deleted first. Not split by year
+     * like the live list: someone looking for an order they just deleted should
+     * not have to remember when it was placed.
+     */
+    public function deleted(Request $request): Response
     {
+        $search = $request->string('search')->trim()->value();
+
+        $orders = Order::onlyTrashed()
+            ->with(['user:id,name,email', 'items.productVariant.product:id,title,type'])
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('order_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->latest('deleted_at')
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn (Order $order): array => [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'status' => $order->status,
+                'total_amount' => (float) $order->total_amount,
+                'customer' => $order->user?->only('name', 'email'),
+                'products' => $order->items
+                    ->map(fn ($item): ?string => $item->productVariant?->product?->title)
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all(),
+                'types' => $order->items
+                    ->map(fn ($item): ?ProductType => $item->productVariant?->product?->type)
+                    ->filter()
+                    ->unique(fn (ProductType $type): string => $type->value)
+                    ->map(fn (ProductType $type): array => ['value' => $type->value, 'label' => $type->label()])
+                    ->values()
+                    ->all(),
+                'placed_on' => $order->created_at?->toFormattedDateString(),
+                'deleted_ago' => $order->deleted_at?->diffForHumans(),
+                'deleted_at' => $order->deleted_at?->toDayDateTimeString(),
+            ]);
+
+        return Inertia::render('Admin/Orders/Deleted', [
+            'orders' => $orders,
+            'filters' => ['search' => $search],
+        ]);
+    }
+
+    public function show(Order $order): Response|RedirectResponse
+    {
+        // Bound with trashed so a notification that links to a deleted order
+        // explains itself instead of answering 404.
+        if ($order->trashed()) {
+            return redirect()->route('admin.orders.index')
+                ->with('error', "Order {$order->order_number} is deleted. Restore it from Orders › Deleted to open it.");
+        }
+
         $order->load(['items.productVariant.product', 'items.serviceEngagements', 'user', 'paymentReceipt', 'credentials', 'messages.user', 'subscriptions.orderItem.productVariant.product', 'shipment', 'shippingAddress']);
 
         // Engagements without a saved invoice are still listed so the lifecycle
@@ -281,17 +347,51 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Prorated refund removed.');
     }
 
+    /**
+     * Move the order to the deleted list. Nothing attached to it is touched, so
+     * a restore brings back the receipt, shipment and subscriptions as they were.
+     */
     public function destroy(Order $order): RedirectResponse
     {
+        $order->delete();
+
+        $productType = $this->productTypeOf($order);
+
+        // Digital is the bare `/admin/orders`; the route has no `digital` segment.
+        return redirect()
+            ->route('admin.orders.index', $productType === ProductType::Digital ? [] : ['productType' => $productType])
+            ->with('success', "Order {$order->order_number} moved to Orders › Deleted.");
+    }
+
+    public function restore(Order $order): RedirectResponse
+    {
+        abort_unless($order->trashed(), 404);
+
+        $order->restore();
+
+        return redirect()->back()->with('success', "Order {$order->order_number} restored.");
+    }
+
+    /**
+     * Erase a deleted order for good: the database cascades take its items,
+     * shipment and subscriptions, and the receipt files go with it. Only an
+     * order already in the deleted list can be erased, so one click never
+     * destroys a live order.
+     */
+    public function forceDestroy(Order $order): RedirectResponse
+    {
+        abort_unless($order->trashed(), 404);
+
+        $order->loadMissing('paymentReceipt');
         $receiptPaths = array_filter([$order->paymentReceipt?->file_path, $order->refund_receipt_path]);
 
-        $order->delete();
+        $order->forceDelete();
 
         if ($receiptPaths !== []) {
             Storage::disk('public')->delete($receiptPaths);
         }
 
-        return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
+        return redirect()->back()->with('success', "Order {$order->order_number} permanently deleted.");
     }
 
     public function allowReceiptReupload(Request $request, Order $order): RedirectResponse
@@ -302,6 +402,18 @@ class OrderController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'User can now re-upload receipt.');
+    }
+
+    /**
+     * The list an order belongs to, so deleting one from its page returns the
+     * admin to the list they came from. Orders hold one type in practice;
+     * anything unclassifiable falls back to the default list.
+     */
+    private function productTypeOf(Order $order): ProductType
+    {
+        $order->loadMissing('items.productVariant.product');
+
+        return $order->items->first()?->productVariant?->product?->type ?? ProductType::Digital;
     }
 
     /**
