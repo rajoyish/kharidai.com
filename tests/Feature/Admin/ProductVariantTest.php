@@ -4,6 +4,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -28,7 +29,7 @@ it('can create a product variant', function () {
         'name' => 'New Variant',
         'price_npr' => 1000,
         'purchase_price_npr' => 800,
-        'validity_days' => 30,
+        'validity_months' => 12,
     ]);
 
     $response->assertRedirect(route('admin.products.variants.index', $product));
@@ -36,7 +37,7 @@ it('can create a product variant', function () {
         'product_id' => $product->id,
         'name' => 'New Variant',
         'price_npr' => 1000 * 100,
-        'validity_days' => 30,
+        'validity_months' => 12,
     ]);
 });
 
@@ -161,7 +162,7 @@ it('can update a product variant', function () {
     $response = $this->actingAs($this->admin)->patch('/admin/products/'.$product->slug.'/variants/'.$variant->id, [
         'name' => 'Updated Variant',
         'price_npr' => 1200,
-        'validity_days' => null,
+        'validity_months' => null,
     ]);
 
     $response->assertRedirect(route('admin.products.variants.index', $product));
@@ -169,7 +170,7 @@ it('can update a product variant', function () {
         'id' => $variant->id,
         'name' => 'Updated Variant',
         'price_npr' => 1200 * 100,
-        'validity_days' => null,
+        'validity_months' => null,
     ]);
 });
 
@@ -187,4 +188,21 @@ it('can delete a product variant', function () {
     $this->assertDatabaseMissing('product_variants', [
         'id' => $variant->id,
     ]);
+});
+
+it('converts stored validity days to the nearest whole month', function () {
+    $days = [30, 182, 365, 725, 10, null];
+    $variantIds = ProductVariant::factory()->count(count($days))->create()->modelKeys();
+
+    // Back to the days column, holding the values production has today.
+    $migration = require database_path('migrations/2026_11_26_150850_convert_variant_validity_days_to_months.php');
+    $migration->down();
+    foreach ($variantIds as $index => $id) {
+        DB::table('product_variants')->where('id', $id)->update(['validity_days' => $days[$index]]);
+    }
+
+    $migration->up();
+
+    expect(ProductVariant::whereKey($variantIds)->orderBy('id')->pluck('validity_months')->all())
+        ->toBe([1, 6, 12, 24, 1, null]);
 });

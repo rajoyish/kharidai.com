@@ -18,7 +18,6 @@ import {
     Megaphone,
     Newspaper,
     Package,
-    Receipt,
     Repeat,
     ShoppingCart,
     Tags,
@@ -41,6 +40,7 @@ import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { ReceiptNpr } from '@/components/receipt-npr-icon';
 import { Button } from '@/components/ui/button';
 import {
     Sidebar,
@@ -158,7 +158,7 @@ const adminNavSections: NavSection[] = [
             {
                 title: 'Orders',
                 href: adminOrdersIndex(),
-                icon: Receipt,
+                icon: ReceiptNpr,
                 items: [
                     {
                         title: 'Digital',

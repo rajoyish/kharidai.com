@@ -24,7 +24,7 @@ class ProductVariantFactory extends Factory
             'price_npr' => $this->faker->randomFloat(2, 100, 10000),
             'purchase_price_npr' => $this->faker->randomFloat(2, 50, 5000),
             'show_pricing' => true,
-            'validity_days' => null,
+            'validity_months' => null,
         ];
     }
 }

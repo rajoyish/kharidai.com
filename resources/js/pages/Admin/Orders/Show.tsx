@@ -83,7 +83,7 @@ type Order = OrderRefund & {
         brief: { note?: string } | null;
         product_variant: {
             name: string;
-            validity_days: number | null;
+            validity_months: number | null;
             weight_kg: string | null;
             product: {
                 title: string;

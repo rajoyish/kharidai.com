@@ -42,7 +42,7 @@ type Variant = {
     name: string;
     price_npr: number;
     purchase_price_npr: number | null;
-    validity_days: number | null;
+    validity_months: number | null;
     supplier_cost_credits: string | null;
     supplier_name: string | null;
     /** What the supplier cost lands at today, from the variant's wallet. */
@@ -165,9 +165,9 @@ export default function VariantsIndex({
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {!variant.validity_days
+                                    {!variant.validity_months
                                         ? 'One-time / Lifetime'
-                                        : `${variant.validity_days} days`}
+                                        : `${variant.validity_months} ${variant.validity_months === 1 ? 'month' : 'months'}`}
                                 </TableCell>
                                 <TableCell className="flex justify-end gap-2">
                                     <Button variant="outline" size="sm" asChild>

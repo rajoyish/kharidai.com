@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -197,10 +198,10 @@ it('creates one subscription per purchased unit when an admin completes an order
 
     $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
     $subscriptionVariant = ProductVariant::factory()->create([
-        'validity_days' => 30,
+        'validity_months' => 1,
     ]);
     $oneTimeVariant = ProductVariant::factory()->create([
-        'validity_days' => null,
+        'validity_months' => null,
     ]);
 
     $subscriptionItem = OrderItem::create([
@@ -223,7 +224,7 @@ it('creates one subscription per purchased unit when an admin completes an order
     ]);
 
     $startDate = today()->toDateString();
-    $endDate = today()->addDays(30)->toDateString();
+    $endDate = today()->addMonthsNoOverflow(1)->toDateString();
     $subscriptions = Subscription::query()
         ->where('order_item_id', $subscriptionItem->id)
         ->orderBy('id')
@@ -239,7 +240,7 @@ it('creates one subscription per purchased unit when an admin completes an order
     expect($subscriptions->pluck('order_id')->unique()->all())->toBe([$order->id]);
     expect($subscriptions->pluck('start_date')->map->toDateString()->unique()->all())->toBe([$startDate]);
     expect($subscriptions->pluck('end_date')->map->toDateString()->unique()->all())->toBe([$endDate]);
-    expect($subscriptions->pluck('days_left')->unique()->all())->toBe([30]);
+    expect($subscriptions->pluck('days_left')->unique()->all())->toBe([(int) today()->diffInDays(today()->addMonthsNoOverflow(1))]);
     $this->assertDatabaseCount('subscriptions', 2);
 
     Notification::assertSentTo($this->user, OrderStatusUpdatedNotification::class);
@@ -250,7 +251,7 @@ it('does not create subscriptions for non-subscription products', function () {
 
     $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
     $variant = ProductVariant::factory()->create([
-        'validity_days' => null,
+        'validity_months' => null,
     ]);
 
     OrderItem::create([
@@ -437,4 +438,22 @@ it('can allow receipt reupload', function () {
         'can_reupload_receipt' => true,
         'request_receipt_upload' => false,
     ]);
+});
+
+it('ends a one-month subscription on the last day of a shorter month', function () {
+    Notification::fake();
+    $this->travelTo(Carbon::parse('2027-01-31 10:00'));
+
+    $order = Order::factory()->create(['user_id' => $this->user->id, 'status' => 'pending']);
+    $item = OrderItem::create([
+        'order_id' => $order->id,
+        'product_variant_id' => ProductVariant::factory()->create(['validity_months' => 1])->id,
+        'price' => 1200,
+        'purchase_price' => 800,
+        'quantity' => 1,
+    ]);
+
+    $this->actingAs($this->admin)->patch('/admin/orders/'.$order->id.'/status', ['status' => 'completed']);
+
+    expect(Subscription::where('order_item_id', $item->id)->sole()->end_date->toDateString())->toBe('2027-02-28');
 });
