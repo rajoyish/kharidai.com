@@ -70,7 +70,7 @@ it('shares which payment methods are in service with customer-facing pages', fun
 
     // Both QR-bearing pages read the same shared prop, so the panel greys out
     // the same provider on each.
-    foreach (["/checkout/{$order->id}/npr", "/orders/{$order->id}"] as $url) {
+    foreach (["/checkout/{$order->uuid}/npr", "/orders/{$order->uuid}"] as $url) {
         $this->actingAs($customer)->get($url)->assertInertia(fn (Assert $page) => $page
             ->where('paymentMethods.0.key', 'default')
             ->where('paymentMethods.0.is_enabled', true)

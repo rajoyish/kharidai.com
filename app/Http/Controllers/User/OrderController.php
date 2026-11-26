@@ -44,9 +44,7 @@ class OrderController extends Controller
 
     public function show(Request $request, Order $order): Response
     {
-        if ($order->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->ensureOwnOrder($request, $order);
 
         $order->load(['items.productVariant.product', 'items.serviceEngagements', 'paymentReceipt', 'credentials', 'messages.user', 'shipment']);
 
@@ -92,9 +90,7 @@ class OrderController extends Controller
 
     public function storeMessage(Request $request, Order $order): RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->ensureOwnOrder($request, $order);
 
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
@@ -116,9 +112,7 @@ class OrderController extends Controller
 
     public function askForReceiptReupload(Request $request, Order $order): RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->ensureOwnOrder($request, $order);
 
         $order->update(['request_receipt_upload' => true]);
 
@@ -134,5 +128,14 @@ class OrderController extends Controller
         Notification::send($admins, new NewMessageNotification($message));
 
         return redirect()->back()->with('success', 'Request sent to admin.');
+    }
+
+    /**
+     * Someone else's order answers 404, as if it did not exist: a 403 would
+     * confirm that an order lives at that address.
+     */
+    private function ensureOwnOrder(Request $request, Order $order): void
+    {
+        abort_if($order->user_id !== $request->user()->id, 404);
     }
 }

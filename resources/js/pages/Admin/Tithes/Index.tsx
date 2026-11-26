@@ -36,6 +36,8 @@ type PaymentStatus = 'paid' | 'partial' | 'unpaid';
 type TitheEntry = {
     source_type: 'order' | 'service';
     source_id: number;
+    /** The order page's URL key; set on order entries only. */
+    order_uuid?: string;
     label: string;
     reference: string;
     /** Net of any prorated refund, which is charged against the order's own month. */
@@ -103,7 +105,7 @@ function entryKey(entry: TitheEntry): string {
 
 function entryHref(entry: TitheEntry): string {
     return entry.source_type === 'order'
-        ? showOrder(entry.source_id).url
+        ? showOrder(entry.order_uuid ?? '').url
         : showService(entry.source_id).url;
 }
 
@@ -712,7 +714,7 @@ export default function AdminTithesIndex({
             entry.source_type === 'order'
                 ? toggleOrderStatus({
                       monthlyTithe: tithe.id,
-                      order: entry.source_id,
+                      order: entry.order_uuid ?? '',
                   })
                 : toggleServiceStatus({
                       monthlyTithe: tithe.id,

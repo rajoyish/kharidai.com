@@ -17,6 +17,9 @@ class ProratedRefundIssuedNotification extends Notification
 
     public int $orderId;
 
+    /** The order's URL key; null only on notifications queued before it existed. */
+    public ?string $orderUuid = null;
+
     public string $orderNumber;
 
     public float $refundAmount;
@@ -24,6 +27,7 @@ class ProratedRefundIssuedNotification extends Notification
     public function __construct(Order $order)
     {
         $this->orderId = $order->id;
+        $this->orderUuid = $order->uuid;
         $this->orderNumber = $order->order_number;
         $this->refundAmount = $order->refundedNpr();
     }
@@ -57,7 +61,7 @@ class ProratedRefundIssuedNotification extends Notification
         return [
             'message' => 'Prorated Refund Issued',
             'description' => 'A prorated refund of Rs. '.number_format($this->refundAmount, 2).' was issued for order #'.$this->orderNumber.'.',
-            'url' => route('orders.show', $this->orderId),
+            'url' => route('orders.show', $this->orderUuid ?? $this->orderId),
             'order_id' => $this->orderId,
         ];
     }

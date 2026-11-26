@@ -35,6 +35,8 @@ import { index as adminTithesIndex } from '@/routes/admin/tithes';
 
 type Order = {
     id: number;
+    /** The order's URL key; the id is never used in links. */
+    uuid: string;
     order_number: string;
     total_amount: string;
     status: string;
@@ -193,7 +195,7 @@ export default function Dashboard({
                         {recentOrders.map((order) => (
                             <TableRow key={order.id}>
                                 <TableCell className="font-medium text-primary">
-                                    <Link href={showAdminOrder.url(order.id)}>
+                                    <Link href={showAdminOrder.url(order.uuid)}>
                                         {order.order_number}
                                     </Link>
                                 </TableCell>
@@ -241,7 +243,7 @@ export default function Dashboard({
                                 <TableCell className="flex justify-end gap-2">
                                     <Button variant="ghost" size="sm" asChild>
                                         <Link
-                                            href={showAdminOrder.url(order.id)}
+                                            href={showAdminOrder.url(order.uuid)}
                                         >
                                             <Eye className="mr-2 h-4 w-4" />
                                             View

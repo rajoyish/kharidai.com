@@ -68,6 +68,7 @@ type Engagement = {
     brief: { note?: string } | null;
     order: {
         id: number;
+        uuid: string;
         order_number: string;
         payment_receipt: {
             id: number;
@@ -1090,7 +1091,7 @@ export default function ServiceInvoice({
                                 <Button asChild variant="outline" size="sm">
                                     <Link
                                         href={showAdminOrder.url({
-                                            order: engagement.order.id,
+                                            order: engagement.order.uuid,
                                         })}
                                     >
                                         Open order

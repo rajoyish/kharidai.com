@@ -28,7 +28,7 @@ use Illuminate\Support\Collection as SupportCollection;
  * month: a month holding nothing but a refund would otherwise owe a negative
  * tithe and be dropped as profitless, losing the credit entirely.
  *
- * @phpstan-type TitheEntry array{source_type: string, source_id: int, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null}
+ * @phpstan-type TitheEntry array{source_type: string, source_id: int, order_uuid?: string, label: string, reference: string, profit: float, tithe: float, refund: array{amount: float, refunded_on: string|null}|null}
  * @phpstan-type MonthBreakdown array{entries: list<TitheEntry>, total_profit: float, total_tithe: float}
  */
 class CalculateMonthlyProfitAction
@@ -196,6 +196,8 @@ class CalculateMonthlyProfitAction
         return [
             'source_type' => self::SOURCE_ORDER,
             'source_id' => $order->id,
+            // The order page's URL key; the id above stays the settlement key.
+            'order_uuid' => $order->uuid,
             'label' => $this->orderLabel($orderItems),
             'reference' => $order->order_number,
             'profit' => $profit,
@@ -295,7 +297,7 @@ class CalculateMonthlyProfitAction
                 ->whereNotNull('created_at'),
             )
             ->orderBy('id')
-            ->with(['order:id,order_number,status,created_at,refund_amount,refunded_on', 'serviceEngagements', 'productVariant.product']);
+            ->with(['order:id,uuid,order_number,status,created_at,refund_amount,refunded_on', 'serviceEngagements', 'productVariant.product']);
     }
 
     private function monthKeyFor(CarbonInterface $createdAt): string

@@ -37,7 +37,7 @@ it('exposes the chosen color, size and weight on the customer order page', funct
     $order = orderWithChosenOptions($user);
 
     $this->actingAs($user)
-        ->get("/orders/{$order->id}")
+        ->get("/orders/{$order->uuid}")
         ->assertInertia(fn (Assert $page) => $page
             ->component('User/Orders/Show')
             ->where('order.items.0.selected_options.color', 'Red')
@@ -51,7 +51,7 @@ it('exposes the chosen color, size and weight on the admin order page', function
     $order = orderWithChosenOptions(User::factory()->create());
 
     $this->actingAs($admin)
-        ->get("/admin/orders/{$order->id}")
+        ->get("/admin/orders/{$order->uuid}")
         ->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Orders/Show')
             ->where('order.items.0.selected_options.color', 'Red')

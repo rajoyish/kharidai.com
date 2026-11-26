@@ -12,6 +12,8 @@ import { process as processNpr } from '@/routes/checkout/npr';
 
 type Order = {
     id: number;
+    /** The order's URL key; the id is never used in links. */
+    uuid: string;
     order_number: string;
     total_amount: string;
     amount_due_now: string;
@@ -34,7 +36,7 @@ export default function NprPayment({ order }: { order: Order }) {
             return;
         }
 
-        post(processNpr.url(order.id), {
+        post(processNpr.url(order.uuid), {
             preserveScroll: true,
         });
     };

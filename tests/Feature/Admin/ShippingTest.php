@@ -69,7 +69,7 @@ it('updates a shipment status from the order', function () {
     $shipment = Shipment::factory()->create(['order_id' => $order->id, 'status' => 'pending']);
 
     $this->actingAs($this->admin)
-        ->patch("/admin/orders/{$order->id}/shipment-status", ['status' => 'shipped'])
+        ->patch("/admin/orders/{$order->uuid}/shipment-status", ['status' => 'shipped'])
         ->assertRedirect();
 
     expect($shipment->refresh()->status)->toBe('shipped');
@@ -79,7 +79,7 @@ it('marks the delivery balance as paid', function () {
     $order = Order::factory()->create(['balance_due' => 200000]);
 
     $this->actingAs($this->admin)
-        ->patch("/admin/orders/{$order->id}/mark-balance-paid")
+        ->patch("/admin/orders/{$order->uuid}/mark-balance-paid")
         ->assertRedirect();
 
     expect($order->refresh()->balance_due)->toBe(0.0);

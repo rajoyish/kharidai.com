@@ -30,12 +30,15 @@ import {
 } from '@/components/status-badge';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
+import { ValidityBadge } from '@/components/validity-badge';
 import { VariantOptionBadges } from '@/components/variant-option-badges';
 import type { SelectedOptions } from '@/components/variant-option-badges';
 import { formatNpr } from '@/lib/currency';
 
 type Order = OrderRefund & {
     id: number;
+    /** The order's URL key; the id is never used in links. */
+    uuid: string;
     order_number: string;
     /** Invoice-aware total: service invoices supersede checkout estimates. */
     display_total_npr: number;
@@ -56,6 +59,7 @@ type Order = OrderRefund & {
         delivery_guides: DeliveryGuide[];
         product_variant: {
             name: string;
+            validity_months: number | null;
             weight_kg: string | null;
             product: {
                 title: string;
@@ -163,7 +167,7 @@ export default function OrderShow({ order }: { order: Order }) {
     const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             router.post(
-                processNprPayment.url(order.id),
+                processNprPayment.url(order.uuid),
                 { receipt: e.target.files[0] },
                 {
                     preserveScroll: true,
@@ -285,6 +289,13 @@ export default function OrderShow({ order }: { order: Order }) {
                                             <p className="text-sm text-muted-foreground">
                                                 {item.product_variant.name}
                                             </p>
+                                            <ValidityBadge
+                                                months={
+                                                    item.product_variant
+                                                        .validity_months
+                                                }
+                                                className="mt-1"
+                                            />
                                             <VariantOptionBadges
                                                 selectedOptions={
                                                     item.selected_options
@@ -534,7 +545,7 @@ export default function OrderShow({ order }: { order: Order }) {
                         {/* Order Messages */}
                         <SupportChat
                             order={order}
-                            postUrl={storeMessage.url(order.id)}
+                            postUrl={storeMessage.url(order.uuid)}
                         />
                     </div>
 
@@ -710,7 +721,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                             onClick={() => {
                                                 router.post(
                                                     askForReceiptReupload.url(
-                                                        order.id,
+                                                        order.uuid,
                                                     ),
                                                     {},
                                                     { preserveScroll: true },

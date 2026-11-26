@@ -39,6 +39,7 @@ type Subscription = {
     };
     order: OrderRefund & {
         id: number;
+        uuid: string;
         order_number: string;
     };
     order_item: {
@@ -136,7 +137,7 @@ export default function AdminSubscriptionIndex({
                                         >
                                             <Link
                                                 href={showAdminOrder(
-                                                    sub.order.id,
+                                                    sub.order.uuid,
                                                 )}
                                                 className="text-primary hover:underline"
                                             >

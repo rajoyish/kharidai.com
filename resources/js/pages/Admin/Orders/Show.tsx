@@ -37,6 +37,7 @@ import type { ServiceInvoice } from '@/components/service-invoice-card';
 import { SupportChat } from '@/components/SupportChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { ValidityBadge } from '@/components/validity-badge';
 import { VariantOptionBadges } from '@/components/variant-option-badges';
 import type { SelectedOptions } from '@/components/variant-option-badges';
 import { formatNpr } from '@/lib/currency';
@@ -46,6 +47,8 @@ import { index as productGuidesIndex } from '@/routes/admin/products/guides';
 
 type Order = OrderRefund & {
     id: number;
+    /** The order's URL key; the id is never used in links. */
+    uuid: string;
     order_number: string;
     total_amount: string;
     items_total: string;
@@ -348,6 +351,13 @@ export default function AdminOrderShow({
                                             <p className="text-sm text-muted-foreground">
                                                 {item.product_variant.name}
                                             </p>
+                                            <ValidityBadge
+                                                months={
+                                                    item.product_variant
+                                                        .validity_months
+                                                }
+                                                className="mt-1"
+                                            />
                                             <VariantOptionBadges
                                                 selectedOptions={
                                                     item.selected_options

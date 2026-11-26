@@ -39,6 +39,8 @@ import { dashboard } from '@/routes/admin';
 
 type DeletedOrder = {
     id: number;
+    /** The order's URL key; the id is never used in links. */
+    uuid: string;
     order_number: string;
     status: string;
     total_amount: number;
@@ -87,7 +89,7 @@ export default function DeletedOrders({
         setRestoringId(order.id);
 
         router.patch(
-            restoreOrder.url(order.id),
+            restoreOrder.url(order.uuid),
             {},
             {
                 preserveScroll: true,
@@ -313,7 +315,7 @@ export default function DeletedOrders({
                     }
                     confirmLabel="Delete permanently"
                     onConfirm={() =>
-                        router.delete(forceDestroyOrder.url(orderToErase.id), {
+                        router.delete(forceDestroyOrder.url(orderToErase.uuid), {
                             preserveScroll: true,
                         })
                     }

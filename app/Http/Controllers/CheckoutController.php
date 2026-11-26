@@ -500,9 +500,13 @@ class CheckoutController extends Controller
 
     public function nprPayment(Request $request, Order $order): Response|RedirectResponse
     {
+        // Someone else's order is not found rather than forbidden, so the
+        // response never confirms that it exists.
+        abort_if($order->user_id !== $request->user()->id, 404);
+
         $unpaidInvoicesTotal = $this->getUnpaidInvoicesTotal($order);
 
-        if ($order->user_id !== $request->user()->id || ($order->status !== 'pending' && $unpaidInvoicesTotal <= 0 && ! $order->can_reupload_receipt)) {
+        if ($order->status !== 'pending' && $unpaidInvoicesTotal <= 0 && ! $order->can_reupload_receipt) {
             abort(403);
         }
 
@@ -522,9 +526,13 @@ class CheckoutController extends Controller
 
     public function processNprPayment(Request $request, Order $order): RedirectResponse
     {
+        // Someone else's order is not found rather than forbidden, so the
+        // response never confirms that it exists.
+        abort_if($order->user_id !== $request->user()->id, 404);
+
         $unpaidInvoicesTotal = $this->getUnpaidInvoicesTotal($order);
 
-        if ($order->user_id !== $request->user()->id || ($order->status !== 'pending' && $unpaidInvoicesTotal <= 0 && ! $order->can_reupload_receipt)) {
+        if ($order->status !== 'pending' && $unpaidInvoicesTotal <= 0 && ! $order->can_reupload_receipt) {
             abort(403);
         }
 

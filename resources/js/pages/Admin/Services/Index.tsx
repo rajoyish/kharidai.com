@@ -41,7 +41,7 @@ type Engagement = {
     product: { id: number; title: string } | null;
     variant: { id: number; name: string } | null;
     assigned_by: string | null;
-    order: { id: number; order_number: string } | null;
+    order: { id: number; uuid: string; order_number: string } | null;
     created_at: string | null;
 };
 
@@ -139,7 +139,7 @@ export default function ServicesIndex({
                                             <Link
                                                 href={
                                                     showOrder(
-                                                        engagement.order.id,
+                                                        engagement.order.uuid,
                                                     ).url
                                                 }
                                                 className="font-medium text-primary hover:underline"

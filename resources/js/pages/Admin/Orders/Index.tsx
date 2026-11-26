@@ -33,6 +33,8 @@ import type { BreadcrumbItem } from '@/types';
 
 type Order = OrderRefund & {
     id: number;
+    /** The order's URL key; the id is never used in links. */
+    uuid: string;
     order_number: string;
     total_amount: string;
     status: string;
@@ -344,7 +346,7 @@ function OrderTable({
                             <CopyableOrderNumber
                                 orderNumber={order.order_number}
                             >
-                                <Link href={showAdminOrder(order.id)}>
+                                <Link href={showAdminOrder(order.uuid)}>
                                     {order.order_number}
                                 </Link>
                             </CopyableOrderNumber>
@@ -387,7 +389,7 @@ function OrderTable({
                         </TableCell>
                         <TableCell className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href={showAdminOrder(order.id)}>
+                                <Link href={showAdminOrder(order.uuid)}>
                                     <Eye className="h-4 w-4" />
                                     View
                                 </Link>

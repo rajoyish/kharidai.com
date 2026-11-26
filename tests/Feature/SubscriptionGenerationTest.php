@@ -130,7 +130,7 @@ it('computes and serializes days left when the database has no days_left column'
     }
 
     $this->actingAs($admin)
-        ->patch('/admin/orders/'.$order->id.'/status', ['status' => 'completed'])
+        ->patch('/admin/orders/'.$order->uuid.'/status', ['status' => 'completed'])
         ->assertRedirect();
 
     $subscription = Subscription::query()
@@ -183,13 +183,13 @@ it('creates one subscription per purchased unit without duplicating them on repe
     ]);
 
     $this->actingAs($admin)
-        ->patch('/admin/orders/'.$order->id.'/status', ['status' => 'completed'])
+        ->patch('/admin/orders/'.$order->uuid.'/status', ['status' => 'completed'])
         ->assertRedirect();
     $this->actingAs($admin)
-        ->patch('/admin/orders/'.$order->id.'/status', ['status' => 'delivering'])
+        ->patch('/admin/orders/'.$order->uuid.'/status', ['status' => 'delivering'])
         ->assertRedirect();
     $this->actingAs($admin)
-        ->patch('/admin/orders/'.$order->id.'/status', ['status' => 'completed'])
+        ->patch('/admin/orders/'.$order->uuid.'/status', ['status' => 'completed'])
         ->assertRedirect();
 
     $monthlySubscriptions = Subscription::query()

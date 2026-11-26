@@ -18,11 +18,15 @@ class PaymentReceiptUploadedNotification extends Notification
 
     public int $orderId;
 
+    /** The order's URL key; null only on notifications queued before it existed. */
+    public ?string $orderUuid = null;
+
     public string $orderNumber;
 
     public function __construct(Order $order)
     {
         $this->orderId = $order->id;
+        $this->orderUuid = $order->uuid;
         $this->orderNumber = $order->order_number;
     }
 
@@ -55,7 +59,7 @@ class PaymentReceiptUploadedNotification extends Notification
         return [
             'message' => 'Payment Receipt Uploaded',
             'description' => 'Customer uploaded a receipt for order #'.$this->orderNumber,
-            'url' => route('admin.orders.show', $this->orderId),
+            'url' => route('admin.orders.show', $this->orderUuid ?? $this->orderId),
             'order_id' => $this->orderId,
         ];
     }

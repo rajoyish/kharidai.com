@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\ExceptionResponse;
+use Inertia\Inertia;
 use Inertia\Ssr\SsrRenderFailed;
 
 class AppServiceProvider extends ServiceProvider
@@ -58,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureDefaults();
         $this->embedLogoInOutgoingMail();
+        $this->renderErrorPagesThroughInertia();
 
         /*
          * The last line of defence on the free-tier send limits. Registered before
@@ -85,6 +88,43 @@ class AppServiceProvider extends ServiceProvider
      * email we send, so a Mailable that forgot to embed the image would render a
      * broken cid. Hooking the send makes that impossible to get wrong.
      */
+    /**
+     * Render error responses as the app's own ErrorPage instead of Laravel's
+     * plain ones.
+     *
+     * 403, 404, 419 and 429 carry the shared data (who is signed in) when the
+     * request has a session, since the app itself is healthy. 500 and 503 render without it: resolving
+     * shared data can be what failed. While debugging, a 500 falls through to
+     * Laravel's exception page so the stack trace stays visible. API routes
+     * keep their JSON errors.
+     */
+    protected function renderErrorPagesThroughInertia(): void
+    {
+        Inertia::handleExceptionsUsing(function (ExceptionResponse $response) {
+            $status = $response->statusCode();
+            $request = $response->request;
+
+            // Mirrors bootstrap/app.php, which renders JSON errors for the API.
+            if ($request->is('api/*')) {
+                return null;
+            }
+
+            if (in_array($status, [403, 404, 419, 429], true)) {
+                $page = $response->render('ErrorPage', ['status' => $status]);
+
+                // Shared data reads the session, which a request that matched
+                // no web route (or the framework's storage route) never started.
+                return $request->hasSession() ? $page->withSharedData() : $page;
+            }
+
+            if (in_array($status, [500, 503], true) && ! config('app.debug')) {
+                return $response->render('ErrorPage', ['status' => $status]);
+            }
+
+            return null;
+        });
+    }
+
     protected function embedLogoInOutgoingMail(): void
     {
         Event::listen(function (MessageSending $event): void {
