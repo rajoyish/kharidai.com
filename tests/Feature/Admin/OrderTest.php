@@ -78,6 +78,8 @@ it('sends only the columns the orders list renders', function () {
         ->get(route('admin.orders.index'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('orders.0.profit', 600)
+            // The row's links and actions are built from the URL key.
+            ->where('orders.0.uuid', $order->uuid)
             ->where('orders.0.user.email', $this->user->email)
             ->where('orders.0.payment_receipt.status', 'approved')
             ->missing('orders.0.items')

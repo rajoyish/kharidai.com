@@ -206,6 +206,7 @@ it('lists one entry per completed order, tithing ten percent of its profit', fun
         // Entries are ordered by profit, largest first.
         ->where('tithes.0.entries.0.source_type', 'order')
         ->where('tithes.0.entries.0.source_id', $larger->id)
+        ->where('tithes.0.entries.0.order_uuid', $larger->uuid)
         ->where('tithes.0.entries.0.reference', $larger->order_number)
         ->where('tithes.0.entries.0.profit', 1200)
         ->where('tithes.0.entries.0.tithe', 120)
