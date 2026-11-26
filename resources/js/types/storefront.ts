@@ -14,6 +14,8 @@ export type StorefrontProduct = {
     slug: string;
     description: string | null;
     image: string | null;
+    /** Small square WebP for icon-sized spots; null until one exists. */
+    image_thumb?: string | null;
     /** Author-supplied alt text; falls back to the title when not set. */
     image_alt?: string | null;
     /**
